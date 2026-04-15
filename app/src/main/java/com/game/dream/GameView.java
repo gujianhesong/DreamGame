@@ -64,6 +64,15 @@ public class GameView extends SurfaceView implements Runnable {
         }
     }
 
+    /**
+     * Clean up resources
+     */
+    public void cleanup() {
+        if (gameEngine != null) {
+            gameEngine.cleanup();
+        }
+    }
+
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         return gameEngine.handleTouch(event);

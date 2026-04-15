@@ -37,7 +37,7 @@ public class Player {
     }
 
     public void setSize(int tileSize) {
-        this.size = (int)(tileSize * 1.5f);
+        this.size = (int)(tileSize * 3f);
     }
 
     public void update(int[][] map, int mapWidth, int mapHeight, int tileSize) {

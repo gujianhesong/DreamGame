@@ -28,4 +28,14 @@ public class MainActivity extends AppCompatActivity {
             gameView.pause();
         }
     }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        // Clean up resources to prevent memory leaks
+        if (gameView != null) {
+            gameView.cleanup();
+            gameView = null;
+        }
+    }
 }

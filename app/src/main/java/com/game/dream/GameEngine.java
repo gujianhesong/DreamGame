@@ -9,23 +9,25 @@ import android.view.MotionEvent;
 
 public class GameEngine {
     private Context context;
-    private int screenWidth;
-    private int screenHeight;
+    private static int screenWidth;
+    private static int screenHeight;
 
     // Map dimensions
     private static final int MAP_WIDTH = 10000;
     private static final int MAP_HEIGHT = 10000;
-    private static final int TILE_SIZE = 50;
+    private static final int TILE_SIZE = 20;
 
     // Camera position (top-left corner of visible area)
-    private float cameraX;
-    private float cameraY;
+    private static float cameraX;
+    private static float cameraY;
 
     // Player
     private Player player;
 
     // Map data
     private int[][] map; // 0=plain, 1=grassland, 2=forest, 3=lake, 4=snow, 5=swamp, 6=lava
+    // Map renderer (extracted to separate class)
+    private MapRenderer mapRenderer;
 
     // Control buttons
     private Rect upButton, downButton, leftButton, rightButton;
@@ -41,8 +43,23 @@ public class GameEngine {
     private static final int SWAMP = 5;
     private static final int LAVA = 6;
 
+    // FPS tracking
+    private long lastFrameTime;
+    private int frameCount;
+    private float currentFPS;
+    private long fpsUpdateTime;
+
+    // Memory tracking (updated every 3 seconds)
+    private float cachedMemoryMB = 0;
+    private long lastMemoryUpdateTime = 0;
+    private static final long MEMORY_UPDATE_INTERVAL = 3000; // 3 seconds
+
     public GameEngine(Context context) {
         this.context = context;
+        this.lastFrameTime = System.currentTimeMillis();
+        this.frameCount = 0;
+        this.currentFPS = 0;
+        this.fpsUpdateTime = System.currentTimeMillis();
         initGame();
     }
 
@@ -79,6 +96,16 @@ public class GameEngine {
 
         // Initialize camera to center on player
         updateCamera();
+
+        // Initialize map renderer
+        mapRenderer = new MapRenderer(map, MAP_WIDTH, MAP_HEIGHT, TILE_SIZE);
+    }
+
+    public void cleanup() {
+        // Clean up map renderer
+        if (mapRenderer != null) {
+            mapRenderer.cleanup();
+        }
     }
 
     private void generateMap() {
@@ -120,6 +147,9 @@ public class GameEngine {
 
         // Update camera to follow player
         updateCamera();
+
+        // Update FPS counter
+        updateFPS();
     }
 
     private void updateCamera() {
@@ -132,12 +162,42 @@ public class GameEngine {
         cameraY = Math.max(0, Math.min(cameraY, MAP_HEIGHT - screenHeight));
     }
 
+    // Static getters for MapRenderer
+    public static float getCameraX() {
+        return cameraX;
+    }
+
+    public static float getCameraY() {
+        return cameraY;
+    }
+
+    public static int getScreenWidth() {
+        return screenWidth;
+    }
+
+    public static int getScreenHeight() {
+        return screenHeight;
+    }
+
+    private void updateFPS() {
+        frameCount++;
+        long currentTime = System.currentTimeMillis();
+        long elapsed = currentTime - fpsUpdateTime;
+
+        // Update FPS every second
+        if (elapsed >= 1000) {
+            currentFPS = (frameCount * 1000f) / elapsed;
+            frameCount = 0;
+            fpsUpdateTime = currentTime;
+        }
+    }
+
     public void draw(Canvas canvas) {
         // Draw background
         canvas.drawColor(Color.BLACK);
 
-        // Draw visible portion of map
-        drawMap(canvas);
+        // Draw map using MapRenderer
+        mapRenderer.draw(canvas, cameraX, cameraY, screenWidth, screenHeight);
 
         // Draw player
         player.draw(canvas, (int)-cameraX, (int)-cameraY);
@@ -149,80 +209,40 @@ public class GameEngine {
         drawControls(canvas);
     }
 
-    private void drawMap(Canvas canvas) {
-        Paint paint = new Paint();
-
-        // Calculate visible tile range
-        int startTileX = (int)(cameraX / TILE_SIZE);
-        int endTileX = (int)((cameraX + screenWidth) / TILE_SIZE) + 1;
-        int startTileY = (int)(cameraY / TILE_SIZE);
-        int endTileY = (int)((cameraY + screenHeight) / TILE_SIZE) + 1;
-
-        // Clamp to map bounds
-        startTileX = Math.max(0, startTileX);
-        startTileY = Math.max(0, startTileY);
-        endTileX = Math.min(map[0].length, endTileX);
-        endTileY = Math.min(map.length, endTileY);
-
-        // Draw only visible tiles
-        for (int y = startTileY; y < endTileY; y++) {
-            for (int x = startTileX; x < endTileX; x++) {
-                int screenX = (int)(x * TILE_SIZE - cameraX);
-                int screenY = (int)(y * TILE_SIZE - cameraY);
-
-                switch (map[y][x]) {
-                    case PLAIN:
-                        paint.setColor(Color.rgb(210, 180, 140)); // Tan
-                        break;
-                    case GRASSLAND:
-                        paint.setColor(Color.rgb(34, 139, 34)); // Forest green
-                        break;
-                    case FOREST:
-                        paint.setColor(Color.rgb(0, 100, 0)); // Dark green
-                        break;
-                    case LAKE:
-                        paint.setColor(Color.rgb(30, 144, 255)); // Dodger blue
-                        break;
-                    case SNOW:
-                        paint.setColor(Color.rgb(255, 250, 250)); // Snow white
-                        break;
-                    case SWAMP:
-                        paint.setColor(Color.rgb(85, 107, 47)); // Dark olive green
-                        break;
-                    case LAVA:
-                        paint.setColor(Color.rgb(255, 69, 0)); // Red orange
-                        break;
-                    default:
-                        paint.setColor(Color.GRAY);
-                        break;
-                }
-
-                canvas.drawRect(screenX, screenY, screenX + TILE_SIZE, screenY + TILE_SIZE, paint);
-
-                // Draw grid lines
-                // Draw grid lines
-                paint.setColor(Color.argb(50, 0, 0, 0));
-                paint.setStrokeWidth(1);
-                canvas.drawLine(screenX, screenY, screenX + TILE_SIZE, screenY, paint);
-                canvas.drawLine(screenX, screenY, screenX, screenY + TILE_SIZE, paint);
-            }
-        }
-    }
-
     private void drawUI(Canvas canvas) {
         Paint paint = new Paint();
         paint.setTextSize(30);
         paint.setColor(Color.WHITE);
         paint.setTextAlign(Paint.Align.LEFT);
 
-        // Draw coordinates
-        canvas.drawText("Position: (" + (int)player.getX() + ", " + (int)player.getY() + ")", 10, 40, paint);
+        // Draw FPS (top-right corner)
+        paint.setTextAlign(Paint.Align.LEFT);
+        if (currentFPS >= 55) {
+            paint.setColor(Color.GREEN);
+        } else if (currentFPS >= 30) {
+            paint.setColor(Color.YELLOW);
+        } else {
+            paint.setColor(Color.RED);
+        }
+        canvas.drawText("FPS: " + String.format("%.1f", currentFPS), 10, 40, paint);
+        paint.setColor(Color.WHITE);
+        canvas.drawText("Memory: " + String.format("%.1f", getUsedMemoryMB()) + " MB", 10, 80, paint);
+
+        // Draw coordinates (top-left)
+        paint.setTextAlign(Paint.Align.LEFT);
+        paint.setColor(Color.WHITE);
+        canvas.drawText("Position: (" + (int)player.getX() + ", " + (int)player.getY() + ")", 10, 120, paint);
 
         // Draw terrain info
         int playerGridX = (int)(player.getX() / TILE_SIZE);
         int playerGridY = (int)(player.getY() / TILE_SIZE);
         String terrainName = getTerrainName(map[playerGridY][playerGridX]);
-        canvas.drawText("Terrain: " + terrainName, 10, 80, paint);
+        canvas.drawText("Terrain: " + terrainName, 10, 160, paint);
+
+        // Draw chunk cache info (for debugging)
+        paint.setColor(Color.CYAN);
+        canvas.drawText("Chunks: " + mapRenderer.getCachedChunkCount(), 10, 200, paint);
+        canvas.drawText("Active: " + mapRenderer.getActiveChunkCount(), 10, 240, paint);
     }
 
     private String getTerrainName(int terrainType) {
@@ -313,8 +333,8 @@ public class GameEngine {
     }
 
     public void setScreenSize(int width, int height) {
-        this.screenWidth = width;
-        this.screenHeight = height;
+        screenWidth = width;
+        screenHeight = height;
 
         // Initialize control buttons
         initControlButtons();
@@ -333,5 +353,24 @@ public class GameEngine {
                 leftAreaCenterX + dpadRadius,
                 leftAreaCenterY + dpadRadius
         );
+    }
+
+    private float getUsedMemoryMB() {
+        long currentTime = System.currentTimeMillis();
+
+        // Only update every 3 seconds
+        if (currentTime - lastMemoryUpdateTime >= MEMORY_UPDATE_INTERVAL) {
+            android.os.Debug.MemoryInfo memoryInfo = new android.os.Debug.MemoryInfo();
+            android.os.Debug.getMemoryInfo(memoryInfo);
+
+            // getTotalPss() returns memory in KB
+            long totalPssKB = memoryInfo.getTotalPss();
+
+            // Convert to MB and cache
+            cachedMemoryMB = totalPssKB / 1024f;
+            lastMemoryUpdateTime = currentTime;
+        }
+
+        return cachedMemoryMB;
     }
 }

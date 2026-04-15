@@ -29,6 +29,16 @@ public class GameEngine {
     // Map renderer (extracted to separate class)
     private MapRenderer mapRenderer;
 
+    // Minimap
+    private Minimap minimap;
+
+    // Day-night cycle
+    private DayNightCycle dayNightCycle;
+    private long lastUpdateTime;
+
+    // Weather system
+    private WeatherSystem weatherSystem;
+
     // Control buttons
     private Rect upButton, downButton, leftButton, rightButton;
     private Rect dpadBounds;
@@ -99,12 +109,28 @@ public class GameEngine {
 
         // Initialize map renderer
         mapRenderer = new MapRenderer(map, MAP_WIDTH, MAP_HEIGHT, TILE_SIZE);
+
+        // Initialize minimap
+        minimap = new Minimap(map, MAP_WIDTH, MAP_HEIGHT, TILE_SIZE);
+        minimap.initialize();
+
+        // Initialize day-night cycle
+        dayNightCycle = new DayNightCycle();
+        lastUpdateTime = System.currentTimeMillis();
+
+        // Initialize weather system
+        //weatherSystem = new WeatherSystem();
     }
 
     public void cleanup() {
         // Clean up map renderer
         if (mapRenderer != null) {
             mapRenderer.cleanup();
+        }
+
+        // Clean up minimap
+        if (minimap != null) {
+            minimap.cleanup();
         }
     }
 
@@ -150,6 +176,17 @@ public class GameEngine {
 
         // Update FPS counter
         updateFPS();
+
+        // Update day-night cycle
+        long currentTime = System.currentTimeMillis();
+        long deltaTime = currentTime - lastUpdateTime;
+        dayNightCycle.update(deltaTime);
+        lastUpdateTime = currentTime;
+
+        // Update weather system
+        if (weatherSystem != null) {
+            weatherSystem.update(deltaTime, screenWidth, screenHeight);
+        }
     }
 
     private void updateCamera() {
@@ -199,11 +236,26 @@ public class GameEngine {
         // Draw map using MapRenderer
         mapRenderer.draw(canvas, cameraX, cameraY, screenWidth, screenHeight);
 
+        // Draw day-night overlay (after map, before player)
+        if (dayNightCycle != null) {
+            dayNightCycle.draw(canvas, screenWidth, screenHeight);
+        }
+
+        // Draw weather effects
+        if (weatherSystem != null) {
+            weatherSystem.draw(canvas);
+        }
+
         // Draw player
         player.draw(canvas, (int)-cameraX, (int)-cameraY);
 
         // Draw UI
         drawUI(canvas);
+
+        // Draw minimap
+        if (minimap != null) {
+            minimap.draw(canvas, player.getX(), player.getY(), screenWidth, screenHeight);
+        }
 
         // Draw controls
         drawControls(canvas);
@@ -243,6 +295,18 @@ public class GameEngine {
         paint.setColor(Color.CYAN);
         canvas.drawText("Chunks: " + mapRenderer.getCachedChunkCount(), 10, 200, paint);
         canvas.drawText("Active: " + mapRenderer.getActiveChunkCount(), 10, 240, paint);
+
+        // Draw time info
+        if (dayNightCycle != null) {
+            paint.setColor(Color.rgb(255, 255, 200)); // Light yellow
+            canvas.drawText(dayNightCycle.getTimePhase(), 10, 280, paint);
+        }
+
+        // Draw weather info
+        if (weatherSystem != null) {
+            paint.setColor(Color.rgb(200, 220, 255)); // Light blue
+            canvas.drawText("Weather: " + weatherSystem.getWeatherDescription(), 10, 320, paint);
+        }
     }
 
     private String getTerrainName(int terrainType) {

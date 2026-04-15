@@ -26,6 +26,8 @@ public class GameEngine {
 
     // Map data
     private int[][] map; // 0=plain, 1=grassland, 2=forest, 3=lake, 4=snow, 5=swamp, 6=lava
+    // Map generator
+    private MapGenerator mapGenerator;
     // Map renderer (extracted to separate class)
     private MapRenderer mapRenderer;
 
@@ -43,15 +45,6 @@ public class GameEngine {
     private Rect upButton, downButton, leftButton, rightButton;
     private Rect dpadBounds;
     private boolean upPressed, downPressed, leftPressed, rightPressed;
-
-    // Terrain types
-    private static final int PLAIN = 0;
-    private static final int GRASSLAND = 1;
-    private static final int FOREST = 2;
-    private static final int LAKE = 3;
-    private static final int SNOW = 4;
-    private static final int SWAMP = 5;
-    private static final int LAVA = 6;
 
     // FPS tracking
     private long lastFrameTime;
@@ -74,7 +67,9 @@ public class GameEngine {
     }
 
     private void initGame() {
-        generateMap();
+        // Initialize map generator and generate map
+        mapGenerator = new MapGenerator(MAP_WIDTH, MAP_HEIGHT, TILE_SIZE);
+        map = mapGenerator.generateMap();
 
         // Find a valid starting position (not on lake or lava)
         int startX = MAP_WIDTH / TILE_SIZE / 2;
@@ -90,7 +85,7 @@ public class GameEngine {
 
                     if (checkX >= 0 && checkX < map[0].length && checkY >= 0 && checkY < map.length) {
                         int terrain = map[checkY][checkX];
-                        if (terrain != LAKE && terrain != LAVA) {
+                        if (terrain != MapGenerator.LAKE && terrain != MapGenerator.LAVA) {
                             startX = checkX;
                             startY = checkY;
                             foundValidPosition = true;
@@ -131,39 +126,6 @@ public class GameEngine {
         // Clean up minimap
         if (minimap != null) {
             minimap.cleanup();
-        }
-    }
-
-    private void generateMap() {
-        map = new int[MAP_HEIGHT / TILE_SIZE][MAP_WIDTH / TILE_SIZE];
-
-        // Generate terrain using simple noise-like algorithm
-        for (int y = 0; y < map.length; y++) {
-            for (int x = 0; x < map[y].length; x++) {
-                map[y][x] = generateTerrainType(x, y);
-            }
-        }
-    }
-
-    private int generateTerrainType(int gridX, int gridY) {
-        // Use coordinates to create interesting terrain patterns
-        double noise = Math.sin(gridX * 0.05) * Math.cos(gridY * 0.05) +
-                Math.sin(gridX * 0.02 + gridY * 0.03) * 0.5;
-
-        if (noise > 0.8) {
-            return SNOW;
-        } else if (noise > 0.5) {
-            return FOREST;
-        } else if (noise > 0.2) {
-            return GRASSLAND;
-        } else if (noise > -0.2) {
-            return PLAIN;
-        } else if (noise > -0.5) {
-            return SWAMP;
-        } else if (noise > -0.8) {
-            return LAKE;
-        } else {
-            return LAVA;
         }
     }
 
@@ -288,7 +250,7 @@ public class GameEngine {
         // Draw terrain info
         int playerGridX = (int)(player.getX() / TILE_SIZE);
         int playerGridY = (int)(player.getY() / TILE_SIZE);
-        String terrainName = getTerrainName(map[playerGridY][playerGridX]);
+        String terrainName = MapGenerator.getTerrainName(map[playerGridY][playerGridX]);
         canvas.drawText("Terrain: " + terrainName, 10, 160, paint);
 
         // Draw chunk cache info (for debugging)
@@ -309,25 +271,12 @@ public class GameEngine {
         }
     }
 
-    private String getTerrainName(int terrainType) {
-        switch (terrainType) {
-            case PLAIN: return "Plain";
-            case GRASSLAND: return "Grassland";
-            case FOREST: return "Forest";
-            case LAKE: return "Lake";
-            case SNOW: return "Snow";
-            case SWAMP: return "Swamp";
-            case LAVA: return "Lava";
-            default: return "Unknown";
-        }
-    }
-
     private void drawControls(Canvas canvas) {
         Paint paint = new Paint();
         paint.setAlpha(150);
 
         // Draw D-pad
-        paint.setColor(Color.rgb(40, 80, 160));
+        paint.setColor(Color.argb(100, 40, 80, 160));
         canvas.drawCircle(dpadBounds.centerX(), dpadBounds.centerY(), dpadBounds.width()/2, paint);
 
         // Draw directional arrows
@@ -408,7 +357,7 @@ public class GameEngine {
         int buttonSize = Math.min(screenWidth, screenHeight) / 8;
 
         int leftAreaCenterX = screenWidth / 8;
-        int leftAreaCenterY = screenHeight / 2;
+        int leftAreaCenterY = screenHeight * 2 / 3;
 
         int dpadRadius = (int)(buttonSize * 1.8f);
         dpadBounds = new Rect(

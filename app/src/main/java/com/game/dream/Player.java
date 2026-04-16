@@ -5,6 +5,8 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 
+import com.game.dream.enemy.Enemy;
+
 public class Player {
     private float x, y;
     private float speed;
@@ -23,21 +25,37 @@ public class Player {
     private static final int LAKE = 3;
     private static final int LAVA = 6;
 
+    // Combat
+    private int attackDamage;
+    private int magicDamage;
+    private long lastAttackTime;
+    private long attackCooldown;
+    private long lastMagicTime;
+    private long magicCooldown;
+
     public Player(float x, float y) {
         this.x = x;
         this.y = y;
         this.speed = 5f;
-        this.size = 30;
+        this.size = 50;
         this.movingUp = false;
         this.movingDown = false;
         this.movingLeft = false;
         this.movingRight = false;
         this.walkCycle = 0;
         this.facingDirection = 0; // Default facing down
+
+        // Combat stats
+        this.attackDamage = 10;
+        this.magicDamage = 15;
+        this.lastAttackTime = 0;
+        this.attackCooldown = 500; // 0.5 seconds
+        this.lastMagicTime = 0;
+        this.magicCooldown = 1200; // 0.8 seconds
     }
 
     public void setSize(int tileSize) {
-        this.size = (int)(tileSize * 3f);
+        this.size = (int)(tileSize * 4f);
     }
 
     public void update(int[][] map, int mapWidth, int mapHeight, int tileSize) {
@@ -1049,4 +1067,132 @@ public class Player {
     public void setMovingRight(boolean moving) { this.movingRight = moving; }
     public void setMovingUp(boolean moving) { this.movingUp = moving; }
     public void setMovingDown(boolean moving) { this.movingDown = moving; }
+
+    public int getFacingDirection() { return facingDirection; }
+    public boolean isMoving() { return movingUp || movingDown || movingLeft || movingRight; }
+
+    /**
+     * Perform melee attack
+     */
+    public boolean performMeleeAttack(java.util.List<Enemy> enemies) {
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - lastAttackTime < attackCooldown) {
+            return false; // Still on cooldown
+        }
+
+        lastAttackTime = currentTime;
+
+        // Attack area in front of player
+        float attackRange = size * 1.5f;
+        float attackX = x;
+        float attackY = y;
+
+        // Determine attack direction based on facing
+        switch (facingDirection) {
+            case 0: // Down
+                attackY += attackRange;
+                break;
+            case 1: // Up
+                attackY -= attackRange;
+                break;
+            case 2: // Left
+                attackX -= attackRange;
+                break;
+            case 3: // Right
+                attackX += attackRange;
+                break;
+        }
+
+        // Check for enemies in attack range
+        boolean hitSomething = false;
+        for (Enemy enemy : enemies) {
+            if (!enemy.isAlive()) continue;
+
+            float dx = enemy.getX() - attackX;
+            float dy = enemy.getY() - attackY;
+            float distance = (float)Math.sqrt(dx * dx + dy * dy);
+
+            if (distance < attackRange) {
+                enemy.takeDamage(attackDamage);
+                hitSomething = true;
+            }
+        }
+
+        return hitSomething;
+    }
+
+    /**
+     * Cast magic spell
+     */
+    public Projectile castSpell(float targetX, float targetY, Projectile.Type spellType) {
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - lastMagicTime < magicCooldown) {
+            return null; // Still on cooldown
+        }
+
+        lastMagicTime = currentTime;
+
+        // Create projectile from player position to target
+        return new Projectile(x, y, targetX, targetY, spellType);
+    }
+
+    /**
+     * Cast triple spell - fires 3 projectiles at once
+     */
+    public java.util.List<Projectile> castTripleSpell(Projectile.Type spellType) {
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - lastMagicTime < magicCooldown) {
+            return null; // Still on cooldown
+        }
+
+        lastMagicTime = currentTime;
+
+        java.util.List<Projectile> spells = new java.util.ArrayList<>();
+
+        float baseAngle = 0;
+
+        // Determine base angle from facing direction
+        switch (getFacingDirection()) {
+            case 0: baseAngle = 90; break;  // Down
+            case 1: baseAngle = -90; break; // Up
+            case 2: baseAngle = 180; break; // Left
+            case 3: baseAngle = 0; break;   // Right
+        }
+
+        // Create 3 projectiles with 30 degree separation
+        float[] angles = {baseAngle - 30, baseAngle, baseAngle + 30};
+        float range = 300;
+
+        for (float angle : angles) {
+            // Convert angle to radians
+            double rad = Math.toRadians(angle);
+
+            // Calculate target position
+            float spellTargetX = getX() + (float)(Math.cos(rad) * range);
+            float spellTargetY = getY() + (float)(Math.sin(rad) * range);
+
+            // Cast triple spell (returns list of 3 projectiles)
+            spells.add(new Projectile(x, y, spellTargetX, spellTargetY, spellType));
+        }
+
+        return spells;
+    }
+
+    /**
+     * Get attack cooldown progress (0-1)
+     */
+    public float getAttackCooldownProgress() {
+        long currentTime = System.currentTimeMillis();
+        long elapsed = currentTime - lastAttackTime;
+        return Math.min(1.0f, (float)elapsed / attackCooldown);
+    }
+
+    /**
+     * Get magic cooldown progress (0-1)
+     */
+    public float getMagicCooldownProgress() {
+        long currentTime = System.currentTimeMillis();
+        long elapsed = currentTime - lastMagicTime;
+        return Math.min(1.0f, (float)elapsed / magicCooldown);
+    }
 }

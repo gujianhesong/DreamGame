@@ -7,6 +7,13 @@ import android.graphics.Paint;
 import android.graphics.Rect;
 import android.view.MotionEvent;
 
+import com.game.dream.enemy.Enemy;
+import com.game.dream.enemy.Tiger;
+import com.game.dream.enemy.Wolf;
+
+import java.util.List;
+import java.util.Random;
+
 public class GameEngine {
     private Context context;
     private static int screenWidth;
@@ -41,8 +48,19 @@ public class GameEngine {
     // Weather system
     private WeatherSystem weatherSystem;
 
+    // Enemies
+    private java.util.List<Enemy> enemies;
+
+    // Projectiles (magic attacks)
+    private java.util.List<Projectile> projectiles;
+
+    // Attack buttons
+    private Rect meleeAttackButton;
+    private Rect magicAttackButton;
+    private boolean meleeAttackPressed;
+    private boolean magicAttackPressed;
+
     // Control buttons
-    private Rect upButton, downButton, leftButton, rightButton;
     private Rect dpadBounds;
     private boolean upPressed, downPressed, leftPressed, rightPressed;
 
@@ -96,7 +114,7 @@ public class GameEngine {
         }
 
         // Create player at center of map
-        player = new Player(startX * TILE_SIZE + TILE_SIZE/2, startY * TILE_SIZE + TILE_SIZE/2);
+        player = new Player(startX * TILE_SIZE + TILE_SIZE / 2, startY * TILE_SIZE + TILE_SIZE / 2);
         player.setSize(TILE_SIZE);
 
         // Initialize camera to center on player
@@ -115,6 +133,60 @@ public class GameEngine {
 
         // Initialize weather system
         //weatherSystem = new WeatherSystem();
+
+        // Initialize enemys
+        initializeEnemies();
+
+        // Initialize projectiles
+        projectiles = new java.util.ArrayList<>();
+    }
+
+    /**
+     * Spawn enemys at random locations
+     */
+    private void initializeEnemies() {
+        enemies = new java.util.ArrayList<>();
+
+        // Spawn 10 wolves at random positions
+        Random random = new Random(67890);
+        int enemyCount = 100;
+
+        for (int i = 0; i < enemyCount; i++) {
+            boolean foundValidSpawn = false;
+            float spawnX = 0, spawnY = 0;
+
+            // Try to find a valid spawn position
+            for (int attempts = 0; attempts < 50 && !foundValidSpawn; attempts++) {
+                int gridX = random.nextInt(map[0].length);
+                int gridY = random.nextInt(map.length);
+
+                int terrain = map[gridY][gridX];
+
+                // Spawn on land (not lake/lava) and not too close to player start
+                if (terrain != MapGenerator.LAKE && terrain != MapGenerator.LAVA) {
+                    spawnX = gridX * TILE_SIZE + TILE_SIZE / 2;
+                    spawnY = gridY * TILE_SIZE + TILE_SIZE / 2;
+
+                    // Check distance from player
+                    float dx = spawnX - player.getX();
+                    float dy = spawnY - player.getY();
+                    float distance = (float) Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance > 500) { // At least 500 pixels away from player
+                        foundValidSpawn = true;
+                    }
+                }
+            }
+
+            if (foundValidSpawn) {
+                double rand = Math.random();
+                if (rand < 0.7) {
+                    enemies.add(new Tiger(spawnX, spawnY));
+                } else {
+                    enemies.add(new Wolf(spawnX, spawnY));
+                }
+            }
+        }
     }
 
     public void cleanup() {
@@ -130,6 +202,12 @@ public class GameEngine {
     }
 
     public void update() {
+        // Set player movement flags based on button states
+        player.setMovingUp(upPressed);
+        player.setMovingDown(downPressed);
+        player.setMovingLeft(leftPressed);
+        player.setMovingRight(rightPressed);
+
         // Update player movement
         player.update(map, MAP_WIDTH / TILE_SIZE, MAP_HEIGHT / TILE_SIZE, TILE_SIZE);
 
@@ -148,6 +226,57 @@ public class GameEngine {
         // Update weather system
         if (weatherSystem != null) {
             weatherSystem.update(deltaTime, screenWidth, screenHeight);
+        }
+
+        // Update enemies
+        if (enemies != null) {
+            for (int i = enemies.size() - 1; i >= 0; i--) {
+                Enemy enemy = enemies.get(i);
+
+                // Only update AI for enemies within a reasonable distance
+                // This saves CPU when there are many enemies
+                float dx = enemy.getX() - player.getX();
+                float dy = enemy.getY() - player.getY();
+                float distanceSquared = dx * dx + dy * dy;
+
+                // 只对距离玩家 2000 像素内的怪物更新 AI
+                float updateThreshold = 2000 * 2000; // 2000^2 to avoid sqrt
+                if (distanceSquared < updateThreshold) {
+                    enemy.update(deltaTime, player.getX(), player.getY(), map, MAP_WIDTH, MAP_HEIGHT);
+                } else {
+                    // Far away enemies don't need AI updates
+                    // They stay in their current state
+                }
+
+                // Remove dead enemies
+                if (!enemy.isAlive()) {
+                    enemies.remove(i);
+                }
+            }
+        }
+
+        // Update projectiles
+        if (projectiles != null) {
+            for (int i = projectiles.size() - 1; i >= 0; i--) {
+                Projectile proj = projectiles.get(i);
+                proj.update(deltaTime);
+
+                // Check collisions with enemies
+                if (proj.isActive()) {
+                    for (Enemy enemy : enemies) {
+                        if (proj.checkCollision(enemy)) {
+                            enemy.takeDamage(proj.getDamage());
+                            proj.deactivate();
+                            break;
+                        }
+                    }
+                }
+
+                // Remove inactive projectiles
+                if (!proj.isActive()) {
+                    projectiles.remove(i);
+                }
+            }
         }
     }
 
@@ -203,13 +332,31 @@ public class GameEngine {
             dayNightCycle.draw(canvas, screenWidth, screenHeight);
         }
 
+        // Draw enemies (only visible ones)
+        if (enemies != null) {
+            for (Enemy enemy : enemies) {
+                // Check if enemy is within visible area (with some padding)
+                float padding = 100; // Draw enemies slightly outside screen for smooth entry
+                if (isEnemyVisible(enemy, padding)) {
+                    enemy.draw(canvas, (int) -cameraX, (int) -cameraY);
+                }
+            }
+        }
+
+        // Draw projectiles
+        if (projectiles != null) {
+            for (Projectile proj : projectiles) {
+                proj.draw(canvas, (int) -cameraX, (int) -cameraY);
+            }
+        }
+
+        // Draw player
+        player.draw(canvas, (int) -cameraX, (int) -cameraY);
+
         // Draw weather effects
         if (weatherSystem != null) {
             weatherSystem.draw(canvas);
         }
-
-        // Draw player
-        player.draw(canvas, (int)-cameraX, (int)-cameraY);
 
         // Draw UI
         drawUI(canvas);
@@ -245,11 +392,11 @@ public class GameEngine {
         // Draw coordinates (top-left)
         paint.setTextAlign(Paint.Align.LEFT);
         paint.setColor(Color.WHITE);
-        canvas.drawText("Position: (" + (int)player.getX() + ", " + (int)player.getY() + ")", 10, 120, paint);
+        canvas.drawText("Position: (" + (int) player.getX() + ", " + (int) player.getY() + ")", 10, 120, paint);
 
         // Draw terrain info
-        int playerGridX = (int)(player.getX() / TILE_SIZE);
-        int playerGridY = (int)(player.getY() / TILE_SIZE);
+        int playerGridX = (int) (player.getX() / TILE_SIZE);
+        int playerGridY = (int) (player.getY() / TILE_SIZE);
         String terrainName = MapGenerator.getTerrainName(map[playerGridY][playerGridX]);
         canvas.drawText("Terrain: " + terrainName, 10, 160, paint);
 
@@ -273,23 +420,102 @@ public class GameEngine {
 
     private void drawControls(Canvas canvas) {
         Paint paint = new Paint();
-        paint.setAlpha(150);
+        paint.setAntiAlias(true);
 
-        // Draw D-pad
-        paint.setColor(Color.argb(100, 40, 80, 160));
-        canvas.drawCircle(dpadBounds.centerX(), dpadBounds.centerY(), dpadBounds.width()/2, paint);
+        // Draw D-pad background
+        paint.setColor(Color.argb(100, 0, 0, 0));
+        canvas.drawCircle(dpadBounds.centerX(), dpadBounds.centerY(), dpadBounds.width() / 2, paint);
 
-        // Draw directional arrows
+        // Draw D-pad buttons
         paint.setColor(Color.WHITE);
         paint.setTextSize(50);
         paint.setTextAlign(Paint.Align.CENTER);
+        canvas.drawText("▲", dpadBounds.centerX(), dpadBounds.centerY() - dpadBounds.height()/4 + 15, paint);
+        canvas.drawText("▼", dpadBounds.centerX(), dpadBounds.centerY() + dpadBounds.height()/4 + 15, paint);
+        canvas.drawText("◀", dpadBounds.centerX() - dpadBounds.width()/4, dpadBounds.centerY() + 15, paint);
+        canvas.drawText("▶", dpadBounds.centerX() + dpadBounds.width()/4, dpadBounds.centerY() + 15, paint);
 
-        canvas.drawText("↑", dpadBounds.centerX(), dpadBounds.centerY() - dpadBounds.height()/4 + 15, paint);
-        canvas.drawText("↓", dpadBounds.centerX(), dpadBounds.centerY() + dpadBounds.height()/4 + 15, paint);
-        canvas.drawText("←", dpadBounds.centerX() - dpadBounds.width()/4, dpadBounds.centerY() + 15, paint);
-        canvas.drawText("→", dpadBounds.centerX() + dpadBounds.width()/4, dpadBounds.centerY() + 15, paint);
+        // Draw attack buttons
+        if (meleeAttackButton != null && magicAttackButton != null) {
+            drawAttackButton(canvas, meleeAttackButton, meleeAttackPressed, "⚔️", Color.rgb(255, 100, 100));
+            drawAttackButton(canvas, magicAttackButton, magicAttackPressed, "✨", Color.rgb(100, 150, 255));
 
-        paint.setAlpha(255);
+            // Draw cooldown indicators
+            drawCooldownIndicator(canvas, meleeAttackButton, player.getAttackCooldownProgress(), Color.RED);
+            drawCooldownIndicator(canvas, magicAttackButton, player.getMagicCooldownProgress(), Color.BLUE);
+        }
+    }
+
+    private void drawDpadButton(Canvas canvas, Rect button, boolean pressed, String label) {
+        Paint paint = new Paint();
+        paint.setAntiAlias(true);
+
+        // Calculate center and radius
+        float centerX = button.centerX();
+        float centerY = button.centerY();
+        float radius = button.width() / 2;
+
+        // Button background (circular)
+        if (pressed) {
+            paint.setColor(Color.argb(200, 100, 100, 100));
+        } else {
+            paint.setColor(Color.argb(150, 80, 80, 80));
+        }
+        canvas.drawCircle(centerX, centerY, radius, paint);
+
+        // Border (circular)
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(2);
+        paint.setColor(Color.WHITE);
+        canvas.drawCircle(centerX, centerY, radius, paint);
+
+        // Label
+        paint.setStyle(Paint.Style.FILL);
+        paint.setTextSize(25);
+        paint.setColor(Color.WHITE);
+        paint.setTextAlign(Paint.Align.CENTER);
+        float textY = centerY + 8;
+        canvas.drawText(label, centerX, textY, paint);
+    }
+
+    private void drawAttackButton(Canvas canvas, Rect button, boolean pressed, String label, int color) {
+        Paint paint = new Paint();
+        paint.setAntiAlias(true);
+
+        // Button background
+        if (pressed) {
+            paint.setColor(Color.argb(200, Color.red(color), Color.green(color), Color.blue(color)));
+        } else {
+            paint.setColor(Color.argb(150, Color.red(color), Color.green(color), Color.blue(color)));
+        }
+        canvas.drawRoundRect(button.left, button.top, button.right, button.bottom, 20, 20, paint);
+
+        // Border
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(3);
+        paint.setColor(Color.WHITE);
+        canvas.drawRoundRect(button.left, button.top, button.right, button.bottom, 20, 20, paint);
+
+        // Label
+        paint.setStyle(Paint.Style.FILL);
+        paint.setTextSize(40);
+        paint.setColor(Color.WHITE);
+        paint.setTextAlign(Paint.Align.CENTER);
+        float textX = button.centerX();
+        float textY = button.centerY() + 15;
+        canvas.drawText(label, textX, textY, paint);
+    }
+
+    private void drawCooldownIndicator(Canvas canvas, Rect button, float progress, int color) {
+        if (progress >= 1.0f) return; // No cooldown
+
+        Paint paint = new Paint();
+        paint.setAntiAlias(true);
+        paint.setColor(Color.argb(150, 0, 0, 0));
+
+        // Draw cooldown overlay
+        float height = button.height() * (1 - progress);
+        canvas.drawRect(button.left, button.top, button.right, button.top + height, paint);
     }
 
     public boolean handleTouch(MotionEvent event) {
@@ -300,7 +526,7 @@ public class GameEngine {
         boolean handled = false;
 
         // Check if touching D-pad
-        if (isInCircle(x, y, dpadBounds.centerX(), dpadBounds.centerY(), dpadBounds.width()/2)) {
+        if (isInCircle(x, y, dpadBounds.centerX(), dpadBounds.centerY(), dpadBounds.width() / 2)) {
             handled = true;
 
             if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_POINTER_UP) {
@@ -336,7 +562,44 @@ public class GameEngine {
             }
         }
 
+        switch (event.getAction()) {
+            case MotionEvent.ACTION_DOWN:
+            case MotionEvent.ACTION_MOVE:
+
+                // Check attack buttons (still use rectangular detection)
+                meleeAttackPressed = meleeAttackButton != null && meleeAttackButton.contains((int)x, (int)y);
+                magicAttackPressed = magicAttackButton != null && magicAttackButton.contains((int)x, (int)y);
+
+                // Perform attacks when buttons are pressed
+                if (meleeAttackPressed) {
+                    player.performMeleeAttack(enemies);
+                }
+
+                if (magicAttackPressed) {
+                    // Cast spell in the direction player is facing
+                    List<Projectile> list = player.castTripleSpell(Projectile.Type.FIREBALL);
+                    if (list != null) {
+                        projectiles.addAll(list);
+                    }
+                }
+                break;
+
+            case MotionEvent.ACTION_UP:
+                meleeAttackPressed = false;
+                magicAttackPressed = false;
+                break;
+        }
+
         return handled;
+    }
+
+    /**
+     * Check if a point is within a circle
+     */
+    private boolean isPointInCircle(float px, float py, float centerX, float centerY, float radius) {
+        float dx = px - centerX;
+        float dy = py - centerY;
+        return (dx * dx + dy * dy) <= (radius * radius);
     }
 
     private boolean isInCircle(float x, float y, float centerX, float centerY, float radius) {
@@ -354,17 +617,40 @@ public class GameEngine {
     }
 
     private void initControlButtons() {
-        int buttonSize = Math.min(screenWidth, screenHeight) / 8;
+        // D-pad buttons (bottom-left) - Smaller size
+        int buttonSize = screenHeight / 5;
+        int padding = 20;
 
-        int leftAreaCenterX = screenWidth / 8;
-        int leftAreaCenterY = screenHeight * 2 / 3;
+        // Calculate the center of the D-pad cross
+        int dpadCenterX = (int) (padding + buttonSize * 1.5);
+        int dpadCenterY = (int) (screenHeight - padding - buttonSize * 1.5);
 
-        int dpadRadius = (int)(buttonSize * 1.8f);
+        // D-pad bounds (entire control area)
         dpadBounds = new Rect(
-                leftAreaCenterX - dpadRadius,
-                leftAreaCenterY - dpadRadius,
-                leftAreaCenterX + dpadRadius,
-                leftAreaCenterY + dpadRadius
+                dpadCenterX - buttonSize,
+                dpadCenterY - buttonSize,
+                dpadCenterX + buttonSize,
+                dpadCenterY + buttonSize
+        );
+
+        // Attack buttons (bottom-right) - Also smaller
+        int attackButtonSize = (int) (buttonSize * 0.8);
+        int attackPadding = (int) (buttonSize * 0.5);
+
+        // Melee attack button (left)
+        meleeAttackButton = new Rect(
+                screenWidth - attackPadding*2 - attackButtonSize*2,
+                screenHeight - attackPadding - attackButtonSize,
+                screenWidth - attackPadding*2 - attackButtonSize,
+                screenHeight - attackPadding
+        );
+
+        // Magic attack button (right)
+        magicAttackButton = new Rect(
+                screenWidth - attackPadding - attackButtonSize,
+                screenHeight - attackPadding - attackButtonSize,
+                screenWidth - attackPadding,
+                screenHeight - attackPadding
         );
     }
 
@@ -385,5 +671,25 @@ public class GameEngine {
         }
 
         return cachedMemoryMB;
+    }
+
+    /**
+     * Check if enemy is within the visible screen area
+     */
+    private boolean isEnemyVisible(Enemy enemy, float padding) {
+        float enemyX = enemy.getX();
+        float enemyY = enemy.getY();
+
+        // Calculate visible area bounds
+        float visibleLeft = cameraX - padding;
+        float visibleRight = cameraX + screenWidth + padding;
+        float visibleTop = cameraY - padding;
+        float visibleBottom = cameraY + screenHeight + padding;
+
+        // Check if enemy is within visible area
+        return enemyX >= visibleLeft &&
+                enemyX <= visibleRight &&
+                enemyY >= visibleTop &&
+                enemyY <= visibleBottom;
     }
 }

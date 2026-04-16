@@ -11,9 +11,8 @@ import android.graphics.Path;
 public class Tiger extends Enemy {
 
     public Tiger(float x, float y) {
-        super(x, y, 50, 100, 250, 60); // health=50, speed=100, detection=250, attack=60
+        super(x, y, 100, 100, 120, 250, 60); // health=50, speed=100, detection=250, attack=60
         attackCooldown = 1200; // Faster attacks than wolf
-        size = 100;
     }
 
     @Override
@@ -41,17 +40,6 @@ public class Tiger extends Enemy {
     }
 
     @Override
-    protected void updateChasing(float deltaSeconds, float playerX, float playerY,
-                                 int[][] map, int mapWidth, int mapHeight) {
-        targetX = playerX;
-        targetY = playerY;
-
-        // Tigers chase faster (1.5x speed)
-        float chaseSpeed = speed * 1.5f;
-        moveToTargetWithSpeed(deltaSeconds, chaseSpeed);
-    }
-
-    @Override
     protected void performAttack() {
         // Tiger has a powerful attack
         // Damage will be handled by GameEngine
@@ -59,7 +47,7 @@ public class Tiger extends Enemy {
 
     @Override
     public void draw(Canvas canvas, int offsetX, int offsetY) {
-        if (!isAlive) return;
+        if (!isAlive()) return;
 
         Paint paint = new Paint();
         paint.setAntiAlias(true);

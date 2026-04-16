@@ -1,74 +1,49 @@
 package com.game.dream.enemy;
 
 import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
+
+import com.game.dream.Character;
 
 /**
  * Base class for all enemies
  */
-public abstract class Enemy {
-    protected float x, y;
-    protected float speed;
-    protected int size = 60;
-
-    // State
-    protected boolean isAlive;
-    protected int health;
-    protected int maxHealth;
-
+public abstract class Enemy extends Character {
     // AI state
-    protected enum State {
+    public enum State {
         IDLE,
         CHASING,
         ATTACKING
     }
+
     protected State currentState;
 
     // Movement
     protected float targetX, targetY;
     protected long stateTimer;
-    protected long attackCooldown;
-    protected long lastAttackTime;
-
-    // Animation
-    protected int animFrame;
-    protected long lastAnimUpdate;
-    protected float bobOffset;
 
     // Detection and attack ranges
     protected float detectionRange;
     protected float attackRange;
 
-    public Enemy(float x, float y, int maxHealth, float speed, float detectionRange, float attackRange) {
-        this.x = x;
-        this.y = y;
-        this.speed = speed;
-
-        this.isAlive = true;
-        this.maxHealth = maxHealth;
-        this.health = maxHealth;
+    public Enemy(float x, float y, int size, int maxHealth, int speed, float detectionRange, float attackRange) {
+        super(x, y, size, maxHealth, 10, 0, speed); // attack=10, defense=0, size=30
 
         this.currentState = State.IDLE;
         this.targetX = x;
         this.targetY = y;
         this.stateTimer = System.currentTimeMillis();
-        this.attackCooldown = 1500;
-        this.lastAttackTime = 0;
-
-        this.animFrame = 0;
-        this.lastAnimUpdate = System.currentTimeMillis();
-        this.bobOffset = 0;
 
         this.detectionRange = detectionRange;
         this.attackRange = attackRange;
+        this.attackCooldown = 1500;
+        this.lastAttackTime = 0;
     }
 
     /**
      * Update enemy behavior - template method
      */
     public void update(long deltaTime, float playerX, float playerY, int[][] map, int mapWidth, int mapHeight) {
-        if (!isAlive) return;
+        if (!isAlive()) return;
 
         long currentTime = System.currentTimeMillis();
         float deltaSeconds = deltaTime / 1000f;
@@ -76,7 +51,7 @@ public abstract class Enemy {
         // Calculate distance to player
         float dx = playerX - x;
         float dy = playerY - y;
-        float distanceToPlayer = (float)Math.sqrt(dx * dx + dy * dy);
+        float distanceToPlayer = (float) Math.sqrt(dx * dx + dy * dy);
 
         // State machine
         switch (currentState) {
@@ -128,7 +103,7 @@ public abstract class Enemy {
         targetX = playerX;
         targetY = playerY;
 
-        float chaseSpeed = speed * 1.3f;
+        float chaseSpeed = speed * 1.2f;
         moveToTargetWithSpeed(deltaSeconds, chaseSpeed);
     }
 
@@ -141,7 +116,7 @@ public abstract class Enemy {
 
         float dx = playerX - x;
         float dy = playerY - y;
-        float distance = (float)Math.sqrt(dx * dx + dy * dy);
+        float distance = (float) Math.sqrt(dx * dx + dy * dy);
 
         if (distance > 0) {
             float optimalDistance = attackRange * 0.7f;
@@ -174,7 +149,7 @@ public abstract class Enemy {
     protected void moveToTargetWithSpeed(float deltaSeconds, float moveSpeed) {
         float dx = targetX - x;
         float dy = targetY - y;
-        float distance = (float)Math.sqrt(dx * dx + dy * dy);
+        float distance = (float) Math.sqrt(dx * dx + dy * dy);
 
         if (distance > 5) {
             float moveX = (dx / distance) * moveSpeed * deltaSeconds;
@@ -200,62 +175,12 @@ public abstract class Enemy {
             animFrame = (animFrame + 1) % 4;
             lastAnimUpdate = currentTime;
 
-            bobOffset = (float)Math.sin(animFrame * Math.PI / 2) * 3;
+            bobOffset = (float) Math.sin(animFrame * Math.PI / 2) * 3;
         }
-    }
-
-    /**
-     * Take damage
-     */
-    public void takeDamage(int damage) {
-        health -= damage;
-        if (health <= 0) {
-            health = 0;
-            isAlive = false;
-        }
-    }
-
-    /**
-     * Draw the enemy - must be implemented by subclass
-     */
-    public abstract void draw(Canvas canvas, int offsetX, int offsetY);
-
-    /**
-     * Draw health bar - common implementation
-     */
-    protected void drawHealthBar(Canvas canvas, float cx, float cy, float scale) {
-        float barWidth = 30 * scale;
-        float barHeight = 4 * scale;
-        float barX = cx - barWidth / 2;
-        float barY = cy - 22 * scale + bobOffset;
-
-        Paint bgPaint = new Paint();
-        bgPaint.setColor(Color.BLACK);
-        canvas.drawRect(barX - 1, barY - 1, barX + barWidth + 1, barY + barHeight + 1, bgPaint);
-
-        Paint healthPaint = new Paint();
-        float healthPercent = (float)health / maxHealth;
-
-        if (healthPercent > 0.6f) {
-            healthPaint.setColor(Color.GREEN);
-        } else if (healthPercent > 0.3f) {
-            healthPaint.setColor(Color.YELLOW);
-        } else {
-            healthPaint.setColor(Color.RED);
-        }
-
-        canvas.drawRect(barX, barY, barX + barWidth * healthPercent, barY + barHeight, healthPaint);
     }
 
     // Getters
-    public float getX() { return x; }
-    public float getY() { return y; }
-    public boolean isAlive() { return isAlive; }
-    public int getHealth() { return health; }
-    public State getState() { return currentState; }
-    public int getSize() { return size; }
-
-    // Setters
-    public void setX(float x) { this.x = x; }
-    public void setY(float y) { this.y = y; }
+    public State getState() {
+        return currentState;
+    }
 }

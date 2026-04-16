@@ -11,9 +11,8 @@ import android.graphics.Path;
 public class Wolf extends Enemy {
 
     public Wolf(float x, float y) {
-        super(x, y, 30, 80, 200, 50); // health=30, speed=80, detection=200, attack=50
+        super(x, y, 60, 80, 100, 200, 50); // health=30, speed=80, detection=200, attack=50
         attackCooldown = 1500;
-        size = 60; // Larger than wolf
     }
 
     @Override
@@ -48,7 +47,7 @@ public class Wolf extends Enemy {
 
     @Override
     public void draw(Canvas canvas, int offsetX, int offsetY) {
-        if (!isAlive) return;
+        if (!isAlive()) return;
 
         Paint paint = new Paint();
         paint.setAntiAlias(true);

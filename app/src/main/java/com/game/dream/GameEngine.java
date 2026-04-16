@@ -115,7 +115,9 @@ public class GameEngine {
 
         // Create player at center of map
         player = new Player(startX * TILE_SIZE + TILE_SIZE / 2, startY * TILE_SIZE + TILE_SIZE / 2);
-        player.setSize(TILE_SIZE);
+
+        // Set initial respawn point
+        player.setRespawnPoint(player.getX(), player.getY());
 
         // Initialize camera to center on player
         updateCamera();
@@ -202,14 +204,25 @@ public class GameEngine {
     }
 
     public void update() {
+        // Calculate delta time first
+        long currentTime = System.currentTimeMillis();
+        long deltaTime = currentTime - lastUpdateTime;
+        lastUpdateTime = currentTime;
+
         // Set player movement flags based on button states
         player.setMovingUp(upPressed);
         player.setMovingDown(downPressed);
         player.setMovingLeft(leftPressed);
         player.setMovingRight(rightPressed);
 
-        // Update player movement
-        player.update(map, MAP_WIDTH / TILE_SIZE, MAP_HEIGHT / TILE_SIZE, TILE_SIZE);
+        // Debug: Log movement state
+        if (upPressed || downPressed || leftPressed || rightPressed) {
+            android.util.Log.d("GameEngine", "Player moving: U=" + upPressed + " D=" + downPressed +
+                    " L=" + leftPressed + " R=" + rightPressed);
+        }
+
+        // Update player movement (pass deltaTime)
+        player.update(map, MAP_WIDTH / TILE_SIZE, MAP_HEIGHT / TILE_SIZE, TILE_SIZE, deltaTime);
 
         // Update camera to follow player
         updateCamera();
@@ -218,10 +231,7 @@ public class GameEngine {
         updateFPS();
 
         // Update day-night cycle
-        long currentTime = System.currentTimeMillis();
-        long deltaTime = currentTime - lastUpdateTime;
         dayNightCycle.update(deltaTime);
-        lastUpdateTime = currentTime;
 
         // Update weather system
         if (weatherSystem != null) {
@@ -234,7 +244,6 @@ public class GameEngine {
                 Enemy enemy = enemies.get(i);
 
                 // Only update AI for enemies within a reasonable distance
-                // This saves CPU when there are many enemies
                 float dx = enemy.getX() - player.getX();
                 float dy = enemy.getY() - player.getY();
                 float distanceSquared = dx * dx + dy * dy;
@@ -275,6 +284,47 @@ public class GameEngine {
                 // Remove inactive projectiles
                 if (!proj.isActive()) {
                     projectiles.remove(i);
+                }
+            }
+        }
+
+        // Check enemy attacks on player
+        checkEnemyAttacksOnPlayer();
+    }
+
+    /**
+     * Check if enemies are attacking the player
+     */
+    private void checkEnemyAttacksOnPlayer() {
+        long currentTime = System.currentTimeMillis();
+
+        for (Enemy enemy : enemies) {
+            if (!enemy.isAlive()) continue;
+
+            // Check if enemy is in attacking state and close to player
+            if (enemy.getState() == Enemy.State.ATTACKING) {
+                float dx = enemy.getX() - player.getX();
+                float dy = enemy.getY() - player.getY();
+                float distance = (float)Math.sqrt(dx * dx + dy * dy);
+
+                // If within attack range, deal damage
+                if (distance < 60) { // Attack range
+                    boolean died = player.takeDamage(10); // 10 damage per hit
+
+                    if (died) {
+                        // Player died - respawn
+                        player.respawn();
+
+                        // Clear nearby enemies to prevent spawn kill
+                        for (Enemy e : enemies) {
+                            float ex = e.getX() - player.getX();
+                            float ey = e.getY() - player.getY();
+                            float edist = (float)Math.sqrt(ex * ex + ey * ey);
+                            if (edist < 300) {
+                                e.takeDamage(1000); // Kill nearby enemies
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -376,6 +426,51 @@ public class GameEngine {
         paint.setColor(Color.WHITE);
         paint.setTextAlign(Paint.Align.LEFT);
 
+        /*// Draw player health bar (top-left, below other info)
+        float healthBarWidth = 200;
+        float healthBarHeight = 20;
+        float healthBarX = 10;
+        float healthBarY = 110;
+
+        // Background
+        paint.setColor(Color.BLACK);
+        canvas.drawRect(healthBarX - 2, healthBarY - 2,
+                healthBarX + healthBarWidth + 2,
+                healthBarY + healthBarHeight + 2, paint);
+
+        // Health fill
+        float healthPercent = player.getHealthPercent();
+        int healthColor;
+        if (healthPercent > 0.6f) {
+            healthColor = Color.GREEN;
+        } else if (healthPercent > 0.3f) {
+            healthColor = Color.YELLOW;
+        } else {
+            healthColor = Color.RED;
+        }
+
+        paint.setColor(healthColor);
+        canvas.drawRect(healthBarX, healthBarY,
+                healthBarX + healthBarWidth * healthPercent,
+                healthBarY + healthBarHeight, paint);
+
+        // Health text
+        paint.setColor(Color.WHITE);
+        paint.setTextSize(18);
+        paint.setTextAlign(Paint.Align.CENTER);
+        canvas.drawText(player.getHealth() + " / " + player.getMaxHealth(),
+                healthBarX + healthBarWidth / 2,
+                healthBarY + 15, paint);
+
+        // Invincibility indicator
+        if (player.isCurrentlyInvincible()) {
+            paint.setColor(Color.YELLOW);
+            paint.setTextSize(16);
+            paint.setTextAlign(Paint.Align.LEFT);
+            canvas.drawText("✨ INVINCIBLE", healthBarX, healthBarY + 40, paint);
+        }*/
+
+        paint.setTextSize(30);
         // Draw FPS (top-right corner)
         paint.setTextAlign(Paint.Align.LEFT);
         if (currentFPS >= 55) {

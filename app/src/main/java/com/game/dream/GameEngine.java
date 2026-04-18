@@ -8,6 +8,7 @@ import android.graphics.Rect;
 import android.view.MotionEvent;
 
 import com.game.dream.bean.AttackResult;
+import com.game.dream.bean.EnemyHitInfo;
 import com.game.dream.enemy.Enemy;
 import com.game.dream.enemy.Tiger;
 import com.game.dream.enemy.Wolf;
@@ -15,6 +16,7 @@ import com.game.dream.panel.RoleInfoPanel;
 import com.game.dream.system.DayNightCycle;
 import com.game.dream.system.WeatherSystem;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
@@ -57,6 +59,9 @@ public class GameEngine {
 
     // Projectiles (magic attacks)
     private java.util.List<Projectile> projectiles;
+
+    // Damage numbers
+    private java.util.List<DamageNumber> damageNumbers;
 
     private RoleInfoPanel roleInfoPanel;
 
@@ -148,6 +153,9 @@ public class GameEngine {
 
         // Initialize projectiles
         projectiles = new java.util.ArrayList<>();
+
+        // Initialize damage numbers
+        damageNumbers = new java.util.ArrayList<>();
 
         // Initialize role info panel
         roleInfoPanel = new RoleInfoPanel(player);
@@ -284,7 +292,16 @@ public class GameEngine {
                 if (proj.isActive()) {
                     for (Enemy enemy : enemies) {
                         if (proj.checkCollision(enemy)) {
-                            enemy.takeDamage(proj.getDamage());
+                            int damage = proj.getDamage();
+                            enemy.takeDamage(damage);
+
+                            // Create floating damage number above enemy
+                            damageNumbers.add(new DamageNumber(
+                                    enemy.getX(),
+                                    enemy.getY() - 30,
+                                    damage
+                            ));
+
                             proj.deactivate();
                             break;
                         }
@@ -300,6 +317,18 @@ public class GameEngine {
 
         // Check enemy attacks on player
         checkEnemyAttacksOnPlayer();
+
+        // Update damage numbers
+        if (damageNumbers != null) {
+            for (int i = damageNumbers.size() - 1; i >= 0; i--) {
+                DamageNumber num = damageNumbers.get(i);
+                num.update(deltaTime);
+
+                if (!num.isActive()) {
+                    damageNumbers.remove(i);
+                }
+            }
+        }
     }
 
     /**
@@ -323,7 +352,16 @@ public class GameEngine {
                         boolean died = false;
                         AttackResult attackResult = BattleUtil.caculateEnemyAttackDamage(enemy);
                         if (attackResult.isHit) {
-                            died = player.takeDamage(attackResult.damageValue);
+                            int damage = attackResult.damageValue;
+                            died = player.takeDamage(damage);
+
+                            // Create floating damage number
+                            damageNumbers.add(new DamageNumber(
+                                    player.getX(),
+                                    player.getY() - 40,
+                                    damage
+                            ));
+
                             //是否暴击
                         } else {
                             //未命中
@@ -423,6 +461,14 @@ public class GameEngine {
 
         // Draw player
         player.draw(canvas, (int) -cameraX, (int) -cameraY);
+
+        // Draw damage numbers (above characters)
+        if (damageNumbers != null) {
+            List<DamageNumber> copyDamageNumbers = new ArrayList(damageNumbers);
+            for (DamageNumber num : copyDamageNumbers) {
+                num.draw(canvas, (int) -cameraX, (int) -cameraY);
+            }
+        }
 
         // Draw weather effects
         if (weatherSystem != null) {
@@ -748,7 +794,17 @@ public class GameEngine {
 
                 // Perform attacks when buttons are pressed
                 if (meleeAttackPressed) {
-                    player.performMeleeAttack(enemies);
+                    List<EnemyHitInfo> hits = player.performMeleeAttack(enemies);
+                    if (hits != null) {
+                        // Create damage numbers for each hit enemy
+                        for (EnemyHitInfo hit : hits) {
+                            damageNumbers.add(new DamageNumber(
+                                    hit.enemy.getX(),
+                                    hit.enemy.getY() - 30,
+                                    hit.damage
+                            ));
+                        }
+                    }
                 }
 
                 if (magicAttackPressed) {

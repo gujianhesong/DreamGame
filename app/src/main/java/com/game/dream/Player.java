@@ -6,9 +6,13 @@ import android.graphics.Paint;
 import android.graphics.Path;
 
 import com.game.dream.bean.AttackResult;
+import com.game.dream.bean.EnemyHitInfo;
 import com.game.dream.bean.RoleInfo;
 import com.game.dream.enemy.Enemy;
 import com.game.dream.system.RoleSystem;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class Player extends Character {
     private static final int LAKE = 3;
@@ -79,7 +83,7 @@ public class Player extends Character {
 
         // Convert speed from pixels/second to pixels/frame
         float deltaSeconds = deltaTime / 1000.0f;
-        float moveAmount = (100 + speed * 0.3f) * deltaSeconds;
+        float moveAmount = (150 + speed * 0.5f) * deltaSeconds;
 
         if (movingLeft) {
             newX -= moveAmount;
@@ -145,10 +149,10 @@ public class Player extends Character {
     /**
      * Perform melee attack
      */
-    public boolean performMeleeAttack(java.util.List<Enemy> enemies) {
+    public List<EnemyHitInfo> performMeleeAttack(java.util.List<Enemy> enemies) {
         long currentTime = System.currentTimeMillis();
         if (currentTime - lastAttackTime < attackCooldown) {
-            return false; // Still on cooldown
+            return null; // Still on cooldown
         }
 
         lastAttackTime = currentTime;
@@ -174,8 +178,9 @@ public class Player extends Character {
                 break;
         }
 
+        List<EnemyHitInfo> hits = new ArrayList<>();
+
         // Check for enemies in attack range
-        boolean hitSomething = false;
         for (Enemy enemy : enemies) {
             if (!enemy.isAlive()) continue;
 
@@ -186,8 +191,11 @@ public class Player extends Character {
             if (distance < attackRange) {
                 AttackResult attackResult = BattleUtil.caculatePlayerAttackDamage(enemy);
                 if (attackResult.isHit) {
-                    enemy.takeDamage(attackResult.damageValue);
-                    hitSomething = true;
+                    int damage = attackResult.damageValue;
+                    enemy.takeDamage(damage);
+
+                    hits.add(new EnemyHitInfo(enemy, damage));
+
                     //是否暴击
                 } else {
                     //未命中
@@ -195,7 +203,7 @@ public class Player extends Character {
             }
         }
 
-        return hitSomething;
+        return hits.isEmpty() ? null : hits;
     }
 
     /**

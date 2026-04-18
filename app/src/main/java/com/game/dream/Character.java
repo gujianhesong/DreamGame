@@ -110,10 +110,12 @@ public abstract class Character {
      * Draw health bar above character
      */
     protected void drawHealthBar(Canvas canvas, float cx, float cy, float scale) {
+        scale = 2f;
+
         float barWidth = 50 * scale;
         float barHeight = 6 * scale;
         float barX = cx - barWidth / 2;
-        float barY = cy - 35 * scale;
+        float barY = cy - 45 * scale;
 
         // Background
         android.graphics.Paint bgPaint = new android.graphics.Paint();

@@ -11,8 +11,14 @@ import android.graphics.Path;
 public class Wolf extends Enemy {
 
     public Wolf(float x, float y) {
-        super(x, y, 60, 80, 100, 200, 50); // health=30, speed=80, detection=200, attack=50
+        super(x, y, 60, 200, 50);
         attackCooldown = 1500;
+
+        this.maxHealth = 60;
+        this.health = 60;
+        this.attackDamage = 30;
+        this.defense = 30;
+        this.speed = 40;
     }
 
     @Override

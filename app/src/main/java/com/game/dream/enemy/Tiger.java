@@ -11,8 +11,14 @@ import android.graphics.Path;
 public class Tiger extends Enemy {
 
     public Tiger(float x, float y) {
-        super(x, y, 100, 100, 120, 250, 60); // health=50, speed=100, detection=250, attack=60
+        super(x, y, 100, 250, 60);
         attackCooldown = 1200; // Faster attacks than wolf
+
+        this.maxHealth = 100;
+        this.health = 100;
+        this.attackDamage = 35;
+        this.defense = 30;
+        this.speed = 30;
     }
 
     @Override

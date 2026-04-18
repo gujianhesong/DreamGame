@@ -7,9 +7,13 @@ import android.graphics.Paint;
 import android.graphics.Rect;
 import android.view.MotionEvent;
 
+import com.game.dream.bean.AttackResult;
 import com.game.dream.enemy.Enemy;
 import com.game.dream.enemy.Tiger;
 import com.game.dream.enemy.Wolf;
+import com.game.dream.panel.RoleInfoPanel;
+import com.game.dream.system.DayNightCycle;
+import com.game.dream.system.WeatherSystem;
 
 import java.util.List;
 import java.util.Random;
@@ -54,9 +58,12 @@ public class GameEngine {
     // Projectiles (magic attacks)
     private java.util.List<Projectile> projectiles;
 
+    private RoleInfoPanel roleInfoPanel;
+
     // Attack buttons
     private Rect meleeAttackButton;
     private Rect magicAttackButton;
+    private Rect roleInfoButton;
     private boolean meleeAttackPressed;
     private boolean magicAttackPressed;
 
@@ -141,6 +148,9 @@ public class GameEngine {
 
         // Initialize projectiles
         projectiles = new java.util.ArrayList<>();
+
+        // Initialize role info panel
+        roleInfoPanel = new RoleInfoPanel(player);
     }
 
     /**
@@ -305,23 +315,34 @@ public class GameEngine {
             if (enemy.getState() == Enemy.State.ATTACKING) {
                 float dx = enemy.getX() - player.getX();
                 float dy = enemy.getY() - player.getY();
-                float distance = (float)Math.sqrt(dx * dx + dy * dy);
+                float distance = (float) Math.sqrt(dx * dx + dy * dy);
 
                 // If within attack range, deal damage
                 if (distance < 60) { // Attack range
-                    boolean died = player.takeDamage(10); // 10 damage per hit
+                    if (enemy.canAttack()) {
+                        boolean died = false;
+                        AttackResult attackResult = BattleUtil.caculateEnemyAttackDamage(enemy);
+                        if (attackResult.isHit) {
+                            died = player.takeDamage(attackResult.damageValue);
+                            //是否暴击
+                        } else {
+                            //未命中
+                        }
 
-                    if (died) {
-                        // Player died - respawn
-                        player.respawn();
+                        enemy.setLastAttackTime(currentTime);
 
-                        // Clear nearby enemies to prevent spawn kill
-                        for (Enemy e : enemies) {
-                            float ex = e.getX() - player.getX();
-                            float ey = e.getY() - player.getY();
-                            float edist = (float)Math.sqrt(ex * ex + ey * ey);
-                            if (edist < 300) {
-                                e.takeDamage(1000); // Kill nearby enemies
+                        if (died) {
+                            // Player died - respawn
+                            player.respawn();
+
+                            // Clear nearby enemies to prevent spawn kill
+                            for (Enemy e : enemies) {
+                                float ex = e.getX() - player.getX();
+                                float ey = e.getY() - player.getY();
+                                float edist = (float) Math.sqrt(ex * ex + ey * ey);
+                                if (edist < 300) {
+                                    e.takeDamage(1000); // Kill nearby enemies
+                                }
                             }
                         }
                     }
@@ -418,6 +439,11 @@ public class GameEngine {
 
         // Draw controls
         drawControls(canvas);
+
+        // Draw role info panel (on top of everything)
+        if (roleInfoPanel != null) {
+            roleInfoPanel.draw(canvas);
+        }
     }
 
     private void drawUI(Canvas canvas) {
@@ -525,10 +551,10 @@ public class GameEngine {
         paint.setColor(Color.WHITE);
         paint.setTextSize(50);
         paint.setTextAlign(Paint.Align.CENTER);
-        canvas.drawText("▲", dpadBounds.centerX(), dpadBounds.centerY() - dpadBounds.height()/4 + 15, paint);
-        canvas.drawText("▼", dpadBounds.centerX(), dpadBounds.centerY() + dpadBounds.height()/4 + 15, paint);
-        canvas.drawText("◀", dpadBounds.centerX() - dpadBounds.width()/4, dpadBounds.centerY() + 15, paint);
-        canvas.drawText("▶", dpadBounds.centerX() + dpadBounds.width()/4, dpadBounds.centerY() + 15, paint);
+        canvas.drawText("▲", dpadBounds.centerX(), dpadBounds.centerY() - dpadBounds.height() / 4 + 15, paint);
+        canvas.drawText("▼", dpadBounds.centerX(), dpadBounds.centerY() + dpadBounds.height() / 4 + 15, paint);
+        canvas.drawText("◀", dpadBounds.centerX() - dpadBounds.width() / 4, dpadBounds.centerY() + 15, paint);
+        canvas.drawText("▶", dpadBounds.centerX() + dpadBounds.width() / 4, dpadBounds.centerY() + 15, paint);
 
         // Draw attack buttons
         if (meleeAttackButton != null && magicAttackButton != null) {
@@ -538,6 +564,11 @@ public class GameEngine {
             // Draw cooldown indicators
             drawCooldownIndicator(canvas, meleeAttackButton, player.getAttackCooldownProgress(), Color.RED);
             drawCooldownIndicator(canvas, magicAttackButton, player.getMagicCooldownProgress(), Color.BLUE);
+        }
+
+        // Draw role info button
+        if (roleInfoButton != null) {
+            drawInfoButton(canvas, roleInfoButton, roleInfoPanel.isVisible());
         }
     }
 
@@ -601,6 +632,37 @@ public class GameEngine {
         canvas.drawText(label, textX, textY, paint);
     }
 
+    /**
+     * Draw role info button
+     */
+    private void drawInfoButton(Canvas canvas, Rect button, boolean isActive) {
+        Paint paint = new Paint();
+        paint.setAntiAlias(true);
+
+        // Button background
+        if (isActive) {
+            paint.setColor(Color.argb(200, 100, 150, 255));
+        } else {
+            paint.setColor(Color.argb(150, 80, 80, 80));
+        }
+        canvas.drawRoundRect(button.left, button.top, button.right, button.bottom, 10, 10, paint);
+
+        // Border
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(2);
+        paint.setColor(Color.WHITE);
+        canvas.drawRoundRect(button.left, button.top, button.right, button.bottom, 10, 10, paint);
+
+        // Icon (ℹ️ or 👤)
+        paint.setStyle(Paint.Style.FILL);
+        paint.setTextSize(30);
+        paint.setColor(Color.WHITE);
+        paint.setTextAlign(Paint.Align.CENTER);
+        float textX = button.centerX();
+        float textY = button.centerY() + 10;
+        canvas.drawText("👤", textX, textY, paint);
+    }
+
     private void drawCooldownIndicator(Canvas canvas, Rect button, float progress, int color) {
         if (progress >= 1.0f) return; // No cooldown
 
@@ -619,6 +681,25 @@ public class GameEngine {
         int action = event.getActionMasked();
 
         boolean handled = false;
+
+        // If role info panel is visible, check if touching it first
+        if (roleInfoPanel != null && roleInfoPanel.isVisible()) {
+            if (roleInfoPanel.handleTouch(x, y)) {
+                return true; // Panel handled the touch (closed itself)
+            }
+        }
+
+        // Check role info button first (independent of other controls)
+        if (roleInfoButton != null && roleInfoButton.contains((int) x, (int) y)) {
+            if (action == MotionEvent.ACTION_DOWN) {
+                roleInfoPanel.toggleVisibility();
+                return true; // Handled by info button
+            }
+            // For ACTION_UP on info button, just return true without toggling again
+            if (action == MotionEvent.ACTION_UP) {
+                return true;
+            }
+        }
 
         // Check if touching D-pad
         if (isInCircle(x, y, dpadBounds.centerX(), dpadBounds.centerY(), dpadBounds.width() / 2)) {
@@ -662,8 +743,8 @@ public class GameEngine {
             case MotionEvent.ACTION_MOVE:
 
                 // Check attack buttons (still use rectangular detection)
-                meleeAttackPressed = meleeAttackButton != null && meleeAttackButton.contains((int)x, (int)y);
-                magicAttackPressed = magicAttackButton != null && magicAttackButton.contains((int)x, (int)y);
+                meleeAttackPressed = meleeAttackButton != null && meleeAttackButton.contains((int) x, (int) y);
+                magicAttackPressed = magicAttackButton != null && magicAttackButton.contains((int) x, (int) y);
 
                 // Perform attacks when buttons are pressed
                 if (meleeAttackPressed) {
@@ -682,6 +763,7 @@ public class GameEngine {
             case MotionEvent.ACTION_UP:
                 meleeAttackPressed = false;
                 magicAttackPressed = false;
+
                 break;
         }
 
@@ -709,6 +791,13 @@ public class GameEngine {
 
         // Initialize control buttons
         initControlButtons();
+
+        // Initialize role info panel (center of screen)
+        int panelWidth = Math.min(600, width - 40);
+        int panelHeight = Math.min(700, height - 100);
+        int panelX = (width - panelWidth) / 2;
+        int panelY = (height - panelHeight) / 2;
+        roleInfoPanel.setBounds(panelX, panelY, panelWidth, panelHeight);
     }
 
     private void initControlButtons() {
@@ -734,9 +823,9 @@ public class GameEngine {
 
         // Melee attack button (left)
         meleeAttackButton = new Rect(
-                screenWidth - attackPadding*2 - attackButtonSize*2,
+                screenWidth - attackPadding * 2 - attackButtonSize * 2,
                 screenHeight - attackPadding - attackButtonSize,
-                screenWidth - attackPadding*2 - attackButtonSize,
+                screenWidth - attackPadding * 2 - attackButtonSize,
                 screenHeight - attackPadding
         );
 
@@ -746,6 +835,16 @@ public class GameEngine {
                 screenHeight - attackPadding - attackButtonSize,
                 screenWidth - attackPadding,
                 screenHeight - attackPadding
+        );
+
+        // role info button (top-right corner)
+        int infoButtonSize = screenHeight / 10;
+        int infoPadding = 20;
+        roleInfoButton = new Rect(
+                screenWidth / 2 + infoPadding,
+                screenHeight - infoPadding - infoButtonSize,
+                screenWidth / 2 + infoPadding + infoButtonSize,
+                screenHeight - infoPadding
         );
     }
 

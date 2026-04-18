@@ -1,4 +1,4 @@
-package com.game.dream;
+package com.game.dream.system;
 
 import android.graphics.Canvas;
 import android.graphics.Color;

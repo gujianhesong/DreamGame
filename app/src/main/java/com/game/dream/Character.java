@@ -19,6 +19,8 @@ public abstract class Character {
 
     // Combat stats
     protected int attackDamage;
+
+    protected int magicDamage;
     protected int defense;
     protected long lastAttackTime;
     protected long attackCooldown;
@@ -28,15 +30,16 @@ public abstract class Character {
     protected long lastAnimUpdate;
     protected float bobOffset;
 
-    public Character(float x, float y, int size, int maxHealth, int attackDamage, int defense, int speed) {
+    public Character(float x, float y, int size) {
         this.x = x;
         this.y = y;
         this.size = size;
-        this.maxHealth = maxHealth;
-        this.health = maxHealth;
-        this.attackDamage = attackDamage;
-        this.defense = defense;
-        this.speed = speed;
+
+//        this.maxHealth = maxHealth;
+//        this.health = maxHealth;
+//        this.attackDamage = attackDamage;
+//        this.defense = defense;
+//        this.speed = speed;
 
         this.isInvincible = false;
         this.invincibleEndTime = 0;
@@ -62,11 +65,8 @@ public abstract class Character {
             return false; // No damage taken
         }
 
-        // Apply defense reduction
-        int actualDamage = Math.max(1, damage - defense);
-
         // Apply damage
-        health -= actualDamage;
+        health -= damage;
         lastDamageTime = currentTime;
 
         // Check if dead
@@ -74,10 +74,6 @@ public abstract class Character {
             health = 0;
             return true; // Died
         }
-
-        // Activate invincibility frames (2 seconds)
-        isInvincible = true;
-        invincibleEndTime = currentTime + 2000;
 
         return false; // Still alive
     }
@@ -179,6 +175,8 @@ public abstract class Character {
     public int getHealth() { return health; }
     public int getMaxHealth() { return maxHealth; }
     public int getAttackDamage() { return attackDamage; }
+
+    public int getMagicDamage() { return magicDamage; }
     public int getDefense() { return defense; }
     public float getSpeed() { return speed; }
     public boolean isAlive() { return health > 0; }

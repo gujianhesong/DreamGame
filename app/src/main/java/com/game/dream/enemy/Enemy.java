@@ -25,8 +25,8 @@ public abstract class Enemy extends Character {
     protected float detectionRange;
     protected float attackRange;
 
-    public Enemy(float x, float y, int size, int maxHealth, int speed, float detectionRange, float attackRange) {
-        super(x, y, size, maxHealth, 10, 0, speed); // attack=10, defense=0, size=30
+    public Enemy(float x, float y, int size, float detectionRange, float attackRange) {
+        super(x, y, size); // attack=10, defense=0, size=30
 
         this.currentState = State.IDLE;
         this.targetX = x;
@@ -103,7 +103,7 @@ public abstract class Enemy extends Character {
         targetX = playerX;
         targetY = playerY;
 
-        float chaseSpeed = speed * 1.2f;
+        float chaseSpeed = speed * 1.1f;
         moveToTargetWithSpeed(deltaSeconds, chaseSpeed);
     }
 
@@ -129,11 +129,11 @@ public abstract class Enemy extends Character {
             }
         }
 
-        long currentTime = System.currentTimeMillis();
+        /*long currentTime = System.currentTimeMillis();
         if (currentTime - lastAttackTime > attackCooldown) {
             performAttack();
             lastAttackTime = currentTime;
-        }
+        }*/
     }
 
     /**
@@ -146,10 +146,12 @@ public abstract class Enemy extends Character {
     /**
      * Move towards target with specific speed
      */
-    protected void moveToTargetWithSpeed(float deltaSeconds, float moveSpeed) {
+    protected void moveToTargetWithSpeed(float deltaSeconds, float speed) {
         float dx = targetX - x;
         float dy = targetY - y;
         float distance = (float) Math.sqrt(dx * dx + dy * dy);
+
+        float moveSpeed = (60 + speed * 0.3f);
 
         if (distance > 5) {
             float moveX = (dx / distance) * moveSpeed * deltaSeconds;
@@ -182,5 +184,34 @@ public abstract class Enemy extends Character {
     // Getters
     public State getState() {
         return currentState;
+    }
+
+    /**
+     * Check if enemy can attack (cooldown expired)
+     */
+    public boolean canAttack() {
+        long currentTime = System.currentTimeMillis();
+        return (currentTime - lastAttackTime) >= attackCooldown;
+    }
+
+    /**
+     * Set last attack time
+     */
+    public void setLastAttackTime(long time) {
+        this.lastAttackTime = time;
+    }
+
+    /**
+     * Get attack cooldown progress (0-1)
+     */
+    public float getAttackCooldownProgress() {
+        long currentTime = System.currentTimeMillis();
+        long timeSinceLastAttack = currentTime - lastAttackTime;
+
+        if (timeSinceLastAttack >= attackCooldown) {
+            return 1.0f; // Ready to attack
+        }
+
+        return (float)timeSinceLastAttack / attackCooldown;
     }
 }

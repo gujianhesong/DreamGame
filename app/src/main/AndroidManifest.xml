@@ -10,9 +10,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.DreamGame">
 
-        <!-- Main Game Screen -->
+        <!-- Welcome Screen -->
         <activity
-            android:name=".MainActivity"
+            android:name=".WelcomeActivity"
             android:exported="true"
             android:screenOrientation="landscape"
             android:configChanges="orientation|screenSize"
@@ -22,6 +22,14 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Main Game Screen -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="false"
+            android:screenOrientation="landscape"
+            android:configChanges="orientation|screenSize"
+            android:theme="@style/Theme.DreamGame.Game"/>
 
     </application>
 

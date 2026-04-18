@@ -5,7 +5,10 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 
+import com.game.dream.bean.AttackResult;
+import com.game.dream.bean.RoleInfo;
 import com.game.dream.enemy.Enemy;
+import com.game.dream.system.RoleSystem;
 
 public class Player extends Character {
     private static final int LAKE = 3;
@@ -31,7 +34,14 @@ public class Player extends Character {
     private PlayerRenderer renderer;
 
     public Player(float x, float y) {
-        super(x, y, 80, 100, 10, 0, 200); // health=100, attack=10, defense=0, speed=150, size=80
+        super(x, y, 80);
+
+        RoleInfo roleInfo = RoleSystem.getInstance().getRoleInfo();
+        this.maxHealth = roleInfo.getBloodCap();
+        this.health = roleInfo.getBlood();
+        this.attackDamage = roleInfo.getAttack();
+        this.defense = roleInfo.getDefense();
+        this.speed = roleInfo.getSpeed();
 
         this.walkCycle = 0;
         this.facingDirection = 0;
@@ -69,7 +79,7 @@ public class Player extends Character {
 
         // Convert speed from pixels/second to pixels/frame
         float deltaSeconds = deltaTime / 1000.0f;
-        float moveAmount = speed * deltaSeconds;
+        float moveAmount = (100 + speed * 0.3f) * deltaSeconds;
 
         if (movingLeft) {
             newX -= moveAmount;
@@ -144,7 +154,7 @@ public class Player extends Character {
         lastAttackTime = currentTime;
 
         // Attack area in front of player
-        float attackRange = size * 1.5f;
+        float attackRange = size * 2f;
         float attackX = x;
         float attackY = y;
 
@@ -174,8 +184,14 @@ public class Player extends Character {
             float distance = (float) Math.sqrt(dx * dx + dy * dy);
 
             if (distance < attackRange) {
-                enemy.takeDamage(attackDamage);
-                hitSomething = true;
+                AttackResult attackResult = BattleUtil.caculatePlayerAttackDamage(enemy);
+                if (attackResult.isHit) {
+                    enemy.takeDamage(attackResult.damageValue);
+                    hitSomething = true;
+                    //是否暴击
+                } else {
+                    //未命中
+                }
             }
         }
 

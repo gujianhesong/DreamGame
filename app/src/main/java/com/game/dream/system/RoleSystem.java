@@ -43,12 +43,12 @@ public class RoleSystem {
     public void updateProperty(RoleInfo roleInfo) {
         int blood = roleInfo.getPropTi() * 5 + 100;
         int magic = roleInfo.getPropMo() * 3 + 80;
-        int hit = roleInfo.getPropLi() * 2 + 30;
-        int attack = (int) (roleInfo.getPropLi() * 0.7f + 40);
-        int defense = (int) (roleInfo.getPropTi() * 1.5f + 10);
+        int hit = roleInfo.getPropLi() * 2 + roleInfo.getPropMo() + 30;
+        int attack = (int) (roleInfo.getPropLi() * 0.9f + 40);
+        int defense = (int) (roleInfo.getPropNai() * 1.5f + 10);
         int speed = (int) (roleInfo.getPropMin() * 0.9f + 10);
         int dodge = roleInfo.getPropMin() + 10;
-        int mana = (int) (roleInfo.getPropTi() * 0.3 + roleInfo.getPropMo() * 0.7 + roleInfo.getPropLi() * 0.4);
+        int mana = (int) (roleInfo.getPropTi() * 0.2 + roleInfo.getPropMo() * 0.8 + roleInfo.getPropLi() * 0.3);
 
         roleInfo.setBlood(blood);
         roleInfo.setBloodCap(blood);

@@ -5,21 +5,16 @@ import android.graphics.Color;
 import android.graphics.Paint;
 
 import com.game.dream.enemy.Enemy;
+import com.game.dream.enums.SkillType;
 
 /**
  * Projectile for magic attacks (fireballs, ice bolts, etc.)
  */
 public class Projectile {
-    public enum Type {
-        FIREBALL,   // Fire attack - high damage, slow
-        ICE_BOLT,   // Ice attack - medium damage, slows enemy
-        LIGHTNING   // Lightning - fast, pierces through enemies
-    }
 
     private float x, y;
     private float vx, vy;
-    private Type type;
-    private int damage;
+    private SkillType skillType;
     private float size;
     private boolean isActive;
     private long lifetime;
@@ -29,10 +24,10 @@ public class Projectile {
     private int color;
     private float rotation;
 
-    public Projectile(float x, float y, float targetX, float targetY, Type type) {
+    public Projectile(float x, float y, float targetX, float targetY, SkillType skillType) {
         this.x = x;
         this.y = y;
-        this.type = type;
+        this.skillType = skillType;
         this.isActive = true;
         this.createdTime = System.currentTimeMillis();
         this.rotation = 0;
@@ -44,31 +39,27 @@ public class Projectile {
 
         if (distance > 0) {
             float speed;
-            switch (type) {
+            switch (skillType) {
                 case FIREBALL:
                     speed = 300;
-                    this.damage = 15;
-                    this.size = 12;
+                    this.size = 20;
                     this.color = Color.rgb(255, 100, 50);
-                    this.lifetime = 2000;
+                    this.lifetime = 1500;
                     break;
                 case ICE_BOLT:
                     speed = 400;
-                    this.damage = 10;
                     this.size = 8;
                     this.color = Color.rgb(100, 200, 255);
-                    this.lifetime = 2500;
+                    this.lifetime = 1000;
                     break;
                 case LIGHTNING:
                     speed = 600;
-                    this.damage = 8;
-                    this.size = 6;
+                    this.size = 10;
                     this.color = Color.rgb(255, 255, 100);
-                    this.lifetime = 1500;
+                    this.lifetime = 2000;
                     break;
                 default:
                     speed = 300;
-                    this.damage = 10;
                     this.size = 10;
                     this.color = Color.WHITE;
                     this.lifetime = 2000;
@@ -127,7 +118,7 @@ public class Projectile {
         float screenX = x + offsetX;
         float screenY = y + offsetY;
 
-        switch (type) {
+        switch (skillType) {
             case FIREBALL:
                 drawFireball(canvas, paint, screenX, screenY);
                 break;
@@ -204,8 +195,7 @@ public class Projectile {
     public float getX() { return x; }
     public float getY() { return y; }
     public boolean isActive() { return isActive; }
-    public int getDamage() { return damage; }
-    public Type getType() { return type; }
+    public SkillType getSkillType() { return skillType; }
 
     // Setters
     public void deactivate() { isActive = false; }

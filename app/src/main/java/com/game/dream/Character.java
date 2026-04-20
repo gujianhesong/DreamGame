@@ -22,6 +22,8 @@ public abstract class Character {
 
     protected int magicDamage;
     protected int defense;
+    protected int mana;
+
     protected long lastAttackTime;
     protected long attackCooldown;
 
@@ -181,6 +183,7 @@ public abstract class Character {
     public int getMagicDamage() { return magicDamage; }
     public int getDefense() { return defense; }
     public float getSpeed() { return speed; }
+    public int getMana() { return mana; }
     public boolean isAlive() { return health > 0; }
 
     // Setters

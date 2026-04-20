@@ -16,9 +16,10 @@ public class Tiger extends Enemy {
 
         this.maxHealth = 100;
         this.health = 100;
-        this.attackDamage = 35;
-        this.defense = 30;
-        this.speed = 30;
+        this.attackDamage = 40;
+        this.defense = 40;
+        this.speed = 40;
+        this.mana = 40;
     }
 
     @Override

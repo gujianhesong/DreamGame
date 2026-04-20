@@ -111,13 +111,21 @@ public class DamageNumber {
         } else {
             paint.setTextSize(50);
         }
+
+        String showText;
+        if (damage >= 0) {
+            showText = "-" + damage;
+        } else {
+            showText = "未命中";
+        }
+
         paint.setColor(Color.argb(alphaInt, 0, 0, 0)); // Black outline
-        canvas.drawText("-" + damage, x + offsetX, y + offsetY + this.offsetY, paint);
+        canvas.drawText(showText, x + offsetX, y + offsetY + this.offsetY, paint);
 
         // Draw fill
         paint.setStyle(Paint.Style.FILL);
         paint.setColor(Color.argb(alphaInt, r, g, b));
-        canvas.drawText("-" + damage, x + offsetX, y + offsetY + this.offsetY, paint);
+        canvas.drawText(showText, x + offsetX, y + offsetY + this.offsetY, paint);
 
         // Add white highlight for extra visibility
         if (alpha > 0.5f) {
@@ -127,7 +135,7 @@ public class DamageNumber {
             } else {
                 paint.setTextSize(50);
             }
-            canvas.drawText("-" + damage, x + offsetX, y + offsetY + this.offsetY - 1, paint);
+            canvas.drawText(showText, x + offsetX, y + offsetY + this.offsetY - 1, paint);
         }
     }
 

@@ -9,6 +9,7 @@ import com.game.dream.bean.AttackResult;
 import com.game.dream.bean.EnemyHitInfo;
 import com.game.dream.bean.RoleInfo;
 import com.game.dream.enemy.Enemy;
+import com.game.dream.enums.SkillType;
 import com.game.dream.system.RoleSystem;
 
 import java.util.ArrayList;
@@ -194,11 +195,12 @@ public class Player extends Character {
                     int damage = attackResult.damageValue;
                     enemy.takeDamage(damage);
 
-                    hits.add(new EnemyHitInfo(enemy, damage));
+                    hits.add(new EnemyHitInfo(enemy, damage, attackResult.isCrit));
 
                     //是否暴击
                 } else {
                     //未命中
+                    hits.add(new EnemyHitInfo(enemy, -1, false));
                 }
             }
         }
@@ -209,7 +211,7 @@ public class Player extends Character {
     /**
      * Cast magic spell
      */
-    public Projectile castSpell(float targetX, float targetY, Projectile.Type spellType) {
+    public Projectile castSpell(float targetX, float targetY, SkillType skillType) {
         long currentTime = System.currentTimeMillis();
         if (currentTime - lastMagicTime < magicCooldown) {
             return null; // Still on cooldown
@@ -218,13 +220,13 @@ public class Player extends Character {
         lastMagicTime = currentTime;
 
         // Create projectile from player position to target
-        return new Projectile(x, y, targetX, targetY, spellType);
+        return new Projectile(x, y, targetX, targetY, skillType);
     }
 
     /**
      * Cast triple spell - fires 3 projectiles at once
      */
-    public java.util.List<Projectile> castTripleSpell(Projectile.Type spellType) {
+    public java.util.List<Projectile> castTripleSpell(SkillType skillType) {
         long currentTime = System.currentTimeMillis();
         if (currentTime - lastMagicTime < magicCooldown) {
             return null; // Still on cooldown
@@ -253,8 +255,26 @@ public class Player extends Character {
         }
 
         // Create 3 projectiles with 30 degree separation
-        float[] angles = {baseAngle - 30, baseAngle, baseAngle + 30};
+        float[] angles = null;
         float range = 300;
+        switch (skillType) {
+            case FIREBALL:
+                angles = new float[]{baseAngle - 60, baseAngle - 40, baseAngle - 20, baseAngle,
+                        baseAngle + 20, baseAngle + 40, baseAngle + 60};
+                range = 400;
+                break;
+            case ICE_BOLT:
+                angles = new float[12];
+                for (int i = 0; i < 12; i++) {
+                    angles[i] = baseAngle + 30 * i;
+                }
+                range = 300;
+                break;
+            case LIGHTNING:
+                angles = new float[]{baseAngle - 90, baseAngle, baseAngle + 90, baseAngle + 180};
+                range = 1000;
+                break;
+        }
 
         for (float angle : angles) {
             // Convert angle to radians
@@ -265,7 +285,7 @@ public class Player extends Character {
             float spellTargetY = getY() + (float) (Math.sin(rad) * range);
 
             // Cast triple spell (returns list of 3 projectiles)
-            spells.add(new Projectile(x, y, spellTargetX, spellTargetY, spellType));
+            spells.add(new Projectile(x, y, spellTargetX, spellTargetY, skillType));
         }
 
         return spells;

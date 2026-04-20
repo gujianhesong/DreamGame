@@ -18,7 +18,8 @@ public class Wolf extends Enemy {
         this.health = 60;
         this.attackDamage = 30;
         this.defense = 30;
-        this.speed = 40;
+        this.speed = 30;
+        this.mana = 30;
     }
 
     @Override

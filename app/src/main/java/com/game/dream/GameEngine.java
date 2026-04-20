@@ -5,6 +5,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
+import android.graphics.RectF;
 import android.view.MotionEvent;
 
 import com.game.dream.bean.AttackResult;
@@ -12,6 +13,7 @@ import com.game.dream.bean.EnemyHitInfo;
 import com.game.dream.enemy.Enemy;
 import com.game.dream.enemy.Tiger;
 import com.game.dream.enemy.Wolf;
+import com.game.dream.enums.SkillType;
 import com.game.dream.panel.RoleInfoPanel;
 import com.game.dream.system.DayNightCycle;
 import com.game.dream.system.WeatherSystem;
@@ -67,10 +69,15 @@ public class GameEngine {
 
     // Attack buttons
     private Rect meleeAttackButton;
-    private Rect magicAttackButton;
+    private Rect magicAttackButton1; // Top-left spell
+    private Rect magicAttackButton2; // Top spell
+    private Rect magicAttackButton3; // Top-right spell
     private Rect roleInfoButton;
     private boolean meleeAttackPressed;
-    private boolean magicAttackPressed;
+    private boolean magicAttack1Pressed, magicAttack2Pressed, magicAttack3Pressed;
+
+    // Track which pointer IDs are controlling the D-pad
+    private Integer dpadPointerId = null;
 
     // Control buttons
     private Rect dpadBounds;
@@ -292,15 +299,28 @@ public class GameEngine {
                 if (proj.isActive()) {
                     for (Enemy enemy : enemies) {
                         if (proj.checkCollision(enemy)) {
-                            int damage = proj.getDamage();
-                            enemy.takeDamage(damage);
+                            AttackResult attackResult = BattleUtil.caculatePlayerCasterDamage(enemy, proj.getSkillType());
+                            if (attackResult != null) {
+                                if (attackResult.isHit) {
+                                    int damage = attackResult.damageValue;
+                                    enemy.takeDamage(damage);
 
-                            // Create floating damage number above enemy
-                            damageNumbers.add(new DamageNumber(
-                                    enemy.getX(),
-                                    enemy.getY() - 30,
-                                    damage
-                            ));
+                                    // Create floating damage number above enemy
+                                    damageNumbers.add(new DamageNumber(
+                                            enemy.getX(),
+                                            enemy.getY() - 30,
+                                            damage,
+                                            attackResult.isCrit
+                                    ));
+                                } else {
+                                    //未命中
+                                    damageNumbers.add(new DamageNumber(
+                                            enemy.getX(),
+                                            enemy.getY() - 30,
+                                            -1
+                                    ));
+                                }
+                            }
 
                             proj.deactivate();
                             break;
@@ -359,12 +379,16 @@ public class GameEngine {
                             damageNumbers.add(new DamageNumber(
                                     player.getX(),
                                     player.getY() - 40,
-                                    damage
+                                    damage,
+                                    attackResult.isCrit
                             ));
-
-                            //是否暴击
                         } else {
                             //未命中
+                            damageNumbers.add(new DamageNumber(
+                                    enemy.getX(),
+                                    enemy.getY() - 30,
+                                    -1
+                            ));
                         }
 
                         enemy.setLastAttackTime(currentTime);
@@ -443,7 +467,8 @@ public class GameEngine {
 
         // Draw enemies (only visible ones)
         if (enemies != null) {
-            for (Enemy enemy : enemies) {
+            List<Enemy> enemiesCopy = new ArrayList<>(enemies);
+            for (Enemy enemy : enemiesCopy) {
                 // Check if enemy is within visible area (with some padding)
                 float padding = 100; // Draw enemies slightly outside screen for smooth entry
                 if (isEnemyVisible(enemy, padding)) {
@@ -454,7 +479,8 @@ public class GameEngine {
 
         // Draw projectiles
         if (projectiles != null) {
-            for (Projectile proj : projectiles) {
+            List<Projectile> projectilesCopy = new ArrayList<>(projectiles);
+            for (Projectile proj : projectilesCopy) {
                 proj.draw(canvas, (int) -cameraX, (int) -cameraY);
             }
         }
@@ -602,14 +628,29 @@ public class GameEngine {
         canvas.drawText("◀", dpadBounds.centerX() - dpadBounds.width() / 4, dpadBounds.centerY() + 15, paint);
         canvas.drawText("▶", dpadBounds.centerX() + dpadBounds.width() / 4, dpadBounds.centerY() + 15, paint);
 
-        // Draw attack buttons
-        if (meleeAttackButton != null && magicAttackButton != null) {
-            drawAttackButton(canvas, meleeAttackButton, meleeAttackPressed, "⚔️", Color.rgb(255, 100, 100));
-            drawAttackButton(canvas, magicAttackButton, magicAttackPressed, "✨", Color.rgb(100, 150, 255));
+        // Draw attack buttons cluster
+        if (meleeAttackButton != null && magicAttackButton1 != null &&
+                magicAttackButton2 != null && magicAttackButton3 != null) {
 
-            // Draw cooldown indicators
-            drawCooldownIndicator(canvas, meleeAttackButton, player.getAttackCooldownProgress(), Color.RED);
-            drawCooldownIndicator(canvas, magicAttackButton, player.getMagicCooldownProgress(), Color.BLUE);
+            // Draw connection lines from magic buttons to physical button
+            paint.setColor(Color.argb(60, 255, 255, 255));
+            paint.setStrokeWidth(2);
+            paint.setStyle(Paint.Style.STROKE);
+
+            canvas.drawLine(magicAttackButton1.centerX(), magicAttackButton1.centerY(),
+                    meleeAttackButton.centerX(), meleeAttackButton.centerY(), paint);
+            canvas.drawLine(magicAttackButton2.centerX(), magicAttackButton2.centerY(),
+                    meleeAttackButton.centerX(), meleeAttackButton.centerY(), paint);
+            canvas.drawLine(magicAttackButton3.centerX(), magicAttackButton3.centerY(),
+                    meleeAttackButton.centerX(), meleeAttackButton.centerY(), paint);
+
+            // Draw magic attack buttons (circular spells)
+            drawCircularMagicAttackButton(canvas, magicAttackButton1, magicAttack1Pressed, "❄️", Color.rgb(100, 200, 255));
+            drawCircularMagicAttackButton(canvas, magicAttackButton2, magicAttack2Pressed, "🔥", Color.rgb(255, 150, 100));
+            drawCircularMagicAttackButton(canvas, magicAttackButton3, magicAttack3Pressed, "⚡", Color.rgb(255, 255, 100));
+
+            // Draw physical attack button (circular, larger and more prominent)
+            drawCircularPhysicalAttackButton(canvas, meleeAttackButton, meleeAttackPressed);
         }
 
         // Draw role info button
@@ -650,32 +691,122 @@ public class GameEngine {
         canvas.drawText(label, centerX, textY, paint);
     }
 
-    private void drawAttackButton(Canvas canvas, Rect button, boolean pressed, String label, int color) {
+    /**
+     * Draw circular magic attack button
+     */
+    private void drawCircularMagicAttackButton(Canvas canvas, Rect button, boolean pressed, String label, int color) {
         Paint paint = new Paint();
         paint.setAntiAlias(true);
 
-        // Button background
-        if (pressed) {
-            paint.setColor(Color.argb(200, Color.red(color), Color.green(color), Color.blue(color)));
-        } else {
-            paint.setColor(Color.argb(150, Color.red(color), Color.green(color), Color.blue(color)));
-        }
-        canvas.drawRoundRect(button.left, button.top, button.right, button.bottom, 20, 20, paint);
+        float centerX = button.centerX();
+        float centerY = button.centerY();
+        float radius = button.width() / 2;
 
-        // Border
+        // Button background (circular)
+        if (pressed) {
+            paint.setColor(Color.argb(120, Color.red(color), Color.green(color), Color.blue(color)));
+        } else {
+            paint.setColor(Color.argb(80, Color.red(color), Color.green(color), Color.blue(color)));
+        }
+        canvas.drawCircle(centerX, centerY, radius, paint);
+
+        // Border (circular)
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(3);
         paint.setColor(Color.WHITE);
-        canvas.drawRoundRect(button.left, button.top, button.right, button.bottom, 20, 20, paint);
+        canvas.drawCircle(centerX, centerY, radius, paint);
 
         // Label
         paint.setStyle(Paint.Style.FILL);
-        paint.setTextSize(40);
+        paint.setTextSize(35);
         paint.setColor(Color.WHITE);
         paint.setTextAlign(Paint.Align.CENTER);
-        float textX = button.centerX();
-        float textY = button.centerY() + 15;
-        canvas.drawText(label, textX, textY, paint);
+        float textY = centerY + 12;
+        canvas.drawText(label, centerX, textY, paint);
+
+        // Draw cooldown overlay
+        float cooldownProgress = player.getMagicCooldownProgress();
+        if (cooldownProgress < 1.0f) {
+            drawCircularCooldown(canvas, button, cooldownProgress);
+        }
+    }
+
+    /**
+     * Draw circular physical attack button (larger and more prominent)
+     */
+    private void drawCircularPhysicalAttackButton(Canvas canvas, Rect button, boolean pressed) {
+        Paint paint = new Paint();
+        paint.setAntiAlias(true);
+
+        float centerX = button.centerX();
+        float centerY = button.centerY();
+        float radius = button.width() / 2;
+
+        // Button background (circular, red gradient effect)
+        if (pressed) {
+            paint.setColor(Color.argb(120, 255, 80, 80));
+        } else {
+            paint.setColor(Color.argb(80, 220, 60, 60));
+        }
+        canvas.drawCircle(centerX, centerY, radius, paint);
+
+        // Outer glow effect
+        paint.setColor(Color.argb(80, 255, 100, 100));
+        canvas.drawCircle(centerX, centerY, radius + 5, paint);
+
+        // Border (circular, thicker)
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(4);
+        paint.setColor(Color.WHITE);
+        canvas.drawCircle(centerX, centerY, radius, paint);
+
+        // Inner circle for depth
+        paint.setStyle(Paint.Style.FILL);
+        paint.setColor(Color.argb(50, 255, 255, 255));
+        canvas.drawCircle(centerX, centerY, radius * 0.7f, paint);
+
+        // Label (larger icon)
+        paint.setStyle(Paint.Style.FILL);
+        paint.setTextSize(50);
+        paint.setColor(Color.WHITE);
+        paint.setTextAlign(Paint.Align.CENTER);
+        float textY = centerY + 17;
+        canvas.drawText("⚔️", centerX, textY, paint);
+
+        // Draw cooldown overlay
+        float cooldownProgress = player.getAttackCooldownProgress();
+        if (cooldownProgress < 1.0f) {
+            drawCircularCooldown(canvas, button, cooldownProgress);
+        }
+    }
+
+    /**
+     * Draw circular cooldown overlay
+     */
+    private void drawCircularCooldown(Canvas canvas, Rect button, float progress) {
+        Paint paint = new Paint();
+        paint.setAntiAlias(true);
+
+        float centerX = button.centerX();
+        float centerY = button.centerY();
+        float radius = button.width() / 2;
+
+        // Dark overlay based on cooldown progress
+        int alpha = (int)(180 * (1 - progress)); // More opaque when cooling down
+        paint.setColor(Color.argb(alpha, 0, 0, 0));
+
+        // Draw arc from top, clockwise
+        RectF oval = new RectF(button.left, button.top, button.right, button.bottom);
+        float sweepAngle = 360 * (1 - progress); // Remaining cooldown
+
+        paint.setStyle(Paint.Style.FILL);
+        canvas.drawArc(oval, -90, sweepAngle, true, paint);
+
+        // Optional: Draw border for the cooldown arc
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(2);
+        paint.setColor(Color.argb(100, 255, 255, 255));
+        canvas.drawArc(oval, -90, sweepAngle, false, paint);
     }
 
     /**
@@ -722,11 +853,15 @@ public class GameEngine {
     }
 
     public boolean handleTouch(MotionEvent event) {
-        float x = event.getX();
-        float y = event.getY();
         int action = event.getActionMasked();
+        int pointerIndex = event.getActionIndex();
+        int pointerId = event.getPointerId(pointerIndex);
 
         boolean handled = false;
+        LogUtil.i("aaaaaaaaaaaaaaa " + magicAttack1Pressed);
+        // Get the coordinates of the pointer that triggered this event
+        float x = event.getX(pointerIndex);
+        float y = event.getY(pointerIndex);
 
         // If role info panel is visible, check if touching it first
         if (roleInfoPanel != null && roleInfoPanel.isVisible()) {
@@ -734,82 +869,152 @@ public class GameEngine {
                 return true; // Panel handled the touch (closed itself)
             }
         }
-
-        // Check role info button first (independent of other controls)
-        if (roleInfoButton != null && roleInfoButton.contains((int) x, (int) y)) {
-            if (action == MotionEvent.ACTION_DOWN) {
+        LogUtil.i("aaaaaaaaaaaaaaa " + magicAttack1Pressed);
+        // Check role info button
+        if (roleInfoButton != null && roleInfoButton.contains((int)x, (int)y)) {
+            if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_POINTER_DOWN) {
                 roleInfoPanel.toggleVisibility();
-                return true; // Handled by info button
+                return true;
             }
-            // For ACTION_UP on info button, just return true without toggling again
-            if (action == MotionEvent.ACTION_UP) {
+            if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_POINTER_UP) {
                 return true;
             }
         }
+        LogUtil.i("aaaaaaaaaaaaaaa " + magicAttack1Pressed);
+        // Handle D-pad with pointer tracking
+        switch (action) {
+            case MotionEvent.ACTION_DOWN:
+            case MotionEvent.ACTION_POINTER_DOWN:
+                // Check if this pointer started on D-pad
+                if (isInCircle(x, y, dpadBounds.centerX(), dpadBounds.centerY(), dpadBounds.width() / 2)) {
+                    dpadPointerId = pointerId; // Lock this pointer to D-pad
+                    handled = true;
 
-        // Check if touching D-pad
-        if (isInCircle(x, y, dpadBounds.centerX(), dpadBounds.centerY(), dpadBounds.width() / 2)) {
-            handled = true;
+                    // Calculate initial direction
+                    float dx = x - dpadBounds.centerX();
+                    float dy = y - dpadBounds.centerY();
 
-            if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_POINTER_UP) {
-                upPressed = false;
-                downPressed = false;
-                leftPressed = false;
-                rightPressed = false;
-                player.setMovingUp(false);
-                player.setMovingDown(false);
-                player.setMovingLeft(false);
-                player.setMovingRight(false);
-            } else {
-                float dx = x - dpadBounds.centerX();
-                float dy = y - dpadBounds.centerY();
+                    upPressed = false;
+                    downPressed = false;
+                    leftPressed = false;
+                    rightPressed = false;
 
-                upPressed = false;
-                downPressed = false;
-                leftPressed = false;
-                rightPressed = false;
-
-                if (Math.abs(dx) > Math.abs(dy)) {
-                    if (dx > 0) rightPressed = true;
-                    else leftPressed = true;
-                } else {
-                    if (dy > 0) downPressed = true;
-                    else upPressed = true;
+                    if (Math.abs(dx) > Math.abs(dy)) {
+                        if (dx > 0) rightPressed = true;
+                        else leftPressed = true;
+                    } else {
+                        if (dy > 0) downPressed = true;
+                        else upPressed = true;
+                    }
                 }
+                break;
 
-                player.setMovingUp(upPressed);
-                player.setMovingDown(downPressed);
-                player.setMovingLeft(leftPressed);
-                player.setMovingRight(rightPressed);
-            }
+            case MotionEvent.ACTION_MOVE:
+                // If this is the D-pad pointer, update direction regardless of position
+                if (dpadPointerId != null && pointerId == dpadPointerId) {
+                    handled = true;
+
+                    float dx = x - dpadBounds.centerX();
+                    float dy = y - dpadBounds.centerY();
+
+                    upPressed = false;
+                    downPressed = false;
+                    leftPressed = false;
+                    rightPressed = false;
+
+                    if (Math.abs(dx) > Math.abs(dy)) {
+                        if (dx > 0) rightPressed = true;
+                        else leftPressed = true;
+                    } else {
+                        if (dy > 0) downPressed = true;
+                        else upPressed = true;
+                    }
+                }
+                break;
+
+            case MotionEvent.ACTION_UP:
+            case MotionEvent.ACTION_POINTER_UP:
+                // If this is the D-pad pointer, release it
+                if (dpadPointerId != null && pointerId == dpadPointerId) {
+                    dpadPointerId = null; // Release the lock
+                    upPressed = false;
+                    downPressed = false;
+                    leftPressed = false;
+                    rightPressed = false;
+                }
+                break;
+
+            case MotionEvent.ACTION_CANCEL:
+                // Cancel all input
+                dpadPointerId = null;
+                upPressed = false;
+                downPressed = false;
+                leftPressed = false;
+                rightPressed = false;
+                break;
         }
 
-        switch (event.getAction()) {
+        // Update player movement
+        player.setMovingUp(upPressed);
+        player.setMovingDown(downPressed);
+        player.setMovingLeft(leftPressed);
+        player.setMovingRight(rightPressed);
+
+        // Handle attack buttons based on event type
+        switch (action) {
             case MotionEvent.ACTION_DOWN:
-            case MotionEvent.ACTION_MOVE:
+            case MotionEvent.ACTION_POINTER_DOWN:
+                // Check if this pointer is on any attack button
+                if (meleeAttackButton != null &&
+                        isPointInCircle(x, y, meleeAttackButton.centerX(), meleeAttackButton.centerY(), meleeAttackButton.width() / 2)) {
+                    meleeAttackPressed = true;
+                    handled = true;
 
-                // Check attack buttons (still use rectangular detection)
-                meleeAttackPressed = meleeAttackButton != null && meleeAttackButton.contains((int) x, (int) y);
-                magicAttackPressed = magicAttackButton != null && magicAttackButton.contains((int) x, (int) y);
-
-                // Perform attacks when buttons are pressed
-                if (meleeAttackPressed) {
+                    // Trigger melee attack
                     List<EnemyHitInfo> hits = player.performMeleeAttack(enemies);
                     if (hits != null) {
-                        // Create damage numbers for each hit enemy
                         for (EnemyHitInfo hit : hits) {
                             damageNumbers.add(new DamageNumber(
                                     hit.enemy.getX(),
                                     hit.enemy.getY() - 30,
-                                    hit.damage
+                                    hit.damage,
+                                    hit.isCrit
                             ));
                         }
                     }
                 }
 
-                if (magicAttackPressed) {
-                    // Cast spell in the direction player is facing
-                    List<Projectile> list = player.castTripleSpell(Projectile.Type.FIREBALL);
+                if (magicAttackButton1 != null &&
+                        isPointInCircle(x, y, magicAttackButton1.centerX(), magicAttackButton1.centerY(), magicAttackButton1.width() / 2)) {
+                    magicAttack1Pressed = true;
+                    handled = true;
+
+                    // Cast ice bolt
+                    List<Projectile> list = player.castTripleSpell(SkillType.ICE_BOLT);
+                    if (list != null) {
+                        projectiles.addAll(list);
+                    }
+                }
+
+                if (magicAttackButton2 != null &&
+                        isPointInCircle(x, y, magicAttackButton2.centerX(), magicAttackButton2.centerY(), magicAttackButton2.width() / 2)) {
+                    magicAttack2Pressed = true;
+                    handled = true;
+
+                    // Cast fireball
+                    List<Projectile> list = player.castTripleSpell(SkillType.FIREBALL);
+                    if (list != null) {
+                        projectiles.addAll(list);
+                    }
+                }
+
+                if (magicAttackButton3 != null &&
+                        isPointInCircle(x, y, magicAttackButton3.centerX(), magicAttackButton3.centerY(), magicAttackButton3.width() / 2)) {
+                    magicAttack3Pressed = true;
+                    handled = true;
+
+                    // Cast lightning
+                    List<Projectile> list = player.castTripleSpell(SkillType.LIGHTNING);
                     if (list != null) {
                         projectiles.addAll(list);
                     }
@@ -817,9 +1022,90 @@ public class GameEngine {
                 break;
 
             case MotionEvent.ACTION_UP:
-                meleeAttackPressed = false;
-                magicAttackPressed = false;
+            case MotionEvent.ACTION_POINTER_UP:
+                // Clear the state for the pointer that lifted
+                // Check which button this pointer was on
+                if (meleeAttackButton != null &&
+                        isPointInCircle(x, y, meleeAttackButton.centerX(), meleeAttackButton.centerY(), meleeAttackButton.width() / 2)) {
+                    meleeAttackPressed = false;
+                    handled = true;
+                }
 
+                if (magicAttackButton1 != null &&
+                        isPointInCircle(x, y, magicAttackButton1.centerX(), magicAttackButton1.centerY(), magicAttackButton1.width() / 2)) {
+                    magicAttack1Pressed = false;
+                    handled = true;
+                }
+
+                if (magicAttackButton2 != null &&
+                        isPointInCircle(x, y, magicAttackButton2.centerX(), magicAttackButton2.centerY(), magicAttackButton2.width() / 2)) {
+                    magicAttack2Pressed = false;
+                    handled = true;
+                }
+
+                if (magicAttackButton3 != null &&
+                        isPointInCircle(x, y, magicAttackButton3.centerX(), magicAttackButton3.centerY(), magicAttackButton3.width() / 2)) {
+                    magicAttack3Pressed = false;
+                    handled = true;
+                }
+                break;
+
+            case MotionEvent.ACTION_MOVE:
+                // For MOVE events, we still need to track if pointers are on buttons
+                // to maintain correct visual state when finger moves in/out of button area
+                boolean anyOnButton = false;
+
+                for (int i = 0; i < event.getPointerCount(); i++) {
+                    float px = event.getX(i);
+                    float py = event.getY(i);
+
+                    if (meleeAttackButton != null &&
+                            isPointInCircle(px, py, meleeAttackButton.centerX(), meleeAttackButton.centerY(), meleeAttackButton.width() / 2)) {
+                        anyOnButton = true;
+                        if (!meleeAttackPressed) {
+                            meleeAttackPressed = true;
+                            handled = true;
+                        }
+                    }
+
+                    if (magicAttackButton1 != null &&
+                            isPointInCircle(px, py, magicAttackButton1.centerX(), magicAttackButton1.centerY(), magicAttackButton1.width() / 2)) {
+                        anyOnButton = true;
+                        if (!magicAttack1Pressed) {
+                            magicAttack1Pressed = true;
+                            handled = true;
+                        }
+                    }
+
+                    if (magicAttackButton2 != null &&
+                            isPointInCircle(px, py, magicAttackButton2.centerX(), magicAttackButton2.centerY(), magicAttackButton2.width() / 2)) {
+                        anyOnButton = true;
+                        if (!magicAttack2Pressed) {
+                            magicAttack2Pressed = true;
+                            handled = true;
+                        }
+                    }
+
+                    if (magicAttackButton3 != null &&
+                            isPointInCircle(px, py, magicAttackButton3.centerX(), magicAttackButton3.centerY(), magicAttackButton3.width() / 2)) {
+                        anyOnButton = true;
+                        if (!magicAttack3Pressed) {
+                            magicAttack3Pressed = true;
+                            handled = true;
+                        }
+                    }
+                }
+
+                // If no pointers are on any button, clear all states
+                if (!anyOnButton) {
+                    if (meleeAttackPressed || magicAttack1Pressed || magicAttack2Pressed || magicAttack3Pressed) {
+                        meleeAttackPressed = false;
+                        magicAttack1Pressed = false;
+                        magicAttack2Pressed = false;
+                        magicAttack3Pressed = false;
+                        handled = true;
+                    }
+                }
                 break;
         }
 
@@ -873,24 +1159,55 @@ public class GameEngine {
                 dpadCenterY + buttonSize
         );
 
-        // Attack buttons (bottom-right) - Also smaller
-        int attackButtonSize = (int) (buttonSize * 0.8);
-        int attackPadding = (int) (buttonSize * 0.5);
+        // Attack buttons cluster (bottom-right)
+        int magicButtonSize = (int)(buttonSize * 0.8); // Magic buttons size
+        int physicalButtonSize = (int)(buttonSize * 1.2); // Physical button is 40% larger
+        int attackPadding = 30;
 
-        // Melee attack button (left)
+        // Physical attack button center (bottom-right position)
+        int physicalCenterX = screenWidth - attackPadding - physicalButtonSize;
+        int physicalCenterY = screenHeight - attackPadding - physicalButtonSize;
+
+        // Physical attack button (melee) - circular, larger
         meleeAttackButton = new Rect(
-                screenWidth - attackPadding * 2 - attackButtonSize * 2,
-                screenHeight - attackPadding - attackButtonSize,
-                screenWidth - attackPadding * 2 - attackButtonSize,
-                screenHeight - attackPadding
+                physicalCenterX - physicalButtonSize / 2,
+                physicalCenterY - physicalButtonSize / 2,
+                physicalCenterX + physicalButtonSize / 2,
+                physicalCenterY + physicalButtonSize / 2
         );
 
-        // Magic attack button (right)
-        magicAttackButton = new Rect(
-                screenWidth - attackPadding - attackButtonSize,
-                screenHeight - attackPadding - attackButtonSize,
-                screenWidth - attackPadding,
-                screenHeight - attackPadding
+        // Magic attack buttons arranged in fan shape around physical button
+        // Layout: Left, Top-Left, Top (forming an arc in the upper-left quadrant)
+        int spacing = (int)(physicalButtonSize * 1.5);
+
+        // Button 1: Left of physical button
+        int magic1X = physicalCenterX - spacing;
+        int magic1Y = physicalCenterY;
+        magicAttackButton1 = new Rect(
+                magic1X - magicButtonSize / 2,
+                magic1Y - magicButtonSize / 2,
+                magic1X + magicButtonSize / 2,
+                magic1Y + magicButtonSize / 2
+        );
+
+        // Button 2: Top-Left of physical button (diagonal)
+        int magic2X = physicalCenterX - (int)(spacing * 0.7);
+        int magic2Y = physicalCenterY - (int)(spacing * 0.7);
+        magicAttackButton2 = new Rect(
+                magic2X - magicButtonSize / 2,
+                magic2Y - magicButtonSize / 2,
+                magic2X + magicButtonSize / 2,
+                magic2Y + magicButtonSize / 2
+        );
+
+        // Button 3: Top of physical button
+        int magic3X = physicalCenterX;
+        int magic3Y = physicalCenterY - spacing;
+        magicAttackButton3 = new Rect(
+                magic3X - magicButtonSize / 2,
+                magic3Y - magicButtonSize / 2,
+                magic3X + magicButtonSize / 2,
+                magic3Y + magicButtonSize / 2
         );
 
         // role info button (top-right corner)

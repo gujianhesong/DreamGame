@@ -5,6 +5,8 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 
+import com.game.dream.utils.Utils;
+
 /**
  * Tiger enemy - stronger and more aggressive than wolf
  */
@@ -14,8 +16,9 @@ public class Tiger extends Enemy {
         super(x, y, 100, 250, 60);
         attackCooldown = 1200; // Faster attacks than wolf
 
-        this.maxHealth = 100;
-        this.health = 100;
+        int health = Utils.getWaveValue(350, 0.2f);
+        this.maxHealth = health;
+        this.health = health;
         this.attackDamage = 40;
         this.defense = 40;
         this.speed = 40;

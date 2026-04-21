@@ -5,6 +5,8 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 
+import com.game.dream.utils.Utils;
+
 /**
  * Wolf enemy that attacks player when nearby
  */
@@ -14,8 +16,9 @@ public class Wolf extends Enemy {
         super(x, y, 60, 200, 50);
         attackCooldown = 1500;
 
-        this.maxHealth = 60;
-        this.health = 60;
+        int health = Utils.getWaveValue(200, 0.2f);
+        this.maxHealth = health;
+        this.health = health;
         this.attackDamage = 30;
         this.defense = 30;
         this.speed = 30;

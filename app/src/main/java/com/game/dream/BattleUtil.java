@@ -51,7 +51,7 @@ public class BattleUtil {
             }
 
             //计算伤害
-            damageValue = (int) ((playerAttack - enemyDefense) * 1.2);
+            damageValue = calculateAttackDamage(playerAttack, enemyDefense);
             damageValue = (int) (damageValue * (0.9 + Math.random() * 0.2));
 
             float critRatio = 0.05f;
@@ -114,7 +114,7 @@ public class BattleUtil {
             }
 
             //计算伤害
-            damageValue = (int) ((enemyAttack - playerDefense) * 1.2);
+            damageValue = calculateAttackDamage(enemyAttack, playerDefense);
             damageValue = (int) (damageValue * (0.9 + Math.random() * 0.2));
 
             float critRatio = 0.05f;
@@ -135,6 +135,13 @@ public class BattleUtil {
         LogUtil.i("aaaaaaaaaaaaaaa 怪物物理输出伤害 " + damageValue + ", 暴击:" + isCrit + ", 命中:" + isHit);
 
         return attackResult;
+    }
+
+    private static int calculateAttackDamage(float attack, int defense) {
+        int damageValue = (int) (attack * 0.2 + (attack - defense) * 1.1);
+        damageValue = Math.max(0, damageValue);
+        damageValue += (int) (attack * 0.05);
+        return damageValue;
     }
 
     /**
@@ -178,23 +185,20 @@ public class BattleUtil {
             isHit = true;
             isCrit = false;
 
-            //计算法术伤害，灵力差 * 技能等级 * 法术基础伤害
-            float manaRatioValue = (20 + (roleInfo.getMana() - enemy.getMana()) * 0.3f);
-            manaRatioValue = Math.max(manaRatioValue, 1);
-            float leveRatioValue = 1 + findSkillInfo.getLevel() * 0.1f;
-            float castBaseValue = 4f;
+            float castBaseValue = 10f;
             switch (skillType){
                 case FIREBALL:
-                    castBaseValue = 4f;
+                    castBaseValue = 20f;
                     break;
                 case ICE_BOLT:
-                    castBaseValue = 4.5f;
+                    castBaseValue = 15f;
                     break;
                 case LIGHTNING:
-                    castBaseValue = 5f;
+                    castBaseValue = 30f;
                     break;
             }
-            damageValue = (int) (manaRatioValue * leveRatioValue * castBaseValue);
+            //计算法术伤害
+            damageValue = calculateMagicDamage(castBaseValue, roleInfo.getMana(), enemy.getMana(), findSkillInfo.getLevel());
 
             //计算修炼加成
             if (roleInfo.getPracticeMagic() > 0) {
@@ -225,5 +229,77 @@ public class BattleUtil {
                 + ", " + roleInfo.getMana() + ", " + enemy.getMana());
 
         return attackResult;
+    }
+
+    private static int calculateMagicDamage(float baseDamage, int playerSpirit,
+                                           int enemySpirit, int skillLevel) {
+        float spiritDelta = playerSpirit - enemySpirit;
+        float playerSpiritMultiplier = (float)Math.pow(playerSpirit, 0.5f); // 平方根软化
+
+        // 3. Skill level multiplier
+        float skillMultiplier = 1.0f + (skillLevel - 1) * 0.15f;
+        skillMultiplier = Math.min(skillMultiplier, 3.0f);
+
+        // 4. Calculate final damage
+        float finalDamage = spiritDelta * 0.3f + baseDamage * skillMultiplier * (0.45f + playerSpiritMultiplier * 0.55f);
+
+//        LogUtil.i("baseDamage  spiritDelta:" + spiritDelta + ",playerSpiritMultiplier:" + playerSpiritMultiplier);
+//        LogUtil.i("baseDamage:" + baseDamage + ",playerSpirit:" + playerSpirit + ",enemySpirit:" + enemySpirit
+//                + ",skillLevel:" + skillLevel + ",result:" + finalDamage);
+
+        // Random variance ±10%
+        float variance = 0.9f + (float)(Math.random() * 0.2);
+        finalDamage *= variance;
+
+        int result = Math.max(1, (int)finalDamage);
+
+        LogUtil.i("baseDamage:" + baseDamage + ",playerSpirit:" + playerSpirit + ",enemySpirit:" + enemySpirit
+                + ",skillLevel:" + skillLevel + ",result:" + result);
+        return result;
+    }
+
+    public static void testMagicDamage(){
+        for (int playerMana = 30; playerMana <= 1000; playerMana += 30) {
+            for (int enemyMana = 30; enemyMana <= 1000; enemyMana += 30) {
+                BattleUtil.calculateMagicDamage(20, playerMana, enemyMana, 1);
+            }
+        }
+    }
+
+    public static int calculateMagicDamage2(float baseDamage, int playerSpirit,
+                                            int enemySpirit, int skillLevel) {
+        // 1. Spirit ratio (player vs enemy)
+        float spiritRatio = (float)playerSpirit / (playerSpirit + enemySpirit);
+        float spiritMultiplier2 = (float) Math.pow(Math.abs(playerSpirit), 0.5f); // 平方根软化
+
+        // 2. Damage multiplier based on ratio
+        // Ratio 0.5 → 0.6x damage (被压制)
+        // Ratio 1.0 → 1.0x damage (平等)
+        // Ratio 2.0 → 1.5x damage (压制)
+        // Ratio 3.0 → 1.8x damage (强力压制)
+        float spiritMultiplier = (float)Math.pow(spiritRatio, 0.5f); // 平方根软化
+        spiritMultiplier = Math.max(0.02f, Math.min(spiritMultiplier, 10f));
+
+        // 3. Skill level multiplier
+        float skillMultiplier = 1.0f + (skillLevel - 1) * 0.15f;
+        skillMultiplier = Math.min(skillMultiplier, 3.0f);
+
+        // 4. Calculate final damage
+        float finalDamage = baseDamage * (spiritMultiplier2 * 0.05f + spiritMultiplier * skillMultiplier * 0.5f);
+
+        LogUtil.i("baseDamage:" + baseDamage + ",playerSpirit:" + playerSpirit + ",enemySpirit:" + enemySpirit
+                + ",skillLevel:" + skillLevel + ",result:" + finalDamage + ",spiritMultiplier:" + spiritMultiplier);
+
+        // Random variance ±10%
+//        float variance = 0.9f + (float)(Math.random() * 0.2);
+//        finalDamage *= variance;
+//
+//        int result = Math.max(1, (int)finalDamage);
+
+        //LogUtil.i("baseDamage=====spiritMultiplier1:" + spiritMultiplier1 + ",spiritMultiplier2:" + spiritMultiplier2);
+//        LogUtil.i("baseDamage:" + baseDamage + ",playerSpirit:" + playerSpirit + ",enemySpirit:" + enemySpirit
+//                + ",skillLevel:" + skillLevel + ",result:" + result);
+//        return result;
+        return 0;
     }
 }

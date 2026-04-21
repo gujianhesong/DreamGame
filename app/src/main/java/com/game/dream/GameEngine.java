@@ -134,7 +134,7 @@ public class GameEngine {
 
         // Create player at center of map
         player = new Player(startX * TILE_SIZE + TILE_SIZE / 2, startY * TILE_SIZE + TILE_SIZE / 2);
-
+        player.setName("剑侠客");
         // Set initial respawn point
         player.setRespawnPoint(player.getX(), player.getY());
 
@@ -208,9 +208,13 @@ public class GameEngine {
             if (foundValidSpawn) {
                 double rand = Math.random();
                 if (rand < 0.7) {
-                    enemies.add(new Tiger(spawnX, spawnY));
+                    Enemy enemy = new Tiger(spawnX, spawnY);
+                    enemy.setName("老虎");
+                    enemies.add(enemy);
                 } else {
-                    enemies.add(new Wolf(spawnX, spawnY));
+                    Enemy enemy = new Wolf(spawnX, spawnY);
+                    enemy.setName("野狼");
+                    enemies.add(enemy);
                 }
             }
         }
@@ -969,6 +973,9 @@ public class GameEngine {
                         isPointInCircle(x, y, meleeAttackButton.centerX(), meleeAttackButton.centerY(), meleeAttackButton.width() / 2)) {
                     meleeAttackPressed = true;
                     handled = true;
+
+                    // Trigger attack animation
+                    player.triggerAttackAnimation();
 
                     // Trigger melee attack
                     List<EnemyHitInfo> hits = player.performMeleeAttack(enemies);

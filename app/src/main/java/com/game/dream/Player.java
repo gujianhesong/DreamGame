@@ -26,6 +26,12 @@ public class Player extends Character {
     private int walkCycle;
     private int facingDirection; // 0=down, 1=up, 2=left, 3=right
 
+    // Attack animation
+    private boolean isAttacking;
+    private long attackStartTime;
+    private int attackAnimationFrame;
+    private static final int ATTACK_ANIMATION_DURATION = 300; // 300ms
+
     // Magic combat
     private int magicDamage;
     private long lastMagicTime;
@@ -60,24 +66,26 @@ public class Player extends Character {
 
         attackCooldown = 500; // Melee attack cooldown
 
+        // Attack animation
+        this.isAttacking = false;
+        this.attackStartTime = 0;
+        this.attackAnimationFrame = 0;
+
         // Initialize renderer
         this.renderer = new PlayerRenderer(this);
     }
 
     @Override
-    public void draw(Canvas canvas, int offsetX, int offsetY) {
+    public void onDraw(Canvas canvas, int offsetX, int offsetY) {
         if (renderer != null) {
             renderer.draw(canvas, offsetX, offsetY);
         }
-
-        // Draw health bar above player (using inherited method)
-        float screenX = getX() + offsetX;
-        float screenY = getY() + offsetY;
-        float scale = getSize() / 40f;
-        drawHealthBar(canvas, screenX, screenY, scale);
     }
 
     public void update(int[][] map, int mapWidth, int mapHeight, int tileSize, long deltaTime) {
+        // Update attack animation
+        updateAttackAnimation();
+
         boolean isMoving = false;
         float newX = x;
         float newY = y;
@@ -324,6 +332,58 @@ public class Player extends Character {
         isInvincible = true;
         invincibleEndTime = System.currentTimeMillis() + 3000; // 3 seconds invincibility after respawn
         android.util.Log.d("Player", "Respawned at (" + (int) x + ", " + (int) y + ")");
+    }
+
+    /**
+     * Trigger melee attack animation
+     */
+    public void triggerAttackAnimation() {
+        isAttacking = true;
+        attackStartTime = System.currentTimeMillis();
+        attackAnimationFrame = 0;
+    }
+
+    /**
+     * Update attack animation state
+     */
+    public void updateAttackAnimation() {
+        if (!isAttacking) return;
+
+        long currentTime = System.currentTimeMillis();
+        long elapsed = currentTime - attackStartTime;
+
+        if (elapsed >= ATTACK_ANIMATION_DURATION) {
+            isAttacking = false;
+            attackAnimationFrame = 0;
+        } else {
+            // Calculate animation frame (0-10)
+            attackAnimationFrame = (int)(elapsed * 10 / ATTACK_ANIMATION_DURATION);
+        }
+    }
+
+    /**
+     * Check if currently playing attack animation
+     */
+    public boolean isAttacking() {
+        if (!isAttacking) return false;
+
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - attackStartTime >= ATTACK_ANIMATION_DURATION) {
+            isAttacking = false;
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Get attack animation progress (0-1)
+     */
+    public float getAttackAnimationProgress() {
+        if (!isAttacking) return 0f;
+
+        long currentTime = System.currentTimeMillis();
+        long elapsed = currentTime - attackStartTime;
+        return Math.min(1.0f, (float)elapsed / ATTACK_ANIMATION_DURATION);
     }
 
     public void setMovingLeft(boolean moving) { this.movingLeft = moving; }

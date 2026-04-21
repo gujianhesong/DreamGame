@@ -1,6 +1,8 @@
 package com.game.dream;
 
 import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
 
 /**
  * Base class for all living characters (player and enemies)
@@ -9,6 +11,9 @@ public abstract class Character {
     protected float x, y;
     protected float speed;
     protected int size;
+
+    // Name
+    protected String name;
 
     // Health system
     protected int health;
@@ -36,13 +41,7 @@ public abstract class Character {
         this.x = x;
         this.y = y;
         this.size = size;
-
-//        this.maxHealth = maxHealth;
-//        this.health = maxHealth;
-//        this.attackDamage = attackDamage;
-//        this.defense = defense;
-//        this.speed = speed;
-
+        this.name = "";
         this.isInvincible = false;
         this.invincibleEndTime = 0;
         this.lastDamageTime = 0;
@@ -54,7 +53,44 @@ public abstract class Character {
         this.bobOffset = 0;
     }
 
-    public abstract void draw(Canvas canvas, int offsetX, int offsetY);
+    public final void draw(Canvas canvas, int offsetX, int offsetY){
+        onDraw(canvas, offsetX, offsetY);
+
+        // Draw health bar above player (using inherited method)
+        float screenX = getX() + offsetX;
+        float screenY = getY() + offsetY;
+        //float scale = getSize() / 40f;
+        float scale = 2f;
+        drawHealthBar(canvas, screenX, screenY, scale);
+
+        // Draw name below player
+        drawName(canvas, screenX, screenY, scale);
+    }
+
+    public abstract void onDraw(Canvas canvas, int offsetX, int offsetY);
+
+    /**
+     * Draw character name below the character
+     */
+    protected void drawName(Canvas canvas, float cx, float cy, float scale) {
+        if (name == null || name.isEmpty()) {
+            return;
+        }
+
+        Paint namePaint = new Paint();
+        namePaint.setAntiAlias(true);
+        namePaint.setTextSize(14 * scale);
+        namePaint.setTextAlign(Paint.Align.CENTER);
+
+        // Add shadow for better visibility
+        namePaint.setColor(Color.BLACK);
+        namePaint.setStyle(Paint.Style.FILL);
+        canvas.drawText(name, cx + 1, cy + 45 * scale + 1, namePaint);
+
+        // Draw name with color
+        namePaint.setColor(Color.WHITE);
+        canvas.drawText(name, cx, cy + 45 * scale, namePaint);
+    }
 
     /**
      * Take damage
@@ -186,9 +222,13 @@ public abstract class Character {
     public int getMana() { return mana; }
     public boolean isAlive() { return health > 0; }
 
+    public String getName() { return name; }
+
     // Setters
     public void setX(float x) { this.x = x; }
     public void setY(float y) { this.y = y; }
     public void setHealth(int health) { this.health = health; }
     public void setSize(int size) { this.size = size; }
+
+    public void setName(String name) { this.name = name; }
 }

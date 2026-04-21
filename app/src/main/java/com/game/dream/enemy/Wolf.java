@@ -56,7 +56,7 @@ public class Wolf extends Enemy {
     }
 
     @Override
-    public void draw(Canvas canvas, int offsetX, int offsetY) {
+    public void onDraw(Canvas canvas, int offsetX, int offsetY) {
         if (!isAlive()) return;
 
         Paint paint = new Paint();
@@ -74,9 +74,6 @@ public class Wolf extends Enemy {
         } else {
             drawFacingLeft(canvas, paint, screenX, screenY, scale);
         }
-
-        // Draw health bar
-        drawHealthBar(canvas, screenX, screenY, scale);
     }
 
     /**

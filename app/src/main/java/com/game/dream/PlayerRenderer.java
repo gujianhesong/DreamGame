@@ -37,13 +37,35 @@ public class PlayerRenderer {
         float scale = player.getSize() / 40f;
 
         // Calculate animation parameters based on state
-        boolean isMoving = player.isMoving();;
+        boolean isMoving = player.isMoving();
+        boolean isAttacking = player.isAttacking();
         int walkCycle = player.getWalkCycle();
         int facingDirection = player.getFacingDirection();
         int size = player.getSize();
+        float attackProgress = player.getAttackAnimationProgress();
+
         float bobOffset, legOffset, armSwing, breathScale;
 
-        if (isMoving) {
+        if (isAttacking) {
+            // Attack animation overrides walking
+            bobOffset = 0;
+            legOffset = 0;
+            breathScale = 1.0f;
+
+            // Arm swing based on attack phase
+            if (attackProgress < 0.3f) {
+                // Wind-up phase: pull arm back
+                armSwing = -20 * scale * (attackProgress / 0.3f);
+            } else if (attackProgress < 0.5f) {
+                // Strike phase: swing forward quickly
+                float strikeProgress = (attackProgress - 0.3f) / 0.2f;
+                armSwing = -20 * scale + 60 * scale * strikeProgress;
+            } else {
+                // Recovery phase: return to normal
+                float recoveryProgress = (attackProgress - 0.5f) / 0.5f;
+                armSwing = 40 * scale * (1 - recoveryProgress);
+            }
+        } else if (isMoving) {
             // Walking animation
             bobOffset = (float) Math.sin(walkCycle * Math.PI / 30) * 2 * scale;
             legOffset = (float) Math.sin(walkCycle * Math.PI / 15) * 3 * scale;
@@ -64,52 +86,63 @@ public class PlayerRenderer {
 
         switch (facingDirection) {
             case 0: // Facing DOWN
-                drawFacingDown(canvas, paint, screenX, screenY, scale, bobOffset, legOffset, armSwing, breathScale, isMoving);
+                drawFacingDown(canvas, paint, screenX, screenY, scale, bobOffset, legOffset, armSwing, breathScale, isMoving, isAttacking, attackProgress);
                 break;
             case 1: // Facing UP
-                drawFacingUp(canvas, paint, screenX, screenY, scale, bobOffset, legOffset, armSwing, breathScale, isMoving);
+                drawFacingUp(canvas, paint, screenX, screenY, scale, bobOffset, legOffset, armSwing, breathScale, isMoving, isAttacking, attackProgress);
                 break;
             case 2: // Facing LEFT
-                drawFacingLeft(canvas, paint, screenX, screenY, scale, bobOffset, legOffset, armSwing, breathScale, isMoving);
+                drawFacingLeft(canvas, paint, screenX, screenY, scale, bobOffset, legOffset, armSwing, breathScale, isMoving, isAttacking, attackProgress);
                 break;
             case 3: // Facing RIGHT
-                drawFacingRight(canvas, paint, screenX, screenY, scale, bobOffset, legOffset, armSwing, breathScale, isMoving);
+                drawFacingRight(canvas, paint, screenX, screenY, scale, bobOffset, legOffset, armSwing, breathScale, isMoving, isAttacking, attackProgress);
                 break;
+        }
+
+        // Draw attack effect (sword slash)
+        if (isAttacking) {
+            drawAttackEffect(canvas, paint, screenX, screenY, scale, facingDirection, attackProgress);
         }
 
         // Floating energy particles (always animated)
         drawEnergyParticles(canvas, paint, screenX, screenY, scale, isMoving);
     }
 
+// ... existing code ...
+
     private void drawFacingDown(Canvas canvas, Paint paint, float cx, float cy, float scale,
-                                float bobOffset, float legOffset, float armSwing, float breathScale, boolean isMoving) {
+                                float bobOffset, float legOffset, float armSwing, float breathScale,
+                                boolean isMoving, boolean isAttacking, float attackProgress) {
         // Reset paint to ensure clean state
         paint.reset();
         paint.setAntiAlias(true);
 
-        // Sword on back
-        Path scabbard = new Path();
-        scabbard.moveTo(cx + 7 * scale, cy - 18 * scale + bobOffset * 0.3f);
-        scabbard.lineTo(cx + 10 * scale, cy - 16 * scale + bobOffset * 0.3f);
-        scabbard.lineTo(cx + 5 * scale, cy + 8 * scale + bobOffset * 0.3f);
-        scabbard.lineTo(cx + 2 * scale, cy + 6 * scale + bobOffset * 0.3f);
-        scabbard.close();
+        // Sword handling - show in hand during attack, on back otherwise
+        if (!isAttacking || attackProgress < 0.2f || attackProgress > 0.6f) {
+            // Sword on back (normal state)
+            Path scabbard = new Path();
+            scabbard.moveTo(cx + 7 * scale, cy - 18 * scale + bobOffset * 0.3f);
+            scabbard.lineTo(cx + 10 * scale, cy - 16 * scale + bobOffset * 0.3f);
+            scabbard.lineTo(cx + 5 * scale, cy + 8 * scale + bobOffset * 0.3f);
+            scabbard.lineTo(cx + 2 * scale, cy + 6 * scale + bobOffset * 0.3f);
+            scabbard.close();
 
-        paint.setColor(Color.rgb(139, 69, 19));
-        canvas.drawPath(scabbard, paint);
+            paint.setColor(Color.rgb(139, 69, 19));
+            canvas.drawPath(scabbard, paint);
 
-        // Scabbard decoration
-        paint.setColor(Color.rgb(255, 215, 0));
-        canvas.drawRect(cx + 5.5f * scale, cy - 10 * scale + bobOffset * 0.3f,
-                cx + 7.5f * scale, cy - 8 * scale + bobOffset * 0.3f, paint);
+            // Scabbard decoration
+            paint.setColor(Color.rgb(255, 215, 0));
+            canvas.drawRect(cx + 5.5f * scale, cy - 10 * scale + bobOffset * 0.3f,
+                    cx + 7.5f * scale, cy - 8 * scale + bobOffset * 0.3f, paint);
 
-        // Sword hilt
-        paint.setColor(Color.rgb(255, 215, 0));
-        canvas.drawRect(cx + 6.5f * scale, cy - 19 * scale + bobOffset * 0.3f,
-                cx + 11 * scale, cy - 17.5f * scale + bobOffset * 0.3f, paint);
+            // Sword hilt
+            paint.setColor(Color.rgb(255, 215, 0));
+            canvas.drawRect(cx + 6.5f * scale, cy - 19 * scale + bobOffset * 0.3f,
+                    cx + 11 * scale, cy - 17.5f * scale + bobOffset * 0.3f, paint);
+        }
 
         // === LEGS ===
-        if (isMoving) {
+        if (isMoving && !isAttacking) {
             // Walking - legs move
             paint.setColor(Color.rgb(240, 240, 240));
             canvas.drawRect(cx - 7 * scale, cy + 15 * scale + bobOffset,
@@ -126,7 +159,7 @@ public class PlayerRenderer {
                     cx + 8 * scale, cy + 23 * scale + bobOffset - legOffset,
                     2 * scale, 2 * scale, paint);
         } else {
-            // Idle - standing still with slight weight shift
+            // Idle or attacking - standing still
             paint.setColor(Color.rgb(240, 240, 240));
             canvas.drawRect(cx - 7 * scale, cy + 15 * scale + bobOffset,
                     cx - 1 * scale, cy + 22 * scale + bobOffset, paint);
@@ -174,8 +207,51 @@ public class PlayerRenderer {
         paint.setColor(Color.rgb(25, 118, 210));
         canvas.drawCircle(cx, cy + 3.5f * scale + bobOffset, 2.5f * scale, paint);
 
-        // === ARMS ===
-        if (isMoving) {
+        // === ARMS with attack animation ===
+        if (isAttacking) {
+            // Attack pose - arms extended forward
+            float rightArmExtend = 0;
+            if (attackProgress >= 0.3f && attackProgress <= 0.5f) {
+                // Strike phase - extend arm forward
+                float strikeProgress = (attackProgress - 0.3f) / 0.2f;
+                rightArmExtend = 15 * scale * strikeProgress;
+            } else if (attackProgress > 0.5f) {
+                // Recovery - return arm
+                float recoveryProgress = (attackProgress - 0.5f) / 0.5f;
+                rightArmExtend = 15 * scale * (1 - recoveryProgress);
+            }
+
+            // Left arm (slightly back for balance)
+            Path leftArm = new Path();
+            leftArm.moveTo(cx - 12 * scale, cy - 5 * scale + bobOffset);
+            leftArm.quadTo(cx - 16 * scale, cy + 2 * scale + bobOffset,
+                    cx - 14 * scale, cy + 10 * scale + bobOffset);
+            leftArm.lineTo(cx - 11 * scale, cy + 9 * scale + bobOffset);
+            leftArm.quadTo(cx - 12 * scale, cy + 2 * scale + bobOffset,
+                    cx - 10 * scale, cy - 3 * scale + bobOffset);
+            leftArm.close();
+
+            paint.setColor(Color.rgb(255, 255, 255));
+            canvas.drawPath(leftArm, paint);
+
+            // Right arm (attacking arm)
+            Path rightArm = new Path();
+            rightArm.moveTo(cx + 12 * scale, cy - 5 * scale + bobOffset);
+            rightArm.quadTo(cx + 18 * scale + rightArmExtend, cy + 2 * scale + bobOffset,
+                    cx + 16 * scale + rightArmExtend, cy + 10 * scale + bobOffset);
+            rightArm.lineTo(cx + 13 * scale + rightArmExtend, cy + 9 * scale + bobOffset);
+            rightArm.quadTo(cx + 14 * scale, cy + 2 * scale + bobOffset,
+                    cx + 10 * scale, cy - 3 * scale + bobOffset);
+            rightArm.close();
+
+            paint.setColor(Color.rgb(255, 255, 255));
+            canvas.drawPath(rightArm, paint);
+
+            // Draw sword in hand during attack
+            if (attackProgress >= 0.2f && attackProgress <= 0.6f) {
+                drawSwordInHand(canvas, paint, cx + 14 * scale + rightArmExtend, cy + 8 * scale + bobOffset, scale, attackProgress);
+            }
+        } else if (isMoving) {
             // Walking - arms swing
             Path leftArm = new Path();
             leftArm.moveTo(cx - 12 * scale, cy - 5 * scale + bobOffset);
@@ -266,7 +342,7 @@ public class PlayerRenderer {
 
         int walkCycle = player.getWalkCycle();
         // Eyes with blinking effect (idle only)
-        if (!isMoving && (walkCycle % 120 < 115)) {
+        if (!isMoving && !isAttacking && (walkCycle % 120 < 115)) {
             // Eyes open
             paint.setColor(Color.rgb(33, 33, 33));
             canvas.drawCircle(cx - 3.5f * scale, cy - 15 * scale + bobOffset * 0.5f, 1.5f * scale, paint);
@@ -276,7 +352,7 @@ public class PlayerRenderer {
             paint.setColor(Color.WHITE);
             canvas.drawCircle(cx - 3 * scale, cy - 15.5f * scale + bobOffset * 0.5f, 0.7f * scale, paint);
             canvas.drawCircle(cx + 4 * scale, cy - 15.5f * scale + bobOffset * 0.5f, 0.7f * scale, paint);
-        } else if (!isMoving) {
+        } else if (!isMoving && !isAttacking) {
             // Blinking - eyes closed
             paint.setStrokeWidth(1.5f * scale);
             paint.setColor(Color.rgb(33, 33, 33));
@@ -286,7 +362,7 @@ public class PlayerRenderer {
                     cx + 5 * scale, cy - 15 * scale + bobOffset * 0.5f, paint);
             paint.setStrokeWidth(1);
         } else {
-            // Walking - eyes always open
+            // Walking or attacking - eyes always open
             paint.setColor(Color.rgb(33, 33, 33));
             canvas.drawCircle(cx - 3.5f * scale, cy - 15 * scale + bobOffset * 0.5f, 1.5f * scale, paint);
             canvas.drawCircle(cx + 3.5f * scale, cy - 15 * scale + bobOffset * 0.5f, 1.5f * scale, paint);
@@ -318,14 +394,17 @@ public class PlayerRenderer {
         canvas.drawCircle(cx + 8.5f * scale, cy - 18.5f * scale + bobOffset * 0.3f, 1.5f * scale, paint);
     }
 
+// ... existing code ...
+
     private void drawFacingUp(Canvas canvas, Paint paint, float cx, float cy, float scale,
-                              float bobOffset, float legOffset, float armSwing, float breathScale, boolean isMoving) {
+                              float bobOffset, float legOffset, float armSwing, float breathScale,
+                              boolean isMoving, boolean isAttacking, float attackProgress) {
         // Reset paint to ensure clean state
         paint.reset();
         paint.setAntiAlias(true);
 
         // Similar structure - implement idle animations for back view
-        if (isMoving) {
+        if (isMoving && !isAttacking) {
             paint.setColor(Color.rgb(240, 240, 240));
             canvas.drawRect(cx - 7 * scale, cy + 15 * scale + bobOffset,
                     cx - 1 * scale, cy + 22 * scale + bobOffset + legOffset, paint);
@@ -378,8 +457,46 @@ public class PlayerRenderer {
         paint.setColor(Color.rgb(25, 118, 210));
         canvas.drawCircle(cx, cy + 3.5f * scale + bobOffset, 2.5f * scale, paint);
 
-        // Arms
-        if (isMoving) {
+        // Arms with attack animation
+        if (isAttacking) {
+            float rightArmExtend = 0;
+            if (attackProgress >= 0.3f && attackProgress <= 0.5f) {
+                float strikeProgress = (attackProgress - 0.3f) / 0.2f;
+                rightArmExtend = 15 * scale * strikeProgress;
+            } else if (attackProgress > 0.5f) {
+                float recoveryProgress = (attackProgress - 0.5f) / 0.5f;
+                rightArmExtend = 15 * scale * (1 - recoveryProgress);
+            }
+
+            Path leftArm = new Path();
+            leftArm.moveTo(cx - 12 * scale, cy - 5 * scale + bobOffset);
+            leftArm.quadTo(cx - 16 * scale, cy + 2 * scale + bobOffset,
+                    cx - 14 * scale, cy + 10 * scale + bobOffset);
+            leftArm.lineTo(cx - 11 * scale, cy + 9 * scale + bobOffset);
+            leftArm.quadTo(cx - 12 * scale, cy + 2 * scale + bobOffset,
+                    cx - 10 * scale, cy - 3 * scale + bobOffset);
+            leftArm.close();
+
+            paint.setColor(Color.rgb(255, 255, 255));
+            canvas.drawPath(leftArm, paint);
+
+            Path rightArm = new Path();
+            rightArm.moveTo(cx + 12 * scale, cy - 5 * scale + bobOffset);
+            rightArm.quadTo(cx + 18 * scale + rightArmExtend, cy + 2 * scale + bobOffset,
+                    cx + 16 * scale + rightArmExtend, cy + 10 * scale + bobOffset);
+            rightArm.lineTo(cx + 13 * scale + rightArmExtend, cy + 9 * scale + bobOffset);
+            rightArm.quadTo(cx + 14 * scale, cy + 2 * scale + bobOffset,
+                    cx + 10 * scale, cy - 3 * scale + bobOffset);
+            rightArm.close();
+
+            paint.setColor(Color.rgb(255, 255, 255));
+            canvas.drawPath(rightArm, paint);
+
+            // Draw sword in hand during attack
+            if (attackProgress >= 0.2f && attackProgress <= 0.6f) {
+                drawSwordInHand(canvas, paint, cx + 14 * scale + rightArmExtend, cy + 8 * scale + bobOffset, scale, attackProgress);
+            }
+        } else if (isMoving) {
             Path leftArm = new Path();
             leftArm.moveTo(cx - 12 * scale, cy - 5 * scale + bobOffset);
             leftArm.quadTo(cx - 18 * scale + armSwing, cy + 5 * scale + bobOffset,
@@ -429,520 +546,399 @@ public class PlayerRenderer {
             canvas.drawPath(rightArm, paint);
         }
 
-        // Hair (back view) with gentle movement
-        Path hair = new Path();
-        hair.moveTo(cx - 10 * scale * breathScale, cy - 15 * scale + bobOffset * 0.5f);
-        hair.quadTo(cx - 12 * scale, cy - 22 * scale + bobOffset * 0.3f, cx - 8 * scale, cy - 25 * scale + bobOffset * 0.3f);
-        hair.quadTo(cx, cy - 28 * scale + bobOffset * 0.3f, cx + 8 * scale, cy - 25 * scale + bobOffset * 0.3f);
-        hair.quadTo(cx + 12 * scale, cy - 22 * scale + bobOffset * 0.3f, cx + 10 * scale * breathScale, cy - 15 * scale + bobOffset * 0.5f);
-        hair.quadTo(cx + 11 * scale, cy - 8 * scale + bobOffset * 0.5f, cx + 9 * scale, cy - 5 * scale + bobOffset * 0.5f);
-        hair.quadTo(cx, cy - 3 * scale + bobOffset * 0.5f, cx - 9 * scale, cy - 5 * scale + bobOffset * 0.5f);
-        hair.quadTo(cx - 11 * scale, cy - 8 * scale + bobOffset * 0.5f, cx - 10 * scale * breathScale, cy - 15 * scale + bobOffset * 0.5f);
-        hair.close();
-
+        // Head (back view)
         paint.setColor(Color.rgb(33, 33, 33));
+        canvas.drawCircle(cx, cy - 15 * scale + bobOffset * 0.5f, 9 * scale * breathScale, paint);
+
+        // Long flowing hair (back view)
+        Path hair = new Path();
+        hair.moveTo(cx - 9 * scale, cy - 18 * scale + bobOffset * 0.3f);
+        hair.quadTo(cx, cy - 26 * scale + bobOffset * 0.3f, cx + 9 * scale, cy - 18 * scale + bobOffset * 0.3f);
+        hair.lineTo(cx + 11 * scale, cy - 8 * scale + bobOffset * 0.3f);
+        hair.quadTo(cx, cy - 10 * scale + bobOffset * 0.3f, cx - 11 * scale, cy - 8 * scale + bobOffset * 0.3f);
+        hair.close();
         canvas.drawPath(hair, paint);
 
-        // Hair flowing down
-        Path hairBack = new Path();
-        hairBack.moveTo(cx - 8 * scale, cy - 10 * scale + bobOffset * 0.5f);
-        hairBack.quadTo(cx - 9 * scale, cy, cx - 7 * scale, cy + 8 * scale + bobOffset * 0.5f);
-        hairBack.lineTo(cx + 7 * scale, cy + 8 * scale + bobOffset * 0.5f);
-        hairBack.quadTo(cx + 9 * scale, cy, cx + 8 * scale, cy - 10 * scale + bobOffset * 0.5f);
-        hairBack.close();
+        // Hair strands flowing down
+        paint.setStrokeWidth(3 * scale);
+        canvas.drawLine(cx - 5 * scale, cy - 10 * scale + bobOffset * 0.3f,
+                cx - 6 * scale, cy + 5 * scale + bobOffset * 0.3f, paint);
+        canvas.drawLine(cx, cy - 10 * scale + bobOffset * 0.3f,
+                cx, cy + 7 * scale + bobOffset * 0.3f, paint);
+        canvas.drawLine(cx + 5 * scale, cy - 10 * scale + bobOffset * 0.3f,
+                cx + 6 * scale, cy + 5 * scale + bobOffset * 0.3f, paint);
+        paint.setStrokeWidth(1);
 
+        // Sword on back (prominently displayed)
+        if (!isAttacking || attackProgress < 0.2f || attackProgress > 0.6f) {
+            drawSwordOnBack(canvas, paint, cx, cy, scale, bobOffset);
+        }
+    }
+
+// ... existing code ...
+
+    private void drawFacingLeft(Canvas canvas, Paint paint, float cx, float cy, float scale,
+                                float bobOffset, float legOffset, float armSwing, float breathScale,
+                                boolean isMoving, boolean isAttacking, float attackProgress) {
+        canvas.save();
+        canvas.scale(-1, 1, cx, cy);
+        drawFacingRight(canvas, paint, cx, cy, scale, bobOffset, legOffset, armSwing, breathScale, isMoving, isAttacking, attackProgress);
+        canvas.restore();
+    }
+
+    private void drawFacingRight(Canvas canvas, Paint paint, float cx, float cy, float scale,
+                                 float bobOffset, float legOffset, float armSwing, float breathScale,
+                                 boolean isMoving, boolean isAttacking, float attackProgress) {
+        // Reset paint to ensure clean state
+        paint.reset();
+        paint.setAntiAlias(true);
+
+        // Legs
+        if (isMoving && !isAttacking) {
+            paint.setColor(Color.rgb(240, 240, 240));
+            canvas.drawRect(cx - 7 * scale, cy + 15 * scale + bobOffset,
+                    cx - 1 * scale, cy + 22 * scale + bobOffset + legOffset, paint);
+            canvas.drawRect(cx + 1 * scale, cy + 15 * scale + bobOffset,
+                    cx + 7 * scale, cy + 22 * scale + bobOffset - legOffset, paint);
+
+            paint.setColor(Color.rgb(62, 39, 35));
+            canvas.drawRoundRect(cx - 8 * scale, cy + 20 * scale + bobOffset + legOffset,
+                    cx, cy + 23 * scale + bobOffset + legOffset,
+                    2 * scale, 2 * scale, paint);
+            canvas.drawRoundRect(cx, cy + 20 * scale + bobOffset - legOffset,
+                    cx + 8 * scale, cy + 23 * scale + bobOffset - legOffset,
+                    2 * scale, 2 * scale, paint);
+        } else {
+            paint.setColor(Color.rgb(240, 240, 240));
+            canvas.drawRect(cx - 7 * scale, cy + 15 * scale + bobOffset,
+                    cx - 1 * scale, cy + 22 * scale + bobOffset, paint);
+            canvas.drawRect(cx + 1 * scale, cy + 15 * scale + bobOffset,
+                    cx + 7 * scale, cy + 22 * scale + bobOffset, paint);
+
+            paint.setColor(Color.rgb(62, 39, 35));
+            canvas.drawRoundRect(cx - 8 * scale, cy + 20 * scale + bobOffset,
+                    cx, cy + 23 * scale + bobOffset,
+                    2 * scale, 2 * scale, paint);
+            canvas.drawRoundRect(cx, cy + 20 * scale + bobOffset,
+                    cx + 8 * scale, cy + 23 * scale + bobOffset,
+                    2 * scale, 2 * scale, paint);
+        }
+
+        // Body
+        Path robeBody = new Path();
+        robeBody.moveTo(cx - 10 * scale * breathScale, cy - 8 * scale + bobOffset);
+        robeBody.lineTo(cx + 10 * scale * breathScale, cy - 8 * scale + bobOffset);
+        robeBody.lineTo(cx + 12 * scale * breathScale, cy + 16 * scale + bobOffset);
+        robeBody.quadTo(cx, cy + 18 * scale + bobOffset, cx - 12 * scale * breathScale, cy + 16 * scale + bobOffset);
+        robeBody.close();
+
+        paint.setColor(Color.rgb(255, 255, 255));
+        canvas.drawPath(robeBody, paint);
+
+        // Side shadow
+        paint.setColor(Color.argb(20, 0, 0, 100));
+        canvas.drawLine(cx, cy - 8 * scale + bobOffset, cx, cy + 16 * scale + bobOffset, paint);
+
+        // Blue sash
+        paint.setColor(Color.rgb(30, 136, 229));
+        canvas.drawRect(cx - 11 * scale * breathScale, cy + 2 * scale + bobOffset,
+                cx + 11 * scale * breathScale, cy + 5 * scale + bobOffset, paint);
+
+        paint.setColor(Color.rgb(25, 118, 210));
+        canvas.drawCircle(cx, cy + 3.5f * scale + bobOffset, 2.5f * scale, paint);
+
+        // Arms with attack animation
+        if (isAttacking) {
+            float rightArmExtend = 0;
+            if (attackProgress >= 0.3f && attackProgress <= 0.5f) {
+                float strikeProgress = (attackProgress - 0.3f) / 0.2f;
+                rightArmExtend = 15 * scale * strikeProgress;
+            } else if (attackProgress > 0.5f) {
+                float recoveryProgress = (attackProgress - 0.5f) / 0.5f;
+                rightArmExtend = 15 * scale * (1 - recoveryProgress);
+            }
+
+            Path leftArm = new Path();
+            leftArm.moveTo(cx - 8 * scale, cy - 5 * scale + bobOffset);
+            leftArm.quadTo(cx - 12 * scale, cy + 2 * scale + bobOffset,
+                    cx - 10 * scale, cy + 10 * scale + bobOffset);
+            leftArm.lineTo(cx - 7 * scale, cy + 9 * scale + bobOffset);
+            leftArm.quadTo(cx - 8 * scale, cy + 2 * scale + bobOffset,
+                    cx - 6 * scale, cy - 3 * scale + bobOffset);
+            leftArm.close();
+
+            paint.setColor(Color.rgb(255, 255, 255));
+            canvas.drawPath(leftArm, paint);
+
+            Path rightArm = new Path();
+            rightArm.moveTo(cx + 10 * scale, cy - 5 * scale + bobOffset);
+            rightArm.quadTo(cx + 16 * scale + rightArmExtend, cy + 2 * scale + bobOffset,
+                    cx + 14 * scale + rightArmExtend, cy + 10 * scale + bobOffset);
+            rightArm.lineTo(cx + 11 * scale + rightArmExtend, cy + 9 * scale + bobOffset);
+            rightArm.quadTo(cx + 12 * scale, cy + 2 * scale + bobOffset,
+                    cx + 8 * scale, cy - 3 * scale + bobOffset);
+            rightArm.close();
+
+            paint.setColor(Color.rgb(255, 255, 255));
+            canvas.drawPath(rightArm, paint);
+
+            // Draw sword in hand during attack
+            if (attackProgress >= 0.2f && attackProgress <= 0.6f) {
+                drawSwordInHand(canvas, paint, cx + 12 * scale + rightArmExtend, cy + 8 * scale + bobOffset, scale, attackProgress);
+            }
+        } else if (isMoving) {
+            Path leftArm = new Path();
+            leftArm.moveTo(cx - 8 * scale, cy - 5 * scale + bobOffset);
+            leftArm.quadTo(cx - 12 * scale + armSwing * 0.5f, cy + 2 * scale + bobOffset,
+                    cx - 10 * scale + armSwing * 0.3f, cy + 10 * scale + bobOffset);
+            leftArm.lineTo(cx - 7 * scale + armSwing * 0.3f, cy + 9 * scale + bobOffset);
+            leftArm.quadTo(cx - 8 * scale, cy + 2 * scale + bobOffset,
+                    cx - 6 * scale, cy - 3 * scale + bobOffset);
+            leftArm.close();
+
+            paint.setColor(Color.rgb(255, 255, 255));
+            canvas.drawPath(leftArm, paint);
+
+            Path rightArm = new Path();
+            rightArm.moveTo(cx + 10 * scale, cy - 5 * scale + bobOffset);
+            rightArm.quadTo(cx + 14 * scale - armSwing * 0.5f, cy + 2 * scale + bobOffset,
+                    cx + 12 * scale - armSwing * 0.3f, cy + 10 * scale + bobOffset);
+            rightArm.lineTo(cx + 9 * scale - armSwing * 0.3f, cy + 9 * scale + bobOffset);
+            rightArm.quadTo(cx + 10 * scale, cy + 2 * scale + bobOffset,
+                    cx + 8 * scale, cy - 3 * scale + bobOffset);
+            rightArm.close();
+
+            paint.setColor(Color.rgb(255, 255, 255));
+            canvas.drawPath(rightArm, paint);
+        } else {
+            Path leftArm = new Path();
+            leftArm.moveTo(cx - 8 * scale, cy - 5 * scale + bobOffset);
+            leftArm.quadTo(cx - 12 * scale, cy + 2 * scale + bobOffset + armSwing * 0.3f,
+                    cx - 10 * scale, cy + 10 * scale + bobOffset);
+            leftArm.lineTo(cx - 7 * scale, cy + 9 * scale + bobOffset);
+            leftArm.quadTo(cx - 8 * scale, cy + 2 * scale + bobOffset,
+                    cx - 6 * scale, cy - 3 * scale + bobOffset);
+            leftArm.close();
+
+            paint.setColor(Color.rgb(255, 255, 255));
+            canvas.drawPath(leftArm, paint);
+
+            Path rightArm = new Path();
+            rightArm.moveTo(cx + 10 * scale, cy - 5 * scale + bobOffset);
+            rightArm.quadTo(cx + 14 * scale, cy + 2 * scale + bobOffset - armSwing * 0.3f,
+                    cx + 12 * scale, cy + 10 * scale + bobOffset);
+            rightArm.lineTo(cx + 9 * scale, cy + 9 * scale + bobOffset);
+            rightArm.quadTo(cx + 10 * scale, cy + 2 * scale + bobOffset,
+                    cx + 8 * scale, cy - 3 * scale + bobOffset);
+            rightArm.close();
+
+            paint.setColor(Color.rgb(255, 255, 255));
+            canvas.drawPath(rightArm, paint);
+        }
+
+        // Head (side profile)
+        paint.setColor(Color.rgb(255, 224, 178));
+        canvas.drawCircle(cx + 2 * scale, cy - 15 * scale + bobOffset * 0.5f, 9 * scale * breathScale, paint);
+
+        // Hair (side view)
+        Path hair = new Path();
+        hair.moveTo(cx - 5 * scale, cy - 18 * scale + bobOffset * 0.3f);
+        hair.quadTo(cx + 2 * scale, cy - 26 * scale + bobOffset * 0.3f, cx + 10 * scale, cy - 18 * scale + bobOffset * 0.3f);
+        hair.lineTo(cx + 11 * scale, cy - 10 * scale + bobOffset * 0.3f);
+        hair.quadTo(cx + 2 * scale, cy - 12 * scale + bobOffset * 0.3f, cx - 6 * scale, cy - 10 * scale + bobOffset * 0.3f);
+        hair.close();
+        canvas.drawPath(hair, paint);
+
+        // Hair flowing back
+        paint.setStrokeWidth(2.5f * scale);
         paint.setColor(Color.rgb(33, 33, 33));
-        canvas.drawPath(hairBack, paint);
+        canvas.drawLine(cx - 4 * scale, cy - 12 * scale + bobOffset * 0.3f,
+                cx - 10 * scale, cy - 5 * scale + bobOffset * 0.3f, paint);
+        canvas.drawLine(cx - 3 * scale, cy - 11 * scale + bobOffset * 0.3f,
+                cx - 9 * scale, cy - 3 * scale + bobOffset * 0.3f, paint);
+        paint.setStrokeWidth(1);
 
-        // Hair highlights
-        paint.setColor(Color.argb(60, 255, 255, 255));
-        canvas.drawCircle(cx - 4 * scale, cy - 20 * scale + bobOffset * 0.3f, 2 * scale, paint);
-        canvas.drawCircle(cx + 4 * scale, cy - 20 * scale + bobOffset * 0.3f, 2 * scale, paint);
+        // Face details
+        paint.setColor(Color.rgb(33, 33, 33));
+        canvas.drawCircle(cx + 5 * scale, cy - 15 * scale + bobOffset * 0.5f, 1.5f * scale, paint);
 
-        // Sword on back
+        paint.setStrokeWidth(1.5f * scale);
+        canvas.drawLine(cx + 3 * scale, cy - 17.5f * scale + bobOffset * 0.5f,
+                cx + 7 * scale, cy - 17 * scale + bobOffset * 0.5f, paint);
+        paint.setStrokeWidth(1);
+
+        // Sword on back (side view)
+        if (!isAttacking || attackProgress < 0.2f || attackProgress > 0.6f) {
+            //drawSwordOnSide(canvas, paint, cx, cy, scale, bobOffset);
+        }
+    }
+
+    /**
+     * Draw sword in hand during attack animation
+     */
+    private void drawSwordInHand(Canvas canvas, Paint paint, float handX, float handY,
+                                 float scale, float attackProgress) {
+        // Calculate sword angle based on attack progress
+        float angle;
+        if (attackProgress < 0.35f) {
+            // Wind-up: sword behind
+            angle = -60;
+        } else if (attackProgress < 0.45f) {
+            // Strike: sword swings through
+            float strikeProgress = (attackProgress - 0.35f) / 0.1f;
+            angle = -60 + 150 * strikeProgress; // -60 to +90 degrees
+        } else {
+            // Recovery: sword returns
+            float recoveryProgress = (attackProgress - 0.45f) / 0.15f;
+            angle = 90 - 60 * recoveryProgress;
+        }
+
+        canvas.save();
+        canvas.rotate(angle, handX, handY);
+
+        // Sword blade
+        paint.setColor(Color.rgb(220, 220, 240));
+        canvas.drawRect(handX - 2 * scale, handY - 25 * scale,
+                handX + 2 * scale, handY + 5 * scale, paint);
+
+        // Sword edge highlight
+        paint.setColor(Color.WHITE);
+        canvas.drawRect(handX - 1 * scale, handY - 25 * scale,
+                handX + 0 * scale, handY + 5 * scale, paint);
+
+        // Sword hilt
+        paint.setColor(Color.rgb(139, 69, 19));
+        canvas.drawRect(handX - 4 * scale, handY + 3 * scale,
+                handX + 4 * scale, handY + 6 * scale, paint);
+
+        canvas.restore();
+    }
+
+    /**
+     * Draw sword on back (for up/back view)
+     */
+    private void drawSwordOnBack(Canvas canvas, Paint paint, float cx, float cy, float scale, float bobOffset) {
         Path scabbard = new Path();
-        scabbard.moveTo(cx + 2 * scale, cy - 20 * scale + bobOffset * 0.3f);
-        scabbard.lineTo(cx + 5 * scale, cy - 18 * scale + bobOffset * 0.3f);
-        scabbard.lineTo(cx, cy + 10 * scale + bobOffset * 0.3f);
-        scabbard.lineTo(cx - 3 * scale, cy + 8 * scale + bobOffset * 0.3f);
+        scabbard.moveTo(cx + 2 * scale, cy - 18 * scale + bobOffset * 0.3f);
+        scabbard.lineTo(cx + 5 * scale, cy - 16 * scale + bobOffset * 0.3f);
+        scabbard.lineTo(cx, cy + 8 * scale + bobOffset * 0.3f);
+        scabbard.lineTo(cx - 3 * scale, cy + 6 * scale + bobOffset * 0.3f);
         scabbard.close();
 
         paint.setColor(Color.rgb(139, 69, 19));
         canvas.drawPath(scabbard, paint);
 
+        // Scabbard decoration
         paint.setColor(Color.rgb(255, 215, 0));
-        canvas.drawRect(cx - 0.5f * scale, cy - 12 * scale + bobOffset * 0.3f,
-                cx + 1.5f * scale, cy - 10 * scale + bobOffset * 0.3f, paint);
-        canvas.drawRect(cx - 1 * scale, cy - 2 * scale + bobOffset * 0.3f,
-                cx + 1 * scale, cy + bobOffset * 0.3f, paint);
+        canvas.drawRect(cx + 0.5f * scale, cy - 10 * scale + bobOffset * 0.3f,
+                cx + 2.5f * scale, cy - 8 * scale + bobOffset * 0.3f, paint);
 
+        // Sword hilt
         paint.setColor(Color.rgb(255, 215, 0));
-        canvas.drawRect(cx + 1.5f * scale, cy - 21 * scale + bobOffset * 0.3f,
-                cx + 6 * scale, cy - 19.5f * scale + bobOffset * 0.3f, paint);
-
-        paint.setColor(Color.rgb(76, 175, 80));
-        canvas.drawCircle(cx + 3.5f * scale, cy - 20.5f * scale + bobOffset * 0.3f, 2 * scale, paint);
+        canvas.drawRect(cx + 1.5f * scale, cy - 19 * scale + bobOffset * 0.3f,
+                cx + 6 * scale, cy - 17.5f * scale + bobOffset * 0.3f, paint);
     }
 
-    private void drawFacingLeft(Canvas canvas, Paint paint, float cx, float cy, float scale,
-                                float bobOffset, float legOffset, float armSwing, float breathScale, boolean isMoving) {
-        // Reset paint to ensure clean state
-        paint.reset();
-        paint.setAntiAlias(true);
+    /**
+     * Draw sword on side (for left/right view)
+     */
+    private void drawSwordOnSide(Canvas canvas, Paint paint, float cx, float cy, float scale, float bobOffset) {
+        Path scabbard = new Path();
+        scabbard.moveTo(cx + 7 * scale, cy - 18 * scale + bobOffset * 0.3f);
+        scabbard.lineTo(cx + 10 * scale, cy - 16 * scale + bobOffset * 0.3f);
+        scabbard.lineTo(cx + 5 * scale, cy + 8 * scale + bobOffset * 0.3f);
+        scabbard.lineTo(cx + 2 * scale, cy + 6 * scale + bobOffset * 0.3f);
+        scabbard.close();
 
-        // Implement similar idle animations for side view
-        if (isMoving) {
-            paint.setColor(Color.rgb(240, 240, 240));
-            canvas.drawRect(cx - 6 * scale, cy + 15 * scale + bobOffset,
-                    cx, cy + 22 * scale + bobOffset + legOffset, paint);
-            canvas.drawRect(cx, cy + 15 * scale + bobOffset,
-                    cx + 6 * scale, cy + 22 * scale + bobOffset - legOffset, paint);
+        paint.setColor(Color.rgb(139, 69, 19));
+        canvas.drawPath(scabbard, paint);
 
-            paint.setColor(Color.rgb(62, 39, 35));
-            canvas.drawRoundRect(cx - 7 * scale, cy + 20 * scale + bobOffset + legOffset,
-                    cx + 1 * scale, cy + 23 * scale + bobOffset + legOffset,
-                    2 * scale, 2 * scale, paint);
-            canvas.drawRoundRect(cx - 1 * scale, cy + 20 * scale + bobOffset - legOffset,
-                    cx + 7 * scale, cy + 23 * scale + bobOffset - legOffset,
-                    2 * scale, 2 * scale, paint);
-        } else {
-            paint.setColor(Color.rgb(240, 240, 240));
-            canvas.drawRect(cx - 6 * scale, cy + 15 * scale + bobOffset,
-                    cx, cy + 22 * scale + bobOffset, paint);
-            canvas.drawRect(cx, cy + 15 * scale + bobOffset,
-                    cx + 6 * scale, cy + 22 * scale + bobOffset, paint);
-
-            paint.setColor(Color.rgb(62, 39, 35));
-            canvas.drawRoundRect(cx - 7 * scale, cy + 20 * scale + bobOffset,
-                    cx + 1 * scale, cy + 23 * scale + bobOffset,
-                    2 * scale, 2 * scale, paint);
-            canvas.drawRoundRect(cx - 1 * scale, cy + 20 * scale + bobOffset,
-                    cx + 7 * scale, cy + 23 * scale + bobOffset,
-                    2 * scale, 2 * scale, paint);
-        }
-
-        // Body with breathing
-        Path robeBody = new Path();
-        robeBody.moveTo(cx - 8 * scale * breathScale, cy - 8 * scale + bobOffset);
-        robeBody.lineTo(cx + 8 * scale * breathScale, cy - 8 * scale + bobOffset);
-        robeBody.lineTo(cx + 10 * scale * breathScale, cy + 16 * scale + bobOffset);
-        robeBody.quadTo(cx, cy + 18 * scale + bobOffset, cx - 10 * scale * breathScale, cy + 16 * scale + bobOffset);
-        robeBody.close();
-
-        paint.setColor(Color.rgb(255, 255, 255));
-        canvas.drawPath(robeBody, paint);
-
-        Path robeShadow = new Path();
-        robeShadow.moveTo(cx - 8 * scale * breathScale, cy - 8 * scale + bobOffset);
-        robeShadow.lineTo(cx, cy - 8 * scale + bobOffset);
-        robeShadow.lineTo(cx, cy + 17 * scale + bobOffset);
-        robeShadow.lineTo(cx - 10 * scale * breathScale, cy + 16 * scale + bobOffset);
-        robeShadow.close();
-
-        paint.setColor(Color.argb(30, 0, 0, 100));
-        canvas.drawPath(robeShadow, paint);
-
-        paint.setColor(Color.rgb(30, 136, 229));
-        canvas.drawRect(cx - 9 * scale * breathScale, cy + 2 * scale + bobOffset,
-                cx + 9 * scale * breathScale, cy + 5 * scale + bobOffset, paint);
-
-        paint.setColor(Color.rgb(25, 118, 210));
-        canvas.drawCircle(cx, cy + 3.5f * scale + bobOffset, 2 * scale, paint);
-
-        // Arms
-        if (isMoving) {
-            Path frontArm = new Path();
-            frontArm.moveTo(cx + 2 * scale, cy - 5 * scale + bobOffset);
-            frontArm.quadTo(cx + 8 * scale - armSwing, cy + 5 * scale + bobOffset,
-                    cx + 6 * scale - armSwing * 0.5f, cy + 12 * scale + bobOffset);
-            frontArm.lineTo(cx + 3 * scale - armSwing * 0.5f, cy + 11 * scale + bobOffset);
-            frontArm.quadTo(cx + 4 * scale, cy + 5 * scale + bobOffset,
-                    cx + 2 * scale, cy - 3 * scale + bobOffset);
-            frontArm.close();
-
-            paint.setColor(Color.rgb(255, 255, 255));
-            canvas.drawPath(frontArm, paint);
-
-            Path backArm = new Path();
-            backArm.moveTo(cx - 6 * scale, cy - 5 * scale + bobOffset);
-            backArm.quadTo(cx - 10 * scale + armSwing * 0.3f, cy + 5 * scale + bobOffset,
-                    cx - 8 * scale + armSwing * 0.2f, cy + 10 * scale + bobOffset);
-            backArm.lineTo(cx - 5 * scale + armSwing * 0.2f, cy + 9 * scale + bobOffset);
-            backArm.quadTo(cx - 6 * scale, cy + 5 * scale + bobOffset,
-                    cx - 6 * scale, cy - 3 * scale + bobOffset);
-            backArm.close();
-
-            paint.setColor(Color.rgb(245, 245, 245));
-            canvas.drawPath(backArm, paint);
-        } else {
-            Path frontArm = new Path();
-            frontArm.moveTo(cx + 2 * scale, cy - 5 * scale + bobOffset);
-            frontArm.quadTo(cx + 7 * scale, cy + 3 * scale + bobOffset + armSwing * 0.2f,
-                    cx + 5 * scale, cy + 11 * scale + bobOffset);
-            frontArm.lineTo(cx + 2.5f * scale, cy + 10 * scale + bobOffset);
-            frontArm.quadTo(cx + 3.5f * scale, cy + 3 * scale + bobOffset,
-                    cx + 2 * scale, cy - 3 * scale + bobOffset);
-            frontArm.close();
-
-            paint.setColor(Color.rgb(255, 255, 255));
-            canvas.drawPath(frontArm, paint);
-
-            Path backArm = new Path();
-            backArm.moveTo(cx - 6 * scale, cy - 5 * scale + bobOffset);
-            backArm.quadTo(cx - 9 * scale, cy + 3 * scale + bobOffset - armSwing * 0.2f,
-                    cx - 7 * scale, cy + 10 * scale + bobOffset);
-            backArm.lineTo(cx - 4.5f * scale, cy + 9 * scale + bobOffset);
-            backArm.quadTo(cx - 5.5f * scale, cy + 3 * scale + bobOffset,
-                    cx - 6 * scale, cy - 3 * scale + bobOffset);
-            backArm.close();
-
-            paint.setColor(Color.rgb(245, 245, 245));
-            canvas.drawPath(backArm, paint);
-        }
-
-        // Head profile
-        paint.setColor(Color.rgb(255, 224, 178));
-        Path faceProfile = new Path();
-        faceProfile.moveTo(cx - 6 * scale, cy - 18 * scale + bobOffset * 0.5f);
-        faceProfile.quadTo(cx - 8 * scale, cy - 15 * scale + bobOffset * 0.5f, cx - 7 * scale, cy - 12 * scale + bobOffset * 0.5f);
-        faceProfile.quadTo(cx - 6 * scale, cy - 10 * scale + bobOffset * 0.5f, cx - 4 * scale, cy - 10 * scale + bobOffset * 0.5f);
-        faceProfile.lineTo(cx + 2 * scale, cy - 10 * scale + bobOffset * 0.5f);
-        faceProfile.quadTo(cx + 5 * scale, cy - 10 * scale + bobOffset * 0.5f, cx + 6 * scale, cy - 12 * scale + bobOffset * 0.5f);
-        faceProfile.quadTo(cx + 7 * scale, cy - 15 * scale + bobOffset * 0.5f, cx + 6 * scale, cy - 18 * scale + bobOffset * 0.5f);
-        faceProfile.quadTo(cx + 4 * scale, cy - 21 * scale + bobOffset * 0.3f, cx, cy - 21 * scale + bobOffset * 0.3f);
-        faceProfile.quadTo(cx - 4 * scale, cy - 21 * scale + bobOffset * 0.3f, cx - 6 * scale, cy - 18 * scale + bobOffset * 0.5f);
-        faceProfile.close();
-        canvas.drawPath(faceProfile, paint);
-
-        paint.setColor(Color.rgb(240, 210, 160));
-        Path nose = new Path();
-        nose.moveTo(cx + 5 * scale, cy - 14 * scale + bobOffset * 0.5f);
-        nose.lineTo(cx + 7 * scale, cy - 13 * scale + bobOffset * 0.5f);
-        nose.lineTo(cx + 5 * scale, cy - 12 * scale + bobOffset * 0.5f);
-        nose.close();
-        canvas.drawPath(nose, paint);
-
-        // Hair
-        Path hair = new Path();
-        hair.moveTo(cx - 6 * scale, cy - 18 * scale + bobOffset * 0.5f);
-        hair.quadTo(cx - 8 * scale, cy - 23 * scale + bobOffset * 0.3f, cx - 4 * scale, cy - 25 * scale + bobOffset * 0.3f);
-        hair.quadTo(cx, cy - 26 * scale + bobOffset * 0.3f, cx + 4 * scale, cy - 25 * scale + bobOffset * 0.3f);
-        hair.quadTo(cx + 7 * scale, cy - 23 * scale + bobOffset * 0.3f, cx + 6 * scale, cy - 18 * scale + bobOffset * 0.5f);
-        hair.quadTo(cx + 7 * scale, cy - 12 * scale + bobOffset * 0.5f, cx + 8 * scale, cy - 8 * scale + bobOffset * 0.5f);
-        hair.lineTo(cx + 6 * scale, cy - 8 * scale + bobOffset * 0.5f);
-        hair.quadTo(cx + 5 * scale, cy - 12 * scale + bobOffset * 0.5f, cx + 4 * scale, cy - 15 * scale + bobOffset * 0.5f);
-        hair.quadTo(cx, cy - 16 * scale + bobOffset * 0.5f, cx - 4 * scale, cy - 15 * scale + bobOffset * 0.5f);
-        hair.quadTo(cx - 6 * scale, cy - 14 * scale + bobOffset * 0.5f, cx - 6 * scale, cy - 18 * scale + bobOffset * 0.5f);
-        hair.close();
-
-        paint.setColor(Color.rgb(33, 33, 33));
-        canvas.drawPath(hair, paint);
-
-        Path hairFlow = new Path();
-        hairFlow.moveTo(cx - 4 * scale, cy - 20 * scale + bobOffset * 0.3f);
-        hairFlow.quadTo(cx - 8 * scale, cy - 15 * scale + bobOffset * 0.3f, cx - 7 * scale, cy - 8 * scale + bobOffset * 0.5f);
-        hairFlow.lineTo(cx - 5 * scale, cy - 8 * scale + bobOffset * 0.5f);
-        hairFlow.quadTo(cx - 6 * scale, cy - 15 * scale + bobOffset * 0.3f, cx - 4 * scale, cy - 20 * scale + bobOffset * 0.3f);
-        hairFlow.close();
-
-        paint.setColor(Color.rgb(33, 33, 33));
-        canvas.drawPath(hairFlow, paint);
-
-        int walkCycle = player.getWalkCycle();
-        // Eye with blinking
-        if (!isMoving && (walkCycle % 120 < 115)) {
-            paint.setColor(Color.rgb(33, 33, 33));
-            canvas.drawOval(cx + 2 * scale, cy - 15 * scale + bobOffset * 0.5f,
-                    cx + 4 * scale, cy - 13.5f * scale + bobOffset * 0.5f, paint);
-
-            paint.setColor(Color.WHITE);
-            canvas.drawCircle(cx + 3 * scale, cy - 14.5f * scale + bobOffset * 0.5f, 0.6f * scale, paint);
-        } else if (!isMoving) {
-            paint.setStrokeWidth(1.5f * scale);
-            paint.setColor(Color.rgb(33, 33, 33));
-            canvas.drawLine(cx + 2 * scale, cy - 14.5f * scale + bobOffset * 0.5f,
-                    cx + 4 * scale, cy - 14.5f * scale + bobOffset * 0.5f, paint);
-            paint.setStrokeWidth(1);
-        } else {
-            paint.setColor(Color.rgb(33, 33, 33));
-            canvas.drawOval(cx + 2 * scale, cy - 15 * scale + bobOffset * 0.5f,
-                    cx + 4 * scale, cy - 13.5f * scale + bobOffset * 0.5f, paint);
-
-            paint.setColor(Color.WHITE);
-            canvas.drawCircle(cx + 3 * scale, cy - 14.5f * scale + bobOffset * 0.5f, 0.6f * scale, paint);
-        }
-
-        paint.setStrokeWidth(1.5f * scale);
-        paint.setColor(Color.rgb(33, 33, 33));
-        canvas.drawLine(cx + 1 * scale, cy - 16.5f * scale + bobOffset * 0.5f,
-                cx + 4 * scale, cy - 17 * scale + bobOffset * 0.5f, paint);
-        paint.setStrokeWidth(1);
-
-        paint.setStrokeWidth(1.2f * scale);
-        paint.setColor(Color.rgb(200, 100, 100));
-        canvas.drawLine(cx + 3 * scale, cy - 10 * scale + bobOffset * 0.5f,
-                cx + 5 * scale, cy - 10 * scale + bobOffset * 0.5f, paint);
-        paint.setStrokeWidth(1);
-
+        // Scabbard decoration
         paint.setColor(Color.rgb(255, 215, 0));
-        canvas.drawRect(cx - 5 * scale, cy - 10 * scale + bobOffset * 0.3f,
-                cx - 3 * scale, cy - 8 * scale + bobOffset * 0.3f, paint);
+        canvas.drawRect(cx + 5.5f * scale, cy - 10 * scale + bobOffset * 0.3f,
+                cx + 7.5f * scale, cy - 8 * scale + bobOffset * 0.3f, paint);
 
+        // Sword hilt
         paint.setColor(Color.rgb(255, 215, 0));
-        canvas.drawRect(cx - 3 * scale, cy - 23 * scale + bobOffset * 0.3f,
-                cx + 2 * scale, cy - 21.5f * scale + bobOffset * 0.3f, paint);
-
-        paint.setColor(Color.rgb(76, 175, 80));
-        canvas.drawCircle(cx - 0.5f * scale, cy - 22.5f * scale + bobOffset * 0.3f, 1.8f * scale, paint);
+        canvas.drawRect(cx + 6.5f * scale, cy - 19 * scale + bobOffset * 0.3f,
+                cx + 11 * scale, cy - 17.5f * scale + bobOffset * 0.3f, paint);
     }
 
-    private void drawFacingRight(Canvas canvas, Paint paint, float cx, float cy, float scale,
-                                 float bobOffset, float legOffset, float armSwing, float breathScale, boolean isMoving) {
-        // Reset paint to ensure clean state
-        paint.reset();
-        paint.setAntiAlias(true);
+    /**
+     * Draw attack effect (sword slash)
+     */
+    private void drawAttackEffect(Canvas canvas, Paint paint, float cx, float cy, float scale,
+                                  int facingDirection, float progress) {
+        // Only show effect during strike phase (30%-50%)
+        if (progress < 0.3f || progress > 0.6f) return;
 
-        // === LEGS ===
-        if (isMoving) {
-            paint.setColor(Color.rgb(240, 240, 240));
-            canvas.drawRect(cx - 6 * scale, cy + 15 * scale + bobOffset,
-                    cx, cy + 22 * scale + bobOffset + legOffset, paint);
-            canvas.drawRect(cx, cy + 15 * scale + bobOffset,
-                    cx + 6 * scale, cy + 22 * scale + bobOffset - legOffset, paint);
-
-            paint.setColor(Color.rgb(62, 39, 35));
-            canvas.drawRoundRect(cx - 7 * scale, cy + 20 * scale + bobOffset + legOffset,
-                    cx + 1 * scale, cy + 23 * scale + bobOffset + legOffset,
-                    2 * scale, 2 * scale, paint);
-            canvas.drawRoundRect(cx - 1 * scale, cy + 20 * scale + bobOffset - legOffset,
-                    cx + 7 * scale, cy + 23 * scale + bobOffset - legOffset,
-                    2 * scale, 2 * scale, paint);
-        } else {
-            paint.setColor(Color.rgb(240, 240, 240));
-            canvas.drawRect(cx - 6 * scale, cy + 15 * scale + bobOffset,
-                    cx, cy + 22 * scale + bobOffset, paint);
-            canvas.drawRect(cx, cy + 15 * scale + bobOffset,
-                    cx + 6 * scale, cy + 22 * scale + bobOffset, paint);
-
-            paint.setColor(Color.rgb(62, 39, 35));
-            canvas.drawRoundRect(cx - 7 * scale, cy + 20 * scale + bobOffset,
-                    cx + 1 * scale, cy + 23 * scale + bobOffset,
-                    2 * scale, 2 * scale, paint);
-            canvas.drawRoundRect(cx - 1 * scale, cy + 20 * scale + bobOffset,
-                    cx + 7 * scale, cy + 23 * scale + bobOffset,
-                    2 * scale, 2 * scale, paint);
+        float effectAlpha = 1.0f;
+        if (progress < 0.35f) {
+            effectAlpha = (progress - 0.3f) / 0.05f; // Fade in
+        } else if (progress > 0.5f) {
+            effectAlpha = 1.0f - (progress - 0.5f) / 0.1f; // Fade out
         }
 
-        // === BODY (Side view - mirrored from left) ===
-        Path robeBody = new Path();
-        robeBody.moveTo(cx - 8 * scale * breathScale, cy - 8 * scale + bobOffset);
-        robeBody.lineTo(cx + 8 * scale * breathScale, cy - 8 * scale + bobOffset);
-        robeBody.lineTo(cx + 10 * scale * breathScale, cy + 16 * scale + bobOffset);
-        robeBody.quadTo(cx, cy + 18 * scale + bobOffset, cx - 10 * scale * breathScale, cy + 16 * scale + bobOffset);
-        robeBody.close();
+        int alpha = (int)(effectAlpha * 200);
 
-        paint.reset();
-        paint.setAntiAlias(true);
-        paint.setColor(Color.rgb(255, 255, 255));
-        canvas.drawPath(robeBody, paint);
+        // Slash color (white with blue tint)
+        paint.setColor(Color.argb(alpha, 200, 230, 255));
+        paint.setStrokeWidth(4 * scale);
+        paint.setStyle(Paint.Style.STROKE);
 
-        // Side shadow (opposite side from left-facing)
-        Path robeShadow = new Path();
-        robeShadow.moveTo(cx, cy - 8 * scale + bobOffset);
-        robeShadow.lineTo(cx + 8 * scale * breathScale, cy - 8 * scale + bobOffset);
-        robeShadow.lineTo(cx + 10 * scale * breathScale, cy + 16 * scale + bobOffset);
-        robeShadow.lineTo(cx, cy + 17 * scale + bobOffset);
-        robeShadow.close();
+        float slashLength = 50 * scale;
+        float startX, startY, endX, endY;
 
-        paint.reset();
-        paint.setAntiAlias(true);
-        paint.setColor(Color.argb(30, 0, 0, 100));
-        canvas.drawPath(robeShadow, paint);
-
-        // Blue sash
-        paint.reset();
-        paint.setAntiAlias(true);
-        paint.setColor(Color.rgb(30, 136, 229));
-        canvas.drawRect(cx - 9 * scale * breathScale, cy + 2 * scale + bobOffset,
-                cx + 9 * scale * breathScale, cy + 5 * scale + bobOffset, paint);
-
-        // Sash knot
-        paint.reset();
-        paint.setAntiAlias(true);
-        paint.setColor(Color.rgb(25, 118, 210));
-        canvas.drawCircle(cx, cy + 3.5f * scale + bobOffset, 2 * scale, paint);
-
-        // === ARMS ===
-        if (isMoving) {
-            // Front arm (left arm visible when facing right)
-            Path frontArm = new Path();
-            frontArm.moveTo(cx - 2 * scale, cy - 5 * scale + bobOffset);
-            frontArm.quadTo(cx - 8 * scale + armSwing, cy + 5 * scale + bobOffset,
-                    cx - 6 * scale + armSwing * 0.5f, cy + 12 * scale + bobOffset);
-            frontArm.lineTo(cx - 3 * scale + armSwing * 0.5f, cy + 11 * scale + bobOffset);
-            frontArm.quadTo(cx - 4 * scale, cy + 5 * scale + bobOffset,
-                    cx - 2 * scale, cy - 3 * scale + bobOffset);
-            frontArm.close();
-
-            paint.reset();
-            paint.setAntiAlias(true);
-            paint.setColor(Color.rgb(255, 255, 255));
-            canvas.drawPath(frontArm, paint);
-
-            // Back arm (right arm, partially visible)
-            Path backArm = new Path();
-            backArm.moveTo(cx + 6 * scale, cy - 5 * scale + bobOffset);
-            backArm.quadTo(cx + 10 * scale - armSwing * 0.3f, cy + 5 * scale + bobOffset,
-                    cx + 8 * scale - armSwing * 0.2f, cy + 10 * scale + bobOffset);
-            backArm.lineTo(cx + 5 * scale - armSwing * 0.2f, cy + 9 * scale + bobOffset);
-            backArm.quadTo(cx + 6 * scale, cy + 5 * scale + bobOffset,
-                    cx + 6 * scale, cy - 3 * scale + bobOffset);
-            backArm.close();
-
-            paint.reset();
-            paint.setAntiAlias(true);
-            paint.setColor(Color.rgb(245, 245, 245));
-            canvas.drawPath(backArm, paint);
-        } else {
-            // Idle arms
-            Path frontArm = new Path();
-            frontArm.moveTo(cx - 2 * scale, cy - 5 * scale + bobOffset);
-            frontArm.quadTo(cx - 7 * scale, cy + 3 * scale + bobOffset + armSwing * 0.2f,
-                    cx - 5 * scale, cy + 11 * scale + bobOffset);
-            frontArm.lineTo(cx - 2.5f * scale, cy + 10 * scale + bobOffset);
-            frontArm.quadTo(cx - 3.5f * scale, cy + 3 * scale + bobOffset,
-                    cx - 2 * scale, cy - 3 * scale + bobOffset);
-            frontArm.close();
-
-            paint.reset();
-            paint.setAntiAlias(true);
-            paint.setColor(Color.rgb(255, 255, 255));
-            canvas.drawPath(frontArm, paint);
-
-            Path backArm = new Path();
-            backArm.moveTo(cx + 6 * scale, cy - 5 * scale + bobOffset);
-            backArm.quadTo(cx + 9 * scale, cy + 3 * scale + bobOffset - armSwing * 0.2f,
-                    cx + 7 * scale, cy + 10 * scale + bobOffset);
-            backArm.lineTo(cx + 4.5f * scale, cy + 9 * scale + bobOffset);
-            backArm.quadTo(cx + 5.5f * scale, cy + 3 * scale + bobOffset,
-                    cx + 6 * scale, cy - 3 * scale + bobOffset);
-            backArm.close();
-
-            paint.reset();
-            paint.setAntiAlias(true);
-            paint.setColor(Color.rgb(245, 245, 245));
-            canvas.drawPath(backArm, paint);
+        switch (facingDirection) {
+            case 0: // Down - horizontal slash
+                startX = cx - slashLength / 2;
+                startY = cy + 20 * scale;
+                endX = cx + slashLength / 2;
+                endY = cy + 20 * scale;
+                break;
+            case 1: // Up - horizontal slash above
+                startX = cx - slashLength / 2;
+                startY = cy - 30 * scale;
+                endX = cx + slashLength / 2;
+                endY = cy - 30 * scale;
+                break;
+            case 2: // Left - vertical slash
+                startX = cx - 25 * scale;
+                startY = cy - slashLength / 2;
+                endX = cx - 25 * scale;
+                endY = cy + slashLength / 2;
+                break;
+            case 3: // Right - vertical slash
+                startX = cx + 25 * scale;
+                startY = cy - slashLength / 2;
+                endX = cx + 25 * scale;
+                endY = cy + slashLength / 2;
+                break;
+            default:
+                return;
         }
 
-        // === HEAD (Profile view - facing right) ===
-        // Face profile
-        paint.reset();
-        paint.setAntiAlias(true);
-        paint.setColor(Color.rgb(255, 224, 178));
-        Path faceProfile = new Path();
-        faceProfile.moveTo(cx + 6 * scale, cy - 18 * scale + bobOffset * 0.5f);
-        faceProfile.quadTo(cx + 8 * scale, cy - 15 * scale + bobOffset * 0.5f, cx + 7 * scale, cy - 12 * scale + bobOffset * 0.5f);
-        faceProfile.quadTo(cx + 6 * scale, cy - 10 * scale + bobOffset * 0.5f, cx + 4 * scale, cy - 10 * scale + bobOffset * 0.5f);
-        faceProfile.lineTo(cx - 2 * scale, cy - 10 * scale + bobOffset * 0.5f);
-        faceProfile.quadTo(cx - 5 * scale, cy - 10 * scale + bobOffset * 0.5f, cx - 6 * scale, cy - 12 * scale + bobOffset * 0.5f);
-        faceProfile.quadTo(cx - 7 * scale, cy - 15 * scale + bobOffset * 0.5f, cx - 6 * scale, cy - 18 * scale + bobOffset * 0.5f);
-        faceProfile.quadTo(cx - 4 * scale, cy - 21 * scale + bobOffset * 0.3f, cx, cy - 21 * scale + bobOffset * 0.3f);
-        faceProfile.quadTo(cx + 4 * scale, cy - 21 * scale + bobOffset * 0.3f, cx + 6 * scale, cy - 18 * scale + bobOffset * 0.5f);
-        faceProfile.close();
-        canvas.drawPath(faceProfile, paint);
+        // Draw slash line with arc effect
+        Path slashPath = new Path();
+        slashPath.moveTo(startX, startY);
 
-        // Nose (pointing right)
-        paint.reset();
-        paint.setAntiAlias(true);
-        paint.setColor(Color.rgb(240, 210, 160));
-        Path nose = new Path();
-        nose.moveTo(cx - 5 * scale, cy - 14 * scale + bobOffset * 0.5f);
-        nose.lineTo(cx - 7 * scale, cy - 13 * scale + bobOffset * 0.5f);
-        nose.lineTo(cx - 5 * scale, cy - 12 * scale + bobOffset * 0.5f);
-        nose.close();
-        canvas.drawPath(nose, paint);
+        // Add slight curve to the slash
+        float controlX = (startX + endX) / 2 + (facingDirection == 0 || facingDirection == 1 ? 0 : 15 * scale);
+        float controlY = (startY + endY) / 2 + (facingDirection == 2 || facingDirection == 3 ? 0 : 15 * scale);
+        slashPath.quadTo(controlX, controlY, endX, endY);
 
-        // Hair (side view - flowing opposite direction)
-        Path hair = new Path();
-        hair.moveTo(cx + 6 * scale, cy - 18 * scale + bobOffset * 0.5f);
-        hair.quadTo(cx + 8 * scale, cy - 23 * scale + bobOffset * 0.3f, cx + 4 * scale, cy - 25 * scale + bobOffset * 0.3f);
-        hair.quadTo(cx, cy - 26 * scale + bobOffset * 0.3f, cx - 4 * scale, cy - 25 * scale + bobOffset * 0.3f);
-        hair.quadTo(cx - 7 * scale, cy - 23 * scale + bobOffset * 0.3f, cx - 6 * scale, cy - 18 * scale + bobOffset * 0.5f);
-        hair.quadTo(cx - 7 * scale, cy - 12 * scale + bobOffset * 0.5f, cx - 8 * scale, cy - 8 * scale + bobOffset * 0.5f);
-        hair.lineTo(cx - 6 * scale, cy - 8 * scale + bobOffset * 0.5f);
-        hair.quadTo(cx - 5 * scale, cy - 12 * scale + bobOffset * 0.5f, cx - 4 * scale, cy - 15 * scale + bobOffset * 0.5f);
-        hair.quadTo(cx, cy - 16 * scale + bobOffset * 0.5f, cx + 4 * scale, cy - 15 * scale + bobOffset * 0.5f);
-        hair.quadTo(cx + 6 * scale, cy - 14 * scale + bobOffset * 0.5f, cx + 6 * scale, cy - 18 * scale + bobOffset * 0.5f);
-        hair.close();
+        canvas.drawPath(slashPath, paint);
 
-        paint.reset();
-        paint.setAntiAlias(true);
-        paint.setColor(Color.rgb(33, 33, 33));
-        canvas.drawPath(hair, paint);
+        // Draw glow effect
+        paint.setColor(Color.argb(alpha / 2, 100, 200, 255));
+        paint.setStrokeWidth(8 * scale);
+        canvas.drawPath(slashPath, paint);
 
-        // Hair flowing back (to the left when facing right)
-        Path hairFlow = new Path();
-        hairFlow.moveTo(cx + 4 * scale, cy - 20 * scale + bobOffset * 0.3f);
-        hairFlow.quadTo(cx + 8 * scale, cy - 15 * scale + bobOffset * 0.3f, cx + 7 * scale, cy - 8 * scale + bobOffset * 0.5f);
-        hairFlow.lineTo(cx + 5 * scale, cy - 8 * scale + bobOffset * 0.5f);
-        hairFlow.quadTo(cx + 6 * scale, cy - 15 * scale + bobOffset * 0.3f, cx + 4 * scale, cy - 20 * scale + bobOffset * 0.3f);
-        hairFlow.close();
-
-        paint.reset();
-        paint.setAntiAlias(true);
-        paint.setColor(Color.rgb(33, 33, 33));
-        canvas.drawPath(hairFlow, paint);
-
-        // Eye (profile - looking right)
-        paint.reset();
-        paint.setAntiAlias(true);
-        int walkCycle = player.getWalkCycle();
-        if (!isMoving && (walkCycle % 120 < 115)) {
-            paint.setColor(Color.rgb(33, 33, 33));
-            canvas.drawOval(cx - 4 * scale, cy - 15 * scale + bobOffset * 0.5f,
-                    cx - 2 * scale, cy - 13.5f * scale + bobOffset * 0.5f, paint);
-
-            paint.setColor(Color.WHITE);
-            canvas.drawCircle(cx - 3 * scale, cy - 14.5f * scale + bobOffset * 0.5f, 0.6f * scale, paint);
-        } else if (!isMoving) {
-            paint.setStrokeWidth(1.5f * scale);
-            paint.setColor(Color.rgb(33, 33, 33));
-            canvas.drawLine(cx - 4 * scale, cy - 14.5f * scale + bobOffset * 0.5f,
-                    cx - 2 * scale, cy - 14.5f * scale + bobOffset * 0.5f, paint);
-            paint.setStrokeWidth(1);
-        } else {
-            paint.setColor(Color.rgb(33, 33, 33));
-            canvas.drawOval(cx - 4 * scale, cy - 15 * scale + bobOffset * 0.5f,
-                    cx - 2 * scale, cy - 13.5f * scale + bobOffset * 0.5f, paint);
-
-            paint.setColor(Color.WHITE);
-            canvas.drawCircle(cx - 3 * scale, cy - 14.5f * scale + bobOffset * 0.5f, 0.6f * scale, paint);
-        }
-
-        // Eyebrow
-        paint.reset();
-        paint.setAntiAlias(true);
-        paint.setStrokeWidth(1.5f * scale);
-        paint.setColor(Color.rgb(33, 33, 33));
-        canvas.drawLine(cx - 1 * scale, cy - 16.5f * scale + bobOffset * 0.5f,
-                cx - 4 * scale, cy - 17 * scale + bobOffset * 0.5f, paint);
         paint.setStrokeWidth(1);
-
-        // Mouth
-        paint.reset();
-        paint.setAntiAlias(true);
-        paint.setStrokeWidth(1.2f * scale);
-        paint.setColor(Color.rgb(200, 100, 100));
-        canvas.drawLine(cx - 3 * scale, cy - 10 * scale + bobOffset * 0.5f,
-                cx - 5 * scale, cy - 10 * scale + bobOffset * 0.5f, paint);
-        paint.setStrokeWidth(1);
-
-        // Jade pommel
-        paint.reset();
-        paint.setAntiAlias(true);
-        paint.setColor(Color.rgb(76, 175, 80));
-        canvas.drawCircle(cx + 0.5f * scale, cy - 22.5f * scale + bobOffset * 0.3f, 1.8f * scale, paint);
+        paint.setStyle(Paint.Style.FILL);
     }
+
+// ... existing code ...
 
     private void drawEnergyParticles(Canvas canvas, Paint paint, float cx, float cy, float scale, boolean isMoving) {
         // More active particles when moving, calmer when idle

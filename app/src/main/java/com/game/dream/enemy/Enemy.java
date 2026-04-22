@@ -3,6 +3,7 @@ package com.game.dream.enemy;
 import android.graphics.Canvas;
 
 import com.game.dream.Character;
+import com.game.dream.LogUtil;
 import com.game.dream.utils.Utils;
 
 /**
@@ -38,6 +39,10 @@ public abstract class Enemy extends Character {
     protected int mana;
     protected float speed;
 
+    // Aggro timer - how long enemy stays aggressive after being damaged
+    protected long aggroEndTime;
+    protected boolean isAggroed;
+
     public Enemy(float x, float y, int size, float detectionRange, float attackRange, int rewardExp, int rewardMoney) {
         super(x, y, size); // attack=10, defense=0, size=30
 
@@ -53,6 +58,9 @@ public abstract class Enemy extends Character {
 
         this.rewardExp = rewardExp;
         this.rewardMoney = rewardMoney;
+
+        this.aggroEndTime = 0;
+        this.isAggroed = false;
     }
 
     /**
@@ -69,6 +77,11 @@ public abstract class Enemy extends Character {
         float dy = playerY - y;
         float distanceToPlayer = (float) Math.sqrt(dx * dx + dy * dy);
 
+        // Check if aggro has expired
+        if (isAggroed && currentTime > aggroEndTime) {
+            isAggroed = false;
+        }
+
         // State machine
         switch (currentState) {
             case IDLE:
@@ -83,7 +96,8 @@ public abstract class Enemy extends Character {
             case CHASING:
                 updateChasing(deltaSeconds, playerX, playerY, map, mapWidth, mapHeight);
 
-                if (distanceToPlayer > detectionRange * 1.5f) {
+                // Only return to idle if not aggroed AND player is far away
+                if (!isAggroed && distanceToPlayer > detectionRange * 1.5f) {
                     currentState = State.IDLE;
                     stateTimer = currentTime;
                 } else if (distanceToPlayer < attackRange) {
@@ -273,6 +287,18 @@ public abstract class Enemy extends Character {
         // Apply damage
         health -= damage;
         lastDamageTime = currentTime;
+
+        // When damaged, automatically enter CHASING state and set aggro
+        if (isAlive()) {
+            currentState = State.CHASING;
+            stateTimer = currentTime;
+
+            // Set aggro timer - enemy will chase for 10 seconds after being hit
+            isAggroed = true;
+            aggroEndTime = currentTime + 10000; // 10 seconds
+
+            LogUtil.d("Enemy", getName() + " was damaged! Aggroed for 10 seconds");
+        }
 
         // Check if dead
         if (health <= 0) {

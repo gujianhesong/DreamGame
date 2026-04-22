@@ -214,9 +214,9 @@ public class GameEngine {
 
             if (foundValidSpawn) {
                 double rand = Math.random();
-                if (rand < 0.7) {
+                if (rand < 0.4) {
                     Enemy enemy = new Tiger(spawnX, spawnY);
-                    enemy.setName("老虎");
+                    enemy.setName("猛虎");
                     enemies.add(enemy);
                 } else {
                     Enemy enemy = new Wolf(spawnX, spawnY);

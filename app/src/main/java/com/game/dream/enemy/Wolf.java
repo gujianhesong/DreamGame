@@ -13,7 +13,7 @@ import com.game.dream.utils.Utils;
 public class Wolf extends Enemy {
 
     public Wolf(float x, float y) {
-        super(x, y, 60, 200, 50, 30, 150);
+        super(x, y, 70, 200, 50, 30, 150);
         attackCooldown = 1500;
 
         int health = Utils.getWaveValue(200, 0.2f);
@@ -23,6 +23,32 @@ public class Wolf extends Enemy {
         this.defense = 30;
         this.speed = 30;
         this.mana = 30;
+
+        if (Math.random() < 0.05) {
+            //精英
+            enemyLevel = EnemyLevel.ELITE;
+            size = size * 2;
+
+            health = Utils.getWaveValue(200 * 10, 0.2f);
+            this.maxHealth = health;
+            this.health = health;
+            this.attackDamage = 60;
+            this.defense = 60;
+            this.speed = 60;
+            this.mana = 60;
+        } else if (Math.random() < 0.25) {
+            //首领
+            enemyLevel = EnemyLevel.LEADER;
+            size = (int) (size * 1.3f);
+
+            health = Utils.getWaveValue(200 * 3, 0.2f);
+            this.maxHealth = health;
+            this.health = health;
+            this.attackDamage = 40;
+            this.defense = 40;
+            this.speed = 40;
+            this.mana = 40;
+        }
     }
 
     @Override

@@ -23,6 +23,32 @@ public class Tiger extends Enemy {
         this.defense = 40;
         this.speed = 40;
         this.mana = 40;
+
+        if (Math.random() < 0.05) {
+            //精英
+            enemyLevel = EnemyLevel.ELITE;
+            size = size * 2;
+
+            health = Utils.getWaveValue(350 * 10, 0.2f);
+            this.maxHealth = health;
+            this.health = health;
+            this.attackDamage = 80;
+            this.defense = 80;
+            this.speed = 80;
+            this.mana = 80;
+        } else if (Math.random() < 0.25) {
+            //首领
+            enemyLevel = EnemyLevel.LEADER;
+            size = (int) (size * 1.3f);
+
+            health = Utils.getWaveValue(350 * 3, 0.2f);
+            this.maxHealth = health;
+            this.health = health;
+            this.attackDamage = 60;
+            this.defense = 60;
+            this.speed = 60;
+            this.mana = 60;
+        }
     }
 
     @Override

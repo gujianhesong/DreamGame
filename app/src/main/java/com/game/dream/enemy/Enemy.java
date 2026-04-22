@@ -17,7 +17,14 @@ public abstract class Enemy extends Character {
         ATTACKING
     }
 
+    public enum EnemyLevel{
+        NORMAL,
+        LEADER,
+        ELITE
+    }
+
     protected State currentState;
+    protected EnemyLevel enemyLevel;
 
     // Movement
     protected float targetX, targetY;
@@ -37,7 +44,7 @@ public abstract class Enemy extends Character {
     protected int magicDamage;
     protected int defense;
     protected int mana;
-    protected float speed;
+    protected int speed;
 
     // Aggro timer - how long enemy stays aggressive after being damaged
     protected long aggroEndTime;
@@ -47,6 +54,7 @@ public abstract class Enemy extends Character {
         super(x, y, size); // attack=10, defense=0, size=30
 
         this.currentState = State.IDLE;
+        this.enemyLevel = EnemyLevel.NORMAL;
         this.targetX = x;
         this.targetY = y;
         this.stateTimer = System.currentTimeMillis();
@@ -256,14 +264,26 @@ public abstract class Enemy extends Character {
      * Get experience reward when this enemy is killed
      */
     public int getExperienceReward() {
-        return Utils.getWaveValue(rewardExp, 0.1f);
+        float factor = 1f;
+        if (enemyLevel == EnemyLevel.ELITE) {
+            factor = 10f;
+        } else if (enemyLevel == EnemyLevel.LEADER) {
+            factor = 3f;
+        }
+        return (int) (Utils.getWaveValue(rewardExp, 0.1f) * factor);
     }
 
     /**
      * Get money reward when this enemy is killed
      */
     public int getMoneyReward() {
-        return Utils.getWaveValue(rewardMoney, 0.1f);
+        float factor = 1f;
+        if (enemyLevel == EnemyLevel.ELITE) {
+            factor = 10f;
+        } else if (enemyLevel == EnemyLevel.LEADER) {
+            factor = 3f;
+        }
+        return (int) (Utils.getWaveValue(rewardMoney, 0.1f) * factor);
     }
 
     @Override
@@ -307,5 +327,15 @@ public abstract class Enemy extends Character {
         }
 
         return false; // Still alive
+    }
+
+    @Override
+    public void setName(String name) {
+        this.name = name;
+        if (enemyLevel == EnemyLevel.ELITE) {
+            this.name = name + "精英";
+        } else if (enemyLevel == EnemyLevel.LEADER) {
+            this.name = name + "首领";
+        }
     }
 }

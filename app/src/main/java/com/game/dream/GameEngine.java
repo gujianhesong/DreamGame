@@ -67,6 +67,9 @@ public class GameEngine {
     // Damage numbers
     private java.util.List<DamageNumber> damageNumbers;
 
+    // Floating texts for rewards/damage
+    private java.util.List<FloatingText> floatingTexts;
+
     private RoleInfoPanel roleInfoPanel;
 
     // Attack buttons
@@ -170,6 +173,9 @@ public class GameEngine {
 
         // Initialize damage numbers
         damageNumbers = new java.util.ArrayList<>();
+
+        // Initialize floating texts list
+        floatingTexts = new java.util.ArrayList<>();
 
         // Initialize role info panel
         roleInfoPanel = new RoleInfoPanel(player);
@@ -296,8 +302,40 @@ public class GameEngine {
                 // Remove dead enemies
                 if (!enemy.isAlive()) {
                     // Grant reward to player
+                    int expReward = enemy.getExperienceReward();
+                    int moneyReward = enemy.getMoneyReward();
+
+                    int oldLevel = RoleSystem.getInstance().getRoleInfo().getLevel();
                     RoleSystem.getInstance().addExperience(enemy.getExperienceReward());
+                    int newLevel = RoleSystem.getInstance().getRoleInfo().getLevel();
                     RoleSystem.getInstance().addMoney(enemy.getMoneyReward());
+
+                    // Create floating texts for rewards
+                    floatingTexts.add(new FloatingText(
+                            enemy.getX(),
+                            enemy.getY() - 120,
+                            "+" + expReward + " 经验",
+                            FloatingText.Type.EXPERIENCE
+                    ));
+
+                    if (moneyReward > 0) {
+                        floatingTexts.add(new FloatingText(
+                                enemy.getX(),
+                                enemy.getY() - 170,
+                                "+" + moneyReward + " 金钱",
+                                FloatingText.Type.MONEY
+                        ));
+                    }
+
+                    // If player leveled up, show special notification
+                    if (newLevel > oldLevel) {
+                        floatingTexts.add(new FloatingText(
+                                player.getX(),
+                                player.getY() - 220,
+                                "升级! Lv." + newLevel,
+                                FloatingText.Type.LEVEL_UP
+                        ));
+                    }
 
                     enemies.remove(i);
                 }
@@ -361,6 +399,18 @@ public class GameEngine {
 
                 if (!num.isActive()) {
                     damageNumbers.remove(i);
+                }
+            }
+        }
+
+        // Update floating texts (rewards, level up, etc.)
+        if (floatingTexts != null) {
+            for (int i = floatingTexts.size() - 1; i >= 0; i--) {
+                FloatingText text = floatingTexts.get(i);
+                text.update(deltaTime);
+
+                if (!text.isActive()) {
+                    floatingTexts.remove(i);
                 }
             }
         }
@@ -508,6 +558,14 @@ public class GameEngine {
             List<DamageNumber> copyDamageNumbers = new ArrayList(damageNumbers);
             for (DamageNumber num : copyDamageNumbers) {
                 num.draw(canvas, (int) -cameraX, (int) -cameraY);
+            }
+        }
+
+        // Draw floating texts (rewards, level up notifications)
+        if (floatingTexts != null) {
+            List<FloatingText> copyFloatingTexts = new ArrayList<>(floatingTexts);
+            for (FloatingText text : copyFloatingTexts) {
+                text.draw(canvas, (int) -cameraX, (int) -cameraY);
             }
         }
 

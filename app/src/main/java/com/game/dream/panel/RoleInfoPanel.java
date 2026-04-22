@@ -50,8 +50,6 @@ public class RoleInfoPanel {
         this.plusButtons = new ArrayList<>();
         this.minusButtons = new ArrayList<>();
         this.confirmButton = new Rect();
-
-        tempRemainPoints = RoleSystem.getInstance().getRoleInfo().getRemainPoints();
     }
 
     /**
@@ -59,6 +57,7 @@ public class RoleInfoPanel {
      */
     public void toggleVisibility() {
         isVisible = !isVisible;
+        tempRemainPoints = RoleSystem.getInstance().getRoleInfo().getRemainPoints();
     }
 
     /**
@@ -66,6 +65,7 @@ public class RoleInfoPanel {
      */
     public void show() {
         isVisible = true;
+        tempRemainPoints = RoleSystem.getInstance().getRoleInfo().getRemainPoints();
     }
 
     /**

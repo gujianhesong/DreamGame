@@ -9,25 +9,13 @@ import android.graphics.Paint;
  */
 public abstract class Character {
     protected float x, y;
-    protected float speed;
     protected int size;
 
-    // Name
     protected String name;
 
-    // Health system
-    protected int health;
-    protected int maxHealth;
     protected boolean isInvincible;
     protected long invincibleEndTime;
     protected long lastDamageTime;
-
-    // Combat stats
-    protected int attackDamage;
-
-    protected int magicDamage;
-    protected int defense;
-    protected int mana;
 
     protected long lastAttackTime;
     protected long attackCooldown;
@@ -93,37 +81,6 @@ public abstract class Character {
     }
 
     /**
-     * Take damage
-     */
-    public boolean takeDamage(int damage) {
-        long currentTime = System.currentTimeMillis();
-
-        // Check if invincible
-        if (isInvincible && currentTime < invincibleEndTime) {
-            return false; // No damage taken
-        }
-
-        // Apply damage
-        health -= damage;
-        lastDamageTime = currentTime;
-
-        // Check if dead
-        if (health <= 0) {
-            health = 0;
-            return true; // Died
-        }
-
-        return false; // Still alive
-    }
-
-    /**
-     * Heal character
-     */
-    public void heal(int amount) {
-        health = Math.min(maxHealth, health + amount);
-    }
-
-    /**
      * Check if currently invincible
      */
     public boolean isCurrentlyInvincible() {
@@ -141,7 +98,7 @@ public abstract class Character {
      * Get health as percentage (0-1)
      */
     public float getHealthPercent() {
-        return (float)health / maxHealth;
+        return (float)getHealth() / getMaxHealth();
     }
 
     /**
@@ -165,7 +122,7 @@ public abstract class Character {
         android.graphics.Paint healthPaint = new android.graphics.Paint();
         healthPaint.setStyle(android.graphics.Paint.Style.FILL);
 
-        float healthPercent = (float)health / maxHealth;
+        float healthPercent = getHealthPercent();
 
         if (healthPercent > 0.6f) {
             healthPaint.setColor(android.graphics.Color.GREEN);
@@ -193,7 +150,7 @@ public abstract class Character {
         textPaint.setTextSize(12 * scale);
         textPaint.setTextAlign(android.graphics.Paint.Align.CENTER);
         textPaint.setAntiAlias(true);
-        canvas.drawText(health + "/" + maxHealth, cx, barY - 2, textPaint);
+        canvas.drawText(getHealth() + "/" + getMaxHealth(), cx, barY - 2, textPaint);
     }
 
     /**
@@ -212,23 +169,23 @@ public abstract class Character {
     public float getX() { return x; }
     public float getY() { return y; }
     public int getSize() { return size; }
-    public int getHealth() { return health; }
-    public int getMaxHealth() { return maxHealth; }
-    public int getAttackDamage() { return attackDamage; }
 
-    public int getMagicDamage() { return magicDamage; }
-    public int getDefense() { return defense; }
-    public float getSpeed() { return speed; }
-    public int getMana() { return mana; }
-    public boolean isAlive() { return health > 0; }
+    public boolean isAlive() { return getHealth() > 0; }
 
     public String getName() { return name; }
 
     // Setters
     public void setX(float x) { this.x = x; }
     public void setY(float y) { this.y = y; }
-    public void setHealth(int health) { this.health = health; }
     public void setSize(int size) { this.size = size; }
-
     public void setName(String name) { this.name = name; }
+
+    public abstract int getHealth();
+    public abstract int getMaxHealth();
+
+    /**
+     * Take damage
+     */
+    public abstract boolean takeDamage(int damage);
+
 }

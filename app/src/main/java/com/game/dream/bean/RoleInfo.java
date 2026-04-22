@@ -4,6 +4,7 @@ public class RoleInfo {
     //基础属性
     private String name;
     private int level;
+    private String label;
     private long exp;
     private long money;
     private int remainPoints;
@@ -58,6 +59,14 @@ public class RoleInfo {
 
     public void setLevel(int level) {
         this.level = level;
+    }
+
+    public String getLabel() {
+        return label;
+    }
+
+    public void setLabel(String label) {
+        this.label = label;
     }
 
     public long getExp() {

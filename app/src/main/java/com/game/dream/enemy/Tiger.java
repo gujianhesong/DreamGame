@@ -13,7 +13,7 @@ import com.game.dream.utils.Utils;
 public class Tiger extends Enemy {
 
     public Tiger(float x, float y) {
-        super(x, y, 100, 250, 60);
+        super(x, y, 100, 250, 60, 50, 200);
         attackCooldown = 1200; // Faster attacks than wolf
 
         int health = Utils.getWaveValue(350, 0.2f);

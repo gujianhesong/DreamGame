@@ -1,9 +1,6 @@
 package com.game.dream;
 
 import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
-import android.graphics.Path;
 
 import com.game.dream.bean.AttackResult;
 import com.game.dream.bean.EnemyHitInfo;
@@ -33,7 +30,6 @@ public class Player extends Character {
     private static final int ATTACK_ANIMATION_DURATION = 300; // 300ms
 
     // Magic combat
-    private int magicDamage;
     private long lastMagicTime;
     private long magicCooldown;
 
@@ -47,16 +43,8 @@ public class Player extends Character {
     public Player(float x, float y) {
         super(x, y, 80);
 
-        RoleInfo roleInfo = RoleSystem.getInstance().getRoleInfo();
-        this.maxHealth = roleInfo.getBloodCap();
-        this.health = roleInfo.getBlood();
-        this.attackDamage = roleInfo.getAttack();
-        this.defense = roleInfo.getDefense();
-        this.speed = roleInfo.getSpeed();
-
         this.walkCycle = 0;
         this.facingDirection = 0;
-        this.magicDamage = 15;
         this.lastMagicTime = 0;
         this.magicCooldown = 1200;
 
@@ -92,6 +80,7 @@ public class Player extends Character {
 
         // Convert speed from pixels/second to pixels/frame
         float deltaSeconds = deltaTime / 1000.0f;
+        int speed = RoleSystem.getInstance().getRoleInfo().getSpeed();
         float moveAmount = (150 + speed * 0.5f) * deltaSeconds;
 
         if (movingLeft) {
@@ -328,7 +317,8 @@ public class Player extends Character {
     public void respawn() {
         x = respawnX;
         y = respawnY;
-        health = maxHealth;
+        RoleInfo roleInfo = RoleSystem.getInstance().getRoleInfo();
+        roleInfo.setBlood(roleInfo.getBloodCap());
         isInvincible = true;
         invincibleEndTime = System.currentTimeMillis() + 3000; // 3 seconds invincibility after respawn
         android.util.Log.d("Player", "Respawned at (" + (int) x + ", " + (int) y + ")");
@@ -395,4 +385,38 @@ public class Player extends Character {
     public boolean isMoving() { return movingUp || movingDown || movingLeft || movingRight; }
     public int getWalkCycle() { return walkCycle; }
     public long getInvincibleEndTime() { return invincibleEndTime; }
+
+    @Override
+    public int getHealth() {
+        return RoleSystem.getInstance().getRoleInfo().getBlood();
+    }
+
+    @Override
+    public int getMaxHealth() {
+        return RoleSystem.getInstance().getRoleInfo().getBloodCap();
+    }
+
+    public boolean takeDamage(int damage) {
+        long currentTime = System.currentTimeMillis();
+
+        // Check if invincible
+        if (isInvincible && currentTime < invincibleEndTime) {
+            return false; // No damage taken
+        }
+
+        // Apply damage
+        int health = getHealth();
+        health -= damage;
+        health = Math.max(0, health);
+        lastDamageTime = currentTime;
+
+        RoleSystem.getInstance().getRoleInfo().setBlood(health);
+
+        // Check if dead
+        if (health <= 0) {
+            return true; // Died
+        }
+
+        return false; // Still alive
+    }
 }

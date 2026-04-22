@@ -16,6 +16,7 @@ import com.game.dream.enemy.Wolf;
 import com.game.dream.enums.SkillType;
 import com.game.dream.panel.RoleInfoPanel;
 import com.game.dream.system.DayNightCycle;
+import com.game.dream.system.RoleSystem;
 import com.game.dream.system.WeatherSystem;
 
 import java.util.ArrayList;
@@ -288,6 +289,10 @@ public class GameEngine {
 
                 // Remove dead enemies
                 if (!enemy.isAlive()) {
+                    // Grant reward to player
+                    RoleSystem.getInstance().addExperience(enemy.getExperienceReward());
+                    RoleSystem.getInstance().addMoney(enemy.getMoneyReward());
+
                     enemies.remove(i);
                 }
             }
@@ -572,6 +577,39 @@ public class GameEngine {
             canvas.drawText("✨ INVINCIBLE", healthBarX, healthBarY + 40, paint);
         }*/
 
+        // Draw player level and experience (top-left)
+        int expBarWidth = 200;
+        int expBarHeight = 20;
+        int expBarX = 10;
+        int expBarY = 35;
+
+        // Level text
+        paint.setColor(Color.rgb(255, 215, 0)); // Gold color
+        paint.setTextSize(30);
+        paint.setTextAlign(Paint.Align.LEFT);
+        canvas.drawText("Lv." + RoleSystem.getInstance().getRoleInfo().getLevel(), expBarX, expBarY + 7, paint);
+
+        // Experience bar background
+        paint.setColor(Color.BLACK);
+        canvas.drawRect(expBarX + 70, expBarY - 12,
+                expBarX + 70 + expBarWidth + 2,
+                expBarY - 12 + expBarHeight + 2, paint);
+
+        // Experience bar fill
+        float expProgress = RoleSystem.getInstance().getRoleInfo().getExp() * 1f / RoleSystem.getInstance().getExpForNextLevel();
+        paint.setColor(Color.rgb(100, 181, 246)); // Blue
+        canvas.drawRect(expBarX + 70, expBarY - 12,
+                expBarX + 70 + expBarWidth * expProgress,
+                expBarY - 12 + expBarHeight, paint);
+
+        // EXP text
+        paint.setColor(Color.WHITE);
+        paint.setTextSize(20);
+        paint.setTextAlign(Paint.Align.CENTER);
+        canvas.drawText(RoleSystem.getInstance().getRoleInfo().getExp() + "/" + RoleSystem.getInstance().getExpForNextLevel(),
+                expBarX + 70 + expBarWidth / 2,
+                expBarY + 5, paint);
+
         paint.setTextSize(30);
         // Draw FPS (top-right corner)
         paint.setTextAlign(Paint.Align.LEFT);
@@ -582,36 +620,36 @@ public class GameEngine {
         } else {
             paint.setColor(Color.RED);
         }
-        canvas.drawText("FPS: " + String.format("%.1f", currentFPS), 10, 40, paint);
+        canvas.drawText("FPS: " + String.format("%.1f", currentFPS), 10, 80, paint);
         paint.setColor(Color.WHITE);
-        canvas.drawText("Memory: " + String.format("%.1f", getUsedMemoryMB()) + " MB", 10, 80, paint);
+        canvas.drawText("Memory: " + String.format("%.1f", getUsedMemoryMB()) + " MB", 10, 120, paint);
 
         // Draw coordinates (top-left)
         paint.setTextAlign(Paint.Align.LEFT);
         paint.setColor(Color.WHITE);
-        canvas.drawText("Position: (" + (int) player.getX() + ", " + (int) player.getY() + ")", 10, 120, paint);
+        canvas.drawText("Position: (" + (int) player.getX() + ", " + (int) player.getY() + ")", 10, 160, paint);
 
-        // Draw terrain info
-        int playerGridX = (int) (player.getX() / TILE_SIZE);
-        int playerGridY = (int) (player.getY() / TILE_SIZE);
-        String terrainName = MapGenerator.getTerrainName(map[playerGridY][playerGridX]);
-        canvas.drawText("Terrain: " + terrainName, 10, 160, paint);
-
-        // Draw chunk cache info (for debugging)
-        paint.setColor(Color.CYAN);
-        canvas.drawText("Chunks: " + mapRenderer.getCachedChunkCount(), 10, 200, paint);
-        canvas.drawText("Active: " + mapRenderer.getActiveChunkCount(), 10, 240, paint);
+//        // Draw terrain info
+//        int playerGridX = (int) (player.getX() / TILE_SIZE);
+//        int playerGridY = (int) (player.getY() / TILE_SIZE);
+//        String terrainName = MapGenerator.getTerrainName(map[playerGridY][playerGridX]);
+//        canvas.drawText("Terrain: " + terrainName, 10, 160, paint);
+//
+//        // Draw chunk cache info (for debugging)
+//        paint.setColor(Color.CYAN);
+//        canvas.drawText("Chunks: " + mapRenderer.getCachedChunkCount(), 10, 200, paint);
+//        canvas.drawText("Active: " + mapRenderer.getActiveChunkCount(), 10, 240, paint);
 
         // Draw time info
         if (dayNightCycle != null) {
             paint.setColor(Color.rgb(255, 255, 200)); // Light yellow
-            canvas.drawText(dayNightCycle.getTimePhase(), 10, 280, paint);
+            canvas.drawText(dayNightCycle.getTimePhase(), 10, 200, paint);
         }
 
         // Draw weather info
         if (weatherSystem != null) {
             paint.setColor(Color.rgb(200, 220, 255)); // Light blue
-            canvas.drawText("Weather: " + weatherSystem.getWeatherDescription(), 10, 320, paint);
+            canvas.drawText("Weather: " + weatherSystem.getWeatherDescription(), 10, 240, paint);
         }
     }
 
@@ -869,7 +907,7 @@ public class GameEngine {
 
         // If role info panel is visible, check if touching it first
         if (roleInfoPanel != null && roleInfoPanel.isVisible()) {
-            if (roleInfoPanel.handleTouch(x, y)) {
+            if (action == MotionEvent.ACTION_DOWN && roleInfoPanel.handleTouch(x, y)) {
                 return true; // Panel handled the touch (closed itself)
             }
         }

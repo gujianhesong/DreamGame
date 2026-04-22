@@ -13,7 +13,7 @@ import com.game.dream.utils.Utils;
 public class Wolf extends Enemy {
 
     public Wolf(float x, float y) {
-        super(x, y, 60, 200, 50);
+        super(x, y, 60, 200, 50, 30, 150);
         attackCooldown = 1500;
 
         int health = Utils.getWaveValue(200, 0.2f);

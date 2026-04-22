@@ -3,6 +3,7 @@ package com.game.dream.enemy;
 import android.graphics.Canvas;
 
 import com.game.dream.Character;
+import com.game.dream.utils.Utils;
 
 /**
  * Base class for all enemies
@@ -25,7 +26,19 @@ public abstract class Enemy extends Character {
     protected float detectionRange;
     protected float attackRange;
 
-    public Enemy(float x, float y, int size, float detectionRange, float attackRange) {
+    // Experience reward when killed
+    protected int rewardExp;
+    protected int rewardMoney;
+
+    protected int health;
+    protected int maxHealth;
+    protected int attackDamage;
+    protected int magicDamage;
+    protected int defense;
+    protected int mana;
+    protected float speed;
+
+    public Enemy(float x, float y, int size, float detectionRange, float attackRange, int rewardExp, int rewardMoney) {
         super(x, y, size); // attack=10, defense=0, size=30
 
         this.currentState = State.IDLE;
@@ -37,6 +50,9 @@ public abstract class Enemy extends Character {
         this.attackRange = attackRange;
         this.attackCooldown = 1500;
         this.lastAttackTime = 0;
+
+        this.rewardExp = rewardExp;
+        this.rewardMoney = rewardMoney;
     }
 
     /**
@@ -89,6 +105,13 @@ public abstract class Enemy extends Character {
         // Update animation
         updateAnimation(currentTime);
     }
+
+    public int getAttackDamage() { return attackDamage; }
+
+    public int getMagicDamage() { return magicDamage; }
+    public int getDefense() { return defense; }
+    public float getSpeed() { return speed; }
+    public int getMana() { return mana; }
 
     /**
      * Update idle behavior - must be implemented by subclass
@@ -213,5 +236,50 @@ public abstract class Enemy extends Character {
         }
 
         return (float)timeSinceLastAttack / attackCooldown;
+    }
+
+    /**
+     * Get experience reward when this enemy is killed
+     */
+    public int getExperienceReward() {
+        return Utils.getWaveValue(rewardExp, 0.1f);
+    }
+
+    /**
+     * Get money reward when this enemy is killed
+     */
+    public int getMoneyReward() {
+        return Utils.getWaveValue(rewardMoney, 0.1f);
+    }
+
+    @Override
+    public int getHealth() {
+        return health;
+    }
+
+    @Override
+    public int getMaxHealth() {
+        return maxHealth;
+    }
+
+    public boolean takeDamage(int damage) {
+        long currentTime = System.currentTimeMillis();
+
+        // Check if invincible
+        if (isInvincible && currentTime < invincibleEndTime) {
+            return false; // No damage taken
+        }
+
+        // Apply damage
+        health -= damage;
+        lastDamageTime = currentTime;
+
+        // Check if dead
+        if (health <= 0) {
+            health = 0;
+            return true; // Died
+        }
+
+        return false; // Still alive
     }
 }

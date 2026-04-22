@@ -3,6 +3,8 @@ package com.game.dream;
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.game.dream.system.SaveSystem;
+
 public class MainActivity extends AppCompatActivity {
     private GameView gameView;
 
@@ -27,6 +29,13 @@ public class MainActivity extends AppCompatActivity {
         super.onPause();
         if (gameView != null) {
             gameView.pause();
+
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    SaveSystem.getInstance().save(MainActivity.this);
+                }
+            }).start();
         }
     }
 

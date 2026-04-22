@@ -142,6 +142,9 @@ public class Player extends Character {
             x = newX;
             y = newY;
         }
+
+        RoleSystem.getInstance().getRoleInfo().setMapX((int) x);
+        RoleSystem.getInstance().getRoleInfo().setMapY((int) y);
     }
 
     /**

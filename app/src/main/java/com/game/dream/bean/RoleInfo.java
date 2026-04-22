@@ -42,8 +42,8 @@ public class RoleInfo {
 
     //地图信息
     private int mapId;
-    private int mapX;
-    private int mapY;
+    private int mapX = -1;
+    private int mapY = -1;
 
     public String getName() {
         return name;

@@ -1,8 +1,8 @@
 package com.game.dream.system;
 
 import android.content.Context;
-import android.widget.Toast;
 
+import com.game.dream.LogUtil;
 import com.game.dream.bean.SaveInfo;
 import com.google.gson.Gson;
 
@@ -37,15 +37,10 @@ public class SaveSystem {
             String jsonData = gson.toJson(saveInfo);
 
             // Save to internal storage with level number
-
             FileOutputStream fos = context.openFileOutput(SAVE_FILE_NAME, Context.MODE_PRIVATE);
             fos.write(jsonData.getBytes());
             fos.close();
-
-            Toast.makeText(context, "Game saved!", Toast.LENGTH_LONG).show();
-
         } catch (Exception e) {
-            Toast.makeText(context, "Error saving game info: " + e.getMessage(), Toast.LENGTH_SHORT).show();
             e.printStackTrace();
         }
     }
@@ -62,8 +57,9 @@ public class SaveSystem {
             reader.close();
             fis.close();
 
+            String content = sb.toString();
             Gson gson = new Gson();
-            saveInfo = gson.fromJson(line, SaveInfo.class);
+            saveInfo = gson.fromJson(content, SaveInfo.class);
         } catch (Exception e) {
             e.printStackTrace();
         }

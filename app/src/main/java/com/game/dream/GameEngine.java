@@ -10,6 +10,7 @@ import android.view.MotionEvent;
 
 import com.game.dream.bean.AttackResult;
 import com.game.dream.bean.EnemyHitInfo;
+import com.game.dream.bean.RoleInfo;
 import com.game.dream.enemy.Enemy;
 import com.game.dream.enemy.Tiger;
 import com.game.dream.enemy.Wolf;
@@ -134,7 +135,12 @@ public class GameEngine {
         }
 
         // Create player at center of map
-        player = new Player(startX * TILE_SIZE + TILE_SIZE / 2, startY * TILE_SIZE + TILE_SIZE / 2);
+        RoleInfo roleInfo = RoleSystem.getInstance().getRoleInfo();
+        if (roleInfo.getMapX() < 0 || roleInfo.getMapY() < 0) {
+            roleInfo.setMapX(startX * TILE_SIZE + TILE_SIZE / 2);
+            roleInfo.setMapY(startY * TILE_SIZE + TILE_SIZE / 2);
+        }
+        player = new Player(roleInfo.getMapX(), roleInfo.getMapY());
         player.setName("剑侠客");
         // Set initial respawn point
         player.setRespawnPoint(player.getX(), player.getY());
@@ -900,7 +906,6 @@ public class GameEngine {
         int pointerId = event.getPointerId(pointerIndex);
 
         boolean handled = false;
-        LogUtil.i("aaaaaaaaaaaaaaa " + magicAttack1Pressed);
         // Get the coordinates of the pointer that triggered this event
         float x = event.getX(pointerIndex);
         float y = event.getY(pointerIndex);
@@ -911,7 +916,6 @@ public class GameEngine {
                 return true; // Panel handled the touch (closed itself)
             }
         }
-        LogUtil.i("aaaaaaaaaaaaaaa " + magicAttack1Pressed);
         // Check role info button
         if (roleInfoButton != null && roleInfoButton.contains((int)x, (int)y)) {
             if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_POINTER_DOWN) {
@@ -922,7 +926,6 @@ public class GameEngine {
                 return true;
             }
         }
-        LogUtil.i("aaaaaaaaaaaaaaa " + magicAttack1Pressed);
         // Handle D-pad with pointer tracking
         switch (action) {
             case MotionEvent.ACTION_DOWN:

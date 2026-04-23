@@ -70,6 +70,9 @@ public class GameEngine {
     // Floating texts for rewards/damage
     private java.util.List<FloatingText> floatingTexts;
 
+    // Center screen notifications
+    private CenterNotification currentNotification;
+
     private RoleInfoPanel roleInfoPanel;
 
     // Attack buttons
@@ -145,6 +148,7 @@ public class GameEngine {
         }
         player = new Player(roleInfo.getMapX(), roleInfo.getMapY());
         player.setName("剑侠客");
+        player.setGameEngine(this);
         // Set initial respawn point
         player.setRespawnPoint(player.getX(), player.getY());
 
@@ -176,6 +180,9 @@ public class GameEngine {
 
         // Initialize floating texts list
         floatingTexts = new java.util.ArrayList<>();
+
+        // Initialize notification
+        currentNotification = null;
 
         // Initialize role info panel
         roleInfoPanel = new RoleInfoPanel(player);
@@ -414,6 +421,14 @@ public class GameEngine {
                 }
             }
         }
+
+        // Update center notification
+        if (currentNotification != null) {
+            currentNotification.update();
+            if (currentNotification.isExpired()) {
+                currentNotification = null;
+            }
+        }
     }
 
     /**
@@ -567,6 +582,11 @@ public class GameEngine {
             for (FloatingText text : copyFloatingTexts) {
                 text.draw(canvas, (int) -cameraX, (int) -cameraY);
             }
+        }
+
+        // Draw center notification (on top of everything except UI panels)
+        if (currentNotification != null) {
+            currentNotification.draw(canvas, screenWidth, screenHeight);
         }
 
         // Draw weather effects
@@ -898,7 +918,7 @@ public class GameEngine {
         float radius = button.width() / 2;
 
         // Dark overlay based on cooldown progress
-        int alpha = (int)(180 * (1 - progress)); // More opaque when cooling down
+        int alpha = (int) (180 * (1 - progress)); // More opaque when cooling down
         paint.setColor(Color.argb(alpha, 0, 0, 0));
 
         // Draw arc from top, clockwise
@@ -975,7 +995,7 @@ public class GameEngine {
             }
         }
         // Check role info button
-        if (roleInfoButton != null && roleInfoButton.contains((int)x, (int)y)) {
+        if (roleInfoButton != null && roleInfoButton.contains((int) x, (int) y)) {
             if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_POINTER_DOWN) {
                 roleInfoPanel.toggleVisibility();
                 return true;
@@ -1266,8 +1286,8 @@ public class GameEngine {
         );
 
         // Attack buttons cluster (bottom-right)
-        int magicButtonSize = (int)(buttonSize * 0.8); // Magic buttons size
-        int physicalButtonSize = (int)(buttonSize * 1.2); // Physical button is 40% larger
+        int magicButtonSize = (int) (buttonSize * 0.8); // Magic buttons size
+        int physicalButtonSize = (int) (buttonSize * 1.2); // Physical button is 40% larger
         int attackPadding = 30;
 
         // Physical attack button center (bottom-right position)
@@ -1284,7 +1304,7 @@ public class GameEngine {
 
         // Magic attack buttons arranged in fan shape around physical button
         // Layout: Left, Top-Left, Top (forming an arc in the upper-left quadrant)
-        int spacing = (int)(physicalButtonSize * 1.5);
+        int spacing = (int) (physicalButtonSize * 1.5);
 
         // Button 1: Left of physical button
         int magic1X = physicalCenterX - spacing;
@@ -1297,8 +1317,8 @@ public class GameEngine {
         );
 
         // Button 2: Top-Left of physical button (diagonal)
-        int magic2X = physicalCenterX - (int)(spacing * 0.7);
-        int magic2Y = physicalCenterY - (int)(spacing * 0.7);
+        int magic2X = physicalCenterX - (int) (spacing * 0.7);
+        int magic2Y = physicalCenterY - (int) (spacing * 0.7);
         magicAttackButton2 = new Rect(
                 magic2X - magicButtonSize / 2,
                 magic2Y - magicButtonSize / 2,
@@ -1365,4 +1385,34 @@ public class GameEngine {
                 enemyY >= visibleTop &&
                 enemyY <= visibleBottom;
     }
+
+    /**
+     * Show a center screen notification
+     */
+    public void showNotification(String title, String message, CenterNotification.Type type) {
+        currentNotification = new CenterNotification(title, message, type);
+        LogUtil.d("GameEngine", "Notification: " + title + " - " + message);
+    }
+
+    /**
+     * Show quest completion notification
+     */
+    public void showQuestComplete(String questName) {
+        showNotification("✅ 任务完成", questName, CenterNotification.Type.QUEST_COMPLETE);
+    }
+
+    /**
+     * Show achievement unlocked notification
+     */
+    public void showAchievement(String achievementName) {
+        showNotification("🏆 成就解锁", achievementName, CenterNotification.Type.ACHIEVEMENT);
+    }
+
+    /**
+     * Show warning notification
+     */
+    public void showWarning(String warning) {
+        showNotification("⚠️ 警告", warning, CenterNotification.Type.WARNING);
+    }
+
 }

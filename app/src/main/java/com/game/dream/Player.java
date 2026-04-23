@@ -39,6 +39,7 @@ public class Player extends Character {
 
     // Renderer
     private PlayerRenderer renderer;
+    private GameEngine gameEngine;
 
     public Player(float x, float y) {
         super(x, y, 80);
@@ -108,7 +109,7 @@ public class Player extends Character {
         if (movingUp || movingDown || movingLeft || movingRight) {
             android.util.Log.d("Player", "Moving: U=" + movingUp + " D=" + movingDown +
                     " L=" + movingLeft + " R=" + movingRight +
-                    " Pos=(" + (int)x + "," + (int)y + ")");
+                    " Pos=(" + (int) x + "," + (int) y + ")");
         }
 
         // Update animation cycle (both walking and idle)
@@ -125,12 +126,12 @@ public class Player extends Character {
         }
 
         // Collision detection with map boundaries
-        newX = Math.max(size/2, Math.min(newX, mapWidth * tileSize - size/2));
-        newY = Math.max(size/2, Math.min(newY, mapHeight * tileSize - size/2));
+        newX = Math.max(size / 2, Math.min(newX, mapWidth * tileSize - size / 2));
+        newY = Math.max(size / 2, Math.min(newY, mapHeight * tileSize - size / 2));
 
         // Check collision with impassable terrain (lake, lava)
-        int gridX = (int)(newX / tileSize);
-        int gridY = (int)(newY / tileSize);
+        int gridX = (int) (newX / tileSize);
+        int gridY = (int) (newY / tileSize);
 
         if (gridX >= 0 && gridX < mapWidth && gridY >= 0 && gridY < mapHeight) {
             int terrain = map[gridY][gridX];
@@ -232,6 +233,14 @@ public class Player extends Character {
             return null; // Still on cooldown
         }
 
+        int costMagic = 20;
+        RoleInfo roleInfo = RoleSystem.getInstance().getRoleInfo();
+        if (roleInfo.getMagic() < costMagic) {
+            gameEngine.showWarning("魔法不足");
+            return null;
+        }
+        roleInfo.setMagic(roleInfo.getMagic() - costMagic);
+
         lastMagicTime = currentTime;
 
         java.util.List<Projectile> spells = new java.util.ArrayList<>();
@@ -309,7 +318,7 @@ public class Player extends Character {
         return Math.min(1.0f, (float) elapsed / magicCooldown);
     }
 
-    public void setRespawnPoint(float respawnX, float respawnY){
+    public void setRespawnPoint(float respawnX, float respawnY) {
         this.respawnX = respawnX;
         this.respawnY = respawnY;
     }
@@ -350,7 +359,7 @@ public class Player extends Character {
             attackAnimationFrame = 0;
         } else {
             // Calculate animation frame (0-10)
-            attackAnimationFrame = (int)(elapsed * 10 / ATTACK_ANIMATION_DURATION);
+            attackAnimationFrame = (int) (elapsed * 10 / ATTACK_ANIMATION_DURATION);
         }
     }
 
@@ -376,18 +385,40 @@ public class Player extends Character {
 
         long currentTime = System.currentTimeMillis();
         long elapsed = currentTime - attackStartTime;
-        return Math.min(1.0f, (float)elapsed / ATTACK_ANIMATION_DURATION);
+        return Math.min(1.0f, (float) elapsed / ATTACK_ANIMATION_DURATION);
     }
 
-    public void setMovingLeft(boolean moving) { this.movingLeft = moving; }
-    public void setMovingRight(boolean moving) { this.movingRight = moving; }
-    public void setMovingUp(boolean moving) { this.movingUp = moving; }
-    public void setMovingDown(boolean moving) { this.movingDown = moving; }
+    public void setMovingLeft(boolean moving) {
+        this.movingLeft = moving;
+    }
 
-    public int getFacingDirection() { return facingDirection; }
-    public boolean isMoving() { return movingUp || movingDown || movingLeft || movingRight; }
-    public int getWalkCycle() { return walkCycle; }
-    public long getInvincibleEndTime() { return invincibleEndTime; }
+    public void setMovingRight(boolean moving) {
+        this.movingRight = moving;
+    }
+
+    public void setMovingUp(boolean moving) {
+        this.movingUp = moving;
+    }
+
+    public void setMovingDown(boolean moving) {
+        this.movingDown = moving;
+    }
+
+    public int getFacingDirection() {
+        return facingDirection;
+    }
+
+    public boolean isMoving() {
+        return movingUp || movingDown || movingLeft || movingRight;
+    }
+
+    public int getWalkCycle() {
+        return walkCycle;
+    }
+
+    public long getInvincibleEndTime() {
+        return invincibleEndTime;
+    }
 
     @Override
     public int getHealth() {
@@ -421,5 +452,9 @@ public class Player extends Character {
         }
 
         return false; // Still alive
+    }
+
+    public void setGameEngine(GameEngine gameEngine) {
+        this.gameEngine = gameEngine;
     }
 }

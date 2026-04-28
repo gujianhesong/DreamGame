@@ -5,6 +5,8 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 
+import com.game.dream.item.EquipCreator;
+import com.game.dream.item.ItemCreator;
 import com.game.dream.utils.Utils;
 
 /**
@@ -49,6 +51,14 @@ public class Tiger extends Enemy {
             this.speed = 60;
             this.mana = 60;
         }
+
+        addPossibleDrop(ItemCreator.createHp1_1_Siyehua());
+        addPossibleDrop(ItemCreator.createHp1_2_QiyeLian());
+        addPossibleDrop(ItemCreator.createMp1_1_Foshou());
+        addPossibleDrop(ItemCreator.createMp1_2_Xiangye());
+
+        addPossibleDrop(EquipCreator.createEquip(0, null));
+        addPossibleDrop(EquipCreator.createEquip(10, null));
     }
 
     @Override
@@ -56,13 +66,13 @@ public class Tiger extends Enemy {
         long currentTime = System.currentTimeMillis();
 
         // Tigers are more active - change direction every 1-3 seconds
-        if (currentTime - stateTimer > 1000 + (int)(Math.random() * 2000)) {
+        if (currentTime - stateTimer > 1000 + (int) (Math.random() * 2000)) {
             // Pick a random nearby position
-            float angle = (float)(Math.random() * Math.PI * 2);
-            float distance = 80 + (float)(Math.random() * 150);
+            float angle = (float) (Math.random() * Math.PI * 2);
+            float distance = 80 + (float) (Math.random() * 150);
 
-            targetX = x + (float)Math.cos(angle) * distance;
-            targetY = y + (float)Math.sin(angle) * distance;
+            targetX = x + (float) Math.cos(angle) * distance;
+            targetY = y + (float) Math.sin(angle) * distance;
 
             // Clamp to map bounds
             targetX = Math.max(size, Math.min(targetX, mapWidth - size));
@@ -175,8 +185,8 @@ public class Tiger extends Enemy {
 
         // Legs (thicker than wolf)
         paint.setColor(Color.rgb(255, 165, 0));
-        float legOffset1 = (float)Math.sin(animFrame * Math.PI / 2) * 4 * scale;
-        float legOffset2 = (float)Math.sin((animFrame + 2) * Math.PI / 2) * 4 * scale;
+        float legOffset1 = (float) Math.sin(animFrame * Math.PI / 2) * 4 * scale;
+        float legOffset2 = (float) Math.sin((animFrame + 2) * Math.PI / 2) * 4 * scale;
 
         // Front legs
         canvas.drawRect(cx + 8 * scale, cy + 6 * scale + bobOffset + legOffset1,

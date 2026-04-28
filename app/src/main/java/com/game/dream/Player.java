@@ -7,6 +7,10 @@ import com.game.dream.bean.EnemyHitInfo;
 import com.game.dream.bean.RoleInfo;
 import com.game.dream.enemy.Enemy;
 import com.game.dream.enums.SkillType;
+import com.game.dream.item.ConsumableItem;
+import com.game.dream.item.Item;
+import com.game.dream.item.ItemStack;
+import com.game.dream.system.ItemSystem;
 import com.game.dream.system.RoleSystem;
 
 import java.util.ArrayList;
@@ -331,6 +335,7 @@ public class Player extends Character {
         y = respawnY;
         RoleInfo roleInfo = RoleSystem.getInstance().getRoleInfo();
         roleInfo.setBlood(roleInfo.getBloodCap());
+        roleInfo.setMagic(roleInfo.getMagicCap());
         isInvincible = true;
         invincibleEndTime = System.currentTimeMillis() + 3000; // 3 seconds invincibility after respawn
         android.util.Log.d("Player", "Respawned at (" + (int) x + ", " + (int) y + ")");
@@ -457,4 +462,39 @@ public class Player extends Character {
     public void setGameEngine(GameEngine gameEngine) {
         this.gameEngine = gameEngine;
     }
+
+    /**
+     * Use item from inventory
+     */
+    public boolean useItem(int index) {
+        if (ItemSystem.getInstance().getItems().size() <= index) return false;
+
+        ItemStack stack = ItemSystem.getInstance().getItems().get(index);
+        Item item = stack.getItem();
+
+        if (item.getType() != Item.Type.CONSUMABLE) {
+            return false;
+        }
+
+        ConsumableItem consumable = (ConsumableItem)item;
+
+        // Apply effect based on type
+        switch (consumable.getEffectType()) {
+            case HEAL_HP:
+
+                break;
+            case HEAL_MP:
+                break;
+            case BUFF_ATTACK:
+                break;
+            case BUFF_DEFENSE:
+                break;
+            case BUFF_SPEED:
+                break;
+        }
+
+        // Consume the item
+        return ItemSystem.getInstance().useItem(index);
+    }
+
 }

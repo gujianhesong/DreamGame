@@ -87,7 +87,7 @@ public class RoleSystem {
         int defense = (int) (nai * 1.5f);
         int speed = (int) (min * 1.1f);
         int dodge = (int) (min * 1.5f);
-        int mana = (int) (li * 0.2f + mo * 0.8f + li * 0.3f);
+        int mana = (int) (ti * 0.3f + mo * 0.8f + li * 0.4f + nai * 0.2f);
         return new AddPointResult(blood, magic, hit, attack, defense, speed, dodge, mana);
     }
 

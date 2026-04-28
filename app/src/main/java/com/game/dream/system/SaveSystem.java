@@ -2,8 +2,8 @@ package com.game.dream.system;
 
 import android.content.Context;
 
-import com.game.dream.LogUtil;
 import com.game.dream.bean.SaveInfo;
+import com.game.dream.utils.StorageHelper;
 import com.google.gson.Gson;
 
 import java.io.BufferedReader;
@@ -19,7 +19,7 @@ public class SaveSystem {
         return instance;
     }
 
-    private final static String SAVE_FILE_NAME = "save.json";
+    private final static String SAVE_FILE_NAME = "save.txt";
     private SaveInfo saveInfo;
 
     private SaveSystem() {
@@ -29,15 +29,15 @@ public class SaveSystem {
     public void save(Context context) {
         try {
             SaveInfo saveInfo = new SaveInfo();
-
             saveInfo.setRoleInfo(RoleSystem.getInstance().getRoleInfo());
+            saveInfo.setItemInfos(ItemSystem.getInstance().getItemInfos());
 
             // Convert to JSON and save
             Gson gson = new Gson();
             String jsonData = gson.toJson(saveInfo);
 
-            // Save to internal storage with level number
-            FileOutputStream fos = context.openFileOutput(SAVE_FILE_NAME, Context.MODE_PRIVATE);
+            // Save to external storage with level number
+            FileOutputStream fos = new FileOutputStream(getSavePath(context));
             fos.write(jsonData.getBytes());
             fos.close();
         } catch (Exception e) {
@@ -47,7 +47,7 @@ public class SaveSystem {
 
     public void read(Context context) {
         try {
-            FileInputStream fis = context.openFileInput(SAVE_FILE_NAME);
+            FileInputStream fis = new FileInputStream(getSavePath(context));
             BufferedReader reader = new BufferedReader(new InputStreamReader(fis));
             StringBuilder sb = new StringBuilder();
             String line;
@@ -69,6 +69,7 @@ public class SaveSystem {
         }
 
         RoleSystem.getInstance().setRoleInfo(saveInfo.getRoleInfo());
+        ItemSystem.getInstance().setItemInfos(saveInfo.getItemInfos());
     }
 
     private SaveInfo getInitData() {
@@ -79,5 +80,10 @@ public class SaveSystem {
 
     public SaveInfo getSaveInfo() {
         return saveInfo;
+    }
+
+    private String getSavePath(Context context) {
+        String savePath = new StorageHelper(context).getAppExternalDir().getAbsolutePath() + "/" + SAVE_FILE_NAME;
+        return savePath;
     }
 }

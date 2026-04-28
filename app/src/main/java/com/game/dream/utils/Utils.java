@@ -14,4 +14,11 @@ public class Utils {
         return newValue;
     }
 
+    public static float getRangeValue(float minValue, float maxValue) {
+        float newMinValue = Math.min(minValue, maxValue);
+        float newMaxValue = Math.min(minValue, maxValue);
+        float value = (float) (newMinValue + (newMaxValue - newMinValue) * Math.random());
+        return value;
+    }
+
 }

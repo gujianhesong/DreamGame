@@ -4,7 +4,13 @@ import android.graphics.Canvas;
 
 import com.game.dream.Character;
 import com.game.dream.LogUtil;
+import com.game.dream.item.EquipmentItem;
+import com.game.dream.item.Item;
+import com.game.dream.item.ItemStack;
 import com.game.dream.utils.Utils;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Base class for all enemies
@@ -50,6 +56,10 @@ public abstract class Enemy extends Character {
     protected long aggroEndTime;
     protected boolean isAggroed;
 
+    // Possible drops
+    protected List<Item> possibleDrops;
+    protected float dropChance;
+
     public Enemy(float x, float y, int size, float detectionRange, float attackRange, int rewardExp, int rewardMoney) {
         super(x, y, size); // attack=10, defense=0, size=30
 
@@ -69,6 +79,9 @@ public abstract class Enemy extends Character {
 
         this.aggroEndTime = 0;
         this.isAggroed = false;
+
+        this.possibleDrops = new ArrayList<>();
+        this.dropChance = 0.3f; // 30% chance to drop something
     }
 
     /**
@@ -337,5 +350,37 @@ public abstract class Enemy extends Character {
         } else if (enemyLevel == EnemyLevel.LEADER) {
             this.name = name + "首领";
         }
+    }
+
+    /**
+     * Add possible drop item
+     */
+    public void addPossibleDrop(Item item) {
+        possibleDrops.add(item);
+    }
+
+    /**
+     * Get dropped items when enemy dies
+     */
+    public List<ItemStack> getDrops() {
+        List<ItemStack> drops = new ArrayList<>();
+
+        if (Math.random() < dropChance && !possibleDrops.isEmpty()) {
+            // Drop 1-2 items
+            int numDrops = 1 + (int)(Math.random() * 2);
+
+            for (int i = 0; i < numDrops && i < possibleDrops.size(); i++) {
+                Item item = possibleDrops.get((int)(Math.random() * possibleDrops.size()));
+                int quantity = 1 + (int)(Math.random() * 3); // 1-3 quantity
+
+                if(item instanceof EquipmentItem){
+                    quantity = 1;
+                }
+
+                drops.add(new ItemStack(item, quantity));
+            }
+        }
+
+        return drops;
     }
 }

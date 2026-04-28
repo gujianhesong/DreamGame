@@ -15,8 +15,11 @@ import com.game.dream.enemy.Enemy;
 import com.game.dream.enemy.Tiger;
 import com.game.dream.enemy.Wolf;
 import com.game.dream.enums.SkillType;
+import com.game.dream.item.EquipmentItem;
+import com.game.dream.item.ItemStack;
 import com.game.dream.panel.RoleInfoPanel;
 import com.game.dream.system.DayNightCycle;
+import com.game.dream.system.ItemSystem;
 import com.game.dream.system.RoleSystem;
 import com.game.dream.system.WeatherSystem;
 
@@ -332,6 +335,29 @@ public class GameEngine {
                                 "+" + moneyReward + " 金钱",
                                 FloatingText.Type.MONEY
                         ));
+                    }
+
+                    // Get item drops from enemy
+                    List<ItemStack> drops = enemy.getDrops();
+                    StringBuilder dropMessage = new StringBuilder();
+                    for (ItemStack drop : drops) {
+                        if (ItemSystem.getInstance().addItem(drop.getItem(), drop.getQuantity())) {
+                            if (dropMessage.length() > 0) dropMessage.append(", ");
+                            if (drop.getItem() instanceof EquipmentItem) {
+                                dropMessage.append(drop.getItem().getName());
+                            } else {
+                                dropMessage.append(drop.getItem().getName())
+                                        .append(" x").append(drop.getQuantity());
+                            }
+
+                            // Show floating text for item drop
+                            floatingTexts.add(new FloatingText(
+                                    enemy.getX() + (float)(Math.random() * 40 - 20),
+                                    enemy.getY() - 70 - (float)(Math.random() * 20),
+                                    drop.getItem().getName(),
+                                    FloatingText.Type.EXPERIENCE
+                            ));
+                        }
                     }
 
                     // If player leveled up, show special notification

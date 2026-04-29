@@ -1,13 +1,12 @@
 package com.game.dream.bean;
 
+import com.game.dream.item.Item;
+
 public class EquipItemInfo extends ItemInfo {
-    private int id;
     //装备类型，1:头盔,2:项链,3:武器,4:衣服,5:腰带,6:鞋子
-    private int type;
+    private int equipType;
     //装备级别
     private int level;
-    //名称
-    private String name;
 
     //属性
     private int hp;
@@ -46,26 +45,15 @@ public class EquipItemInfo extends ItemInfo {
 
 
     public EquipItemInfo(int id, String name) {
-        super(id, name);
+        super(id, name, Item.Type.EQUIPMENT.name());
     }
 
-
-    @Override
-    public int getId() {
-        return id;
+    public int getEquipType() {
+        return equipType;
     }
 
-    @Override
-    public void setId(int id) {
-        this.id = id;
-    }
-
-    public int getType() {
-        return type;
-    }
-
-    public void setType(int type) {
-        this.type = type;
+    public void setEquipType(int equipType) {
+        this.equipType = equipType;
     }
 
     public int getLevel() {
@@ -74,16 +62,6 @@ public class EquipItemInfo extends ItemInfo {
 
     public void setLevel(int level) {
         this.level = level;
-    }
-
-    @Override
-    public String getName() {
-        return name;
-    }
-
-    @Override
-    public void setName(String name) {
-        this.name = name;
     }
 
     public int getHp() {

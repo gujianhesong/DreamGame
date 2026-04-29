@@ -6,8 +6,13 @@ import android.graphics.Paint;
 import android.graphics.Path;
 
 import com.game.dream.item.EquipCreator;
+import com.game.dream.item.EquipmentItem;
+import com.game.dream.item.Item;
 import com.game.dream.item.ItemCreator;
 import com.game.dream.utils.Utils;
+
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Tiger enemy - stronger and more aggressive than wolf
@@ -18,7 +23,7 @@ public class Tiger extends Enemy {
         super(x, y, 100, 250, 60, 50, 200);
         attackCooldown = 1200; // Faster attacks than wolf
 
-        int health = Utils.getWaveValue(350, 0.2f);
+        int health = Utils.getWaveValueInt(350, 0.2f);
         this.maxHealth = health;
         this.health = health;
         this.attackDamage = 40;
@@ -31,7 +36,7 @@ public class Tiger extends Enemy {
             enemyLevel = EnemyLevel.ELITE;
             size = size * 2;
 
-            health = Utils.getWaveValue(350 * 10, 0.2f);
+            health = Utils.getWaveValueInt(350 * 10, 0.2f);
             this.maxHealth = health;
             this.health = health;
             this.attackDamage = 80;
@@ -43,7 +48,7 @@ public class Tiger extends Enemy {
             enemyLevel = EnemyLevel.LEADER;
             size = (int) (size * 1.3f);
 
-            health = Utils.getWaveValue(350 * 3, 0.2f);
+            health = Utils.getWaveValueInt(350 * 3, 0.2f);
             this.maxHealth = health;
             this.health = health;
             this.attackDamage = 60;
@@ -52,13 +57,21 @@ public class Tiger extends Enemy {
             this.mana = 60;
         }
 
+
+    }
+
+    @Override
+    public List<Item> getPossibleDropList() {
+        possibleDrops.clear();
+
         addPossibleDrop(ItemCreator.createHp1_1_Siyehua());
         addPossibleDrop(ItemCreator.createHp1_2_QiyeLian());
         addPossibleDrop(ItemCreator.createMp1_1_Foshou());
         addPossibleDrop(ItemCreator.createMp1_2_Xiangye());
 
         addPossibleDrop(EquipCreator.createEquip(0, null));
-        addPossibleDrop(EquipCreator.createEquip(10, null));
+
+        return possibleDrops;
     }
 
     @Override

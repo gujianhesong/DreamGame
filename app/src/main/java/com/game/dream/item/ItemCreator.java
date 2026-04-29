@@ -1,5 +1,7 @@
 package com.game.dream.item;
 
+import com.game.dream.LogUtil;
+import com.game.dream.bean.EquipItemInfo;
 import com.game.dream.bean.ItemInfo;
 
 public class ItemCreator {
@@ -11,8 +13,8 @@ public class ItemCreator {
 
         int id = itemInfo.getId();
         int type = id / 1000;
-
-        if (id >= 20000 * 1000 && id < 30000 * 1000) {
+        LogUtil.i("aaaaaaaaaaaaaaaaa " + itemInfo.getName() + " " + itemInfo);
+        if (itemInfo instanceof EquipItemInfo) {
             return EquipCreator.createEquipWithInfo(itemInfo);
         }
 

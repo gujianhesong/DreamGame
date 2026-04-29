@@ -39,7 +39,7 @@ public class EquipmentItem extends Item {
     public Slot getSlot() {
         Slot slot = null;
         if (equipItemInfo != null) {
-            switch (equipItemInfo.getType()) {
+            switch (equipItemInfo.getEquipType()) {
                 case 1:
                     slot = Slot.HELMET;
                     break;

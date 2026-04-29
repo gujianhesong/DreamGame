@@ -17,6 +17,7 @@ import com.game.dream.enemy.Wolf;
 import com.game.dream.enums.SkillType;
 import com.game.dream.item.EquipmentItem;
 import com.game.dream.item.ItemStack;
+import com.game.dream.panel.EquipmentPanel;
 import com.game.dream.panel.RoleInfoPanel;
 import com.game.dream.system.DayNightCycle;
 import com.game.dream.system.ItemSystem;
@@ -78,12 +79,15 @@ public class GameEngine {
 
     private RoleInfoPanel roleInfoPanel;
 
+    private EquipmentPanel equipmentPanel;
+
     // Attack buttons
     private Rect meleeAttackButton;
     private Rect magicAttackButton1; // Top-left spell
     private Rect magicAttackButton2; // Top spell
     private Rect magicAttackButton3; // Top-right spell
     private Rect roleInfoButton;
+    private Rect equipmentButton;
     private boolean meleeAttackPressed;
     private boolean magicAttack1Pressed, magicAttack2Pressed, magicAttack3Pressed;
 
@@ -189,6 +193,9 @@ public class GameEngine {
 
         // Initialize role info panel
         roleInfoPanel = new RoleInfoPanel(player);
+
+        // Initialize equipment panel
+        equipmentPanel = new EquipmentPanel();
     }
 
     /**
@@ -635,6 +642,11 @@ public class GameEngine {
         if (roleInfoPanel != null) {
             roleInfoPanel.draw(canvas);
         }
+
+        // Draw equipment panel (on top of everything)
+        if (equipmentPanel != null && equipmentPanel.isVisible()) {
+            equipmentPanel.draw(canvas);
+        }
     }
 
     private void drawUI(Canvas canvas) {
@@ -808,6 +820,11 @@ public class GameEngine {
         // Draw role info button
         if (roleInfoButton != null) {
             drawInfoButton(canvas, roleInfoButton, roleInfoPanel.isVisible());
+        }
+
+        // Draw equipment button
+        if (equipmentButton != null) {
+            drawEquipmentButton(canvas, equipmentButton, equipmentPanel != null && equipmentPanel.isVisible());
         }
     }
 
@@ -992,6 +1009,41 @@ public class GameEngine {
         canvas.drawText("👤", textX, textY, paint);
     }
 
+    /**
+     * Draw equipment button
+     */
+    private void drawEquipmentButton(Canvas canvas, Rect button, boolean isOpen) {
+        Paint paint = new Paint();
+        paint.setAntiAlias(true);
+
+        // Calculate center and radius
+        float centerX = button.centerX();
+        float centerY = button.centerY();
+        float radius = Math.min(button.width(), button.height()) / 2f - 2;
+
+        // Button background
+        if (isOpen) {
+            paint.setColor(Color.argb(200, 100, 200, 100)); // Green when open
+        } else {
+            paint.setColor(Color.argb(150, 80, 80, 80));
+        }
+        canvas.drawRoundRect(button.left, button.top, button.right, button.bottom, 10, 10, paint);
+
+        // Border
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(2);
+        paint.setColor(Color.WHITE);
+        canvas.drawRoundRect(button.left, button.top, button.right, button.bottom, 10, 10, paint);
+
+        // Label (backpack icon)
+        paint.setStyle(Paint.Style.FILL);
+        paint.setTextSize(25);
+        paint.setColor(Color.WHITE);
+        paint.setTextAlign(Paint.Align.CENTER);
+        float textY = centerY + 8;
+        canvas.drawText("🎒", centerX, textY, paint);
+    }
+
     private void drawCooldownIndicator(Canvas canvas, Rect button, float progress, int color) {
         if (progress >= 1.0f) return; // No cooldown
 
@@ -1020,6 +1072,13 @@ public class GameEngine {
                 return true; // Panel handled the touch (closed itself)
             }
         }
+        // If equipment panel is visible, check if touching it first
+        if (equipmentPanel != null && equipmentPanel.isVisible()) {
+            if (action == MotionEvent.ACTION_DOWN && equipmentPanel.handleTouch(x, y)) {
+                return true; // Panel handled the touch
+            }
+        }
+
         // Check role info button
         if (roleInfoButton != null && roleInfoButton.contains((int) x, (int) y)) {
             if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_POINTER_DOWN) {
@@ -1030,6 +1089,20 @@ public class GameEngine {
                 return true;
             }
         }
+        // Check equipment button
+        if (equipmentButton != null && equipmentButton.contains((int) x, (int) y)) {
+            if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_POINTER_DOWN) {
+                if (equipmentPanel != null) {
+                    equipmentPanel.toggleVisibility();
+                }
+                return true;
+            }
+            if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_POINTER_UP) {
+                return true;
+            }
+        }
+
+
         // Handle D-pad with pointer tracking
         switch (action) {
             case MotionEvent.ACTION_DOWN:
@@ -1287,11 +1360,16 @@ public class GameEngine {
         initControlButtons();
 
         // Initialize role info panel (center of screen)
-        int panelWidth = Math.min(600, width - 40);
+        int panelWidth = Math.min(900, width - 40); // Increased from 600 to 900
         int panelHeight = Math.min(700, height - 100);
         int panelX = (width - panelWidth) / 2;
         int panelY = (height - panelHeight) / 2;
         roleInfoPanel.setBounds(panelX, panelY, panelWidth, panelHeight);
+
+        // Initialize equipment panel (center of screen)
+        if (equipmentPanel != null) {
+            equipmentPanel.setBounds(panelX, panelY, panelWidth, panelHeight);
+        }
     }
 
     private void initControlButtons() {
@@ -1369,6 +1447,14 @@ public class GameEngine {
                 screenWidth / 2 + infoPadding,
                 screenHeight - infoPadding - infoButtonSize,
                 screenWidth / 2 + infoPadding + infoButtonSize,
+                screenHeight - infoPadding
+        );
+
+        // Equipment button (next to role info button)
+        equipmentButton = new Rect(
+                screenWidth / 2 + infoPadding + infoButtonSize + 20,
+                screenHeight - infoPadding - infoButtonSize,
+                screenWidth / 2 + infoPadding + infoButtonSize * 2 + 20,
                 screenHeight - infoPadding
         );
     }

@@ -1,5 +1,6 @@
 package com.game.dream.item;
 
+import com.game.dream.LogUtil;
 import com.game.dream.bean.EquipItemInfo;
 import com.game.dream.bean.ItemInfo;
 import com.game.dream.system.ItemSystem;
@@ -13,7 +14,9 @@ import java.util.List;
 public class EquipCreator {
 
     public static EquipmentItem createEquipWithInfo(ItemInfo itemInfo) {
+        LogUtil.i("aaaaaaaaaaaaaaaaa " + itemInfo);
         if (itemInfo instanceof EquipItemInfo) {
+            LogUtil.i("aaaaaaaaaaaaaaaaa " + itemInfo);
             EquipItemInfo equipItemInfo = (EquipItemInfo) itemInfo;
             EquipmentItem equipmentItem = new EquipmentItem(equipItemInfo);
             return equipmentItem;
@@ -53,12 +56,12 @@ public class EquipCreator {
         EquipItemInfo equipItemInfo = new EquipItemInfo(newId, "");
         switch (slot) {
             case HELMET: {
-                equipItemInfo.setName(level + "头盔");
+                equipItemInfo.setName(level + "级头盔");
                 equipItemInfo.setLevel(level);
-                equipItemInfo.setType(1);
+                equipItemInfo.setEquipType(1);
 
-                float waveRatio1 = Utils.getWaveValue(1, 0.3f);
-                float waveRatio2 = Utils.getWaveValue(1, 0.3f);
+                float waveRatio1 = Utils.getWaveValueFloat(1, 0.3f);
+                float waveRatio2 = Utils.getWaveValueFloat(1, 0.3f);
                 equipItemInfo.setDefense((int) (30 * (level / 10 + 1) * waveRatio1));
                 equipItemInfo.setMp((int) (30 * (level / 10 + 1) * waveRatio2));
 
@@ -68,11 +71,11 @@ public class EquipCreator {
             }
             break;
             case ACCESSORY: {
-                equipItemInfo.setName(level + "项链");
-                equipItemInfo.setType(2);
+                equipItemInfo.setName(level + "级项链");
+                equipItemInfo.setEquipType(2);
 
-                float waveRatio1 = Utils.getWaveValue(1, 0.3f);
-                float waveRatio2 = Utils.getWaveValue(1, 0.3f);
+                float waveRatio1 = Utils.getWaveValueFloat(1, 0.3f);
+                float waveRatio2 = Utils.getWaveValueFloat(1, 0.3f);
                 equipItemInfo.setMana((int) (25 * (level / 10 + 1) * waveRatio1));
                 equipItemInfo.setMp((int) (30 * (level / 10 + 1) * waveRatio2));
 
@@ -82,11 +85,11 @@ public class EquipCreator {
             }
             break;
             case WEAPON: {
-                equipItemInfo.setName(level + "剑");
-                equipItemInfo.setType(3);
+                equipItemInfo.setName(level + "级剑");
+                equipItemInfo.setEquipType(3);
 
-                float waveRatio1 = Utils.getWaveValue(1, 0.3f);
-                float waveRatio2 = Utils.getWaveValue(1, 0.3f);
+                float waveRatio1 = Utils.getWaveValueFloat(1, 0.3f);
+                float waveRatio2 = Utils.getWaveValueFloat(1, 0.3f);
                 equipItemInfo.setHit((int) (45 * (level / 10 + 1) * waveRatio1));
                 equipItemInfo.setAttack((int) (35 * (level / 10 + 1) * waveRatio2));
 
@@ -96,10 +99,10 @@ public class EquipCreator {
             }
             break;
             case ARMOR: {
-                equipItemInfo.setName(level + "铠甲");
-                equipItemInfo.setType(4);
+                equipItemInfo.setName(level + "级铠甲");
+                equipItemInfo.setEquipType(4);
 
-                float waveRatio1 = Utils.getWaveValue(1, 0.3f);
+                float waveRatio1 = Utils.getWaveValueFloat(1, 0.3f);
                 equipItemInfo.setDefense((int) (45 * (level / 10 + 1) * waveRatio1));
 
                 gradeValue += waveRatio1;
@@ -107,11 +110,11 @@ public class EquipCreator {
             }
             break;
             case BELT: {
-                equipItemInfo.setName(level + "腰带");
-                equipItemInfo.setType(5);
+                equipItemInfo.setName(level + "级腰带");
+                equipItemInfo.setEquipType(5);
 
-                float waveRatio1 = Utils.getWaveValue(1, 0.3f);
-                float waveRatio2 = Utils.getWaveValue(1, 0.3f);
+                float waveRatio1 = Utils.getWaveValueFloat(1, 0.3f);
+                float waveRatio2 = Utils.getWaveValueFloat(1, 0.3f);
                 equipItemInfo.setDefense((int) (20 * (level / 10 + 1) * waveRatio1));
                 equipItemInfo.setHp((int) (50 * (level / 10 + 1) * waveRatio2));
 
@@ -121,11 +124,11 @@ public class EquipCreator {
             }
             break;
             case SHOES: {
-                equipItemInfo.setName(level + "鞋子");
-                equipItemInfo.setType(6);
+                equipItemInfo.setName(level + "级鞋子");
+                equipItemInfo.setEquipType(6);
 
-                float waveRatio1 = Utils.getWaveValue(1, 0.3f);
-                float waveRatio2 = Utils.getWaveValue(1, 0.3f);
+                float waveRatio1 = Utils.getWaveValueFloat(1, 0.3f);
+                float waveRatio2 = Utils.getWaveValueFloat(1, 0.3f);
                 equipItemInfo.setSpeed((int) (25 * (level / 10 + 1) * waveRatio1));
                 equipItemInfo.setDodge((int) (30 * (level / 10 + 1) * waveRatio2));
 
@@ -150,7 +153,7 @@ public class EquipCreator {
             int first = numbers.get(0);
             int second = numbers.get(1);
 
-            float waveRatio1 = Utils.getWaveValue(1, 0.25f);
+            float waveRatio1 = Utils.getWaveValueFloat(1, 0.25f);
             int value1 = (int) (baseProp * waveRatio1);
             switch (first) {
                 case 0:
@@ -170,7 +173,7 @@ public class EquipCreator {
                     break;
             }
 
-            float waveRatio2 = Utils.getWaveValue(1, 0.25f);
+            float waveRatio2 = Utils.getWaveValueFloat(1, 0.25f);
             int value2 = (int) (baseProp * waveRatio2);
             switch (second) {
                 case 0:
@@ -195,7 +198,7 @@ public class EquipCreator {
             gradeCount += 2;
         } else if (srcPropRatio < 0.4) {
             //属性单加
-            float waveRatio1 = Utils.getWaveValue(1, 0.25f);
+            float waveRatio1 = Utils.getWaveValueFloat(1, 0.25f);
             int value1 = (int) (baseProp * waveRatio1);
             int index1 = (int) (Math.random() * 5);
             switch (index1) {

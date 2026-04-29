@@ -1,7 +1,5 @@
 package com.game.dream.enemy;
 
-import android.graphics.Canvas;
-
 import com.game.dream.Character;
 import com.game.dream.LogUtil;
 import com.game.dream.item.EquipmentItem;
@@ -283,7 +281,7 @@ public abstract class Enemy extends Character {
         } else if (enemyLevel == EnemyLevel.LEADER) {
             factor = 3f;
         }
-        return (int) (Utils.getWaveValue(rewardExp, 0.1f) * factor);
+        return (int) (Utils.getWaveValueInt(rewardExp, 0.1f) * factor);
     }
 
     /**
@@ -296,7 +294,7 @@ public abstract class Enemy extends Character {
         } else if (enemyLevel == EnemyLevel.LEADER) {
             factor = 3f;
         }
-        return (int) (Utils.getWaveValue(rewardMoney, 0.1f) * factor);
+        return (int) (Utils.getWaveValueInt(rewardMoney, 0.1f) * factor);
     }
 
     @Override
@@ -365,6 +363,8 @@ public abstract class Enemy extends Character {
     public List<ItemStack> getDrops() {
         List<ItemStack> drops = new ArrayList<>();
 
+        getPossibleDropList();
+
         if (Math.random() < dropChance && !possibleDrops.isEmpty()) {
             // Drop 1-2 items
             int numDrops = 1 + (int)(Math.random() * 2);
@@ -383,4 +383,6 @@ public abstract class Enemy extends Character {
 
         return drops;
     }
+
+    public abstract List<Item> getPossibleDropList();
 }

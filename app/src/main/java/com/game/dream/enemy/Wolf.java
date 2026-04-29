@@ -6,8 +6,12 @@ import android.graphics.Paint;
 import android.graphics.Path;
 
 import com.game.dream.item.EquipCreator;
+import com.game.dream.item.EquipmentItem;
+import com.game.dream.item.Item;
 import com.game.dream.item.ItemCreator;
 import com.game.dream.utils.Utils;
+
+import java.util.List;
 
 /**
  * Wolf enemy that attacks player when nearby
@@ -18,7 +22,7 @@ public class Wolf extends Enemy {
         super(x, y, 70, 200, 50, 30, 150);
         attackCooldown = 1500;
 
-        int health = Utils.getWaveValue(200, 0.2f);
+        int health = Utils.getWaveValueInt(200, 0.2f);
         this.maxHealth = health;
         this.health = health;
         this.attackDamage = 30;
@@ -31,7 +35,7 @@ public class Wolf extends Enemy {
             enemyLevel = EnemyLevel.ELITE;
             size = size * 2;
 
-            health = Utils.getWaveValue(200 * 10, 0.2f);
+            health = Utils.getWaveValueInt(200 * 10, 0.2f);
             this.maxHealth = health;
             this.health = health;
             this.attackDamage = 60;
@@ -43,7 +47,7 @@ public class Wolf extends Enemy {
             enemyLevel = EnemyLevel.LEADER;
             size = (int) (size * 1.3f);
 
-            health = Utils.getWaveValue(200 * 3, 0.2f);
+            health = Utils.getWaveValueInt(200 * 3, 0.2f);
             this.maxHealth = health;
             this.health = health;
             this.attackDamage = 40;
@@ -51,6 +55,11 @@ public class Wolf extends Enemy {
             this.speed = 40;
             this.mana = 40;
         }
+    }
+
+    @Override
+    public List<Item> getPossibleDropList() {
+        possibleDrops.clear();
 
         addPossibleDrop(ItemCreator.createHp1_1_Siyehua());
         addPossibleDrop(ItemCreator.createHp1_2_QiyeLian());
@@ -58,7 +67,8 @@ public class Wolf extends Enemy {
         addPossibleDrop(ItemCreator.createMp1_2_Xiangye());
 
         addPossibleDrop(EquipCreator.createEquip(0, null));
-        addPossibleDrop(EquipCreator.createEquip(10, null));
+
+        return possibleDrops;
     }
 
     @Override

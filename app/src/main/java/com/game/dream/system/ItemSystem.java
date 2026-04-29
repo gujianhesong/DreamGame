@@ -1,6 +1,7 @@
 package com.game.dream.system;
 
 import com.game.dream.LogUtil;
+import com.game.dream.bean.EquipItemInfo;
 import com.game.dream.bean.ItemInfo;
 import com.game.dream.item.ConsumableItem;
 import com.game.dream.item.EquipmentItem;
@@ -28,7 +29,7 @@ public class ItemSystem {
     private EquipmentItem weapon;
     private EquipmentItem armor;
     private EquipmentItem belt;
-    private EquipmentItem shoe;
+    private EquipmentItem shoes;
 
     private ItemSystem() {
         this.maxSize = 500;
@@ -43,7 +44,7 @@ public class ItemSystem {
                 EquipmentItem equipmentItem = (EquipmentItem) item;
                 itemInfos.add(equipmentItem.getEquipItemInfo());
             } else {
-                itemInfos.add(new ItemInfo(item.getId(), item.getName(), itemStack.getQuantity()));
+                itemInfos.add(new ItemInfo(item.getId(), item.getName(), item.getType().name(), itemStack.getQuantity()));
             }
         }
         return itemInfos;
@@ -59,6 +60,71 @@ public class ItemSystem {
                 } else {
                     LogUtil.i("无法创建item, itemId:" + itemInfo.getId() + ", " + itemInfo.getName());
                 }
+            }
+        }
+    }
+
+    public List<EquipItemInfo> getEquipInfos() {
+        ArrayList<EquipItemInfo> itemInfos = new ArrayList<>();
+        if (helmet != null) {
+            itemInfos.add(helmet.getEquipItemInfo());
+        } else {
+            itemInfos.add(null);
+        }
+
+        if (accessory != null) {
+            itemInfos.add(accessory.getEquipItemInfo());
+        } else {
+            itemInfos.add(null);
+        }
+
+        if (weapon != null) {
+            itemInfos.add(weapon.getEquipItemInfo());
+        } else {
+            itemInfos.add(null);
+        }
+
+        if (armor != null) {
+            itemInfos.add(armor.getEquipItemInfo());
+        } else {
+            itemInfos.add(null);
+        }
+
+        if (belt != null) {
+            itemInfos.add(belt.getEquipItemInfo());
+        } else {
+            itemInfos.add(null);
+        }
+
+        if (shoes != null) {
+            itemInfos.add(shoes.getEquipItemInfo());
+        } else {
+            itemInfos.add(null);
+        }
+
+        return itemInfos;
+    }
+
+    public void setEquipInfos(List<EquipItemInfo> equipInfos) {
+        if (equipInfos != null) {
+            int equipInfoSize = equipInfos.size();
+            if (equipInfoSize > 0 && equipInfos.get(0) != null) {
+                helmet = new EquipmentItem(equipInfos.get(0));
+            }
+            if (equipInfoSize > 1 && equipInfos.get(1) != null) {
+                accessory = new EquipmentItem(equipInfos.get(1));
+            }
+            if (equipInfoSize > 2 && equipInfos.get(2) != null) {
+                weapon = new EquipmentItem(equipInfos.get(2));
+            }
+            if (equipInfoSize > 3 && equipInfos.get(3) != null) {
+                armor = new EquipmentItem(equipInfos.get(3));
+            }
+            if (equipInfoSize > 4 && equipInfos.get(4) != null) {
+                belt = new EquipmentItem(equipInfos.get(4));
+            }
+            if (equipInfoSize > 5 && equipInfos.get(5) != null) {
+                shoes = new EquipmentItem(equipInfos.get(5));
             }
         }
     }
@@ -173,7 +239,7 @@ public class ItemSystem {
                 belt = equipment;
                 break;
             case SHOES:
-                shoe = equipment;
+                shoes = equipment;
                 break;
         }
 
@@ -212,7 +278,7 @@ public class ItemSystem {
                     belt = null;
                     break;
                 case SHOES:
-                    shoe = null;
+                    shoes = null;
                     break;
             }
         }
@@ -234,7 +300,7 @@ public class ItemSystem {
             case BELT:
                 return belt;
             case SHOES:
-                return shoe;
+                return shoes;
             default:
                 return null;
         }

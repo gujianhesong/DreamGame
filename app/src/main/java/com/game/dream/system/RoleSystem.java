@@ -1,8 +1,10 @@
 package com.game.dream.system;
 
-import com.game.dream.LogUtil;
 import com.game.dream.bean.AddPointResult;
+import com.game.dream.bean.EquipItemInfo;
 import com.game.dream.bean.RoleInfo;
+import com.game.dream.item.EquipmentItem;
+import com.game.dream.utils.EquipUtil;
 
 public class RoleSystem {
 
@@ -29,54 +31,14 @@ public class RoleSystem {
         RoleInfo roleInfo = new RoleInfo();
         roleInfo.setName("剑侠客");
         roleInfo.setLabel("初出茅庐");
-        roleInfo.setPropTi(10);
-        roleInfo.setPropMo(10);
-        roleInfo.setPropLi(10);
-        roleInfo.setPropNai(10);
-        roleInfo.setPropMin(10);
-
-        updateProperty(roleInfo);
-
+        roleInfo.getSelfProperty().propTi = 10;
+        roleInfo.getSelfProperty().propMo = 10;
+        roleInfo.getSelfProperty().propLi = 10;
+        roleInfo.getSelfProperty().propNai = 10;
+        roleInfo.getSelfProperty().propMin = 10;
+        roleInfo.setHp(roleInfo.getBloodCap());
+        roleInfo.setMp(roleInfo.getMagicCap());
         return roleInfo;
-    }
-
-    /**
-     * 更新属性
-     */
-    public void updateProperty(RoleInfo roleInfo) {
-        AddPointResult addPointResult = caculateAddPoints(roleInfo.getPropTi(), roleInfo.getPropMo(),
-                roleInfo.getPropLi(), roleInfo.getPropNai(), roleInfo.getPropMin());
-        int blood = addPointResult.getBlood() + 100;
-        int magic = addPointResult.getMagic() + 80;
-        int hit = addPointResult.getHit() + 50;
-        int attack = addPointResult.getAttack() + 40;
-        int defense = addPointResult.getDefense() + 20;
-        int speed = addPointResult.getSpeed() + 10;
-        int dodge = addPointResult.getDodge() + 20;
-        int mana = addPointResult.getMana() + 10;
-
-        roleInfo.setBlood(blood);
-        roleInfo.setBloodCap(blood);
-        roleInfo.setMagic(magic);
-        roleInfo.setMagicCap(magic);
-        roleInfo.setHit(hit);
-        roleInfo.setAttack(attack);
-        roleInfo.setDefense(defense);
-        roleInfo.setSpeed(speed);
-        roleInfo.setDodge(dodge);
-        roleInfo.setMana(mana);
-
-        String[] names = {"ti", "mo", "li", "nai", "min", "hp", "mp",
-                "hit", "attack", "defense", "speed", "dodge", "mana"};
-        int[] values = {roleInfo.getPropTi(), roleInfo.getPropMo(), roleInfo.getPropLi(),
-                roleInfo.getPropNai(), roleInfo.getPropMin(), roleInfo.getBlood(), roleInfo.getMagic(),
-                roleInfo.getHit(), roleInfo.getAttack(), roleInfo.getDefense(), roleInfo.getSpeed(),
-                roleInfo.getDodge(), roleInfo.getMana()};
-        StringBuilder builder = new StringBuilder("角色属性更新: ");
-        for (int i = 0; i < names.length; i++) {
-            builder.append(names[i]).append(":").append(values[i]).append(",");
-        }
-        LogUtil.i(builder.toString());
     }
 
     public AddPointResult caculateAddPoints(int ti, int mo, int li, int nai, int min) {
@@ -130,13 +92,54 @@ public class RoleSystem {
         roleInfo.setLevel(roleInfo.getLevel() + 1);
 
         // Increase stats on level up
-        roleInfo.setPropTi(roleInfo.getPropTi() + 1);
-        roleInfo.setPropMo(roleInfo.getPropMo() + 1);
-        roleInfo.setPropLi(roleInfo.getPropLi() + 1);
-        roleInfo.setPropNai(roleInfo.getPropNai() + 1);
-        roleInfo.setPropMin(roleInfo.getPropMin() + 1);
+        roleInfo.getSelfProperty().propTi += 1;
+        roleInfo.getSelfProperty().propMo += 1;
+        roleInfo.getSelfProperty().propLi += 1;
+        roleInfo.getSelfProperty().propNai += 1;
+        roleInfo.getSelfProperty().propMin += 1;
         roleInfo.setRemainPoints(roleInfo.getRemainPoints() + 5);
+    }
 
-        updateProperty(roleInfo);
+    public void updateRoleEquipProperty() {
+        RoleInfo.EquipAddition equipAddition = new RoleInfo.EquipAddition();
+        EquipmentItem helmet = ItemSystem.getInstance().getEquippedItem(EquipmentItem.Slot.HELMET);
+        EquipmentItem accessory = ItemSystem.getInstance().getEquippedItem(EquipmentItem.Slot.ACCESSORY);
+        EquipmentItem weapon = ItemSystem.getInstance().getEquippedItem(EquipmentItem.Slot.WEAPON);
+        EquipmentItem armor = ItemSystem.getInstance().getEquippedItem(EquipmentItem.Slot.ARMOR);
+        EquipmentItem belt = ItemSystem.getInstance().getEquippedItem(EquipmentItem.Slot.BELT);
+        EquipmentItem shoes = ItemSystem.getInstance().getEquippedItem(EquipmentItem.Slot.SHOES);
+        EquipmentItem[] equipments = {helmet, accessory, weapon, armor, belt, shoes};
+        for (EquipmentItem equipmentItem : equipments) {
+            if (equipmentItem != null) {
+                EquipItemInfo equipItemInfo = equipmentItem.getEquipItemInfo();
+                equipAddition.propTi += equipItemInfo.getPropTi();
+                equipAddition.propMo += equipItemInfo.getPropMo();
+                equipAddition.propLi += equipItemInfo.getPropLi();
+                equipAddition.propNai += equipItemInfo.getPropNai();
+                equipAddition.propMin += equipItemInfo.getPropMin();
+
+                equipAddition.blood += equipItemInfo.getHp();
+                equipAddition.magic += equipItemInfo.getMp();
+                equipAddition.hit += equipItemInfo.getHit();
+                equipAddition.attack += equipItemInfo.getAttack();
+                equipAddition.defense += equipItemInfo.getDefense();
+                equipAddition.speed += equipItemInfo.getSpeed();
+                equipAddition.dodge += equipItemInfo.getDodge();
+                equipAddition.mana += equipItemInfo.getMana();
+
+                AddPointResult addPointResult = EquipUtil.getStoneAddResult(equipItemInfo);
+                if(addPointResult != null){
+                    equipAddition.blood += addPointResult.getBlood();
+                    equipAddition.magic += addPointResult.getMagic();
+                    equipAddition.hit += addPointResult.getHit();
+                    equipAddition.attack += addPointResult.getAttack();
+                    equipAddition.defense += addPointResult.getDefense();
+                    equipAddition.speed += addPointResult.getSpeed();
+                    equipAddition.dodge += addPointResult.getDodge();
+                    equipAddition.mana += addPointResult.getMana();
+                }
+            }
+        }
+        roleInfo.setEquipAddition(equipAddition);
     }
 }

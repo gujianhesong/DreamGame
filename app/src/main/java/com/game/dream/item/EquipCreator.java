@@ -14,9 +14,7 @@ import java.util.List;
 public class EquipCreator {
 
     public static EquipmentItem createEquipWithInfo(ItemInfo itemInfo) {
-        LogUtil.i("aaaaaaaaaaaaaaaaa " + itemInfo);
         if (itemInfo instanceof EquipItemInfo) {
-            LogUtil.i("aaaaaaaaaaaaaaaaa " + itemInfo);
             EquipItemInfo equipItemInfo = (EquipItemInfo) itemInfo;
             EquipmentItem equipmentItem = new EquipmentItem(equipItemInfo);
             return equipmentItem;

@@ -75,9 +75,8 @@ public class SaveSystem {
             fis.close();
 
             String content = sb.toString();
-            saveInfo = gson.fromJson(content, SaveInfo.class);
-
             LogUtil.i("read saveInfo: " + content);
+            saveInfo = gson.fromJson(content, SaveInfo.class);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -115,10 +114,14 @@ public class SaveSystem {
 
             if ("EQUIPMENT".equals(type)) {
                 return context.deserialize(jsonObject, EquipItemInfo.class);
-            } else if ("CONSUMABLE".equals(type)) {
-                return context.deserialize(jsonObject, ItemInfo.class);
             } else {
-                return context.deserialize(jsonObject, ItemInfo.class);
+                // For other items (CONSUMABLE, MATERIAL, etc.), parse directly to avoid infinite recursion
+                int id = jsonObject.get("id").getAsInt();
+                String name = jsonObject.get("name").getAsString();
+                int amount = jsonObject.has("amount") ? jsonObject.get("amount").getAsInt() : 1;
+
+                ItemInfo itemInfo = new ItemInfo(id, name, type, amount);
+                return itemInfo;
             }
         }
     }

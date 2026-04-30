@@ -1,6 +1,43 @@
 package com.game.dream.bean;
 
+import com.game.dream.system.RoleSystem;
+
 public class RoleInfo {
+
+    public static class EquipAddition {
+        public int propTi;
+        public int propMo;
+        public int propLi;
+        public int propNai;
+        public int propMin;
+
+        public int blood;
+        public int magic;
+        public int hit;
+        public int attack;
+        public int defense;
+        public int speed;
+        public int dodge;
+        public int mana;
+    }
+
+    public static class SelfProperty {
+        public int propTi;
+        public int propMo;
+        public int propLi;
+        public int propNai;
+        public int propMin;
+
+        private int blood;
+        private int magic;
+        private int hit;
+        private int attack;
+        private int defense;
+        private int speed;
+        private int dodge;
+        private int mana;
+    }
+
     //基础属性
     private String name;
     private int level;
@@ -9,24 +46,13 @@ public class RoleInfo {
     private long money;
     private int remainPoints;
 
-    //原始属性
-    private int propTi;
-    private int propMo;
-    private int propLi;
-    private int propNai;
-    private int propMin;
+    private int hp;
+    private int mp;
 
-    //输出属性
-    private int blood;
-    private int bloodCap;
-    private int magic;
-    private int magicCap;
-    private int hit;
-    private int attack;
-    private int defense;
-    private int speed;
-    private int dodge;
-    private int mana;
+    //自身属性
+    private SelfProperty selfProperty;
+    //装备加成
+    private EquipAddition equipAddition;
 
     //人物修炼
     private int practiceAttack;
@@ -40,10 +66,16 @@ public class RoleInfo {
     private int practiceBBDefense;
     private int practiceBBMagicDefense;
 
+
     //地图信息
     private int mapId;
     private int mapX = -1;
     private int mapY = -1;
+
+    public RoleInfo() {
+        selfProperty = new SelfProperty();
+        equipAddition = new EquipAddition();
+    }
 
     public String getName() {
         return name;
@@ -93,124 +125,36 @@ public class RoleInfo {
         this.remainPoints = remainPoints;
     }
 
-    public int getPropTi() {
-        return propTi;
+    public int getHp() {
+        return hp;
     }
 
-    public void setPropTi(int propTi) {
-        this.propTi = propTi;
+    public void setHp(int hp) {
+        this.hp = hp;
     }
 
-    public int getPropMo() {
-        return propMo;
+    public int getMp() {
+        return mp;
     }
 
-    public void setPropMo(int propMo) {
-        this.propMo = propMo;
+    public void setMp(int mp) {
+        this.mp = mp;
     }
 
-    public int getPropLi() {
-        return propLi;
+    public SelfProperty getSelfProperty() {
+        return selfProperty;
     }
 
-    public void setPropLi(int propLi) {
-        this.propLi = propLi;
+    public void setSelfProperty(SelfProperty selfProperty) {
+        this.selfProperty = selfProperty;
     }
 
-    public int getPropNai() {
-        return propNai;
+    public EquipAddition getEquipAddtion() {
+        return equipAddition;
     }
 
-    public void setPropNai(int propNai) {
-        this.propNai = propNai;
-    }
-
-    public int getPropMin() {
-        return propMin;
-    }
-
-    public void setPropMin(int propMin) {
-        this.propMin = propMin;
-    }
-
-    public int getBlood() {
-        return blood;
-    }
-
-    public void setBlood(int blood) {
-        this.blood = blood;
-    }
-
-    public int getBloodCap() {
-        return bloodCap;
-    }
-
-    public void setBloodCap(int bloodCap) {
-        this.bloodCap = bloodCap;
-    }
-
-    public int getMagic() {
-        return magic;
-    }
-
-    public void setMagic(int magic) {
-        this.magic = magic;
-    }
-
-    public int getMagicCap() {
-        return magicCap;
-    }
-
-    public void setMagicCap(int magicCap) {
-        this.magicCap = magicCap;
-    }
-
-    public int getHit() {
-        return hit;
-    }
-
-    public void setHit(int hit) {
-        this.hit = hit;
-    }
-
-    public int getAttack() {
-        return attack;
-    }
-
-    public void setAttack(int attack) {
-        this.attack = attack;
-    }
-
-    public int getDefense() {
-        return defense;
-    }
-
-    public void setDefense(int defense) {
-        this.defense = defense;
-    }
-
-    public int getSpeed() {
-        return speed;
-    }
-
-    public void setSpeed(int speed) {
-        this.speed = speed;
-    }
-
-    public int getDodge() {
-        return dodge;
-    }
-
-    public void setDodge(int dodge) {
-        this.dodge = dodge;
-    }
-
-    public int getMana() {
-        return mana;
-    }
-
-    public void setMana(int mana) {
-        this.mana = mana;
+    public void setEquipAddition(EquipAddition equipAddition) {
+        this.equipAddition = equipAddition;
     }
 
     public int getPracticeAttack() {
@@ -300,4 +244,94 @@ public class RoleInfo {
     public void setMapY(int mapY) {
         this.mapY = mapY;
     }
+
+    public int getPropTi() {
+        int propTi = selfProperty.propTi + equipAddition.propTi;
+        return propTi;
+    }
+
+    public int getPropMo() {
+        int propMo = selfProperty.propMo + equipAddition.propMo;
+        return propMo;
+    }
+
+    public int getPropLi() {
+        int propLi = selfProperty.propLi + equipAddition.propLi;
+        return propLi;
+    }
+
+    public int getPropNai() {
+        int propNai = selfProperty.propNai + equipAddition.propNai;
+        return propNai;
+    }
+
+    public int getPropMin() {
+        int propMin = selfProperty.propMin + equipAddition.propMin;
+        return propMin;
+    }
+
+    public int getBloodCap() {
+        int baseValue = 100;
+        AddPointResult result = RoleSystem.getInstance().caculateAddPoints(getPropTi(), getPropMo(),
+                getPropLi(), getPropNai(), getPropMin());
+        int value = baseValue + result.getBlood() + equipAddition.blood;
+        return value;
+    }
+
+    public int getMagicCap() {
+        int baseValue = 80;
+        AddPointResult result = RoleSystem.getInstance().caculateAddPoints(getPropTi(), getPropMo(),
+                getPropLi(), getPropNai(), getPropMin());
+        int value = baseValue + result.getMagic() + equipAddition.magic;
+        return value;
+    }
+
+    public int getHit() {
+        int baseValue = 50;
+        AddPointResult result = RoleSystem.getInstance().caculateAddPoints(getPropTi(), getPropMo(),
+                getPropLi(), getPropNai(), getPropMin());
+        int value = baseValue + result.getHit() + equipAddition.hit;
+        return value;
+    }
+
+    public int getAttack() {
+        int baseValue = 40;
+        AddPointResult result = RoleSystem.getInstance().caculateAddPoints(getPropTi(), getPropMo(),
+                getPropLi(), getPropNai(), getPropMin());
+        int value = baseValue + result.getAttack() + equipAddition.attack;
+        return value;
+    }
+
+    public int getDefense() {
+        int baseValue = 40;
+        AddPointResult result = RoleSystem.getInstance().caculateAddPoints(getPropTi(), getPropMo(),
+                getPropLi(), getPropNai(), getPropMin());
+        int value = baseValue + result.getDefense() + equipAddition.defense;
+        return value;
+    }
+
+    public int getSpeed() {
+        int baseValue = 20;
+        AddPointResult result = RoleSystem.getInstance().caculateAddPoints(getPropTi(), getPropMo(),
+                getPropLi(), getPropNai(), getPropMin());
+        int value = baseValue + result.getSpeed() + equipAddition.speed;
+        return value;
+    }
+
+    public int getDodge() {
+        int baseValue = 20;
+        AddPointResult result = RoleSystem.getInstance().caculateAddPoints(getPropTi(), getPropMo(),
+                getPropLi(), getPropNai(), getPropMin());
+        int value = baseValue + result.getDodge() + equipAddition.dodge;
+        return value;
+    }
+
+    public int getMana() {
+        int baseValue = 20;
+        AddPointResult result = RoleSystem.getInstance().caculateAddPoints(getPropTi(), getPropMo(),
+                getPropLi(), getPropNai(), getPropMin());
+        int value = baseValue + result.getMana() + equipAddition.mana;
+        return value;
+    }
+
 }

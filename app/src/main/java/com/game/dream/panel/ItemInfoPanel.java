@@ -46,12 +46,12 @@ public class ItemInfoPanel {
         this.isVisible = true;
 
         // Calculate panel size
-        int panelWidth = 400;
-        int panelHeight = 350;
+        int panelWidth = 420;
+        int panelHeight = 420;
 
         // Position panel to the right of the click position
         // Add some offset so it doesn't overlap with the cursor/item
-        int offsetX = 50;
+        int offsetX = 70;
         int panelX = centerX + offsetX;
         int panelY = centerY - panelHeight / 2; // Center vertically relative to click
 
@@ -66,7 +66,7 @@ public class ItemInfoPanel {
         // Calculate button positions
         int buttonWidth = 120;
         int buttonHeight = 45;
-        int bottomMargin = 30;
+        int bottomMargin = 20;
 
         // Use/Equip button (left)
         useButton.set(
@@ -137,12 +137,12 @@ public class ItemInfoPanel {
 
         // Divider line
         paint.setStrokeWidth(2);
-        paint.setColor(Color.rgb(80, 80, 100));
+        paint.setColor(Color.rgb(150, 150, 150));
         canvas.drawLine(panelBounds.left + 20, panelBounds.top + 85,
                 panelBounds.right - 20, panelBounds.top + 85, paint);
 
         // Description
-        paint.setColor(Color.rgb(200, 200, 220));
+        paint.setColor(Color.WHITE);
         paint.setTextSize(20);
         paint.setTextAlign(Paint.Align.LEFT);
 
@@ -154,7 +154,7 @@ public class ItemInfoPanel {
         // Additional info section
         int infoStartY = panelBounds.top + 180;
 
-        paint.setColor(Color.rgb(150, 150, 180));
+        paint.setColor(Color.YELLOW);
         paint.setTextSize(18);
         canvas.drawText("类型: " + getTypeText(item.getType()),
                 panelBounds.left + 25, infoStartY, paint);

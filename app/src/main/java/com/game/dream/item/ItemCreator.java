@@ -13,7 +13,6 @@ public class ItemCreator {
 
         int id = itemInfo.getId();
         int type = id / 1000;
-        LogUtil.i("aaaaaaaaaaaaaaaaa " + itemInfo.getName() + " " + itemInfo);
         if (itemInfo instanceof EquipItemInfo) {
             return EquipCreator.createEquipWithInfo(itemInfo);
         }

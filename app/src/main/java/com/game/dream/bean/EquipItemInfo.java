@@ -27,6 +27,8 @@ public class EquipItemInfo extends ItemInfo {
 
     //宝石
     private int hpStoneLevel;
+    private int mpStoneLevel;
+    private int hitStoneLevel;
     private int attackStoneLevel;
     private int defenseStoneLevel;
     private int speedStoneLevel;
@@ -174,6 +176,22 @@ public class EquipItemInfo extends ItemInfo {
 
     public void setHpStoneLevel(int hpStoneLevel) {
         this.hpStoneLevel = hpStoneLevel;
+    }
+
+    public int getMpStoneLevel() {
+        return mpStoneLevel;
+    }
+
+    public void setMpStoneLevel(int mpStoneLevel) {
+        this.mpStoneLevel = mpStoneLevel;
+    }
+
+    public int getHitStoneLevel() {
+        return hitStoneLevel;
+    }
+
+    public void setHitStoneLevel(int hitStoneLevel) {
+        this.hitStoneLevel = hitStoneLevel;
     }
 
     public int getAttackStoneLevel() {

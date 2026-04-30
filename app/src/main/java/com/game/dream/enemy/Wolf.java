@@ -19,7 +19,7 @@ import java.util.List;
 public class Wolf extends Enemy {
 
     public Wolf(float x, float y) {
-        super(x, y, 70, 200, 50, 30, 150);
+        super(x, y, 70, 250, 110, 30, 150);
         attackCooldown = 1500;
 
         int health = Utils.getWaveValueInt(200, 0.2f);
@@ -67,6 +67,11 @@ public class Wolf extends Enemy {
         addPossibleDrop(ItemCreator.createMp1_2_Xiangye());
 
         addPossibleDrop(EquipCreator.createEquip(0, null));
+        addPossibleDrop(EquipCreator.createEquip(10, null));
+        addPossibleDrop(EquipCreator.createEquip(20, null));
+        addPossibleDrop(EquipCreator.createEquip(30, null));
+        addPossibleDrop(EquipCreator.createEquip(40, null));
+        addPossibleDrop(EquipCreator.createEquip(50, null));
 
         return possibleDrops;
     }

@@ -215,8 +215,8 @@ public class RoleInfoPanel {
         startY += lineHeight;
 
         // Health
-        drawStatRow(canvas, paint, "生命值", roleInfo.getBlood() + " / " + roleInfo.getBloodCap(),
-                startY, roleInfo.getBlood() * 1f / roleInfo.getBloodCap());
+        drawStatRow(canvas, paint, "生命值", roleInfo.getHp() + " / " + roleInfo.getBloodCap(),
+                startY, roleInfo.getHp() * 1f / roleInfo.getBloodCap());
         if (addPointResult != null && addPointResult.getBlood() > 0) {
             paint.setColor(Color.WHITE);
             canvas.drawText("+" + addPointResult.getBlood(), panelBounds.right - 160, startY + 20, paint);
@@ -225,8 +225,8 @@ public class RoleInfoPanel {
         startY += lineHeight;
 
         // Magic
-        drawStatRow(canvas, paint, "魔法值", roleInfo.getMagic() + " / " + roleInfo.getMagicCap(),
-                startY, roleInfo.getMagic() * 1f / roleInfo.getMagicCap());
+        drawStatRow(canvas, paint, "魔法值", roleInfo.getMp() + " / " + roleInfo.getMagicCap(),
+                startY, roleInfo.getMp() * 1f / roleInfo.getMagicCap());
         if (addPointResult != null && addPointResult.getMagic() > 0) {
             paint.setColor(Color.WHITE);
             canvas.drawText("+" + addPointResult.getMagic(), panelBounds.right - 160, startY + 20, paint);
@@ -592,20 +592,12 @@ public class RoleInfoPanel {
         if (tempAddTi > 0 || tempAddMo > 0 || tempAddLi > 0 || tempAddNai > 0 || tempAddMin > 0) {
             addPointResult = RoleSystem.getInstance().caculateAddPoints(tempAddTi, tempAddMo, tempAddLi, tempAddNai, tempAddMin);
             RoleInfo roleInfo = RoleSystem.getInstance().getRoleInfo();
-            roleInfo.setBloodCap(roleInfo.getBlood() + addPointResult.getBlood());
-            roleInfo.setMagicCap(roleInfo.getMagicCap() + addPointResult.getMagic());
-            roleInfo.setHit(roleInfo.getHit() + addPointResult.getHit());
-            roleInfo.setAttack(roleInfo.getAttack() + addPointResult.getAttack());
-            roleInfo.setDefense(roleInfo.getDefense() + addPointResult.getDefense());
-            roleInfo.setSpeed(roleInfo.getSpeed() + addPointResult.getSpeed());
-            roleInfo.setDodge(roleInfo.getDodge() + addPointResult.getDodge());
-            roleInfo.setMana(roleInfo.getMana() + addPointResult.getMana());
 
-            roleInfo.setPropTi(roleInfo.getPropTi() + tempAddTi);
-            roleInfo.setPropMo(roleInfo.getPropMo() + tempAddMo);
-            roleInfo.setPropLi(roleInfo.getPropLi() + tempAddLi);
-            roleInfo.setPropNai(roleInfo.getPropNai() + tempAddNai);
-            roleInfo.setPropMin(roleInfo.getPropMin() + tempAddMin);
+            roleInfo.getSelfProperty().propTi += tempAddTi;
+            roleInfo.getSelfProperty().propMo += tempAddMo;
+            roleInfo.getSelfProperty().propLi += tempAddLi;
+            roleInfo.getSelfProperty().propNai += tempAddNai;
+            roleInfo.getSelfProperty().propMin += tempAddMin;
 
             tempAddTi = 0;
             tempAddMo = 0;

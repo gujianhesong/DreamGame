@@ -13,6 +13,7 @@ public class FloatingText {
         MONEY,        // Gold text for money
         DAMAGE,       // Red text for damage
         HEAL,         // Green text for healing
+        HEAL_MAGIC,   // Blue text for healing magic
         LEVEL_UP      // Yellow text for level up
     }
 
@@ -55,6 +56,9 @@ public class FloatingText {
                 break;
             case HEAL:
                 this.color = Color.rgb(100, 255, 100); // Green
+                break;
+            case HEAL_MAGIC:
+                this.color = Color.rgb(100, 181, 246); // Light blue
                 break;
             case LEVEL_UP:
                 this.color = Color.rgb(255, 255, 100); // Bright yellow

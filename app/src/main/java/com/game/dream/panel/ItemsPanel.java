@@ -16,7 +16,7 @@ import java.util.List;
 /**
  * Equipment and Inventory Panel
  */
-public class EquipmentPanel {
+public class ItemsPanel {
     private boolean isVisible;
     private Rect panelBounds;
     private Rect closeButton;
@@ -36,15 +36,16 @@ public class EquipmentPanel {
     private Rect[][] inventorySlots;
     private static final int INVENTORY_COLS = 6; // Increased from 5 to 6
     private static final int INVENTORY_ROWS = 5; // Reduced from 6 to 5 to fit better
-    private static final int SLOT_SIZE = 90; // Slightly larger slots
+    private static final int SLOT_SIZE = 120; // Slightly larger slots
     private static final int SLOT_GAP = 8;
+    private static final int SLOT_GAP_EQUIP = 20;
 
     // Item info popup
     private ItemInfoPanel itemInfoPanel;
     // Equipment info popup
     private EquipInfoPanel equipInfoPanel;
 
-    public EquipmentPanel() {
+    public ItemsPanel() {
         this.isVisible = false;
         this.panelBounds = new Rect();
         this.closeButton = new Rect();
@@ -82,15 +83,15 @@ public class EquipmentPanel {
 
         // Calculate equipment slots (left side) - 3 rows x 2 columns
         int leftPanelWidth = (int) (width * 0.28f);
-        int slotWidth = 100;
-        int slotHeight = 100;
-        int slotGapX = 15; // Horizontal gap between columns
-        int slotGapY = 15; // Vertical gap between rows
+        int slotWidth = SLOT_SIZE;
+        int slotHeight = SLOT_SIZE;
+        int slotGapX = SLOT_GAP_EQUIP; // Horizontal gap between columns
+        int slotGapY = SLOT_GAP_EQUIP; // Vertical gap between rows
 
         // Calculate starting position to center the 2-column grid
         int totalWidth = slotWidth * 2 + slotGapX;
         int startX = x + (leftPanelWidth - totalWidth) / 2;
-        int startY = y + 120;
+        int startY = y + 140;
 
         // Row 1: Helmet, Necklace
         helmetSlot = new Rect(startX, startY,
@@ -120,7 +121,7 @@ public class EquipmentPanel {
 
         // Inventory grid (right side, below money with more gap)
         int inventoryStartX = rightPanelStartX;
-        int inventoryStartY = y + 80 + moneyHeight + 50; // Added 30px gap
+        int inventoryStartY = y + 80 + moneyHeight + 60; // Added 30px gap
 
         for (int row = 0; row < INVENTORY_ROWS; row++) {
             for (int col = 0; col < INVENTORY_COLS; col++) {
@@ -159,7 +160,7 @@ public class EquipmentPanel {
         paint.setColor(Color.WHITE);
         paint.setTextSize(32);
         paint.setTextAlign(Paint.Align.CENTER);
-        canvas.drawText("装备与背包", panelBounds.centerX(), panelBounds.top + 45, paint);
+        canvas.drawText("装备与背包", panelBounds.centerX(), panelBounds.top + 50, paint);
 
         // Divider line
         paint.setStrokeWidth(2);
@@ -195,7 +196,7 @@ public class EquipmentPanel {
         paint.setColor(Color.rgb(200, 200, 220));
         paint.setTextSize(24);
         paint.setTextAlign(Paint.Align.CENTER);
-        canvas.drawText("装备栏", helmetSlot.centerX(), helmetSlot.top - 20, paint);
+        canvas.drawText("装备栏", helmetSlot.centerX() - 20, helmetSlot.top - 20, paint);
 
         // Draw each equipment slot
         drawEquipmentSlot(canvas, paint, helmetSlot, "头盔",
@@ -244,13 +245,13 @@ public class EquipmentPanel {
         if (equipped != null) {
             // Draw equipped item name (no background box)
             paint.setColor(equipped.getColor());
-            paint.setTextSize(20);
+            paint.setTextSize(18);
             paint.setTextAlign(Paint.Align.CENTER);
 
             // Item name (truncated if too long)
             String itemName = equipped.getName();
-            if (itemName.length() > 4) {
-                itemName = itemName.substring(0, 4) + "..";
+            if (itemName.length() > 5) {
+                itemName = itemName.substring(0, 5) + "..";
             }
             canvas.drawText(itemName, slot.centerX(), slot.centerY() + 5, paint);
 
@@ -262,7 +263,7 @@ public class EquipmentPanel {
         } else {
             // Empty slot - draw label with brighter color
             paint.setColor(Color.argb(220, 200, 200, 220)); // Much brighter text
-            paint.setTextSize(22); // Slightly larger font
+            paint.setTextSize(18); // Slightly larger font
             paint.setTextAlign(Paint.Align.CENTER);
             canvas.drawText(label, slot.centerX(), slot.centerY() + 7, paint);
         }
@@ -467,7 +468,7 @@ public class EquipmentPanel {
         }
 
         if (beltSlot.contains((int)x, (int)y)) {
-            EquipmentItem equipped = ItemSystem.getInstance().getEquippedItem(EquipmentItem.Slot.ACCESSORY);
+            EquipmentItem equipped = ItemSystem.getInstance().getEquippedItem(EquipmentItem.Slot.BELT);
             if (equipped != null) {
                 showEquipmentInfo(equipped, true, -1, beltSlot.centerX(), beltSlot.centerY());
             }
@@ -475,7 +476,7 @@ public class EquipmentPanel {
         }
 
         if (shoesSlot.contains((int)x, (int)y)) {
-            EquipmentItem equipped = ItemSystem.getInstance().getEquippedItem(EquipmentItem.Slot.ACCESSORY);
+            EquipmentItem equipped = ItemSystem.getInstance().getEquippedItem(EquipmentItem.Slot.SHOES);
             if (equipped != null) {
                 showEquipmentInfo(equipped, true, -1, shoesSlot.centerX(), shoesSlot.centerY());
             }

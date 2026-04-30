@@ -1,14 +1,18 @@
 package com.game.dream.system;
 
+import com.game.dream.FloatingText;
+import com.game.dream.GameEngine;
 import com.game.dream.LogUtil;
 import com.game.dream.bean.EquipItemInfo;
 import com.game.dream.bean.ItemInfo;
+import com.game.dream.bean.RoleInfo;
 import com.game.dream.item.ConsumableItem;
 import com.game.dream.item.EquipmentItem;
 import com.game.dream.item.Item;
 import com.game.dream.item.ItemCreator;
 import com.game.dream.item.ItemStack;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,9 +35,15 @@ public class ItemSystem {
     private EquipmentItem belt;
     private EquipmentItem shoes;
 
+    private WeakReference<GameEngine> gameEngineWeakReference;
+
     private ItemSystem() {
         this.maxSize = 500;
         this.items = new ArrayList<>();
+    }
+
+    public void setGameEngine(GameEngine gameEngine) {
+        this.gameEngineWeakReference = new WeakReference<>(gameEngine);
     }
 
     public List<ItemInfo> getItemInfos() {
@@ -194,12 +204,36 @@ public class ItemSystem {
         if (item.getType() != Item.Type.CONSUMABLE) return false;
 
         // Use the item
-        if (((ConsumableItem) item).use()) {
+        boolean isUsed = false;
+        if (item instanceof ConsumableItem) {
+            ConsumableItem consumableItem = (ConsumableItem) item;
+            switch (consumableItem.getEffectType()) {
+                case HEAL_HP: {
+                    RoleInfo roleInfo = RoleSystem.getInstance().getRoleInfo();
+                    roleInfo.setHp(Math.min(roleInfo.getBloodCap(), roleInfo.getHp() + consumableItem.getEffectValue()));
+                    if (gameEngineWeakReference != null && gameEngineWeakReference.get() != null) {
+                        gameEngineWeakReference.get().showFloatText("气血+" + consumableItem.getEffectValue(), FloatingText.Type.HEAL);
+                    }
+                    isUsed = true;
+                }
+                break;
+                case HEAL_MP: {
+                    RoleInfo roleInfo = RoleSystem.getInstance().getRoleInfo();
+                    roleInfo.setMp(Math.min(roleInfo.getMagicCap(), roleInfo.getMp() + consumableItem.getEffectValue()));
+                    if (gameEngineWeakReference != null && gameEngineWeakReference.get() != null) {
+                        gameEngineWeakReference.get().showFloatText("魔法+" + consumableItem.getEffectValue(), FloatingText.Type.HEAL_MAGIC);
+                    }
+                    isUsed = true;
+                }
+                break;
+            }
+        }
+
+        if (isUsed) {
             stack.remove(1);
             if (stack.isEmpty()) {
                 items.remove(index);
             }
-            return true;
         }
 
         return false;
@@ -243,6 +277,8 @@ public class ItemSystem {
                 break;
         }
 
+        RoleSystem.getInstance().updateRoleEquipProperty();
+
         // Remove from inventory
         stack.remove(1);
         if (stack.isEmpty()) {
@@ -259,7 +295,6 @@ public class ItemSystem {
         EquipmentItem equipped = getEquippedItem(slot);
         if (equipped != null) {
             addItem(equipped, 1);
-
 
             switch (slot) {
                 case HELMET:
@@ -281,6 +316,8 @@ public class ItemSystem {
                     shoes = null;
                     break;
             }
+
+            RoleSystem.getInstance().updateRoleEquipProperty();
         }
     }
 

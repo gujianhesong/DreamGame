@@ -239,11 +239,11 @@ public class Player extends Character {
 
         int costMagic = 20;
         RoleInfo roleInfo = RoleSystem.getInstance().getRoleInfo();
-        if (roleInfo.getMagic() < costMagic) {
+        if (roleInfo.getMp() < costMagic) {
             gameEngine.showWarning("魔法不足");
             return null;
         }
-        roleInfo.setMagic(roleInfo.getMagic() - costMagic);
+        roleInfo.setMp(roleInfo.getMp() - costMagic);
 
         lastMagicTime = currentTime;
 
@@ -334,8 +334,8 @@ public class Player extends Character {
         x = respawnX;
         y = respawnY;
         RoleInfo roleInfo = RoleSystem.getInstance().getRoleInfo();
-        roleInfo.setBlood(roleInfo.getBloodCap());
-        roleInfo.setMagic(roleInfo.getMagicCap());
+        roleInfo.setHp(roleInfo.getBloodCap());
+        roleInfo.setMp(roleInfo.getMagicCap());
         isInvincible = true;
         invincibleEndTime = System.currentTimeMillis() + 3000; // 3 seconds invincibility after respawn
         android.util.Log.d("Player", "Respawned at (" + (int) x + ", " + (int) y + ")");
@@ -427,7 +427,7 @@ public class Player extends Character {
 
     @Override
     public int getHealth() {
-        return RoleSystem.getInstance().getRoleInfo().getBlood();
+        return RoleSystem.getInstance().getRoleInfo().getHp();
     }
 
     @Override
@@ -449,7 +449,7 @@ public class Player extends Character {
         health = Math.max(0, health);
         lastDamageTime = currentTime;
 
-        RoleSystem.getInstance().getRoleInfo().setBlood(health);
+        RoleSystem.getInstance().getRoleInfo().setHp(health);
 
         // Check if dead
         if (health <= 0) {

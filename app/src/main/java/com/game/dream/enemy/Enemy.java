@@ -79,7 +79,7 @@ public abstract class Enemy extends Character {
         this.isAggroed = false;
 
         this.possibleDrops = new ArrayList<>();
-        this.dropChance = 0.3f; // 30% chance to drop something
+        this.dropChance = 0.6f; // 30% chance to drop something
     }
 
     /**
@@ -145,6 +145,7 @@ public abstract class Enemy extends Character {
     public int getDefense() { return defense; }
     public float getSpeed() { return speed; }
     public int getMana() { return mana; }
+    public float getAttackRange() { return attackRange; }
 
     /**
      * Update idle behavior - must be implemented by subclass

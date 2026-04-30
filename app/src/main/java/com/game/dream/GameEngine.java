@@ -17,7 +17,7 @@ import com.game.dream.enemy.Wolf;
 import com.game.dream.enums.SkillType;
 import com.game.dream.item.EquipmentItem;
 import com.game.dream.item.ItemStack;
-import com.game.dream.panel.EquipmentPanel;
+import com.game.dream.panel.ItemsPanel;
 import com.game.dream.panel.RoleInfoPanel;
 import com.game.dream.system.DayNightCycle;
 import com.game.dream.system.ItemSystem;
@@ -79,7 +79,7 @@ public class GameEngine {
 
     private RoleInfoPanel roleInfoPanel;
 
-    private EquipmentPanel equipmentPanel;
+    private ItemsPanel itemsPanel;
 
     // Attack buttons
     private Rect meleeAttackButton;
@@ -116,6 +116,8 @@ public class GameEngine {
         this.currentFPS = 0;
         this.fpsUpdateTime = System.currentTimeMillis();
         initGame();
+
+        ItemSystem.getInstance().setGameEngine(this);
     }
 
     private void initGame() {
@@ -195,7 +197,7 @@ public class GameEngine {
         roleInfoPanel = new RoleInfoPanel(player);
 
         // Initialize equipment panel
-        equipmentPanel = new EquipmentPanel();
+        itemsPanel = new ItemsPanel();
     }
 
     /**
@@ -480,7 +482,7 @@ public class GameEngine {
                 float distance = (float) Math.sqrt(dx * dx + dy * dy);
 
                 // If within attack range, deal damage
-                if (distance < 60) { // Attack range
+                if (distance < enemy.getAttackRange()) { // Attack range
                     if (enemy.canAttack()) {
                         boolean died = false;
                         AttackResult attackResult = BattleUtil.caculateEnemyAttackDamage(enemy);
@@ -644,8 +646,8 @@ public class GameEngine {
         }
 
         // Draw equipment panel (on top of everything)
-        if (equipmentPanel != null && equipmentPanel.isVisible()) {
-            equipmentPanel.draw(canvas);
+        if (itemsPanel != null && itemsPanel.isVisible()) {
+            itemsPanel.draw(canvas);
         }
     }
 
@@ -824,7 +826,7 @@ public class GameEngine {
 
         // Draw equipment button
         if (equipmentButton != null) {
-            drawEquipmentButton(canvas, equipmentButton, equipmentPanel != null && equipmentPanel.isVisible());
+            drawEquipmentButton(canvas, equipmentButton, itemsPanel != null && itemsPanel.isVisible());
         }
     }
 
@@ -1073,8 +1075,8 @@ public class GameEngine {
             }
         }
         // If equipment panel is visible, check if touching it first
-        if (equipmentPanel != null && equipmentPanel.isVisible()) {
-            if (action == MotionEvent.ACTION_DOWN && equipmentPanel.handleTouch(x, y)) {
+        if (itemsPanel != null && itemsPanel.isVisible()) {
+            if (action == MotionEvent.ACTION_DOWN && itemsPanel.handleTouch(x, y)) {
                 return true; // Panel handled the touch
             }
         }
@@ -1092,8 +1094,8 @@ public class GameEngine {
         // Check equipment button
         if (equipmentButton != null && equipmentButton.contains((int) x, (int) y)) {
             if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_POINTER_DOWN) {
-                if (equipmentPanel != null) {
-                    equipmentPanel.toggleVisibility();
+                if (itemsPanel != null) {
+                    itemsPanel.toggleVisibility();
                 }
                 return true;
             }
@@ -1360,15 +1362,21 @@ public class GameEngine {
         initControlButtons();
 
         // Initialize role info panel (center of screen)
-        int panelWidth = Math.min(900, width - 40); // Increased from 600 to 900
-        int panelHeight = Math.min(700, height - 100);
-        int panelX = (width - panelWidth) / 2;
-        int panelY = (height - panelHeight) / 2;
-        roleInfoPanel.setBounds(panelX, panelY, panelWidth, panelHeight);
+        if(roleInfoPanel != null){
+            int panelWidth = Math.min(900, width - 40); // Increased from 600 to 900
+            int panelHeight = Math.min(700, height - 100);
+            int panelX = (width - panelWidth) / 2;
+            int panelY = (height - panelHeight) / 2;
+            roleInfoPanel.setBounds(panelX, panelY, panelWidth, panelHeight);
+        }
 
         // Initialize equipment panel (center of screen)
-        if (equipmentPanel != null) {
-            equipmentPanel.setBounds(panelX, panelY, panelWidth, panelHeight);
+        if (itemsPanel != null) {
+            int panelWidth = Math.min(1200, width - 40); // Increased from 600 to 900
+            int panelHeight = Math.min(900, height - 100);
+            int panelX = (width - panelWidth) / 2;
+            int panelY = (height - panelHeight) / 2;
+            itemsPanel.setBounds(panelX, panelY, panelWidth, panelHeight);
         }
     }
 
@@ -1525,6 +1533,18 @@ public class GameEngine {
      */
     public void showWarning(String warning) {
         showNotification("⚠️ 警告", warning, CenterNotification.Type.WARNING);
+    }
+
+    /**
+     * Show float text
+     */
+    public void showFloatText(String text, FloatingText.Type type) {
+        floatingTexts.add(new FloatingText(
+                player.getX(),
+                player.getY() - 220,
+                text,
+                type
+        ));
     }
 
 }

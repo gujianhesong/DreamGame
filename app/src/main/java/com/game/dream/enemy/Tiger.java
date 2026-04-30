@@ -20,7 +20,7 @@ import java.util.List;
 public class Tiger extends Enemy {
 
     public Tiger(float x, float y) {
-        super(x, y, 100, 250, 60, 50, 200);
+        super(x, y, 100, 300, 150, 50, 200);
         attackCooldown = 1200; // Faster attacks than wolf
 
         int health = Utils.getWaveValueInt(350, 0.2f);
@@ -70,6 +70,11 @@ public class Tiger extends Enemy {
         addPossibleDrop(ItemCreator.createMp1_2_Xiangye());
 
         addPossibleDrop(EquipCreator.createEquip(0, null));
+        addPossibleDrop(EquipCreator.createEquip(10, null));
+        addPossibleDrop(EquipCreator.createEquip(20, null));
+        addPossibleDrop(EquipCreator.createEquip(30, null));
+        addPossibleDrop(EquipCreator.createEquip(40, null));
+        addPossibleDrop(EquipCreator.createEquip(50, null));
 
         return possibleDrops;
     }

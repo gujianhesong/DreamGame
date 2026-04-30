@@ -9,6 +9,7 @@ import com.game.dream.bean.EquipItemInfo;
 import com.game.dream.item.EquipmentItem;
 import com.game.dream.item.Item;
 import com.game.dream.item.ItemStack;
+import com.game.dream.utils.EquipUtil;
 
 /**
  * Equipment information panel - displays detailed equipment stats
@@ -29,7 +30,9 @@ public class EquipInfoPanel {
     // Callback interface
     public interface EquipActionListener {
         void onUnequip(EquipmentItem equipment);
+
         void onEquip(EquipmentItem equipment, int index);
+
         void onDrop(EquipmentItem equipment, int index);
     }
 
@@ -56,10 +59,10 @@ public class EquipInfoPanel {
 
         // Calculate panel size (larger than item info for more stats)
         int panelWidth = 420;
-        int panelHeight = 450;
+        int panelHeight = 480;
 
         // Position panel to the right of the click position
-        int offsetX = 50;
+        int offsetX = 70;
         int panelX = centerX + offsetX;
         int panelY = centerY - panelHeight / 2; // Center vertically relative to click
 
@@ -73,7 +76,7 @@ public class EquipInfoPanel {
         // Calculate button positions based on state
         int buttonWidth = 150;
         int buttonHeight = 50;
-        int bottomMargin = 35;
+        int bottomMargin = 20;
 
         if (isEquipped) {
             // For equipped items: single "Unequip" button centered
@@ -111,7 +114,9 @@ public class EquipInfoPanel {
         selectedEquipment = null;
     }
 
-    public boolean isVisible() { return isVisible; }
+    public boolean isVisible() {
+        return isVisible;
+    }
 
     /**
      * Draw the equipment info panel
@@ -122,7 +127,7 @@ public class EquipInfoPanel {
         Paint paint = new Paint();
         paint.setAntiAlias(true);
 
-        EquipmentItem equipment = (EquipmentItem)selectedEquipment.getItem();
+        EquipmentItem equipment = (EquipmentItem) selectedEquipment.getItem();
 
         // Panel background (semi-transparent dark)
         paint.setColor(Color.argb(190, 20, 25, 35));
@@ -157,35 +162,26 @@ public class EquipInfoPanel {
 
         // Divider line
         paint.setStrokeWidth(2);
-        paint.setColor(Color.rgb(80, 80, 100));
+        paint.setColor(Color.rgb(150, 150, 150));
         canvas.drawLine(panelBounds.left + 25, panelBounds.top + 95,
                 panelBounds.right - 25, panelBounds.top + 95, paint);
 
-        // Stats section
-        int statsStartY = panelBounds.top + 130;
-        drawStatsSection(canvas, paint, equipment, statsStartY);
-
         // Description section
-        int descStartY = statsStartY + 160;
+        int descStartY = panelBounds.top + 130;
 
-        paint.setColor(Color.rgb(180, 180, 200));
+        paint.setColor(Color.WHITE);
         paint.setTextSize(18);
         paint.setTextAlign(Paint.Align.LEFT);
         canvas.drawText("描述:", panelBounds.left + 25, descStartY, paint);
 
-        paint.setColor(Color.rgb(200, 200, 220));
-        paint.setTextSize(19);
+        paint.setTextSize(18);
         drawWrappedText(canvas, paint, equipment.getDescription(),
                 panelBounds.left + 25, descStartY + 30,
                 panelBounds.width() - 50, 26);
 
-        // Additional info
-        int infoStartY = descStartY + 100;
-
-        paint.setColor(Color.rgb(150, 150, 180));
-        paint.setTextSize(17);
-        canvas.drawText("价值: " + equipment.getValue() + " 金币",
-                panelBounds.left + 25, infoStartY, paint);
+        // Stats section
+        int statsStartY = panelBounds.top + 200;
+        drawStatsSection(canvas, paint, equipment, statsStartY);
 
         // Draw action buttons (Equip/Unequip + Drop)
         drawButtons(canvas, paint, equipment);
@@ -197,82 +193,33 @@ public class EquipInfoPanel {
     private void drawStatsSection(Canvas canvas, Paint paint, EquipmentItem equipment, int startY) {
         paint.setTextSize(20);
         paint.setTextAlign(Paint.Align.LEFT);
+        paint.setColor(Color.rgb(255, 255, 0));
 
         int currentY = startY;
         int lineHeight = 35;
 
         EquipItemInfo equipItemInfo = equipment.getEquipItemInfo();
 
-        // hp bonus
-        if (equipItemInfo.getHp() > 0) {
-            paint.setColor(Color.rgb(255, 100, 100)); // Red for attack
-            canvas.drawText("气血: +" + equipItemInfo.getHp(),
-                    panelBounds.left + 25, currentY, paint);
-            currentY += lineHeight;
+        //装备属性
+        String equipAddValue = EquipUtil.getEquipValueText(equipItemInfo);
+        if(!equipAddValue.isEmpty()){
+            canvas.drawText(equipAddValue, panelBounds.left + 25, currentY, paint);
+            currentY += 50;
         }
 
-        // mp bonus
-        if (equipItemInfo.getMp() > 0) {
-            paint.setColor(Color.rgb(255, 100, 100)); // Red for attack
-            canvas.drawText("魔法: +" + equipItemInfo.getMp(),
-                    panelBounds.left + 25, currentY, paint);
-            currentY += lineHeight;
+        // 附加原始属性
+        String srcPropText = EquipUtil.getEquipPropText(equipItemInfo);
+        if(!srcPropText.isEmpty()){
+            canvas.drawText(srcPropText, panelBounds.left + 25, currentY, paint);
+            currentY += 50;
         }
 
-        // Hit bonus
-        if (equipItemInfo.getHit() > 0) {
-            paint.setColor(Color.rgb(255, 100, 100)); // Red for attack
-            canvas.drawText("命中: +" + equipItemInfo.getHit(),
-                    panelBounds.left + 25, currentY, paint);
-            currentY += lineHeight;
+        //宝石属性
+        String text = EquipUtil.getStoneAddResultText(equipItemInfo);
+        if (!text.isEmpty()) {
+            canvas.drawText(text, panelBounds.left + 25, currentY, paint);
+            currentY += 50;
         }
-
-        // Attack bonus
-        if (equipItemInfo.getAttack() > 0) {
-            paint.setColor(Color.rgb(255, 100, 100)); // Red for attack
-            canvas.drawText("伤害: +" + equipItemInfo.getAttack(),
-                    panelBounds.left + 25, currentY, paint);
-            currentY += lineHeight;
-        }
-
-        // Defense bonus
-        if (equipItemInfo.getDefense() > 0) {
-            paint.setColor(Color.rgb(100, 150, 255)); // Blue for defense
-            canvas.drawText("防御: +" + equipItemInfo.getDefense(),
-                    panelBounds.left + 25, currentY, paint);
-            currentY += lineHeight;
-        }
-
-        // Magic bonus
-        if (equipItemInfo.getMana() > 0) {
-            paint.setColor(Color.rgb(200, 100, 255)); // Purple for magic
-            canvas.drawText("灵力: +" + equipItemInfo.getMana(),
-                    panelBounds.left + 25, currentY, paint);
-            currentY += lineHeight;
-        }
-
-        // Speed bonus
-        if (equipItemInfo.getSpeed() > 0) {
-            paint.setColor(Color.rgb(100, 255, 100)); // Green for speed
-            canvas.drawText("速度: +" + equipItemInfo.getSpeed(),
-                    panelBounds.left + 25, currentY, paint);
-            currentY += lineHeight;
-        }
-
-        // Dodge bonus
-        if (equipItemInfo.getDodge() > 0) {
-            paint.setColor(Color.rgb(100, 255, 100)); // Green for speed
-            canvas.drawText("闪避: +" + equipItemInfo.getDodge(),
-                    panelBounds.left + 25, currentY, paint);
-            currentY += lineHeight;
-        }
-
-        // If no bonuses, show a message
-//        if (equipment.getAttackBonus() == 0 && equipment.getDefenseBonus() == 0 &&
-//                equipment.getMagicBonus() == 0 && equipment.getSpeedBonus() == 0) {
-//            paint.setColor(Color.rgb(150, 150, 150));
-//            canvas.drawText("无额外属性加成", panelBounds.left + 25, currentY, paint);
-//        }
     }
 
     /**
@@ -348,12 +295,18 @@ public class EquipInfoPanel {
      */
     private String getRarityText(Item.Rarity rarity) {
         switch (rarity) {
-            case Rarity_1: return "普通";
-            case Rarity_2: return "优秀";
-            case Rarity_3: return "稀有";
-            case Rarity_4: return "史诗";
-            case Rarity_5: return "传说";
-            default: return "";
+            case Rarity_1:
+                return "普通";
+            case Rarity_2:
+                return "优秀";
+            case Rarity_3:
+                return "稀有";
+            case Rarity_4:
+                return "史诗";
+            case Rarity_5:
+                return "传说";
+            default:
+                return "";
         }
     }
 
@@ -362,13 +315,20 @@ public class EquipInfoPanel {
      */
     private String getSlotText(EquipmentItem.Slot slot) {
         switch (slot) {
-            case HELMET: return "头盔";
-            case ACCESSORY: return "饰品";
-            case WEAPON: return "武器";
-            case ARMOR: return "铠甲";
-            case BELT: return "腰带";
-            case SHOES: return "鞋子";
-            default: return "未知";
+            case HELMET:
+                return "头盔";
+            case ACCESSORY:
+                return "饰品";
+            case WEAPON:
+                return "武器";
+            case ARMOR:
+                return "铠甲";
+            case BELT:
+                return "腰带";
+            case SHOES:
+                return "鞋子";
+            default:
+                return "未知";
         }
     }
 
@@ -386,15 +346,15 @@ public class EquipInfoPanel {
         }
 
         // Check if touch is outside the info panel but inside parent - close the panel
-        if (!panelBounds.contains((int)x, (int)y)) {
+        if (!panelBounds.contains((int) x, (int) y)) {
             hide();
             return true;
         }
 
         // Check action button (Unequip or Equip)
-        if (actionButton.contains((int)x, (int)y)) {
+        if (actionButton.contains((int) x, (int) y)) {
             if (listener != null && selectedEquipment != null) {
-                EquipmentItem equipment = (EquipmentItem)selectedEquipment.getItem();
+                EquipmentItem equipment = (EquipmentItem) selectedEquipment.getItem();
                 if (isEquipped) {
                     listener.onUnequip(equipment);
                 } else {
@@ -406,9 +366,9 @@ public class EquipInfoPanel {
         }
 
         // Check drop button (only for inventory items)
-        if (!isEquipped && dropButton.contains((int)x, (int)y)) {
+        if (!isEquipped && dropButton.contains((int) x, (int) y)) {
             if (listener != null && selectedEquipment != null) {
-                EquipmentItem equipment = (EquipmentItem)selectedEquipment.getItem();
+                EquipmentItem equipment = (EquipmentItem) selectedEquipment.getItem();
                 listener.onDrop(equipment, inventoryIndex);
             }
             hide();

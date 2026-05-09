@@ -300,135 +300,10 @@ public class GameEngine {
         }
 
         // Update enemies
-        if (enemies != null) {
-            for (int i = enemies.size() - 1; i >= 0; i--) {
-                Enemy enemy = enemies.get(i);
-
-                // Only update AI for enemies within a reasonable distance
-                float dx = enemy.getX() - player.getX();
-                float dy = enemy.getY() - player.getY();
-                float distanceSquared = dx * dx + dy * dy;
-
-                // 只对距离玩家 2000 像素内的怪物更新 AI
-                float updateThreshold = 2000 * 2000; // 2000^2 to avoid sqrt
-                if (distanceSquared < updateThreshold) {
-                    enemy.update(deltaTime, player.getX(), player.getY(), map, MAP_WIDTH, MAP_HEIGHT);
-                } else {
-                    // Far away enemies don't need AI updates
-                    // They stay in their current state
-                }
-
-                // Remove dead enemies
-                if (!enemy.isAlive()) {
-                    // Grant reward to player
-                    int expReward = enemy.getExperienceReward();
-                    int moneyReward = enemy.getMoneyReward();
-
-                    int oldLevel = RoleSystem.getInstance().getRoleInfo().getLevel();
-                    RoleSystem.getInstance().addExperience(enemy.getExperienceReward());
-                    int newLevel = RoleSystem.getInstance().getRoleInfo().getLevel();
-                    RoleSystem.getInstance().addMoney(enemy.getMoneyReward());
-
-                    // Create floating texts for rewards
-                    floatingTexts.add(new FloatingText(
-                            enemy.getX(),
-                            enemy.getY() - 120,
-                            "+" + expReward + " 经验",
-                            FloatingText.Type.EXPERIENCE
-                    ));
-
-                    if (moneyReward > 0) {
-                        floatingTexts.add(new FloatingText(
-                                enemy.getX(),
-                                enemy.getY() - 170,
-                                "+" + moneyReward + " 金钱",
-                                FloatingText.Type.MONEY
-                        ));
-                    }
-
-                    // Get item drops from enemy
-                    List<ItemStack> drops = enemy.getDrops();
-                    StringBuilder dropMessage = new StringBuilder();
-                    for (ItemStack drop : drops) {
-                        if (ItemSystem.getInstance().addItem(drop.getItem(), drop.getQuantity())) {
-                            if (dropMessage.length() > 0) dropMessage.append(", ");
-                            if (drop.getItem() instanceof EquipmentItem) {
-                                dropMessage.append(drop.getItem().getName());
-                            } else {
-                                dropMessage.append(drop.getItem().getName())
-                                        .append(" x").append(drop.getQuantity());
-                            }
-
-                            // Show floating text for item drop
-                            floatingTexts.add(new FloatingText(
-                                    enemy.getX() + (float)(Math.random() * 40 - 20),
-                                    enemy.getY() - 70 - (float)(Math.random() * 20),
-                                    drop.getItem().getName(),
-                                    FloatingText.Type.EXPERIENCE
-                            ));
-                        }
-                    }
-
-                    // If player leveled up, show special notification
-                    if (newLevel > oldLevel) {
-                        floatingTexts.add(new FloatingText(
-                                player.getX(),
-                                player.getY() - 220,
-                                "升级! Lv." + newLevel,
-                                FloatingText.Type.LEVEL_UP
-                        ));
-                    }
-
-                    enemies.remove(i);
-                }
-            }
-        }
+        checkEnemiesUpdate(deltaTime);
 
         // Update projectiles
-        if (projectiles != null) {
-            for (int i = projectiles.size() - 1; i >= 0; i--) {
-                Projectile proj = projectiles.get(i);
-                proj.update(deltaTime);
-
-                // Check collisions with enemies
-                if (proj.isActive()) {
-                    for (Enemy enemy : enemies) {
-                        if (proj.checkCollision(enemy)) {
-                            AttackResult attackResult = BattleUtil.caculatePlayerCasterDamage(enemy, proj.getSkillType());
-                            if (attackResult != null) {
-                                if (attackResult.isHit) {
-                                    int damage = attackResult.damageValue;
-                                    enemy.takeDamage(damage);
-
-                                    // Create floating damage number above enemy
-                                    damageNumbers.add(new DamageNumber(
-                                            enemy.getX(),
-                                            enemy.getY() - 30,
-                                            damage,
-                                            attackResult.isCrit
-                                    ));
-                                } else {
-                                    //未命中
-                                    damageNumbers.add(new DamageNumber(
-                                            enemy.getX(),
-                                            enemy.getY() - 30,
-                                            -1
-                                    ));
-                                }
-                            }
-
-                            proj.deactivate();
-                            break;
-                        }
-                    }
-                }
-
-                // Remove inactive projectiles
-                if (!proj.isActive()) {
-                    projectiles.remove(i);
-                }
-            }
-        }
+        checkProjectileUpdate(deltaTime);
 
         // Check enemy attacks on player
         checkEnemyAttacksOnPlayer();
@@ -484,45 +359,257 @@ public class GameEngine {
                 // If within attack range, deal damage
                 if (distance < enemy.getAttackRange()) { // Attack range
                     if (enemy.canAttack()) {
-                        boolean died = false;
-                        AttackResult attackResult = BattleUtil.caculateEnemyAttackDamage(enemy);
-                        if (attackResult.isHit) {
-                            int damage = attackResult.damageValue;
-                            died = player.takeDamage(damage);
-
-                            // Create floating damage number
-                            damageNumbers.add(new DamageNumber(
-                                    player.getX(),
-                                    player.getY() - 40,
-                                    damage,
-                                    attackResult.isCrit
-                            ));
-                        } else {
-                            //未命中
-                            damageNumbers.add(new DamageNumber(
-                                    enemy.getX(),
-                                    enemy.getY() - 30,
-                                    -1
-                            ));
+                        // Elite/Leader enemys have chance to use magic attacks
+                        boolean usedMagic = false;
+                        if (enemy.canCastSpell() && Math.random() < 0.9f) {
+                            // Cast magic spell - create projectile
+                            float[] targetPos = enemy.castMagicSpell(player.getX(), player.getY());
+                            if (targetPos != null) {
+                                Projectile magicProj = new Projectile(
+                                        enemy.getX(),
+                                        enemy.getY(),
+                                        targetPos[0],
+                                        targetPos[1],
+                                        SkillType.FIREBALL
+                                );
+                                magicProj.setFromEnemy(enemy);
+                                projectiles.add(magicProj);
+                                usedMagic = true;
+                                LogUtil.d("Elite Enemy casts fireball!");
+                            }
                         }
 
                         enemy.setLastAttackTime(currentTime);
 
-                        if (died) {
-                            // Player died - respawn
-                            player.respawn();
+                        // If didn't use magic, perform physical attack
+                        if (!usedMagic) {
+                            boolean died = false;
+                            AttackResult attackResult = BattleUtil.caculateEnemyAttackDamage(enemy);
+                            if (attackResult.isHit) {
+                                int damage = attackResult.damageValue;
+                                died = player.takeDamage(damage);
 
-                            // Clear nearby enemies to prevent spawn kill
-                            for (Enemy e : enemies) {
-                                float ex = e.getX() - player.getX();
-                                float ey = e.getY() - player.getY();
-                                float edist = (float) Math.sqrt(ex * ex + ey * ey);
-                                if (edist < 300) {
-                                    e.takeDamage(1000); // Kill nearby enemies
-                                }
+                                // Create floating damage number
+                                damageNumbers.add(new DamageNumber(
+                                        player.getX(),
+                                        player.getY() - 40,
+                                        damage,
+                                        attackResult.isCrit
+                                ));
+                            } else {
+                                //未命中
+                                damageNumbers.add(new DamageNumber(
+                                        enemy.getX(),
+                                        enemy.getY() - 30,
+                                        -1
+                                ));
+                            }
+
+                            if (died) {
+                                // Player died - respawn
+                                player.respawn();
                             }
                         }
                     }
+                }
+            }
+        }
+    }
+
+    private void checkEnemiesUpdate(long deltaTime) {
+        if (enemies != null) {
+            for (int i = enemies.size() - 1; i >= 0; i--) {
+                Enemy enemy = enemies.get(i);
+
+                // Only update AI for enemies within a reasonable distance
+                float dx = enemy.getX() - player.getX();
+                float dy = enemy.getY() - player.getY();
+                float distanceSquared = dx * dx + dy * dy;
+
+                // 只对距离玩家 2000 像素内的怪物更新 AI
+                float updateThreshold = 2000 * 2000; // 2000^2 to avoid sqrt
+                if (distanceSquared < updateThreshold) {
+                    enemy.update(deltaTime, player.getX(), player.getY(), map, MAP_WIDTH, MAP_HEIGHT);
+
+                    // Check if elite/leader enemy is casting spell while chasing
+                    if (enemy.isCastingSpell()) {
+                        if (enemy.getState() == Enemy.State.CHASING) {
+                            // Cast magic spell - create projectile
+                            float[] targetPos = enemy.castMagicSpell(player.getX(), player.getY());
+                            if (targetPos != null) {
+                                Projectile magicProj = new Projectile(
+                                        enemy.getX(),
+                                        enemy.getY(),
+                                        targetPos[0],
+                                        targetPos[1],
+                                        SkillType.FIREBALL
+                                );
+                                magicProj.setFromEnemy(enemy);
+                                projectiles.add(magicProj);
+                                LogUtil.d("Elite Enemy casts fireball!");
+                            }
+                        }
+                        // Reset casting state
+                        enemy.resetCastingState();
+                    }
+                } else {
+                    // Far away enemies don't need AI updates
+                    // They stay in their current state
+                }
+
+                // Remove dead enemies
+                if (!enemy.isAlive()) {
+                    // Grant reward to player
+                    int expReward = enemy.getExperienceReward();
+                    int moneyReward = enemy.getMoneyReward();
+
+                    int oldLevel = RoleSystem.getInstance().getRoleInfo().getLevel();
+                    RoleSystem.getInstance().addExperience(enemy.getExperienceReward());
+                    int newLevel = RoleSystem.getInstance().getRoleInfo().getLevel();
+                    RoleSystem.getInstance().addMoney(enemy.getMoneyReward());
+
+                    // Create floating texts for rewards
+                    floatingTexts.add(new FloatingText(
+                            enemy.getX(),
+                            enemy.getY() - 120,
+                            "+" + expReward + " 经验",
+                            FloatingText.Type.EXPERIENCE
+                    ));
+
+                    if (moneyReward > 0) {
+                        floatingTexts.add(new FloatingText(
+                                enemy.getX(),
+                                enemy.getY() - 170,
+                                "+" + moneyReward + " 金钱",
+                                FloatingText.Type.MONEY
+                        ));
+                    }
+
+                    // Get item drops from enemy
+                    List<ItemStack> drops = enemy.getDrops();
+                    StringBuilder dropMessage = new StringBuilder();
+                    for (ItemStack drop : drops) {
+                        if (ItemSystem.getInstance().addItem(drop.getItem(), drop.getQuantity())) {
+                            if (dropMessage.length() > 0) dropMessage.append(", ");
+                            if (drop.getItem() instanceof EquipmentItem) {
+                                dropMessage.append(drop.getItem().getName());
+                            } else {
+                                dropMessage.append(drop.getItem().getName())
+                                        .append(" x").append(drop.getQuantity());
+                            }
+
+                            // Show floating text for item drop
+                            floatingTexts.add(new FloatingText(
+                                    enemy.getX() + (float) (Math.random() * 40 - 20),
+                                    enemy.getY() - 70 - (float) (Math.random() * 20),
+                                    drop.getItem().getName(),
+                                    FloatingText.Type.EXPERIENCE
+                            ));
+                        }
+                    }
+
+                    // If player leveled up, show special notification
+                    if (newLevel > oldLevel) {
+                        floatingTexts.add(new FloatingText(
+                                player.getX(),
+                                player.getY() - 220,
+                                "升级! Lv." + newLevel,
+                                FloatingText.Type.LEVEL_UP
+                        ));
+                    }
+
+                    enemies.remove(i);
+                }
+            }
+        }
+    }
+
+    private void checkProjectileUpdate(long deltaTime) {
+        if (projectiles != null) {
+            for (int i = projectiles.size() - 1; i >= 0; i--) {
+                Projectile proj = projectiles.get(i);
+                proj.update(deltaTime);
+
+                // Check collisions with enemies
+                if (proj.isActive()) {
+
+                    if (proj.isEnemyProjectile()) {
+                        // Check if this is an enemy projectile hitting the player
+                        float dx = proj.getX() - player.getX();
+                        float dy = proj.getY() - player.getY();
+                        float distance = (float) Math.sqrt(dx * dx + dy * dy);
+
+                        if (distance < (proj.getSize() + player.getSize())) {
+                            // Enemy projectile hit player
+                            boolean died = false;
+                            int skillLevel = 1;
+                            AttackResult attackResult = BattleUtil.caculateEnemyCasterDamage(proj.getFromEnemy(), proj.getSkillType(), skillLevel);
+                            if (attackResult != null) {
+                                if (attackResult.isHit) {
+                                    int damage = attackResult.damageValue;
+                                    died = player.takeDamage(damage);
+
+                                    // Create floating damage number above enemy
+                                    damageNumbers.add(new DamageNumber(
+                                            player.getX(),
+                                            player.getY() - 30,
+                                            damage,
+                                            attackResult.isCrit
+                                    ));
+                                } else {
+                                    //未命中
+                                    damageNumbers.add(new DamageNumber(
+                                            player.getX(),
+                                            player.getY() - 30,
+                                            -1
+                                    ));
+                                }
+
+                                proj.deactivate();
+
+                                if (died) {
+                                    player.respawn();
+                                }
+                            }
+                            continue;
+                        }
+                    } else {
+                        for (Enemy enemy : enemies) {
+                            if (proj.checkCollision(enemy)) {
+                                AttackResult attackResult = BattleUtil.caculatePlayerCasterDamage(enemy, proj.getSkillType());
+                                if (attackResult != null) {
+                                    if (attackResult.isHit) {
+                                        int damage = attackResult.damageValue;
+                                        enemy.takeDamage(damage);
+
+                                        // Create floating damage number above enemy
+                                        damageNumbers.add(new DamageNumber(
+                                                enemy.getX(),
+                                                enemy.getY() - 30,
+                                                damage,
+                                                attackResult.isCrit
+                                        ));
+                                    } else {
+                                        //未命中
+                                        damageNumbers.add(new DamageNumber(
+                                                enemy.getX(),
+                                                enemy.getY() - 30,
+                                                -1
+                                        ));
+                                    }
+                                }
+
+                                proj.deactivate();
+                                break;
+                            }
+                        }
+                    }
+
+                }
+
+                // Remove inactive projectiles
+                if (!proj.isActive()) {
+                    projectiles.remove(i);
                 }
             }
         }
@@ -1362,7 +1449,7 @@ public class GameEngine {
         initControlButtons();
 
         // Initialize role info panel (center of screen)
-        if(roleInfoPanel != null){
+        if (roleInfoPanel != null) {
             int panelWidth = Math.min(900, width - 40); // Increased from 600 to 900
             int panelHeight = Math.min(700, height - 100);
             int panelX = (width - panelWidth) / 2;

@@ -58,6 +58,8 @@ public abstract class Enemy extends Character {
     protected List<Item> possibleDrops;
     protected float dropChance;
 
+    protected boolean isCastingSpell;
+
     public Enemy(float x, float y, int size, float detectionRange, float attackRange, int rewardExp, int rewardMoney) {
         super(x, y, size); // attack=10, defense=0, size=30
 
@@ -80,6 +82,8 @@ public abstract class Enemy extends Character {
 
         this.possibleDrops = new ArrayList<>();
         this.dropChance = 0.6f; // 30% chance to drop something
+
+        this.isCastingSpell = false;
     }
 
     /**
@@ -159,6 +163,18 @@ public abstract class Enemy extends Character {
                                  int[][] map, int mapWidth, int mapHeight) {
         targetX = playerX;
         targetY = playerY;
+
+        // Elite and Leader tigers can cast spells while chasing
+        if (enemyLevel == EnemyLevel.ELITE || enemyLevel == EnemyLevel.LEADER) {
+            // Check if should cast spell (15% chance per update, with cooldown)
+            long currentTime = System.currentTimeMillis();
+            if (canCastSpell() && (currentTime - lastAttackTime > 3000) && Math.random() < 0.3f) {
+                // Will cast spell - this will be handled by GameEngine
+                isCastingSpell = true;
+                lastAttackTime = currentTime;
+                LogUtil.d("Tiger preparing magic spell while chasing!");
+            }
+        }
 
         float chaseSpeed = speed * 1.1f;
         moveToTargetWithSpeed(deltaSeconds, chaseSpeed);
@@ -252,6 +268,23 @@ public abstract class Enemy extends Character {
     }
 
     /**
+     * Check if enemy can cast magic spell
+     */
+    public boolean canCastSpell() {
+        return (enemyLevel == EnemyLevel.ELITE || enemyLevel == EnemyLevel.LEADER);
+    }
+
+    /**
+     * Cast magic spell - returns target position for projectile
+     */
+    public float[] castMagicSpell(float playerX, float playerY) {
+        if (!canCastSpell()) return null;
+
+        // Return player position as target
+        return new float[]{playerX, playerY};
+    }
+
+    /**
      * Set last attack time
      */
     public void setLastAttackTime(long time) {
@@ -306,6 +339,20 @@ public abstract class Enemy extends Character {
     @Override
     public int getMaxHealth() {
         return maxHealth;
+    }
+
+    /**
+     * Check if enemy is currently casting a spell
+     */
+    public boolean isCastingSpell() {
+        return isCastingSpell;
+    }
+
+    /**
+     * Reset casting state
+     */
+    public void resetCastingState() {
+        isCastingSpell = false;
     }
 
     public boolean takeDamage(int damage) {

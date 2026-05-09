@@ -74,69 +74,6 @@ public class BattleUtil {
         return attackResult;
     }
 
-    /**
-     * 计算敌人输出的物理伤害
-     *
-     * @param enemy
-     * @return
-     */
-    public static AttackResult caculateEnemyAttackDamage(Enemy enemy) {
-        boolean isCrit;
-        boolean isHit;
-        int damageValue;
-
-        //计算命中
-        RoleInfo roleInfo = RoleSystem.getInstance().getRoleInfo();
-        int enemyHit = (int) (enemy.getSpeed() * 1.2);
-        int playerDodge = roleInfo.getDodge();
-        float value = (enemyHit - playerDodge) / 2000f;
-        value = Math.max(-0.1f, Math.min(0.1f, value));
-        float dodgeRatio = 0.1f - value;
-
-        if (Math.random() < dodgeRatio) {
-            //未命中
-            isHit = false;
-            isCrit = false;
-            damageValue = 0;
-        } else {
-            //命中
-            isHit = true;
-            isCrit = false;
-
-            int enemyAttack = enemy.getAttackDamage();
-            int playerDefense = roleInfo.getDefense();
-
-            //计算修炼加成
-            if (roleInfo.getPracticeDefense() > 0) {
-                for (int i = 0; i < roleInfo.getPracticeDefense(); i++) {
-                    playerDefense = (int) (playerDefense * 1.02 + 5);
-                }
-            }
-
-            //计算伤害
-            damageValue = calculateAttackDamage(enemyAttack, playerDefense);
-            damageValue = (int) (damageValue * (0.9 + Math.random() * 0.2));
-
-            float critRatio = 0.05f;
-            if (Math.random() < critRatio) {
-                //暴击几率
-                isCrit = true;
-                damageValue *= 2;
-            }
-
-            damageValue = Math.max(damageValue, 1);
-        }
-
-        AttackResult attackResult = new AttackResult();
-        attackResult.damageValue = damageValue;
-        attackResult.isCrit = isCrit;
-        attackResult.isHit = isHit;
-
-        LogUtil.i("aaaaaaaaaaaaaaa 怪物物理输出伤害 " + damageValue + ", 暴击:" + isCrit + ", 命中:" + isHit);
-
-        return attackResult;
-    }
-
     private static int calculateAttackDamage(float attack, int defense) {
         int damageValue = (int) (attack * 0.2 + (attack - defense) * 1.1);
         damageValue = Math.max(0, damageValue);
@@ -231,10 +168,10 @@ public class BattleUtil {
         return attackResult;
     }
 
-    private static int calculateMagicDamage(float baseDamage, int playerSpirit,
-                                           int enemySpirit, int skillLevel) {
-        float spiritDelta = playerSpirit - enemySpirit;
-        float playerSpiritMultiplier = (float)Math.pow(playerSpirit, 0.5f); // 平方根软化
+    private static int calculateMagicDamage(float baseDamage, int casterSpirit,
+                                           int acceptSpirit, int skillLevel) {
+        float spiritDelta = casterSpirit - acceptSpirit;
+        float playerSpiritMultiplier = (float)Math.pow(casterSpirit, 0.5f); // 平方根软化
 
         // 3. Skill level multiplier
         float skillMultiplier = 1.0f + (skillLevel - 1) * 0.15f;
@@ -253,7 +190,7 @@ public class BattleUtil {
 
         int result = Math.max(1, (int)finalDamage);
 
-        LogUtil.i("baseDamage:" + baseDamage + ",playerSpirit:" + playerSpirit + ",enemySpirit:" + enemySpirit
+        LogUtil.i("baseDamage:" + baseDamage + ",casterSpirit:" + casterSpirit + ",acceptSpirit:" + acceptSpirit
                 + ",skillLevel:" + skillLevel + ",result:" + result);
         return result;
     }
@@ -301,5 +238,169 @@ public class BattleUtil {
 //                + ",skillLevel:" + skillLevel + ",result:" + result);
 //        return result;
         return 0;
+    }
+
+    /**
+     * 计算敌人输出的物理伤害
+     *
+     * @param enemy
+     * @return
+     */
+    public static AttackResult caculateEnemyAttackDamage(Enemy enemy) {
+        boolean isCrit;
+        boolean isHit;
+        int damageValue;
+
+        //计算命中
+        RoleInfo roleInfo = RoleSystem.getInstance().getRoleInfo();
+        int enemyHit = (int) (enemy.getSpeed() * 1.2);
+        int playerDodge = roleInfo.getDodge();
+        float value = (enemyHit - playerDodge) / 2000f;
+        value = Math.max(-0.1f, Math.min(0.1f, value));
+        float dodgeRatio = 0.1f - value;
+
+        if (Math.random() < dodgeRatio) {
+            //未命中
+            isHit = false;
+            isCrit = false;
+            damageValue = 0;
+        } else {
+            //命中
+            isHit = true;
+            isCrit = false;
+
+            int enemyAttack = enemy.getAttackDamage();
+            int playerDefense = roleInfo.getDefense();
+
+            //计算修炼加成
+            if (roleInfo.getPracticeDefense() > 0) {
+                for (int i = 0; i < roleInfo.getPracticeDefense(); i++) {
+                    playerDefense = (int) (playerDefense * 1.02 + 5);
+                }
+            }
+
+            //计算伤害
+            damageValue = calculateAttackDamage(enemyAttack, playerDefense);
+            damageValue = (int) (damageValue * (0.9 + Math.random() * 0.2));
+
+            float critRatio = 0.05f;
+            if (Math.random() < critRatio) {
+                //暴击几率
+                isCrit = true;
+                damageValue *= 2;
+            }
+
+            damageValue = Math.max(damageValue, 1);
+        }
+
+        AttackResult attackResult = new AttackResult();
+        attackResult.damageValue = damageValue;
+        attackResult.isCrit = isCrit;
+        attackResult.isHit = isHit;
+
+        LogUtil.i("aaaaaaaaaaaaaaa 怪物物理输出伤害 " + damageValue + ", 暴击:" + isCrit + ", 命中:" + isHit);
+
+        return attackResult;
+    }
+
+    /**
+     * 计算怪物输出的法术伤害
+     *
+     * @param skillType
+     * @return
+     */
+    public static AttackResult caculateEnemyCasterDamage(Enemy enemy, SkillType skillType, int skillLevel) {
+        boolean isCrit;
+        boolean isHit;
+        int damageValue;
+
+        //计算命中
+        RoleInfo roleInfo = RoleSystem.getInstance().getRoleInfo();
+        int enemyHit = (int) (enemy.getSpeed() * 1.2);
+        int playerDodge = roleInfo.getDodge();
+        float value = (enemyHit - playerDodge) / 2000f;
+        value = Math.max(-0.1f, Math.min(0.1f, value));
+        float dodgeRatio = 0.1f - value;
+        if (Math.random() < dodgeRatio) {
+            //未命中
+            isHit = false;
+            isCrit = false;
+            damageValue = 0;
+        } else {
+            //命中
+            isHit = true;
+            isCrit = false;
+
+            float castBaseValue = 7f;
+            switch (skillType){
+                case FIREBALL:
+                    castBaseValue = 10f;
+                    break;
+                case ICE_BOLT:
+                    castBaseValue = 7f;
+                    break;
+                case LIGHTNING:
+                    castBaseValue = 14f;
+                    break;
+            }
+            //计算法术伤害
+            damageValue = calculateEnemyMagicDamage(castBaseValue, enemy.getMana(), roleInfo.getMana(), skillLevel);
+            LogUtil.i("aaaaaaaaaaaaaaa 怪物法术输出伤害 " + damageValue);
+            //计算修炼加成
+            if (roleInfo.getPracticeMagicDefense() > 0) {
+                for (int i = 0; i < roleInfo.getPracticeMagicDefense(); i++) {
+                    damageValue = (int) (damageValue * 0.98 - 5);
+                }
+            }
+
+            //浮动伤害
+            damageValue = (int) (damageValue * (0.9 + Math.random() * 0.2));
+
+            float critRatio = 0.1f;
+            if (Math.random() < critRatio) {
+                //暴击几率
+                isCrit = true;
+                damageValue *= 2;
+            }
+
+            damageValue = Math.max(damageValue, 1);
+        }
+
+        AttackResult attackResult = new AttackResult();
+        attackResult.damageValue = damageValue;
+        attackResult.isCrit = isCrit;
+        attackResult.isHit = isHit;
+
+        LogUtil.i("aaaaaaaaaaaaaaa 怪物法术输出伤害 " + damageValue + ", 暴击:" + isCrit + ", 命中:" + isHit
+                + ", " + roleInfo.getMana() + ", " + enemy.getMana());
+
+        return attackResult;
+    }
+
+    private static int calculateEnemyMagicDamage(float baseDamage, int casterSpirit,
+                                            int acceptSpirit, int skillLevel) {
+        float spiritDelta = casterSpirit - acceptSpirit;
+        float playerSpiritMultiplier = (float)Math.pow(casterSpirit, 0.5f); // 平方根软化
+
+        // 3. Skill level multiplier
+        float skillMultiplier = 1.0f + (skillLevel - 1) * 0.15f;
+        skillMultiplier = Math.min(skillMultiplier, 3.0f);
+
+        // 4. Calculate final damage
+        float finalDamage = spiritDelta * 0.3f + baseDamage * skillMultiplier * (0.45f + playerSpiritMultiplier * 0.4f);
+
+//        LogUtil.i("baseDamage  spiritDelta:" + spiritDelta + ",playerSpiritMultiplier:" + playerSpiritMultiplier);
+//        LogUtil.i("baseDamage:" + baseDamage + ",playerSpirit:" + playerSpirit + ",enemySpirit:" + enemySpirit
+//                + ",skillLevel:" + skillLevel + ",result:" + finalDamage);
+
+        // Random variance ±10%
+        float variance = 0.9f + (float)(Math.random() * 0.2);
+        finalDamage *= variance;
+
+        int result = Math.max(1, (int)finalDamage);
+
+        LogUtil.i("baseDamage:" + baseDamage + ",casterSpirit:" + casterSpirit + ",acceptSpirit:" + acceptSpirit
+                + ",skillLevel:" + skillLevel + ",result:" + result);
+        return result;
     }
 }

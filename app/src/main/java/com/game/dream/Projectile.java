@@ -17,12 +17,15 @@ public class Projectile {
     private SkillType skillType;
     private float size;
     private boolean isActive;
+    private boolean isEnemyProjectile;
     private long lifetime;
     private long createdTime;
 
     // Visual effects
     private int color;
     private float rotation;
+
+    private Enemy fromEnemy;
 
     public Projectile(float x, float y, float targetX, float targetY, SkillType skillType) {
         this.x = x;
@@ -35,7 +38,7 @@ public class Projectile {
         // Calculate velocity towards target
         float dx = targetX - x;
         float dy = targetY - y;
-        float distance = (float)Math.sqrt(dx * dx + dy * dy);
+        float distance = (float) Math.sqrt(dx * dx + dy * dy);
 
         if (distance > 0) {
             float speed;
@@ -101,7 +104,7 @@ public class Projectile {
 
         float dx = x - enemy.getX();
         float dy = y - enemy.getY();
-        float distance = (float)Math.sqrt(dx * dx + dy * dy);
+        float distance = (float) Math.sqrt(dx * dx + dy * dy);
 
         return distance < (size + enemy.getSize());
     }
@@ -163,9 +166,9 @@ public class Projectile {
         // Sparkles
         paint.setColor(Color.WHITE);
         for (int i = 0; i < 3; i++) {
-            float angle = rotation + i * (float)(Math.PI * 2 / 3);
-            float sx = cx + (float)Math.cos(angle) * size * 0.7f;
-            float sy = cy + (float)Math.sin(angle) * size * 0.7f;
+            float angle = rotation + i * (float) (Math.PI * 2 / 3);
+            float sx = cx + (float) Math.cos(angle) * size * 0.7f;
+            float sy = cy + (float) Math.sin(angle) * size * 0.7f;
             canvas.drawCircle(sx, sy, 2, paint);
         }
     }
@@ -192,11 +195,41 @@ public class Projectile {
     }
 
     // Getters
-    public float getX() { return x; }
-    public float getY() { return y; }
-    public boolean isActive() { return isActive; }
-    public SkillType getSkillType() { return skillType; }
+    public float getX() {
+        return x;
+    }
+
+    public float getY() {
+        return y;
+    }
+
+    public float getSize() {
+        return size;
+    }
+
+    public boolean isActive() {
+        return isActive;
+    }
+
+    public SkillType getSkillType() {
+        return skillType;
+    }
 
     // Setters
-    public void deactivate() { isActive = false; }
+    public void deactivate() {
+        isActive = false;
+    }
+
+    public boolean isEnemyProjectile() {
+        return isEnemyProjectile;
+    }
+
+    public void setFromEnemy(Enemy fromEnemy) {
+        this.fromEnemy = fromEnemy;
+        this.isEnemyProjectile = fromEnemy != null;
+    }
+
+    public Enemy getFromEnemy() {
+        return fromEnemy;
+    }
 }

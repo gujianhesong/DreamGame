@@ -64,17 +64,30 @@ public class Tiger extends Enemy {
     public List<Item> getPossibleDropList() {
         possibleDrops.clear();
 
-        addPossibleDrop(ItemCreator.createHp1_1_Siyehua());
-        addPossibleDrop(ItemCreator.createHp1_2_QiyeLian());
-        addPossibleDrop(ItemCreator.createMp1_1_Foshou());
-        addPossibleDrop(ItemCreator.createMp1_2_Xiangye());
+        if (enemyLevel == EnemyLevel.ELITE) {
+            addPossibleDrop(EquipCreator.createEquip(10, null));
+            addPossibleDrop(EquipCreator.createEquip(20, null));
 
-        addPossibleDrop(EquipCreator.createEquip(0, null));
-        addPossibleDrop(EquipCreator.createEquip(10, null));
-        addPossibleDrop(EquipCreator.createEquip(20, null));
-        addPossibleDrop(EquipCreator.createEquip(30, null));
-        addPossibleDrop(EquipCreator.createEquip(40, null));
-        addPossibleDrop(EquipCreator.createEquip(50, null));
+            addPossibleDrop(ItemCreator.createHp1_3_Lurong());
+            addPossibleDrop(ItemCreator.createHp1_4_Xuesechahua());
+            addPossibleDrop(ItemCreator.createMp1_3_Shexiang());
+            addPossibleDrop(ItemCreator.createMp1_4_Dingxiangshui());
+        } else if (enemyLevel == EnemyLevel.LEADER) {
+            addPossibleDrop(EquipCreator.createEquip(0, null));
+            addPossibleDrop(EquipCreator.createEquip(10, null));
+
+            addPossibleDrop(ItemCreator.createHp1_2_QiyeLian());
+            addPossibleDrop(ItemCreator.createHp1_3_Lurong());
+            addPossibleDrop(ItemCreator.createMp1_2_Xiangye());
+            addPossibleDrop(ItemCreator.createMp1_3_Shexiang());
+        } else {
+            addPossibleDrop(EquipCreator.createEquip(0, null));
+
+            addPossibleDrop(ItemCreator.createHp1_1_Siyehua());
+            addPossibleDrop(ItemCreator.createHp1_2_QiyeLian());
+            addPossibleDrop(ItemCreator.createMp1_1_Foshou());
+            addPossibleDrop(ItemCreator.createMp1_2_Xiangye());
+        }
 
         return possibleDrops;
     }

@@ -106,9 +106,9 @@ public class RoleInfoPanel {
         plusButtons.clear();
         minusButtons.clear();
 
-        int lineHeight = 45;
-        int buttonSize = 35;
-        int buttonGap = 10;
+        int lineHeight = 50;
+        int buttonSize = 40;
+        int buttonGap = 20;
         int deltaY = 8;
 
         for (int i = 0; i < 6; i++) {
@@ -126,13 +126,13 @@ public class RoleInfoPanel {
         }
 
         // Confirm button at bottom
-        int btnWidth = 120;
-        int btnHeight = 50;
+        int btnWidth = 100;
+        int btnHeight = 40;
         confirmButton.set(
-                panelBounds.centerX() - btnWidth / 2,
-                panelBounds.bottom - btnHeight - 20,
-                panelBounds.centerX() + btnWidth / 2,
-                panelBounds.bottom - 20
+                panelBounds.centerX() - btnWidth / 2 + 150,
+                panelBounds.bottom - btnHeight - 203,
+                panelBounds.centerX() + btnWidth / 2  + 150,
+                panelBounds.bottom - 203
         );
     }
 
@@ -175,7 +175,7 @@ public class RoleInfoPanel {
 
         // Character Name and Level
         int startY = panelBounds.top + 90;
-        int lineHeight = 40;
+        int lineHeight = 45;
 
         // Name
         paint.setColor(Color.WHITE);
@@ -209,13 +209,30 @@ public class RoleInfoPanel {
         canvas.drawText(roleInfo.getLabel(), panelBounds.right - 20, startY + 20, paint);
         startY += lineHeight;
 
-        // Experience bar
-        drawExpBar(canvas, paint, "经验", roleInfo.getExp(),
-                RoleSystem.getInstance().getExpForNextLevel(), startY);
+        // Huoli
+        paint.setColor(Color.WHITE);
+        paint.setTextSize(28);
+        paint.setTextAlign(Paint.Align.LEFT);
+        canvas.drawText("活力", panelBounds.left + 20, startY + 20, paint);
+
+        paint.setTextAlign(Paint.Align.RIGHT);
+        String huoliStr = roleInfo.getHuoli() + "/" + roleInfo.getHuoliMax();
+        canvas.drawText(huoliStr, panelBounds.right - 20, startY + 20, paint);
+        startY += lineHeight;
+
+        // Tili
+        paint.setColor(Color.WHITE);
+        paint.setTextSize(28);
+        paint.setTextAlign(Paint.Align.LEFT);
+        canvas.drawText("体力", panelBounds.left + 20, startY + 20, paint);
+
+        paint.setTextAlign(Paint.Align.RIGHT);
+        String tiliStr = roleInfo.getTili() + "/" + roleInfo.getTiliMax();
+        canvas.drawText(tiliStr, panelBounds.right - 20, startY + 20, paint);
         startY += lineHeight;
 
         // Health
-        drawStatRow(canvas, paint, "生命值", roleInfo.getHp() + " / " + roleInfo.getBloodCap(),
+        drawHpStatRow(canvas, paint, roleInfo.getHp() + " / " + roleInfo.getBloodCap(),
                 startY, roleInfo.getHp() * 1f / roleInfo.getBloodCap());
         if (addPointResult != null && addPointResult.getBlood() > 0) {
             paint.setColor(Color.WHITE);
@@ -225,13 +242,13 @@ public class RoleInfoPanel {
         startY += lineHeight;
 
         // Magic
-        drawStatRow(canvas, paint, "魔法值", roleInfo.getMp() + " / " + roleInfo.getMagicCap(),
+        drawMpStatRow(canvas, paint, roleInfo.getMp() + " / " + roleInfo.getMagicCap(),
                 startY, roleInfo.getMp() * 1f / roleInfo.getMagicCap());
         if (addPointResult != null && addPointResult.getMagic() > 0) {
             paint.setColor(Color.WHITE);
             canvas.drawText("+" + addPointResult.getMagic(), panelBounds.right - 160, startY + 20, paint);
         }
-        startY += lineHeight;
+        startY += lineHeight + 10;
 
         // Draw attribute rows
         if (!isInitAttributeButtons) {
@@ -242,6 +259,11 @@ public class RoleInfoPanel {
 
         // Draw confirm button
         drawConfirmButton(canvas, paint);
+
+        // Experience bar
+        startY = 880;
+        drawExpBar(canvas, paint, "经验", roleInfo.getExp(),
+                RoleSystem.getInstance().getExpForNextLevel(), startY);
     }
 
     /**
@@ -255,7 +277,7 @@ public class RoleInfoPanel {
      * Draw attribute rows with +/- buttons
      */
     private void drawAttributeRows(Canvas canvas, Paint paint, RoleInfo roleInfo, int startY) {
-        int lineHeight = 45;
+        int lineHeight = 50;
         int leftMargin = 20;
         int rightMargin = 20;
 
@@ -366,8 +388,30 @@ public class RoleInfoPanel {
 
             // Draw +/- buttons (except for last row - potential)
             if (i < 5) {
-                drawPlusButton(canvas, paint, plusButtons.get(i));
-                drawMinusButton(canvas, paint, minusButtons.get(i));
+                // Determine if buttons should be enabled
+                boolean plusEnabled = tempRemainPoints > 0;
+                boolean minusEnabled = false;
+
+                switch (i) {
+                    case 0:
+                        minusEnabled = tempAddTi > 0;
+                        break;
+                    case 1:
+                        minusEnabled = tempAddMo > 0;
+                        break;
+                    case 2:
+                        minusEnabled = tempAddLi > 0;
+                        break;
+                    case 3:
+                        minusEnabled = tempAddNai > 0;
+                        break;
+                    case 4:
+                        minusEnabled = tempAddMin > 0;
+                        break;
+                }
+
+                drawPlusButton(canvas, paint, plusButtons.get(i), plusEnabled);
+                drawMinusButton(canvas, paint, minusButtons.get(i), minusEnabled);
             }
         }
     }
@@ -404,21 +448,25 @@ public class RoleInfoPanel {
     /**
      * Draw plus button
      */
-    private void drawPlusButton(Canvas canvas, Paint paint, Rect button) {
+    private void drawPlusButton(Canvas canvas, Paint paint, Rect button, boolean enabled) {
         // Button background
-        paint.setColor(Color.argb(180, 100, 200, 100));
+        if (enabled) {
+            paint.setColor(Color.argb(180, 100, 200, 100));
+        } else {
+            paint.setColor(Color.argb(80, 100, 100, 100)); // Gray when disabled
+        }
         canvas.drawRoundRect(button.left, button.top, button.right, button.bottom, 5, 5, paint);
 
         // Border
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(2);
-        paint.setColor(Color.WHITE);
+        paint.setColor(enabled ? Color.WHITE : Color.rgb(150, 150, 150));
         canvas.drawRoundRect(button.left, button.top, button.right, button.bottom, 5, 5, paint);
 
         // Plus symbol
         paint.setStyle(Paint.Style.FILL);
         paint.setStrokeWidth(3);
-        paint.setColor(Color.WHITE);
+        paint.setColor(enabled ? Color.WHITE : Color.rgb(150, 150, 150));
         paint.setTextSize(28);
         paint.setTextAlign(Paint.Align.CENTER);
 
@@ -432,21 +480,25 @@ public class RoleInfoPanel {
     /**
      * Draw minus button
      */
-    private void drawMinusButton(Canvas canvas, Paint paint, Rect button) {
+    private void drawMinusButton(Canvas canvas, Paint paint, Rect button, boolean enabled) {
         // Button background
-        paint.setColor(Color.argb(180, 200, 100, 100));
+        if (enabled) {
+            paint.setColor(Color.argb(180, 200, 100, 100));
+        } else {
+            paint.setColor(Color.argb(80, 100, 100, 100)); // Gray when disabled
+        }
         canvas.drawRoundRect(button.left, button.top, button.right, button.bottom, 5, 5, paint);
 
         // Border
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(2);
-        paint.setColor(Color.WHITE);
+        paint.setColor(enabled ? Color.WHITE : Color.rgb(150, 150, 150));
         canvas.drawRoundRect(button.left, button.top, button.right, button.bottom, 5, 5, paint);
 
         // Minus symbol
         paint.setStyle(Paint.Style.FILL);
         paint.setStrokeWidth(3);
-        paint.setColor(Color.WHITE);
+        paint.setColor(enabled ? Color.WHITE : Color.rgb(150, 150, 150));
         paint.setTextSize(28);
         paint.setTextAlign(Paint.Align.CENTER);
 
@@ -633,20 +685,18 @@ public class RoleInfoPanel {
         // Bar background
         int barX = panelBounds.centerX() - barWidth / 2;
         int barY = y + 8;
-        paint.setColor(Color.BLACK);
+        paint.setColor(Color.GRAY);
         canvas.drawRect(barX, barY, barX + barWidth, barY + barHeight, paint);
 
         // Experience bar fill (blue color)
         float percent = max > 0 ? (float) current / max : 0;
         percent = Math.max(0, Math.min(1, percent));
-        paint.setColor(Color.rgb(100, 181, 246)); // Light blue
+        paint.setColor(Color.rgb(255, 200, 50));
         canvas.drawRect(barX, barY, barX + barWidth * percent, barY + barHeight, paint);
     }
 
-    /**
-     * Draw a stat row with bar
-     */
-    private void drawStatRow(Canvas canvas, Paint paint, String label, String value,
+
+    private void drawHpStatRow(Canvas canvas, Paint paint, String value,
                              int y, float percent) {
         int leftMargin = 20;
         int rightMargin = 20;
@@ -657,7 +707,7 @@ public class RoleInfoPanel {
         paint.setColor(Color.WHITE);
         paint.setTextSize(26);
         paint.setTextAlign(Paint.Align.LEFT);
-        canvas.drawText(label, panelBounds.left + leftMargin, y + 20, paint);
+        canvas.drawText("气血", panelBounds.left + leftMargin, y + 20, paint);
 
         // Value
         paint.setTextAlign(Paint.Align.RIGHT);
@@ -666,19 +716,42 @@ public class RoleInfoPanel {
         // Bar background
         int barX = panelBounds.centerX() - barWidth / 2;
         int barY = y + 2;
-        paint.setColor(Color.BLACK);
+        paint.setColor(Color.GRAY);
         canvas.drawRect(barX, barY, barX + barWidth, barY + barHeight, paint);
 
         // Bar fill
         percent = Math.max(0, Math.min(1, percent));
-        int barColor;
-        if (percent > 0.6f) {
-            barColor = Color.rgb(100, 200, 100);
-        } else if (percent > 0.3f) {
-            barColor = Color.rgb(255, 200, 50);
-        } else {
-            barColor = Color.rgb(255, 100, 100);
-        }
+        int barColor = Color.rgb(100, 200, 100);
+        paint.setColor(barColor);
+        canvas.drawRect(barX, barY, barX + barWidth * percent, barY + barHeight, paint);
+    }
+
+    private void drawMpStatRow(Canvas canvas, Paint paint, String value,
+                               int y, float percent) {
+        int leftMargin = 20;
+        int rightMargin = 20;
+        int barWidth = 150;
+        int barHeight = 16;
+
+        // Label
+        paint.setColor(Color.WHITE);
+        paint.setTextSize(26);
+        paint.setTextAlign(Paint.Align.LEFT);
+        canvas.drawText("魔法", panelBounds.left + leftMargin, y + 20, paint);
+
+        // Value
+        paint.setTextAlign(Paint.Align.RIGHT);
+        canvas.drawText(value, panelBounds.right - rightMargin, y + 20, paint);
+
+        // Bar background
+        int barX = panelBounds.centerX() - barWidth / 2;
+        int barY = y + 2;
+        paint.setColor(Color.GRAY);
+        canvas.drawRect(barX, barY, barX + barWidth, barY + barHeight, paint);
+
+        // Bar fill
+        percent = Math.max(0, Math.min(1, percent));
+        int barColor = Color.rgb(100, 181, 246);
         paint.setColor(barColor);
         canvas.drawRect(barX, barY, barX + barWidth * percent, barY + barHeight, paint);
     }

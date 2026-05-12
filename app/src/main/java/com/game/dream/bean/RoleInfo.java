@@ -1,6 +1,10 @@
 package com.game.dream.bean;
 
+import com.game.dream.enums.SkillType;
 import com.game.dream.system.RoleSystem;
+import com.game.dream.system.SkillSystem;
+
+import java.util.function.Predicate;
 
 public class RoleInfo {
 
@@ -48,6 +52,9 @@ public class RoleInfo {
 
     private int hp;
     private int mp;
+
+    private int huoli;
+    private int tili;
 
     //自身属性
     private SelfProperty selfProperty;
@@ -141,6 +148,22 @@ public class RoleInfo {
         this.mp = mp;
     }
 
+    public int getHuoli() {
+        return huoli;
+    }
+
+    public void setHuoli(int huoli) {
+        this.huoli = huoli;
+    }
+
+    public int getTili() {
+        return tili;
+    }
+
+    public void setTili(int tili) {
+        this.tili = tili;
+    }
+
     public SelfProperty getSelfProperty() {
         return selfProperty;
     }
@@ -158,67 +181,91 @@ public class RoleInfo {
     }
 
     public int getPracticeAttack() {
+        practiceAttack = 0;
+        for (SkillInfo skillInfo : SkillSystem.getInstance().getAssistSkillInfos()) {
+            if (skillInfo.getSkillType() == SkillType.PST_AttackPractise) {
+                practiceAttack = skillInfo.getLevel();
+                break;
+            }
+        }
         return practiceAttack;
     }
 
-    public void setPracticeAttack(int practiceAttack) {
-        this.practiceAttack = practiceAttack;
-    }
-
     public int getPracticeMagic() {
+        practiceMagic = 0;
+        for (SkillInfo skillInfo : SkillSystem.getInstance().getAssistSkillInfos()) {
+            if (skillInfo.getSkillType() == SkillType.PST_MagicPractise) {
+                practiceMagic = skillInfo.getLevel();
+                break;
+            }
+        }
         return practiceMagic;
     }
 
-    public void setPracticeMagic(int practiceMagic) {
-        this.practiceMagic = practiceMagic;
-    }
-
     public int getPracticeDefense() {
+        practiceDefense = 0;
+        for (SkillInfo skillInfo : SkillSystem.getInstance().getAssistSkillInfos()) {
+            if (skillInfo.getSkillType() == SkillType.PST_DefensePractise) {
+                practiceDefense = skillInfo.getLevel();
+                break;
+            }
+        }
         return practiceDefense;
     }
 
-    public void setPracticeDefense(int practiceDefense) {
-        this.practiceDefense = practiceDefense;
-    }
-
     public int getPracticeMagicDefense() {
+        practiceMagicDefense = 0;
+        for (SkillInfo skillInfo : SkillSystem.getInstance().getAssistSkillInfos()) {
+            if (skillInfo.getSkillType() == SkillType.PST_MagicDefensePractise) {
+                practiceMagicDefense = skillInfo.getLevel();
+                break;
+            }
+        }
         return practiceMagicDefense;
     }
 
-    public void setPracticeMagicDefense(int practiceMagicDefense) {
-        this.practiceMagicDefense = practiceMagicDefense;
-    }
-
     public int getPracticeBBAttack() {
+        practiceBBAttack = 0;
+        for (SkillInfo skillInfo : SkillSystem.getInstance().getAssistSkillInfos()) {
+            if (skillInfo.getSkillType() == SkillType.PST_BB_AttackPractise) {
+                practiceBBAttack = skillInfo.getLevel();
+                break;
+            }
+        }
         return practiceBBAttack;
     }
 
-    public void setPracticeBBAttack(int practiceBBAttack) {
-        this.practiceBBAttack = practiceBBAttack;
-    }
-
     public int getPracticeBBMagic() {
+        practiceBBMagic = 0;
+        for (SkillInfo skillInfo : SkillSystem.getInstance().getAssistSkillInfos()) {
+            if (skillInfo.getSkillType() == SkillType.PST_BB_MagicPractise) {
+                practiceBBMagic = skillInfo.getLevel();
+                break;
+            }
+        }
         return practiceBBMagic;
     }
 
-    public void setPracticeBBMagic(int practiceBBMagic) {
-        this.practiceBBMagic = practiceBBMagic;
-    }
-
     public int getPracticeBBDefense() {
+        practiceBBDefense = 0;
+        for (SkillInfo skillInfo : SkillSystem.getInstance().getAssistSkillInfos()) {
+            if (skillInfo.getSkillType() == SkillType.PST_BB_DefensePractise) {
+                practiceBBDefense = skillInfo.getLevel();
+                break;
+            }
+        }
         return practiceBBDefense;
     }
 
-    public void setPracticeBBDefense(int practiceBBDefense) {
-        this.practiceBBDefense = practiceBBDefense;
-    }
-
     public int getPracticeBBMagicDefense() {
+        practiceBBMagicDefense = 0;
+        for (SkillInfo skillInfo : SkillSystem.getInstance().getAssistSkillInfos()) {
+            if (skillInfo.getSkillType() == SkillType.PST_BB_MagicDefensePractise) {
+                practiceBBMagicDefense = skillInfo.getLevel();
+                break;
+            }
+        }
         return practiceBBMagicDefense;
-    }
-
-    public void setPracticeBBMagicDefense(int practiceBBMagicDefense) {
-        this.practiceBBMagicDefense = practiceBBMagicDefense;
     }
 
     public int getMapId() {
@@ -275,6 +322,12 @@ public class RoleInfo {
         AddPointResult result = RoleSystem.getInstance().caculateAddPoints(getPropTi(), getPropMo(),
                 getPropLi(), getPropNai(), getPropMin());
         int value = baseValue + result.getBlood() + equipAddition.blood;
+        for (SkillInfo skillInfo : SkillSystem.getInstance().getAssistSkillInfos()) {
+            if (skillInfo.getSkillType() == SkillType.AST_QiangShen && skillInfo.getLevel() > 0) {
+                value = (int) (value * (1 + 0.01 * skillInfo.getLevel()));
+                break;
+            }
+        }
         return value;
     }
 
@@ -283,6 +336,12 @@ public class RoleInfo {
         AddPointResult result = RoleSystem.getInstance().caculateAddPoints(getPropTi(), getPropMo(),
                 getPropLi(), getPropNai(), getPropMin());
         int value = baseValue + result.getMagic() + equipAddition.magic;
+        for (SkillInfo skillInfo : SkillSystem.getInstance().getAssistSkillInfos()) {
+            if (skillInfo.getSkillType() == SkillType.AST_MingXiang && skillInfo.getLevel() > 0) {
+                value = (int) (value * (1 + 0.01 * skillInfo.getLevel()));
+                break;
+            }
+        }
         return value;
     }
 
@@ -315,6 +374,13 @@ public class RoleInfo {
         AddPointResult result = RoleSystem.getInstance().caculateAddPoints(getPropTi(), getPropMo(),
                 getPropLi(), getPropNai(), getPropMin());
         int value = baseValue + result.getSpeed() + equipAddition.speed;
+        for (SkillInfo skillInfo : SkillSystem.getInstance().getAssistSkillInfos()) {
+            if (skillInfo.getSkillType() == SkillType.AST_ShenSu && skillInfo.getLevel() > 0) {
+                value += skillInfo.getLevel() * 2;
+                break;
+            }
+        }
+
         return value;
     }
 
@@ -334,4 +400,25 @@ public class RoleInfo {
         return value;
     }
 
+    public int getHuoliMax() {
+        int value = 200;
+        for (SkillInfo skillInfo : SkillSystem.getInstance().getAssistSkillInfos()) {
+            if (skillInfo.getSkillType() == SkillType.AST_YangShengZhiDao && skillInfo.getLevel() > 0) {
+                value += skillInfo.getLevel() * 10;
+                break;
+            }
+        }
+        return value;
+    }
+
+    public int getTiliMax() {
+        int value = 200;
+        for (SkillInfo skillInfo : SkillSystem.getInstance().getAssistSkillInfos()) {
+            if (skillInfo.getSkillType() == SkillType.AST_JianShen && skillInfo.getLevel() > 0) {
+                value += skillInfo.getLevel() * 10;
+                break;
+            }
+        }
+        return value;
+    }
 }

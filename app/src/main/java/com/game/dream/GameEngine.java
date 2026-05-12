@@ -19,6 +19,7 @@ import com.game.dream.item.EquipmentItem;
 import com.game.dream.item.ItemStack;
 import com.game.dream.panel.ItemsPanel;
 import com.game.dream.panel.RoleInfoPanel;
+import com.game.dream.panel.SkillsPanel;
 import com.game.dream.system.DayNightCycle;
 import com.game.dream.system.ItemSystem;
 import com.game.dream.system.RoleSystem;
@@ -81,6 +82,9 @@ public class GameEngine {
 
     private ItemsPanel itemsPanel;
 
+    // Skills panel
+    private SkillsPanel skillsPanel;
+
     // Attack buttons
     private Rect meleeAttackButton;
     private Rect magicAttackButton1; // Top-left spell
@@ -88,6 +92,12 @@ public class GameEngine {
     private Rect magicAttackButton3; // Top-right spell
     private Rect roleInfoButton;
     private Rect equipmentButton;
+    // Skills button
+    private Rect skillsButton;
+    // For tracking scroll gestures
+
+    private float lastSkillsPanelTouchY = 0;
+
     private boolean meleeAttackPressed;
     private boolean magicAttack1Pressed, magicAttack2Pressed, magicAttack3Pressed;
 
@@ -109,12 +119,18 @@ public class GameEngine {
     private long lastMemoryUpdateTime = 0;
     private static final long MEMORY_UPDATE_INTERVAL = 3000; // 3 seconds
 
+    // Resource recovery tracking (every 60 seconds)
+    private long accumulatedRecoveryTime = 0; // Accumulated game time in milliseconds
+    private static final long RECOVERY_INTERVAL = 60000; // 60 seconds (1 minute)
+
     public GameEngine(Context context) {
         this.context = context;
         this.lastFrameTime = System.currentTimeMillis();
         this.frameCount = 0;
         this.currentFPS = 0;
         this.fpsUpdateTime = System.currentTimeMillis();
+        this.accumulatedRecoveryTime = 0; // Initialize recovery timer
+
         initGame();
 
         ItemSystem.getInstance().setGameEngine(this);
@@ -198,6 +214,9 @@ public class GameEngine {
 
         // Initialize equipment panel
         itemsPanel = new ItemsPanel();
+
+        // Initialize skills panel
+        this.skillsPanel = new SkillsPanel();
     }
 
     /**
@@ -338,6 +357,23 @@ public class GameEngine {
             if (currentNotification.isExpired()) {
                 currentNotification = null;
             }
+        }
+
+        // Check and recover huoli/tili every minute (based on game runtime, not system time)
+        checkResourceRecovery(deltaTime);
+    }
+
+    /**
+     * Check if it's time to recover huoli and tili
+     * Uses accumulated game time instead of system time to avoid counting offline time
+     */
+    private void checkResourceRecovery(long deltaTime) {
+        accumulatedRecoveryTime += deltaTime;
+        if (accumulatedRecoveryTime >= RECOVERY_INTERVAL) {
+            RoleSystem.getInstance().recoverOverTime();
+
+            // Reset accumulated time (keep remainder for accuracy)
+            accumulatedRecoveryTime -= RECOVERY_INTERVAL;
         }
     }
 
@@ -736,6 +772,11 @@ public class GameEngine {
         if (itemsPanel != null && itemsPanel.isVisible()) {
             itemsPanel.draw(canvas);
         }
+
+        // Draw skills panel (on top of everything)
+        if (skillsPanel != null && skillsPanel.isVisible()) {
+            skillsPanel.draw(canvas);
+        }
     }
 
     private void drawUI(Canvas canvas) {
@@ -914,6 +955,11 @@ public class GameEngine {
         // Draw equipment button
         if (equipmentButton != null) {
             drawEquipmentButton(canvas, equipmentButton, itemsPanel != null && itemsPanel.isVisible());
+        }
+
+        // Draw skills button
+        if (skillsButton != null) {
+            drawSkillsButton(canvas, skillsButton, skillsPanel != null && skillsPanel.isVisible());
         }
     }
 
@@ -1133,6 +1179,41 @@ public class GameEngine {
         canvas.drawText("🎒", centerX, textY, paint);
     }
 
+    /**
+     * Draw skills button
+     */
+    private void drawSkillsButton(Canvas canvas, Rect button, boolean isOpen) {
+        Paint paint = new Paint();
+        paint.setAntiAlias(true);
+
+        // Calculate center and radius
+        float centerX = button.centerX();
+        float centerY = button.centerY();
+        float radius = Math.min(button.width(), button.height()) / 2f - 2;
+
+        // Button background
+        if (isOpen) {
+            paint.setColor(Color.argb(200, 200, 100, 255)); // Purple when open
+        } else {
+            paint.setColor(Color.argb(150, 80, 80, 80));
+        }
+        canvas.drawRoundRect(button.left, button.top, button.right, button.bottom, 10, 10, paint);
+
+        // Border (circular)
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(2);
+        paint.setColor(Color.WHITE);
+        canvas.drawRoundRect(button.left, button.top, button.right, button.bottom, 10, 10, paint);
+
+        // Label (star icon for skills)
+        paint.setStyle(Paint.Style.FILL);
+        paint.setTextSize(25);
+        paint.setColor(Color.WHITE);
+        paint.setTextAlign(Paint.Align.CENTER);
+        float textY = centerY + 8;
+        canvas.drawText("⭐", centerX, textY, paint);
+    }
+
     private void drawCooldownIndicator(Canvas canvas, Rect button, float progress, int color) {
         if (progress >= 1.0f) return; // No cooldown
 
@@ -1167,6 +1248,23 @@ public class GameEngine {
                 return true; // Panel handled the touch
             }
         }
+        // If skills panel is visible, check if touching it first
+        if (skillsPanel != null && skillsPanel.isVisible()) {
+            if (action == MotionEvent.ACTION_DOWN) {
+                lastSkillsPanelTouchY = y;
+                if (skillsPanel.handleTouch(x, y)) {
+                    return true;
+                }
+            } else if (action == MotionEvent.ACTION_MOVE) {
+                float deltaY = y - lastSkillsPanelTouchY;
+                if (Math.abs(deltaY) > 5) { // Minimum drag distance
+                    skillsPanel.handleScroll(0, deltaY);
+                    lastSkillsPanelTouchY = y;
+                    return true;
+                }
+            }
+            return true; // Consume all events when skills panel is open
+        }
 
         // Check role info button
         if (roleInfoButton != null && roleInfoButton.contains((int) x, (int) y)) {
@@ -1191,6 +1289,18 @@ public class GameEngine {
             }
         }
 
+        // Check skills button
+        if (skillsButton != null && skillsButton.contains((int) x, (int) y)) {
+            if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_POINTER_DOWN) {
+                if (skillsPanel != null) {
+                    skillsPanel.toggleVisibility();
+                }
+                return true;
+            }
+            if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_POINTER_UP) {
+                return true;
+            }
+        }
 
         // Handle D-pad with pointer tracking
         switch (action) {
@@ -1450,8 +1560,8 @@ public class GameEngine {
 
         // Initialize role info panel (center of screen)
         if (roleInfoPanel != null) {
-            int panelWidth = Math.min(900, width - 40); // Increased from 600 to 900
-            int panelHeight = Math.min(700, height - 100);
+            int panelWidth = Math.min(600, width - 40); // Increased from 600 to 900
+            int panelHeight = Math.min(900, height - 100);
             int panelX = (width - panelWidth) / 2;
             int panelY = (height - panelHeight) / 2;
             roleInfoPanel.setBounds(panelX, panelY, panelWidth, panelHeight);
@@ -1464,6 +1574,15 @@ public class GameEngine {
             int panelX = (width - panelWidth) / 2;
             int panelY = (height - panelHeight) / 2;
             itemsPanel.setBounds(panelX, panelY, panelWidth, panelHeight);
+        }
+
+        // Initialize skills panel (center of screen)
+        if (skillsPanel != null) {
+            int panelWidth = Math.min(1200, width - 40); // Increased from 600 to 900
+            int panelHeight = Math.min(900, height - 100);
+            int panelX = (width - panelWidth) / 2;
+            int panelY = (height - panelHeight) / 2;
+            skillsPanel.setBounds(panelX, panelY, panelWidth, panelHeight);
         }
     }
 
@@ -1538,18 +1657,30 @@ public class GameEngine {
         // role info button (top-right corner)
         int infoButtonSize = screenHeight / 10;
         int infoPadding = 20;
+
+        int startX = screenWidth / 2 + infoPadding;
         roleInfoButton = new Rect(
-                screenWidth / 2 + infoPadding,
+                startX,
                 screenHeight - infoPadding - infoButtonSize,
-                screenWidth / 2 + infoPadding + infoButtonSize,
+                startX + infoButtonSize,
                 screenHeight - infoPadding
         );
 
         // Equipment button (next to role info button)
+        startX += infoButtonSize + infoPadding;
         equipmentButton = new Rect(
-                screenWidth / 2 + infoPadding + infoButtonSize + 20,
+                startX,
                 screenHeight - infoPadding - infoButtonSize,
-                screenWidth / 2 + infoPadding + infoButtonSize * 2 + 20,
+                startX + infoButtonSize,
+                screenHeight - infoPadding
+        );
+
+        // Skills button (next to equipment button)
+        startX += infoButtonSize + infoPadding;
+        skillsButton = new Rect(
+                startX,
+                screenHeight - infoPadding - infoButtonSize,
+                startX + infoButtonSize,
                 screenHeight - infoPadding
         );
     }

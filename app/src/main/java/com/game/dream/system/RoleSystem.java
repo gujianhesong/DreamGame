@@ -142,4 +142,16 @@ public class RoleSystem {
         }
         roleInfo.setEquipAddition(equipAddition);
     }
+
+    /**
+     * Recover huoli and tili over time
+     * Called every minute to restore 10 points each, capped at max values
+     */
+    public void recoverOverTime() {
+        // Recover huoli
+        roleInfo.setHuoli(Math.min(roleInfo.getHuoli() + 10, roleInfo.getHuoliMax()));
+
+        // Recover tili
+        roleInfo.setTili(Math.min(roleInfo.getTili() + 10, roleInfo.getTiliMax()));
+    }
 }

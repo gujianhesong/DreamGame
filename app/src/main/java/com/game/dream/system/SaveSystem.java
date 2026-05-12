@@ -46,6 +46,9 @@ public class SaveSystem {
             saveInfo.setRoleInfo(RoleSystem.getInstance().getRoleInfo());
             saveInfo.setItemInfos(ItemSystem.getInstance().getItemInfos());
             saveInfo.setEquipInfos(ItemSystem.getInstance().getEquipInfos());
+            saveInfo.setMainSkillInfos(SkillSystem.getInstance().getMainSkillInfos());
+            saveInfo.setAssistSkillInfos(SkillSystem.getInstance().getAssistSkillInfos());
+            saveInfo.setPractiseSkillInfos(SkillSystem.getInstance().getPractiseSkillInfos());
 
             // Convert to JSON and save
             String jsonData = gson.toJson(saveInfo);
@@ -88,6 +91,9 @@ public class SaveSystem {
         RoleSystem.getInstance().setRoleInfo(saveInfo.getRoleInfo());
         ItemSystem.getInstance().setItemInfos(saveInfo.getItemInfos());
         ItemSystem.getInstance().setEquipInfos(saveInfo.getEquipInfos());
+        SkillSystem.getInstance().setMainSkillInfos(saveInfo.getMainSkillInfos());
+        SkillSystem.getInstance().setAssistSkillInfos(saveInfo.getAssistSkillInfos());
+        SkillSystem.getInstance().setPractiseSkillInfos(saveInfo.getPractiseSkillInfos());
     }
 
     private SaveInfo getInitData() {

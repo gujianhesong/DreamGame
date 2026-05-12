@@ -10,6 +10,7 @@ import com.game.dream.item.EquipmentItem;
 import com.game.dream.item.Item;
 import com.game.dream.item.ItemStack;
 import com.game.dream.utils.EquipUtil;
+import com.game.dream.utils.TouchUtil;
 
 /**
  * Equipment information panel - displays detailed equipment stats
@@ -202,14 +203,14 @@ public class EquipInfoPanel {
 
         //装备属性
         String equipAddValue = EquipUtil.getEquipValueText(equipItemInfo);
-        if(!equipAddValue.isEmpty()){
+        if (!equipAddValue.isEmpty()) {
             canvas.drawText(equipAddValue, panelBounds.left + 25, currentY, paint);
             currentY += 50;
         }
 
         // 附加原始属性
         String srcPropText = EquipUtil.getEquipPropText(equipItemInfo);
-        if(!srcPropText.isEmpty()){
+        if (!srcPropText.isEmpty()) {
             canvas.drawText(srcPropText, panelBounds.left + 25, currentY, paint);
             currentY += 50;
         }
@@ -339,20 +340,14 @@ public class EquipInfoPanel {
                                float parentRight, float parentBottom) {
         if (!isVisible) return false;
 
-        // Check if touch is outside the panel bounds - close the panel
-        if (x < parentLeft || x > parentRight || y < parentTop || y > parentBottom) {
-            hide();
-            return true;
-        }
-
-        // Check if touch is outside the info panel but inside parent - close the panel
-        if (!panelBounds.contains((int) x, (int) y)) {
+        // Check if touch is outside the info panel- close the panel
+        if (!TouchUtil.checkIsInTouchRectFloat(panelBounds, x, y)) {
             hide();
             return true;
         }
 
         // Check action button (Unequip or Equip)
-        if (actionButton.contains((int) x, (int) y)) {
+        if (TouchUtil.checkIsInTouchRectFloat(actionButton, x, y)) {
             if (listener != null && selectedEquipment != null) {
                 EquipmentItem equipment = (EquipmentItem) selectedEquipment.getItem();
                 if (isEquipped) {
@@ -366,7 +361,7 @@ public class EquipInfoPanel {
         }
 
         // Check drop button (only for inventory items)
-        if (!isEquipped && dropButton.contains((int) x, (int) y)) {
+        if (!isEquipped && TouchUtil.checkIsInTouchRectFloat(dropButton, x, y)) {
             if (listener != null && selectedEquipment != null) {
                 EquipmentItem equipment = (EquipmentItem) selectedEquipment.getItem();
                 listener.onDrop(equipment, inventoryIndex);

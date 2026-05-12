@@ -7,6 +7,7 @@ import android.graphics.Rect;
 
 import com.game.dream.item.Item;
 import com.game.dream.item.ItemStack;
+import com.game.dream.utils.TouchUtil;
 
 /**
  * Item information popup panel
@@ -280,20 +281,14 @@ public class ItemInfoPanel {
                                float parentRight, float parentBottom) {
         if (!isVisible) return false;
 
-        // Check if touch is outside the panel bounds - close the panel
-        if (x < parentLeft || x > parentRight || y < parentTop || y > parentBottom) {
-            hide();
-            return true;
-        }
-
-        // Check if touch is outside the info panel but inside parent - close the panel
-        if (!panelBounds.contains((int) x, (int) y)) {
+        // Check if touch is outside the info panel - close the panel
+        if (!TouchUtil.checkIsInTouchRectFloat(panelBounds, x, y)) {
             hide();
             return true;
         }
 
         // Check use/unequip button
-        if (useButton.contains((int) x, (int) y)) {
+        if (TouchUtil.checkIsInTouchRectFloat(useButton, x, y)) {
             if (listener != null && selectedItem != null) {
                 listener.onUseItem(selectedItem);
             }
@@ -302,7 +297,7 @@ public class ItemInfoPanel {
         }
 
         // Check drop button (only for non-equipped items)
-        if (dropButton.contains((int) x, (int) y)) {
+        if (TouchUtil.checkIsInTouchRectFloat(dropButton, x, y)) {
             if (listener != null && selectedItem != null) {
                 listener.onDropItem(selectedItem);
             }

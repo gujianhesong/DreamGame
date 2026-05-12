@@ -8,6 +8,7 @@ import android.graphics.Rect;
 import com.game.dream.bean.SkillInfo;
 import com.game.dream.system.RoleSystem;
 import com.game.dream.system.SkillSystem;
+import com.game.dream.utils.TouchUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -484,13 +485,13 @@ public class SkillsPanel {
         if (!isVisible) return false;
 
         // Check close button FIRST
-        if (closeButton.contains((int)x, (int)y)) {
+        if (TouchUtil.checkIsInTouchRectFloat(closeButton, x, y)) {
             hide();
             return true;
         }
 
         // Check tabs
-        if (activeTab.contains((int)x, (int)y)) {
+        if (TouchUtil.checkIsInTouchRectFloat(activeTab, x, y)) {
             if (currentTab != 0) {
                 currentTab = 0;
                 scrollOffset = 0; // Reset scroll when switching tabs
@@ -498,7 +499,7 @@ public class SkillsPanel {
             }
             return true;
         }
-        if (passiveTab.contains((int)x, (int)y)) {
+        if (TouchUtil.checkIsInTouchRectFloat(passiveTab, x, y)) {
             if (currentTab != 1) {
                 currentTab = 1;
                 scrollOffset = 0;
@@ -506,7 +507,7 @@ public class SkillsPanel {
             }
             return true;
         }
-        if (cultivationTab.contains((int)x, (int)y)) {
+        if (TouchUtil.checkIsInTouchRectFloat(cultivationTab, x, y)) {
             if (currentTab != 2) {
                 currentTab = 2;
                 scrollOffset = 0;
@@ -516,18 +517,18 @@ public class SkillsPanel {
         }
 
         // Handle scrolling in skill list area
-        if (skillListArea.contains((int)x, (int)y)) {
+        if (TouchUtil.checkIsInTouchRectFloat(skillListArea, x, y)) {
             // Check skill buttons first (only if not dragging)
             if (!isDragging) {
                 for (SkillButtonPair pair : skillButtons) {
-                    if (pair.upgradeButton.contains((int)x, (int)y)) {
+                    if (TouchUtil.checkIsInTouchRectFloat(pair.upgradeButton, x, y)) {
                         if (pair.skill.canUpgrade() && listener != null) {
                             listener.onUpgradeSkill(pair.skill);
                             updateSkillButtons();
                         }
                         return true;
                     }
-                    if (pair.downgradeButton.contains((int)x, (int)y)) {
+                    if (TouchUtil.checkIsInTouchRectFloat(pair.downgradeButton, x, y)) {
                         if (pair.skill.canDowngrade() && listener != null) {
                             listener.onDowngradeSkill(pair.skill);
                             updateSkillButtons();

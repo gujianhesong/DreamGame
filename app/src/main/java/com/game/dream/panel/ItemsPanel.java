@@ -10,6 +10,7 @@ import com.game.dream.item.Item;
 import com.game.dream.item.ItemStack;
 import com.game.dream.system.ItemSystem;
 import com.game.dream.system.RoleSystem;
+import com.game.dream.utils.TouchUtil;
 
 import java.util.List;
 
@@ -426,7 +427,7 @@ public class ItemsPanel {
         }
 
         // Check close button
-        if (closeButton.contains((int)x, (int)y)) {
+        if (TouchUtil.checkIsInTouchRectFloat(closeButton, x, y)) {
             hide();
             return true;
         }

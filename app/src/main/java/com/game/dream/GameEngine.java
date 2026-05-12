@@ -24,6 +24,7 @@ import com.game.dream.system.DayNightCycle;
 import com.game.dream.system.ItemSystem;
 import com.game.dream.system.RoleSystem;
 import com.game.dream.system.WeatherSystem;
+import com.game.dream.utils.TouchUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -1267,7 +1268,7 @@ public class GameEngine {
         }
 
         // Check role info button
-        if (roleInfoButton != null && roleInfoButton.contains((int) x, (int) y)) {
+        if (roleInfoButton != null && TouchUtil.checkIsInTouchRectFloat(roleInfoButton, x, y)) {
             if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_POINTER_DOWN) {
                 roleInfoPanel.toggleVisibility();
                 return true;
@@ -1277,7 +1278,7 @@ public class GameEngine {
             }
         }
         // Check equipment button
-        if (equipmentButton != null && equipmentButton.contains((int) x, (int) y)) {
+        if (equipmentButton != null && TouchUtil.checkIsInTouchRectFloat(equipmentButton, x, y)) {
             if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_POINTER_DOWN) {
                 if (itemsPanel != null) {
                     itemsPanel.toggleVisibility();
@@ -1290,7 +1291,7 @@ public class GameEngine {
         }
 
         // Check skills button
-        if (skillsButton != null && skillsButton.contains((int) x, (int) y)) {
+        if (skillsButton != null && TouchUtil.checkIsInTouchRectFloat(skillsButton, x, y)) {
             if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_POINTER_DOWN) {
                 if (skillsPanel != null) {
                     skillsPanel.toggleVisibility();

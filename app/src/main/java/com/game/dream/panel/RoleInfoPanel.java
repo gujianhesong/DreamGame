@@ -9,6 +9,7 @@ import com.game.dream.Player;
 import com.game.dream.bean.AddPointResult;
 import com.game.dream.bean.RoleInfo;
 import com.game.dream.system.RoleSystem;
+import com.game.dream.utils.TouchUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -89,7 +90,7 @@ public class RoleInfoPanel {
         panelBounds.set(x, y, x + width, y + height);
 
         // Calculate close button position (top-right corner)
-        int buttonSize = 50;
+        int buttonSize = 40;
         int padding = 10;
         closeButton.set(
                 panelBounds.right - buttonSize - padding,
@@ -543,13 +544,13 @@ public class RoleInfoPanel {
         if (!isVisible) return false;
 
         // Check if touched close button
-        if (closeButton.contains((int) x, (int) y)) {
+        if (TouchUtil.checkIsInTouchRectFloat(closeButton, x, y)) {
             hide();
             return true;
         }
 
         // Check if touched confirm button
-        if (confirmButton.contains((int) x, (int) y)) {
+        if (TouchUtil.checkIsInTouchRectFloat(confirmButton, x, y)) {
             // Save changes here
             confirmAttributes();
             return true;
@@ -558,10 +559,10 @@ public class RoleInfoPanel {
         // Check if touched +/- buttons
         RoleInfo roleInfo = RoleSystem.getInstance().getRoleInfo();
         for (int i = 0; i < 5; i++) { // Only first 5 attributes have buttons
-            if (plusButtons.get(i).contains((int) x, (int) y)) {
+            if (TouchUtil.checkIsInTouchRectFloat(plusButtons.get(i), x, y)) {
                 increaseAttribute(i, roleInfo);
                 return true;
-            } else if (minusButtons.get(i).contains((int) x, (int) y)) {
+            } else if (TouchUtil.checkIsInTouchRectFloat(minusButtons.get(i), x, y)) {
                 decreaseAttribute(i, roleInfo);
                 return true;
             }

@@ -49,6 +49,7 @@ public class SaveSystem {
             saveInfo.setMainSkillInfos(SkillSystem.getInstance().getMainSkillInfos());
             saveInfo.setAssistSkillInfos(SkillSystem.getInstance().getAssistSkillInfos());
             saveInfo.setPractiseSkillInfos(SkillSystem.getInstance().getPractiseSkillInfos());
+            saveInfo.setEquipedSkillInfos(SkillSystem.getInstance().getEquippedActiveSkills());
 
             // Convert to JSON and save
             String jsonData = gson.toJson(saveInfo);
@@ -94,6 +95,7 @@ public class SaveSystem {
         SkillSystem.getInstance().setMainSkillInfos(saveInfo.getMainSkillInfos());
         SkillSystem.getInstance().setAssistSkillInfos(saveInfo.getAssistSkillInfos());
         SkillSystem.getInstance().setPractiseSkillInfos(saveInfo.getPractiseSkillInfos());
+        SkillSystem.getInstance().setEquippedActiveSkills(saveInfo.getEquipedSkillInfos());
     }
 
     private SaveInfo getInitData() {

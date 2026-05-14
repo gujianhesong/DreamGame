@@ -2,6 +2,8 @@ package com.game.dream.bean;
 
 import com.game.dream.enums.SkillType;
 
+import java.security.PublicKey;
+
 public class SkillInfo {
     private SkillType skillType;
     private int level;
@@ -57,12 +59,32 @@ public class SkillInfo {
         this.desc = desc;
     }
 
-
     public boolean canUpgrade() {
         return level < maxLevel;
     }
 
     public boolean canDowngrade() {
         return level > 1;
+    }
+
+    public boolean isMainSkill(){
+        if (getSkillType().name().startsWith("MAIN_")) {
+            return true;
+        }
+        return false;
+    }
+
+    public boolean isAssistSkill(){
+        if (getSkillType().name().startsWith("AST_")) {
+            return true;
+        }
+        return false;
+    }
+
+    public boolean isPractiseSkill(){
+        if (getSkillType().name().startsWith("PST_")) {
+            return true;
+        }
+        return false;
     }
 }

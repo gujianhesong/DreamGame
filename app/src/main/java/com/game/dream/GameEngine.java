@@ -11,6 +11,7 @@ import android.view.MotionEvent;
 import com.game.dream.bean.AttackResult;
 import com.game.dream.bean.EnemyHitInfo;
 import com.game.dream.bean.RoleInfo;
+import com.game.dream.bean.SkillInfo;
 import com.game.dream.enemy.Enemy;
 import com.game.dream.enemy.Tiger;
 import com.game.dream.enemy.Wolf;
@@ -23,6 +24,7 @@ import com.game.dream.panel.SkillsPanel;
 import com.game.dream.system.DayNightCycle;
 import com.game.dream.system.ItemSystem;
 import com.game.dream.system.RoleSystem;
+import com.game.dream.system.SkillSystem;
 import com.game.dream.system.WeatherSystem;
 import com.game.dream.utils.TouchUtil;
 
@@ -88,9 +90,12 @@ public class GameEngine {
 
     // Attack buttons
     private Rect meleeAttackButton;
-    private Rect magicAttackButton1; // Top-left spell
-    private Rect magicAttackButton2; // Top spell
-    private Rect magicAttackButton3; // Top-right spell
+
+    // Skill buttons (Dynamic based on loadout)
+    private List<Rect> skillButtons = new ArrayList<>();
+    private Rect switchPageButton;
+    private static final int MAX_SKILL_SLOTS = 5;
+
     private Rect roleInfoButton;
     private Rect equipmentButton;
     // Skills button
@@ -100,7 +105,7 @@ public class GameEngine {
     private float lastSkillsPanelTouchY = 0;
 
     private boolean meleeAttackPressed;
-    private boolean magicAttack1Pressed, magicAttack2Pressed, magicAttack3Pressed;
+    private boolean magicAttackPressed;
 
     // Track which pointer IDs are controlling the D-pad
     private Integer dpadPointerId = null;
@@ -407,7 +412,7 @@ public class GameEngine {
                                         enemy.getY(),
                                         targetPos[0],
                                         targetPos[1],
-                                        SkillType.FIREBALL
+                                        SkillType.MAIN_FIREBALL
                                 );
                                 magicProj.setFromEnemy(enemy);
                                 projectiles.add(magicProj);
@@ -479,7 +484,7 @@ public class GameEngine {
                                         enemy.getY(),
                                         targetPos[0],
                                         targetPos[1],
-                                        SkillType.FIREBALL
+                                        SkillType.MAIN_FIREBALL
                                 );
                                 magicProj.setFromEnemy(enemy);
                                 projectiles.add(magicProj);
@@ -924,29 +929,72 @@ public class GameEngine {
         canvas.drawText("▶", dpadBounds.centerX() + dpadBounds.width() / 4, dpadBounds.centerY() + 15, paint);
 
         // Draw attack buttons cluster
-        if (meleeAttackButton != null && magicAttackButton1 != null &&
-                magicAttackButton2 != null && magicAttackButton3 != null) {
-
+        if (meleeAttackButton != null) {
             // Draw connection lines from magic buttons to physical button
             paint.setColor(Color.argb(60, 255, 255, 255));
             paint.setStrokeWidth(2);
             paint.setStyle(Paint.Style.STROKE);
 
-            canvas.drawLine(magicAttackButton1.centerX(), magicAttackButton1.centerY(),
-                    meleeAttackButton.centerX(), meleeAttackButton.centerY(), paint);
-            canvas.drawLine(magicAttackButton2.centerX(), magicAttackButton2.centerY(),
-                    meleeAttackButton.centerX(), meleeAttackButton.centerY(), paint);
-            canvas.drawLine(magicAttackButton3.centerX(), magicAttackButton3.centerY(),
-                    meleeAttackButton.centerX(), meleeAttackButton.centerY(), paint);
-
-            // Draw magic attack buttons (circular spells)
-            drawCircularMagicAttackButton(canvas, magicAttackButton1, magicAttack1Pressed, "❄️", Color.rgb(100, 200, 255));
-            drawCircularMagicAttackButton(canvas, magicAttackButton2, magicAttack2Pressed, "🔥", Color.rgb(255, 150, 100));
-            drawCircularMagicAttackButton(canvas, magicAttackButton3, magicAttack3Pressed, "⚡", Color.rgb(255, 255, 100));
-
             // Draw physical attack button (circular, larger and more prominent)
             drawCircularPhysicalAttackButton(canvas, meleeAttackButton, meleeAttackPressed);
         }
+
+        List<SkillInfo> equipped = SkillSystem.getInstance().getCurrentPageSkills();
+        paint.setAntiAlias(true);
+        paint.setTextAlign(Paint.Align.CENTER);
+
+        for (int i = 0; i < MAX_SKILL_SLOTS; i++) {
+            Rect btn = skillButtons.get(i);
+            boolean hasSkill = i < equipped.size();
+
+            // Button Background
+            paint.setStyle(Paint.Style.FILL);
+            paint.setColor(hasSkill ? Color.argb(100, 200, 200, 50) : Color.argb(10, 200, 200, 50));
+            canvas.drawCircle(btn.centerX(), btn.centerY(), btn.width() / 2, paint);
+
+            // Border
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setStrokeWidth(2);
+            paint.setColor(Color.WHITE);
+            canvas.drawCircle(btn.centerX(), btn.centerY(), btn.width() / 2, paint);
+
+            // Skill Name or Empty Slot Label
+            paint.setStyle(Paint.Style.FILL);
+            paint.setTextSize(18);
+            paint.setColor(Color.WHITE);
+            if (hasSkill) {
+                String name = equipped.get(i).getName();
+                if (name.length() > 4) name = name.substring(0, 4) + "..";
+                canvas.drawText(name, btn.centerX(), btn.centerY() + 5, paint);
+            } else {
+                canvas.drawText("空", btn.centerX(), btn.centerY() + 5, paint);
+            }
+
+            // Draw cooldown overlay
+            float cooldownProgress = player.getMagicCooldownProgress();
+            if (cooldownProgress < 1.0f) {
+                drawCircularCooldown(canvas, btn, cooldownProgress);
+            }
+        }
+
+        // Draw Switch Page Button
+        boolean hasMorePages = SkillSystem.getInstance().getCurrentPageSkills().size() > 0 &&
+                (SkillSystem.getInstance().getCurrentPageIndex() + 1) * 5 < SkillSystem.getInstance().getEquippedActiveSkills().size();
+
+        paint.setColor(Color.argb(100, 255, 140, 0)); // Orange
+        canvas.drawCircle(switchPageButton.centerX(), switchPageButton.centerY(), switchPageButton.width()/2, paint);
+
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(2);
+        paint.setColor(Color.WHITE);
+        canvas.drawCircle(switchPageButton.centerX(), switchPageButton.centerY(), switchPageButton.width()/2 - 1, paint);
+
+        paint.setStyle(Paint.Style.FILL);
+        paint.setTextSize(30);
+        paint.setTextAlign(Paint.Align.CENTER);
+        paint.setColor(Color.WHITE);
+        // Show arrow or page number
+        canvas.drawText("⇄", switchPageButton.centerX(), switchPageButton.centerY() + 8, paint);
 
         // Draw role info button
         if (roleInfoButton != null) {
@@ -1267,6 +1315,14 @@ public class GameEngine {
             return true; // Consume all events when skills panel is open
         }
 
+        // Check Switch Page Button
+        if (TouchUtil.checkIsInTouchRectFloat(switchPageButton, x, y)) {
+            SkillSystem.getInstance().nextPage();
+            int page = SkillSystem.getInstance().getCurrentPageIndex() + 1;
+            showNotification("提示", "技能第 " + page + " 页", CenterNotification.Type.INFO);
+            return true;
+        }
+
         // Check role info button
         if (roleInfoButton != null && TouchUtil.checkIsInTouchRectFloat(roleInfoButton, x, y)) {
             if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_POINTER_DOWN) {
@@ -1409,41 +1465,18 @@ public class GameEngine {
                     }
                 }
 
-                if (magicAttackButton1 != null &&
-                        isPointInCircle(x, y, magicAttackButton1.centerX(), magicAttackButton1.centerY(), magicAttackButton1.width() / 2)) {
-                    magicAttack1Pressed = true;
-                    handled = true;
-
-                    // Cast ice bolt
-                    List<Projectile> list = player.castTripleSpell(SkillType.ICE_BOLT);
-                    if (list != null) {
-                        projectiles.addAll(list);
+                for (int index = 0; index < skillButtons.size(); index++) {
+                    Rect skillBtn = skillButtons.get(index);
+                    if (isPointInCircle(x, y, skillBtn.centerX(), skillBtn.centerY(), skillBtn.width() / 2)) {
+                        magicAttackPressed = true;
+                        handled = true;
+                        List<SkillInfo> equipped = SkillSystem.getInstance().getEquippedActiveSkills();
+                        if (index < equipped.size()) {
+                            castSkill(equipped.get(index));
+                        }
                     }
                 }
 
-                if (magicAttackButton2 != null &&
-                        isPointInCircle(x, y, magicAttackButton2.centerX(), magicAttackButton2.centerY(), magicAttackButton2.width() / 2)) {
-                    magicAttack2Pressed = true;
-                    handled = true;
-
-                    // Cast fireball
-                    List<Projectile> list = player.castTripleSpell(SkillType.FIREBALL);
-                    if (list != null) {
-                        projectiles.addAll(list);
-                    }
-                }
-
-                if (magicAttackButton3 != null &&
-                        isPointInCircle(x, y, magicAttackButton3.centerX(), magicAttackButton3.centerY(), magicAttackButton3.width() / 2)) {
-                    magicAttack3Pressed = true;
-                    handled = true;
-
-                    // Cast lightning
-                    List<Projectile> list = player.castTripleSpell(SkillType.LIGHTNING);
-                    if (list != null) {
-                        projectiles.addAll(list);
-                    }
-                }
                 break;
 
             case MotionEvent.ACTION_UP:
@@ -1456,23 +1489,14 @@ public class GameEngine {
                     handled = true;
                 }
 
-                if (magicAttackButton1 != null &&
-                        isPointInCircle(x, y, magicAttackButton1.centerX(), magicAttackButton1.centerY(), magicAttackButton1.width() / 2)) {
-                    magicAttack1Pressed = false;
-                    handled = true;
+                for (int index = 0; index < skillButtons.size(); index++) {
+                    Rect skillBtn = skillButtons.get(index);
+                    if (isPointInCircle(x, y, skillBtn.centerX(), skillBtn.centerY(), skillBtn.width() / 2)) {
+                        magicAttackPressed = false;
+                        handled = true;
+                    }
                 }
 
-                if (magicAttackButton2 != null &&
-                        isPointInCircle(x, y, magicAttackButton2.centerX(), magicAttackButton2.centerY(), magicAttackButton2.width() / 2)) {
-                    magicAttack2Pressed = false;
-                    handled = true;
-                }
-
-                if (magicAttackButton3 != null &&
-                        isPointInCircle(x, y, magicAttackButton3.centerX(), magicAttackButton3.centerY(), magicAttackButton3.width() / 2)) {
-                    magicAttack3Pressed = false;
-                    handled = true;
-                }
                 break;
 
             case MotionEvent.ACTION_MOVE:
@@ -1493,41 +1517,23 @@ public class GameEngine {
                         }
                     }
 
-                    if (magicAttackButton1 != null &&
-                            isPointInCircle(px, py, magicAttackButton1.centerX(), magicAttackButton1.centerY(), magicAttackButton1.width() / 2)) {
-                        anyOnButton = true;
-                        if (!magicAttack1Pressed) {
-                            magicAttack1Pressed = true;
-                            handled = true;
-                        }
-                    }
-
-                    if (magicAttackButton2 != null &&
-                            isPointInCircle(px, py, magicAttackButton2.centerX(), magicAttackButton2.centerY(), magicAttackButton2.width() / 2)) {
-                        anyOnButton = true;
-                        if (!magicAttack2Pressed) {
-                            magicAttack2Pressed = true;
-                            handled = true;
-                        }
-                    }
-
-                    if (magicAttackButton3 != null &&
-                            isPointInCircle(px, py, magicAttackButton3.centerX(), magicAttackButton3.centerY(), magicAttackButton3.width() / 2)) {
-                        anyOnButton = true;
-                        if (!magicAttack3Pressed) {
-                            magicAttack3Pressed = true;
-                            handled = true;
+                    for (int index = 0; index < skillButtons.size(); index++) {
+                        Rect skillBtn = skillButtons.get(index);
+                        if (isPointInCircle(x, y, skillBtn.centerX(), skillBtn.centerY(), skillBtn.width() / 2)) {
+                            anyOnButton = true;
+                            if (!magicAttackPressed) {
+                                magicAttackPressed = true;
+                                handled = true;
+                            }
                         }
                     }
                 }
 
                 // If no pointers are on any button, clear all states
                 if (!anyOnButton) {
-                    if (meleeAttackPressed || magicAttack1Pressed || magicAttack2Pressed || magicAttack3Pressed) {
+                    if (meleeAttackPressed || magicAttackPressed) {
                         meleeAttackPressed = false;
-                        magicAttack1Pressed = false;
-                        magicAttack2Pressed = false;
-                        magicAttack3Pressed = false;
+                        magicAttackPressed = false;
                         handled = true;
                     }
                 }
@@ -1535,6 +1541,34 @@ public class GameEngine {
         }
 
         return handled;
+    }
+
+    private void castSkill(SkillInfo skill) {
+        LogUtil.d("Casting skill: " + skill.getName());
+        // TODO: Implement actual skill effects based on skill ID or Type
+        switch (skill.getSkillType()) {
+            case MAIN_FIREBALL: {
+                List<Projectile> list = player.castTripleSpell(SkillType.MAIN_FIREBALL);
+                if (list != null) {
+                    projectiles.addAll(list);
+                }
+            }
+            break;
+            case MAIN_ICE_BOLT: {
+                List<Projectile> list = player.castTripleSpell(SkillType.MAIN_ICE_BOLT);
+                if (list != null) {
+                    projectiles.addAll(list);
+                }
+            }
+            break;
+            case MAIN_LIGHTNING: {
+                List<Projectile> list = player.castTripleSpell(SkillType.MAIN_LIGHTNING);
+                if (list != null) {
+                    projectiles.addAll(list);
+                }
+            }
+            break;
+        }
     }
 
     /**
@@ -1621,40 +1655,6 @@ public class GameEngine {
                 physicalCenterY + physicalButtonSize / 2
         );
 
-        // Magic attack buttons arranged in fan shape around physical button
-        // Layout: Left, Top-Left, Top (forming an arc in the upper-left quadrant)
-        int spacing = (int) (physicalButtonSize * 1.5);
-
-        // Button 1: Left of physical button
-        int magic1X = physicalCenterX - spacing;
-        int magic1Y = physicalCenterY;
-        magicAttackButton1 = new Rect(
-                magic1X - magicButtonSize / 2,
-                magic1Y - magicButtonSize / 2,
-                magic1X + magicButtonSize / 2,
-                magic1Y + magicButtonSize / 2
-        );
-
-        // Button 2: Top-Left of physical button (diagonal)
-        int magic2X = physicalCenterX - (int) (spacing * 0.7);
-        int magic2Y = physicalCenterY - (int) (spacing * 0.7);
-        magicAttackButton2 = new Rect(
-                magic2X - magicButtonSize / 2,
-                magic2Y - magicButtonSize / 2,
-                magic2X + magicButtonSize / 2,
-                magic2Y + magicButtonSize / 2
-        );
-
-        // Button 3: Top of physical button
-        int magic3X = physicalCenterX;
-        int magic3Y = physicalCenterY - spacing;
-        magicAttackButton3 = new Rect(
-                magic3X - magicButtonSize / 2,
-                magic3Y - magicButtonSize / 2,
-                magic3X + magicButtonSize / 2,
-                magic3Y + magicButtonSize / 2
-        );
-
         // role info button (top-right corner)
         int infoButtonSize = screenHeight / 10;
         int infoPadding = 20;
@@ -1684,6 +1684,59 @@ public class GameEngine {
                 startX + infoButtonSize,
                 screenHeight - infoPadding
         );
+
+        {
+            // Initialize 5 skill slots in an arc around the top-left of the attack button
+            int attackBtnSize = meleeAttackButton.width(); // Assuming attack button size
+            int skillBtnSize = 150;  // Slightly smaller than attack button
+            padding = 20;
+
+            // Attack button center position
+            float attackCenterX = meleeAttackButton.centerX();
+            float attackCenterY = meleeAttackButton.centerY();
+
+            // Radius of the arc (distance from attack center to skill centers)
+            float radius = attackBtnSize / 2 + skillBtnSize / 2 + 80;
+
+            skillButtons.clear();
+            for (int i = 0; i < MAX_SKILL_SLOTS; i++) {
+                // Calculate angle: Distribute 5 buttons between 135 degrees (bottom-left) and 225 degrees (top-left)
+                // Or simply from 180 (left) to 270 (top). Let's do 160 to 260 degrees for a nice left-side arc.
+                // Angle in radians: startAngle + (step * i)
+                double startAngleDeg = 140;
+                double endAngleDeg = 280;
+                double step = (endAngleDeg - startAngleDeg) / (MAX_SKILL_SLOTS - 1);
+                double angleDeg = startAngleDeg + step * i;
+
+                // Convert to radians and adjust for Android coordinate system (0 is right, 90 is down)
+                // We want counter-clockwise from left-up.
+                // Let's use standard math: x = cx + r * cos(a), y = cy + r * sin(a)
+                double angleRad = Math.toRadians(angleDeg);
+
+                int centerX = (int) (attackCenterX + radius * Math.cos(angleRad));
+                int centerY = (int) (attackCenterY + radius * Math.sin(angleRad));
+
+                Rect btn = new Rect(
+                        centerX - skillBtnSize / 2,
+                        centerY - skillBtnSize / 2,
+                        centerX + skillBtnSize / 2,
+                        centerY + skillBtnSize / 2
+                );
+                skillButtons.add(btn);
+            }
+
+            // Initialize Switch Page Button
+            // Place it near the center of the attack button or slightly to the left
+            int switchBtnSize = 120;
+            padding = 20;
+
+            // Position: To the left of the attack button, vertically centered with it
+            int x = screenWidth - 400;
+            int y = screenHeight - 150;
+
+            switchPageButton = new Rect(x, y, x + switchBtnSize, y + switchBtnSize);
+        }
+
     }
 
     private float getUsedMemoryMB() {

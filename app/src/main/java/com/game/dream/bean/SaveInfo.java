@@ -9,6 +9,7 @@ public class SaveInfo {
     private List<SkillInfo> mainSkillInfos;
     private List<SkillInfo> assistSkillInfos;
     private List<SkillInfo> practiseSkillInfos;
+    private List<SkillInfo> equipedSkillInfos;
 
     public RoleInfo getRoleInfo() {
         return roleInfo;
@@ -56,5 +57,13 @@ public class SaveInfo {
 
     public void setPractiseSkillInfos(List<SkillInfo> skillInfos) {
         this.practiseSkillInfos = skillInfos;
+    }
+
+    public List<SkillInfo> getEquipedSkillInfos() {
+        return equipedSkillInfos;
+    }
+
+    public void setEquipedSkillInfos(List<SkillInfo> equipedSkillInfos) {
+        this.equipedSkillInfos = equipedSkillInfos;
     }
 }

@@ -18,16 +18,23 @@ public class SkillSystem {
         initMainSkills();
         initAssistSkills();
         initPractiseSkills();
+
+        equippedActiveSkills = new ArrayList<>();
     }
 
     private List<SkillInfo> playerMainSkills = new ArrayList<>();
     private List<SkillInfo> playerAssistSkills = new ArrayList<>();
     private List<SkillInfo> playerPractiseSkills = new ArrayList<>();
 
+    private List<SkillInfo> equippedActiveSkills;
+    private int currentSkillPage = 0; // 0 for first page, 1 for second page
+    private static final int SKILLS_PER_PAGE = 5;
+    private static final int MAX_EQUIPED_ACTIVE_SKILLS = 15;
+
     private void initMainSkills() {
-        playerMainSkills.add(new SkillInfo(SkillType.FIREBALL, 1, 10, "火云术", "发射火焰对敌人造成伤害"));
-        playerMainSkills.add(new SkillInfo(SkillType.ICE_BOLT, 1, 10, "寒冰术", "发射寒冰对敌人造成伤害"));
-        playerMainSkills.add(new SkillInfo(SkillType.LIGHTNING, 1, 10, "极光术", "发射几道极光对敌人造成伤害"));
+        playerMainSkills.add(new SkillInfo(SkillType.MAIN_FIREBALL, 1, 10, "火云术", "发射火焰对敌人造成伤害"));
+        playerMainSkills.add(new SkillInfo(SkillType.MAIN_ICE_BOLT, 1, 10, "寒冰术", "发射寒冰对敌人造成伤害"));
+        playerMainSkills.add(new SkillInfo(SkillType.MAIN_LIGHTNING, 1, 10, "雷击术", "发射几道闪电对敌人造成伤害"));
     }
 
     private void initAssistSkills() {
@@ -102,4 +109,61 @@ public class SkillSystem {
     public List<SkillInfo> getPractiseSkillInfos() {
         return new ArrayList<>(playerPractiseSkills);
     }
+
+    public List<SkillInfo> getEquippedActiveSkills() {
+        return equippedActiveSkills;
+    }
+
+    public void setEquippedActiveSkills(List<SkillInfo> skillInfos) {
+        equippedActiveSkills.clear();
+        if (skillInfos != null) {
+            for (SkillInfo skillInfo : skillInfos) {
+                for (SkillInfo skillItem : playerMainSkills) {
+                    if (skillInfo.getSkillType() == skillItem.getSkillType()) {
+                        equipSkill(skillItem);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    public boolean equipSkill(SkillInfo skill) {
+        // Only main skills for now
+        if (!skill.isMainSkill()) return false;
+        if (equippedActiveSkills.contains(skill)) return false;
+        if (equippedActiveSkills.size() >= MAX_EQUIPED_ACTIVE_SKILLS) return false;
+
+        equippedActiveSkills.add(skill);
+        return true;
+    }
+
+    public void unequipSkill(SkillInfo skill) {
+        equippedActiveSkills.remove(skill);
+    }
+
+    public List<SkillInfo> getCurrentPageSkills() {
+        int start = currentSkillPage * SKILLS_PER_PAGE;
+        int end = Math.min(start + SKILLS_PER_PAGE, equippedActiveSkills.size());
+
+        if (start >= equippedActiveSkills.size()) {
+            return new ArrayList<>(); // Return empty list if page is out of bounds
+        }
+
+        return equippedActiveSkills.subList(start, end);
+    }
+
+    public void nextPage() {
+        // Check if there are more skills to show on the next page
+        if ((currentSkillPage + 1) * SKILLS_PER_PAGE < equippedActiveSkills.size()) {
+            currentSkillPage++;
+        } else {
+            currentSkillPage = 0; // Loop back to first page
+        }
+    }
+
+    public int getCurrentPageIndex() {
+        return currentSkillPage;
+    }
+
 }

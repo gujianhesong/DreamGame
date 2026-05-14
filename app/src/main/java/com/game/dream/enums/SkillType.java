@@ -5,9 +5,9 @@ import android.text.TextUtils;
 public enum SkillType {
 
     //主技能
-    FIREBALL,
-    ICE_BOLT,
-    LIGHTNING,
+    MAIN_FIREBALL,
+    MAIN_ICE_BOLT,
+    MAIN_LIGHTNING,
 
     //辅助技能
     AST_QiangShen,

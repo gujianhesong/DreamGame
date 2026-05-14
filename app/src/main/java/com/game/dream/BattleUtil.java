@@ -124,13 +124,13 @@ public class BattleUtil {
 
             float castBaseValue = 10f;
             switch (skillType){
-                case FIREBALL:
+                case MAIN_FIREBALL:
                     castBaseValue = 20f;
                     break;
-                case ICE_BOLT:
+                case MAIN_ICE_BOLT:
                     castBaseValue = 15f;
                     break;
-                case LIGHTNING:
+                case MAIN_LIGHTNING:
                     castBaseValue = 30f;
                     break;
             }
@@ -333,13 +333,13 @@ public class BattleUtil {
 
             float castBaseValue = 7f;
             switch (skillType){
-                case FIREBALL:
+                case MAIN_FIREBALL:
                     castBaseValue = 10f;
                     break;
-                case ICE_BOLT:
+                case MAIN_ICE_BOLT:
                     castBaseValue = 7f;
                     break;
-                case LIGHTNING:
+                case MAIN_LIGHTNING:
                     castBaseValue = 14f;
                     break;
             }

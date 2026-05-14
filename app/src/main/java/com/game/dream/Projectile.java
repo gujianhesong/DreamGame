@@ -43,19 +43,19 @@ public class Projectile {
         if (distance > 0) {
             float speed;
             switch (skillType) {
-                case FIREBALL:
+                case MAIN_FIREBALL:
                     speed = 300;
                     this.size = 20;
                     this.color = Color.rgb(255, 100, 50);
                     this.lifetime = 1500;
                     break;
-                case ICE_BOLT:
+                case MAIN_ICE_BOLT:
                     speed = 400;
                     this.size = 8;
                     this.color = Color.rgb(100, 200, 255);
                     this.lifetime = 1000;
                     break;
-                case LIGHTNING:
+                case MAIN_LIGHTNING:
                     speed = 600;
                     this.size = 10;
                     this.color = Color.rgb(255, 255, 100);
@@ -122,13 +122,13 @@ public class Projectile {
         float screenY = y + offsetY;
 
         switch (skillType) {
-            case FIREBALL:
+            case MAIN_FIREBALL:
                 drawFireball(canvas, paint, screenX, screenY);
                 break;
-            case ICE_BOLT:
+            case MAIN_ICE_BOLT:
                 drawIceBolt(canvas, paint, screenX, screenY);
                 break;
-            case LIGHTNING:
+            case MAIN_LIGHTNING:
                 drawLightning(canvas, paint, screenX, screenY);
                 break;
         }

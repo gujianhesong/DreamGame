@@ -271,19 +271,19 @@ public class Player extends Character {
         float[] angles = null;
         float range = 300;
         switch (skillType) {
-            case FIREBALL:
+            case MAIN_FIREBALL:
                 angles = new float[]{baseAngle - 60, baseAngle - 40, baseAngle - 20, baseAngle,
                         baseAngle + 20, baseAngle + 40, baseAngle + 60};
                 range = 400;
                 break;
-            case ICE_BOLT:
+            case MAIN_ICE_BOLT:
                 angles = new float[12];
                 for (int i = 0; i < 12; i++) {
                     angles[i] = baseAngle + 30 * i;
                 }
                 range = 300;
                 break;
-            case LIGHTNING:
+            case MAIN_LIGHTNING:
                 angles = new float[]{baseAngle - 90, baseAngle, baseAngle + 90, baseAngle + 180};
                 range = 1000;
                 break;

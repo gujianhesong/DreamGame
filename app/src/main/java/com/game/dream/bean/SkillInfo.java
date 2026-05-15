@@ -8,13 +8,24 @@ public class SkillInfo {
     private SkillType skillType;
     private int level;
     private transient int maxLevel;
+    private transient int cooldownSeconds;
     private String name;
     private transient String desc;
+
 
     public SkillInfo(SkillType skillType, int level, int maxLevel, String name, String desc) {
         this.skillType = skillType;
         this.level = level;
         this.maxLevel = maxLevel;
+        this.name = name;
+        this.desc = desc;
+    }
+
+    public SkillInfo(SkillType skillType, int level, int maxLevel, int cooldownSeconds, String name, String desc) {
+        this.skillType = skillType;
+        this.level = level;
+        this.maxLevel = maxLevel;
+        this.cooldownSeconds = cooldownSeconds;
         this.name = name;
         this.desc = desc;
     }
@@ -41,6 +52,14 @@ public class SkillInfo {
 
     public void setMaxLevel(int maxLevel) {
         this.maxLevel = maxLevel;
+    }
+
+    public int getCooldownSeconds() {
+        return cooldownSeconds;
+    }
+
+    public void setCooldownSeconds(int cooldownSeconds) {
+        this.cooldownSeconds = cooldownSeconds;
     }
 
     public String getName() {

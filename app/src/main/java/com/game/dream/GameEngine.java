@@ -1013,17 +1013,18 @@ public class GameEngine {
             paint.setTextSize(18);
             paint.setColor(Color.WHITE);
             if (hasSkill) {
-                String name = equipped.get(i).getName();
+                SkillInfo skillInfo = equipped.get(i);
+                String name = skillInfo.getName();
                 if (name.length() > 4) name = name.substring(0, 4) + "..";
                 canvas.drawText(name, btn.centerX(), btn.centerY() + 5, paint);
+
+                // Draw cooldown overlay
+                float cooldownProgress = player.getMagicCooldownProgress(skillInfo.getSkillType());
+                if (cooldownProgress < 1.0f) {
+                    drawCircularCooldown(canvas, btn, cooldownProgress);
+                }
             } else {
                 canvas.drawText("空", btn.centerX(), btn.centerY() + 5, paint);
-            }
-
-            // Draw cooldown overlay
-            float cooldownProgress = player.getMagicCooldownProgress();
-            if (cooldownProgress < 1.0f) {
-                drawCircularCooldown(canvas, btn, cooldownProgress);
             }
         }
 
@@ -1092,46 +1093,6 @@ public class GameEngine {
         paint.setTextAlign(Paint.Align.CENTER);
         float textY = centerY + 8;
         canvas.drawText(label, centerX, textY, paint);
-    }
-
-    /**
-     * Draw circular magic attack button
-     */
-    private void drawCircularMagicAttackButton(Canvas canvas, Rect button, boolean pressed, String label, int color) {
-        Paint paint = new Paint();
-        paint.setAntiAlias(true);
-
-        float centerX = button.centerX();
-        float centerY = button.centerY();
-        float radius = button.width() / 2;
-
-        // Button background (circular)
-        if (pressed) {
-            paint.setColor(Color.argb(120, Color.red(color), Color.green(color), Color.blue(color)));
-        } else {
-            paint.setColor(Color.argb(80, Color.red(color), Color.green(color), Color.blue(color)));
-        }
-        canvas.drawCircle(centerX, centerY, radius, paint);
-
-        // Border (circular)
-        paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(3);
-        paint.setColor(Color.WHITE);
-        canvas.drawCircle(centerX, centerY, radius, paint);
-
-        // Label
-        paint.setStyle(Paint.Style.FILL);
-        paint.setTextSize(35);
-        paint.setColor(Color.WHITE);
-        paint.setTextAlign(Paint.Align.CENTER);
-        float textY = centerY + 12;
-        canvas.drawText(label, centerX, textY, paint);
-
-        // Draw cooldown overlay
-        float cooldownProgress = player.getMagicCooldownProgress();
-        if (cooldownProgress < 1.0f) {
-            drawCircularCooldown(canvas, button, cooldownProgress);
-        }
     }
 
     /**

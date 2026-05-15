@@ -41,13 +41,13 @@ public class SkillSystem {
     private static final int MAX_EQUIPED_ACTIVE_SKILLS = 15;
 
     private void initMainSkills() {
-        playerMainSkills.add(new SkillInfo(SkillType.MAIN_FIREBALL, 1, 10, "火云术", "发射火焰对敌人造成伤害"));
-        playerMainSkills.add(new SkillInfo(SkillType.MAIN_ICE_BOLT, 1, 10, "寒冰术", "发射寒冰对敌人造成伤害"));
-        playerMainSkills.add(new SkillInfo(SkillType.MAIN_LIGHTNING, 1, 10, "雷击术", "发射几道闪电对敌人造成伤害"));
-        playerMainSkills.add(new SkillInfo(SkillType.MAIN_ROOT, 1, 10, "定身术", "发射符咒定住敌人，使其无法移动"));
-        playerMainSkills.add(new SkillInfo(SkillType.MAIN_WanJianGuiZong, 1, 10, "万剑归宗", "发动剑阵对范围内的敌人造成多次伤害"));
-        playerMainSkills.add(new SkillInfo(SkillType.MAIN_JinGangHuTi, 1, 10, "金刚护体", "获得金刚护体效果后大幅降低受到的伤害，期间不会死亡，持续5秒"));
-        playerMainSkills.add(new SkillInfo(SkillType.MAIN_MiaoShouHuiChun, 1, 10, "妙手回春", "消耗法力值恢复大量气血"));
+        playerMainSkills.add(new SkillInfo(SkillType.MAIN_FIREBALL, 1, 10, 3,  "火云术", "发射火焰对敌人造成伤害"));
+        playerMainSkills.add(new SkillInfo(SkillType.MAIN_ICE_BOLT, 1, 10, 4, "寒冰术", "发射寒冰对敌人造成伤害"));
+        playerMainSkills.add(new SkillInfo(SkillType.MAIN_LIGHTNING, 1, 10, 5, "雷击术", "发射几道闪电对敌人造成伤害"));
+        playerMainSkills.add(new SkillInfo(SkillType.MAIN_ROOT, 1, 10, 8, "定身术", "发射符咒定住敌人，使其无法移动"));
+        playerMainSkills.add(new SkillInfo(SkillType.MAIN_WanJianGuiZong, 1, 10, 10, "万剑归宗", "发动剑阵对范围内的敌人造成多次伤害"));
+        playerMainSkills.add(new SkillInfo(SkillType.MAIN_JinGangHuTi, 1, 10, 10, "金刚护体", "获得金刚护体效果后大幅降低受到的伤害，期间不会死亡，持续5秒"));
+        playerMainSkills.add(new SkillInfo(SkillType.MAIN_MiaoShouHuiChun, 1, 10, 15, "妙手回春", "消耗法力值恢复大量气血"));
     }
 
     private void initAssistSkills() {
@@ -197,7 +197,7 @@ public class SkillSystem {
 
         Player player = GameEngine.getInstance().getPlayer();
         long currentTime = System.currentTimeMillis();
-        if (currentTime - player.getLastMagicTime() < player.getMagicCooldown()) {
+        if (currentTime - player.getLastMagicTime(skill.getSkillType()) < skill.getCooldownSeconds() * 1000L) {
             return null; // Still on cooldown
         }
 
@@ -213,7 +213,7 @@ public class SkillSystem {
             return null;
         }
         roleInfo.setMp(roleInfo.getMp() - costMagic);
-        player.setLastMagicTime(currentTime);
+        player.setLastMagicTime(skill.getSkillType(), currentTime);
 
         SkillStartInfo skillStartInfo = null;
         switch (skill.getSkillType()) {

@@ -16,6 +16,7 @@ import com.game.dream.system.RoleSystem;
 import com.game.dream.system.SkillSystem;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public class Player extends Character {
@@ -35,10 +36,6 @@ public class Player extends Character {
     private int attackAnimationFrame;
     private static final int ATTACK_ANIMATION_DURATION = 300; // 300ms
 
-    // Magic combat
-    private long lastMagicTime;
-    private long magicCooldown;
-
     // Respawn
     private float respawnX;
     private float respawnY;
@@ -46,14 +43,14 @@ public class Player extends Character {
     // Renderer
     private PlayerRenderer renderer;
 
+    private HashMap<SkillType, Long> lastCasterTimeHashMap = new HashMap<>();
+
 
     public Player(float x, float y) {
         super(x, y, 80);
 
         this.walkCycle = 0;
         this.facingDirection = 0;
-        this.lastMagicTime = 0;
-        this.magicCooldown = 1200;
 
         // Respawn point (initial position)
         this.respawnX = x;
@@ -241,8 +238,18 @@ public class Player extends Character {
     /**
      * Get magic cooldown progress (0-1)
      */
-    public float getMagicCooldownProgress() {
+    public float getMagicCooldownProgress(SkillType skillType) {
         long currentTime = System.currentTimeMillis();
+        long lastMagicTime = 0;
+        if (lastCasterTimeHashMap.containsKey(skillType)) {
+            lastMagicTime = lastCasterTimeHashMap.get(skillType);
+        }
+
+        long magicCooldown = 2000;
+        SkillInfo skillInfo = SkillSystem.getInstance().getPlayerSkill(skillType);
+        if (skillInfo != null) {
+            magicCooldown = skillInfo.getCooldownSeconds() * 1000L;
+        }
         long elapsed = currentTime - lastMagicTime;
         return Math.min(1.0f, (float) elapsed / magicCooldown);
     }
@@ -439,24 +446,20 @@ public class Player extends Character {
         return ItemSystem.getInstance().useItem(index);
     }
 
-    public long getLastMagicTime() {
+    public long getLastMagicTime(SkillType skillType) {
+        long lastMagicTime = 0;
+        if (lastCasterTimeHashMap.containsKey(skillType)) {
+            lastMagicTime = lastCasterTimeHashMap.get(skillType);
+        }
         return lastMagicTime;
     }
 
-    public void setLastMagicTime(long lastMagicTime) {
-        this.lastMagicTime = lastMagicTime;
+    public void setLastMagicTime(SkillType skillType, long lastMagicTime) {
+        lastCasterTimeHashMap.put(skillType, lastMagicTime);
     }
 
     public void setFacingDirection(int facingDirection) {
         this.facingDirection = facingDirection;
-    }
-
-    public long getMagicCooldown() {
-        return magicCooldown;
-    }
-
-    public void setMagicCooldown(long magicCooldown) {
-        this.magicCooldown = magicCooldown;
     }
 
 }

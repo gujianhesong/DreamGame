@@ -37,6 +37,9 @@ public abstract class Character {
 
     Paint ccPaint = new Paint();
 
+    protected long jinGangStateEndTime = 0;
+    protected boolean isJinGangState = false;
+
     public Character(float x, float y, int size) {
         this.x = x;
         this.y = y;
@@ -67,6 +70,8 @@ public abstract class Character {
         drawName(canvas, screenX, screenY, scale);
 
         drawCCEffects(canvas, screenX, screenY, scale);
+
+        drawJinGangEffect(canvas, screenX, screenY, scale);
     }
 
     public abstract void onDraw(Canvas canvas, int offsetX, int offsetY);
@@ -243,6 +248,51 @@ public abstract class Character {
         } else if (currentCC == CrowdControlType.STUN) {
             // Draw stars for Stun effect
             canvas.drawText("眩晕", centerX, centerY + 7, ccPaint);
+        }
+    }
+
+    protected void drawJinGangEffect(Canvas canvas, float cx, float cy, float scale) {
+        float centerX = cx;
+        float centerY = cy; // Position slightly above the character
+        int radius = (int) ((size/2 + 10) * scale);
+        if (isJinGangState) {
+            Paint paint = new Paint();
+            paint.setAntiAlias(true);
+            paint.setColor(Color.argb(80, 255, 215, 0)); // Golden semi-transparent
+
+            // Pulsing circle around player
+            long time = System.currentTimeMillis();
+            float pulse = 1.0f + 0.1f * (float)Math.sin(time / 100.0);
+
+            canvas.drawCircle(centerX, centerY, radius * pulse, paint);
+
+            // Golden border
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setStrokeWidth(3);
+            paint.setColor(Color.rgb(255, 215, 0));
+            canvas.drawCircle(centerX, centerY, radius, paint);
+        }
+    }
+
+    /**
+     * Activate Diamond Body (金刚护体)
+     *
+     * @param durationMillis  How long the buff lasts
+     */
+    public void activateDiamondBody(long durationMillis) {
+        this.jinGangStateEndTime = System.currentTimeMillis() + durationMillis;
+        this.isJinGangState = true; // Mark as having the buff
+        // You can store the reduction percentage in a field if you want variable reduction
+    }
+
+    /**
+     * Update shield state and clear expired buffs
+     */
+    public void updateBuffs() {
+        long currentTime = System.currentTimeMillis();
+        if (currentTime > jinGangStateEndTime) {
+            jinGangStateEndTime = 0;
+            isJinGangState = false;
         }
     }
 }

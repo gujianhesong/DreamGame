@@ -382,6 +382,10 @@ public abstract class Enemy extends Character {
         health -= damage;
         lastDamageTime = currentTime;
 
+        if (isJinGangState) {
+            health = Math.max(1, health);
+        }
+
         // When damaged, automatically enter CHASING state and set aggro
         if (isAlive()) {
             currentState = State.CHASING;

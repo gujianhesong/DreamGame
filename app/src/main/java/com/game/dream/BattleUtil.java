@@ -61,6 +61,12 @@ public class BattleUtil {
                 damageValue *= 2;
             }
 
+            if (enemy.isJinGangState) {
+                //金刚护体: Reduce damage by 50% (example)
+                float ratio = 0.5f;
+                damageValue = (int) (damageValue * ratio);
+            }
+
             damageValue = Math.max(damageValue, 1);
         }
 
@@ -122,7 +128,7 @@ public class BattleUtil {
             isCrit = false;
 
             float castBaseValue = 0f;
-            switch (skillType){
+            switch (skillType) {
                 case MAIN_FIREBALL:
                     castBaseValue = 20f;
                     break;
@@ -137,7 +143,7 @@ public class BattleUtil {
                     break;
             }
 
-            if(castBaseValue > 0){
+            if (castBaseValue > 0) {
                 //计算法术伤害
                 damageValue = calculateMagicDamage(castBaseValue, roleInfo.getMana(), enemy.getMana(), findSkillInfo.getLevel());
 
@@ -158,6 +164,12 @@ public class BattleUtil {
                     damageValue *= 2;
                 }
 
+                if (enemy.isJinGangState) {
+                    //金刚护体: Reduce damage by 50% (example)
+                    float ratio = 0.5f;
+                    damageValue = (int) (damageValue * ratio);
+                }
+
                 damageValue = Math.max(damageValue, 1);
             }
         }
@@ -174,9 +186,9 @@ public class BattleUtil {
     }
 
     private static int calculateMagicDamage(float baseDamage, int casterSpirit,
-                                           int acceptSpirit, int skillLevel) {
+                                            int acceptSpirit, int skillLevel) {
         float spiritDelta = casterSpirit - acceptSpirit;
-        float playerSpiritMultiplier = (float)Math.pow(casterSpirit, 0.5f); // 平方根软化
+        float playerSpiritMultiplier = (float) Math.pow(casterSpirit, 0.5f); // 平方根软化
 
         // 3. Skill level multiplier
         float skillMultiplier = 1.0f + (skillLevel - 1) * 0.15f;
@@ -190,17 +202,17 @@ public class BattleUtil {
 //                + ",skillLevel:" + skillLevel + ",result:" + finalDamage);
 
         // Random variance ±10%
-        float variance = 0.9f + (float)(Math.random() * 0.2);
+        float variance = 0.9f + (float) (Math.random() * 0.2);
         finalDamage *= variance;
 
-        int result = Math.max(1, (int)finalDamage);
+        int result = Math.max(1, (int) finalDamage);
 
         LogUtil.i("baseDamage:" + baseDamage + ",casterSpirit:" + casterSpirit + ",acceptSpirit:" + acceptSpirit
                 + ",skillLevel:" + skillLevel + ",result:" + result);
         return result;
     }
 
-    public static void testMagicDamage(){
+    public static void testMagicDamage() {
         for (int playerMana = 30; playerMana <= 1000; playerMana += 30) {
             for (int enemyMana = 30; enemyMana <= 1000; enemyMana += 30) {
                 BattleUtil.calculateMagicDamage(20, playerMana, enemyMana, 1);
@@ -211,7 +223,7 @@ public class BattleUtil {
     public static int calculateMagicDamage2(float baseDamage, int playerSpirit,
                                             int enemySpirit, int skillLevel) {
         // 1. Spirit ratio (player vs enemy)
-        float spiritRatio = (float)playerSpirit / (playerSpirit + enemySpirit);
+        float spiritRatio = (float) playerSpirit / (playerSpirit + enemySpirit);
         float spiritMultiplier2 = (float) Math.pow(Math.abs(playerSpirit), 0.5f); // 平方根软化
 
         // 2. Damage multiplier based on ratio
@@ -219,7 +231,7 @@ public class BattleUtil {
         // Ratio 1.0 → 1.0x damage (平等)
         // Ratio 2.0 → 1.5x damage (压制)
         // Ratio 3.0 → 1.8x damage (强力压制)
-        float spiritMultiplier = (float)Math.pow(spiritRatio, 0.5f); // 平方根软化
+        float spiritMultiplier = (float) Math.pow(spiritRatio, 0.5f); // 平方根软化
         spiritMultiplier = Math.max(0.02f, Math.min(spiritMultiplier, 10f));
 
         // 3. Skill level multiplier
@@ -295,6 +307,15 @@ public class BattleUtil {
                 damageValue *= 2;
             }
 
+            if (GameEngine.getInstance().getPlayer().isJinGangState) {
+                //金刚护体: Reduce damage by 50% (example)
+                SkillInfo skillInfo = SkillSystem.getInstance().getPlayerSkill(SkillType.MAIN_JinGangHuTi);
+                if (skillInfo != null && skillInfo.getLevel() > 0) {
+                    float ratio = 1 - (0.3f + skillInfo.getLevel() * 0.03f);
+                    damageValue = (int) (damageValue * ratio);
+                }
+            }
+
             damageValue = Math.max(damageValue, 1);
         }
 
@@ -337,7 +358,7 @@ public class BattleUtil {
             isCrit = false;
 
             float castBaseValue = 0f;
-            switch (skillType){
+            switch (skillType) {
                 case MAIN_FIREBALL:
                     castBaseValue = 10f;
                     break;
@@ -349,7 +370,7 @@ public class BattleUtil {
                     break;
             }
 
-            if(castBaseValue > 0){
+            if (castBaseValue > 0) {
                 //计算法术伤害
                 damageValue = calculateEnemyMagicDamage(castBaseValue, enemy.getMana(), roleInfo.getMana(), skillLevel);
                 LogUtil.i("aaaaaaaaaaaaaaa 怪物法术输出伤害 " + damageValue);
@@ -370,6 +391,15 @@ public class BattleUtil {
                     damageValue *= 2;
                 }
 
+                if (GameEngine.getInstance().getPlayer().isJinGangState) {
+                    //金刚护体: Reduce damage by 50% (example)
+                    SkillInfo skillInfo = SkillSystem.getInstance().getPlayerSkill(SkillType.MAIN_JinGangHuTi);
+                    if (skillInfo != null && skillInfo.getLevel() > 0) {
+                        float ratio = 1 - (0.3f + skillInfo.getLevel() * 0.03f);
+                        damageValue = (int) (damageValue * ratio);
+                    }
+                }
+
                 damageValue = Math.max(damageValue, 1);
             }
         }
@@ -386,9 +416,9 @@ public class BattleUtil {
     }
 
     private static int calculateEnemyMagicDamage(float baseDamage, int casterSpirit,
-                                            int acceptSpirit, int skillLevel) {
+                                                 int acceptSpirit, int skillLevel) {
         float spiritDelta = casterSpirit - acceptSpirit;
-        float playerSpiritMultiplier = (float)Math.pow(casterSpirit, 0.5f); // 平方根软化
+        float playerSpiritMultiplier = (float) Math.pow(casterSpirit, 0.5f); // 平方根软化
 
         // 3. Skill level multiplier
         float skillMultiplier = 1.0f + (skillLevel - 1) * 0.15f;
@@ -402,10 +432,10 @@ public class BattleUtil {
 //                + ",skillLevel:" + skillLevel + ",result:" + finalDamage);
 
         // Random variance ±10%
-        float variance = 0.9f + (float)(Math.random() * 0.2);
+        float variance = 0.9f + (float) (Math.random() * 0.2);
         finalDamage *= variance;
 
-        int result = Math.max(1, (int)finalDamage);
+        int result = Math.max(1, (int) finalDamage);
 
         LogUtil.i("baseDamage:" + baseDamage + ",casterSpirit:" + casterSpirit + ",acceptSpirit:" + acceptSpirit
                 + ",skillLevel:" + skillLevel + ",result:" + result);

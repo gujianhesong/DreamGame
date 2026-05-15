@@ -209,7 +209,6 @@ public class GameEngine {
         }
         player = new Player(roleInfo.getMapX(), roleInfo.getMapY());
         player.setName("剑侠客");
-        player.setGameEngine(this);
         // Set initial respawn point
         player.setRespawnPoint(player.getX(), player.getY());
 
@@ -1521,9 +1520,10 @@ public class GameEngine {
                     if (isPointInCircle(x, y, skillBtn.centerX(), skillBtn.centerY(), skillBtn.width() / 2)) {
                         magicAttackPressed = true;
                         handled = true;
+                        int finalIndex = SkillSystem.getInstance().getSkillIndex(index);
                         List<SkillInfo> equipped = SkillSystem.getInstance().getEquippedActiveSkills();
-                        if (index < equipped.size()) {
-                            castSkill(equipped.get(index));
+                        if (finalIndex < equipped.size()) {
+                            castSkill(equipped.get(finalIndex));
                         }
                     }
                 }

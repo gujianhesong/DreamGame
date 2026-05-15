@@ -5,6 +5,7 @@ import android.graphics.Canvas;
 import com.game.dream.bean.AttackResult;
 import com.game.dream.bean.EnemyHitInfo;
 import com.game.dream.bean.RoleInfo;
+import com.game.dream.bean.SkillInfo;
 import com.game.dream.enemy.Enemy;
 import com.game.dream.enums.SkillType;
 import com.game.dream.item.ConsumableItem;
@@ -12,6 +13,7 @@ import com.game.dream.item.Item;
 import com.game.dream.item.ItemStack;
 import com.game.dream.system.ItemSystem;
 import com.game.dream.system.RoleSystem;
+import com.game.dream.system.SkillSystem;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,7 +45,7 @@ public class Player extends Character {
 
     // Renderer
     private PlayerRenderer renderer;
-    private GameEngine gameEngine;
+
 
     public Player(float x, float y) {
         super(x, y, 80);
@@ -361,6 +363,8 @@ public class Player extends Character {
     public boolean takeDamage(int damage) {
         long currentTime = System.currentTimeMillis();
 
+        updateBuffs(); // Check if buff expired
+
         // Check if invincible
         if (isInvincible && currentTime < invincibleEndTime) {
             return false; // No damage taken
@@ -372,6 +376,10 @@ public class Player extends Character {
         health = Math.max(0, health);
         lastDamageTime = currentTime;
 
+        if (isJinGangState) {
+            health = Math.max(1, health);
+        }
+
         RoleSystem.getInstance().getRoleInfo().setHp(health);
 
         // Check if dead
@@ -380,10 +388,6 @@ public class Player extends Character {
         }
 
         return false; // Still alive
-    }
-
-    public void setGameEngine(GameEngine gameEngine) {
-        this.gameEngine = gameEngine;
     }
 
     /**
@@ -439,4 +443,5 @@ public class Player extends Character {
     public void setMagicCooldown(long magicCooldown) {
         this.magicCooldown = magicCooldown;
     }
+
 }

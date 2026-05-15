@@ -36,7 +36,7 @@ public class SkillSystem {
 
     private List<SkillInfo> equippedActiveSkills;
     private int currentSkillPage = 0; // 0 for first page, 1 for second page
-    private static final int SKILLS_PER_PAGE = 5;
+    public static final int SKILLS_PER_PAGE = 5;
     private static final int MAX_EQUIPED_ACTIVE_SKILLS = 15;
 
     private void initMainSkills() {
@@ -45,6 +45,7 @@ public class SkillSystem {
         playerMainSkills.add(new SkillInfo(SkillType.MAIN_LIGHTNING, 1, 10, "雷击术", "发射几道闪电对敌人造成伤害"));
         playerMainSkills.add(new SkillInfo(SkillType.MAIN_ROOT, 1, 10, "定身术", "发射符咒定住敌人，使其无法移动"));
         playerMainSkills.add(new SkillInfo(SkillType.MAIN_WanJianGuiZong, 1, 10, "万剑归宗", "发动剑阵对范围内的敌人造成多次伤害"));
+        playerMainSkills.add(new SkillInfo(SkillType.MAIN_JinGangHuTi, 1, 10, "金刚护体", "获得金刚护体效果后大幅降低受到的伤害，期间不会死亡，持续5秒"));
     }
 
     private void initAssistSkills() {
@@ -70,6 +71,15 @@ public class SkillSystem {
 
     public List<SkillInfo> getPlayerSkills() {
         return playerMainSkills;
+    }
+
+    public SkillInfo getPlayerSkill(SkillType skillType) {
+        for (SkillInfo skillInfo : playerMainSkills) {
+            if (skillInfo.getSkillType() == skillType) {
+                return skillInfo;
+            }
+        }
+        return null;
     }
 
     public void setMainSkillInfos(List<SkillInfo> skillInfos) {
@@ -176,6 +186,10 @@ public class SkillSystem {
         return currentSkillPage;
     }
 
+    public int getSkillIndex(int buttonIndex) {
+        return currentSkillPage * SKILLS_PER_PAGE + buttonIndex;
+    }
+
     public SkillStartInfo castSkill(SkillInfo skill) {
         LogUtil.d("Casting skill: " + skill.getName());
 
@@ -186,7 +200,7 @@ public class SkillSystem {
         }
 
         int costMagic = 20;
-        if(skill.getSkillType() == SkillType.MAIN_WanJianGuiZong){
+        if (skill.getSkillType() == SkillType.MAIN_WanJianGuiZong) {
             costMagic = 40;
         }
         RoleInfo roleInfo = RoleSystem.getInstance().getRoleInfo();
@@ -208,6 +222,12 @@ public class SkillSystem {
             break;
             case MAIN_WanJianGuiZong: {
                 skillStartInfo = castSwordStorm();
+            }
+            break;
+            case MAIN_JinGangHuTi: {
+                // Activate buff for 5 seconds
+                player.activateDiamondBody(5000);
+                GameEngine.getInstance().showCenterToast("获得金刚护体!", 1000);
             }
             break;
         }

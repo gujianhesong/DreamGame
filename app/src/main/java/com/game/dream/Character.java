@@ -40,6 +40,8 @@ public abstract class Character {
     protected long jinGangStateEndTime = 0;
     protected boolean isJinGangState = false;
 
+    protected long lastHealTime = 0;
+
     public Character(float x, float y, int size) {
         this.x = x;
         this.y = y;
@@ -72,6 +74,8 @@ public abstract class Character {
         drawCCEffects(canvas, screenX, screenY, scale);
 
         drawJinGangEffect(canvas, screenX, screenY, scale);
+
+        drawHealEffect(canvas, screenX, screenY, scale);
     }
 
     public abstract void onDraw(Canvas canvas, int offsetX, int offsetY);
@@ -293,6 +297,22 @@ public abstract class Character {
         if (currentTime > jinGangStateEndTime) {
             jinGangStateEndTime = 0;
             isJinGangState = false;
+        }
+    }
+
+    protected void drawHealEffect(Canvas canvas, float cx, float cy, float scale) {
+        float centerX = cx;
+        float centerY = cy; // Position slightly above the character
+
+        // Draw healing flash effect
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - lastHealTime < 500) { // Show for 0.5 seconds
+            Paint paint = new Paint();
+            paint.setAntiAlias(true);
+            float alpha = 1.0f - ((float)(currentTime - lastHealTime) / 500f);
+            paint.setColor(Color.argb((int)(150 * alpha), 0, 255, 0)); // Green
+
+            canvas.drawCircle(centerX, centerY, size, paint);
         }
     }
 }

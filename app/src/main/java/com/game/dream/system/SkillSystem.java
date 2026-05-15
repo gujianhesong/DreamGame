@@ -1,5 +1,6 @@
 package com.game.dream.system;
 
+import com.game.dream.FloatingText;
 import com.game.dream.GameEngine;
 import com.game.dream.LogUtil;
 import com.game.dream.Player;
@@ -46,6 +47,7 @@ public class SkillSystem {
         playerMainSkills.add(new SkillInfo(SkillType.MAIN_ROOT, 1, 10, "定身术", "发射符咒定住敌人，使其无法移动"));
         playerMainSkills.add(new SkillInfo(SkillType.MAIN_WanJianGuiZong, 1, 10, "万剑归宗", "发动剑阵对范围内的敌人造成多次伤害"));
         playerMainSkills.add(new SkillInfo(SkillType.MAIN_JinGangHuTi, 1, 10, "金刚护体", "获得金刚护体效果后大幅降低受到的伤害，期间不会死亡，持续5秒"));
+        playerMainSkills.add(new SkillInfo(SkillType.MAIN_MiaoShouHuiChun, 1, 10, "妙手回春", "消耗法力值恢复大量气血"));
     }
 
     private void initAssistSkills() {
@@ -202,6 +204,8 @@ public class SkillSystem {
         int costMagic = 20;
         if (skill.getSkillType() == SkillType.MAIN_WanJianGuiZong) {
             costMagic = 40;
+        } else if (skill.getSkillType() == SkillType.MAIN_MiaoShouHuiChun) {
+            costMagic = 30;
         }
         RoleInfo roleInfo = RoleSystem.getInstance().getRoleInfo();
         if (roleInfo.getMp() < costMagic) {
@@ -228,6 +232,12 @@ public class SkillSystem {
                 // Activate buff for 5 seconds
                 player.activateDiamondBody(5000);
                 GameEngine.getInstance().showCenterToast("获得金刚护体!", 1000);
+            }
+            case MAIN_MiaoShouHuiChun: {
+                float ratio = 0.1f + skill.getLevel() * 0.02f;
+                int healAmount = (int) (RoleSystem.getInstance().getRoleInfo().getBloodCap() * ratio) + 50;
+                player.heal(healAmount);
+                GameEngine.getInstance().showFloatText("恢复气血 +" + healAmount, FloatingText.Type.HEAL);
             }
             break;
         }
@@ -365,4 +375,5 @@ public class SkillSystem {
 
         return skillStartInfo;
     }
+
 }

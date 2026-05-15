@@ -391,6 +391,21 @@ public class Player extends Character {
     }
 
     /**
+     * Heal the player for a specific amount
+     */
+    public void heal(int amount) {
+        if (amount <= 0) return;
+
+        int oldHealth = this.getHealth();
+        int newHealth = Math.min(oldHealth + amount, getMaxHealth());
+        RoleSystem.getInstance().getRoleInfo().setHp(newHealth);
+
+        if (newHealth > oldHealth) {
+            lastHealTime = System.currentTimeMillis(); // Trigger visual effect
+        }
+    }
+
+    /**
      * Use item from inventory
      */
     public boolean useItem(int index) {

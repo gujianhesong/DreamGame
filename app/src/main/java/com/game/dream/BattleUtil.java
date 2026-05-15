@@ -132,6 +132,9 @@ public class BattleUtil {
                 case MAIN_LIGHTNING:
                     castBaseValue = 30f;
                     break;
+                case MAIN_WanJianGuiZong:
+                    castBaseValue = 25f;
+                    break;
             }
 
             if(castBaseValue > 0){

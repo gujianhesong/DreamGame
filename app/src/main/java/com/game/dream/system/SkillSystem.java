@@ -1,7 +1,15 @@
 package com.game.dream.system;
 
+import com.game.dream.GameEngine;
+import com.game.dream.LogUtil;
+import com.game.dream.Player;
+import com.game.dream.Projectile;
+import com.game.dream.bean.RoleInfo;
 import com.game.dream.bean.SkillInfo;
+import com.game.dream.bean.SkillStartInfo;
+import com.game.dream.enemy.Enemy;
 import com.game.dream.enums.SkillType;
+import com.game.dream.skill.SkillEffect;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,6 +44,7 @@ public class SkillSystem {
         playerMainSkills.add(new SkillInfo(SkillType.MAIN_ICE_BOLT, 1, 10, "寒冰术", "发射寒冰对敌人造成伤害"));
         playerMainSkills.add(new SkillInfo(SkillType.MAIN_LIGHTNING, 1, 10, "雷击术", "发射几道闪电对敌人造成伤害"));
         playerMainSkills.add(new SkillInfo(SkillType.MAIN_ROOT, 1, 10, "定身术", "发射符咒定住敌人，使其无法移动"));
+        playerMainSkills.add(new SkillInfo(SkillType.MAIN_WanJianGuiZong, 1, 10, "万剑归宗", "发动剑阵对范围内的敌人造成多次伤害"));
     }
 
     private void initAssistSkills() {
@@ -151,7 +160,7 @@ public class SkillSystem {
             return new ArrayList<>(); // Return empty list if page is out of bounds
         }
 
-        return equippedActiveSkills.subList(start, end);
+        return new ArrayList<>(equippedActiveSkills.subList(start, end));
     }
 
     public void nextPage() {
@@ -167,4 +176,173 @@ public class SkillSystem {
         return currentSkillPage;
     }
 
+    public SkillStartInfo castSkill(SkillInfo skill) {
+        LogUtil.d("Casting skill: " + skill.getName());
+
+        Player player = GameEngine.getInstance().getPlayer();
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - player.getLastMagicTime() < player.getMagicCooldown()) {
+            return null; // Still on cooldown
+        }
+
+        int costMagic = 20;
+        if(skill.getSkillType() == SkillType.MAIN_WanJianGuiZong){
+            costMagic = 40;
+        }
+        RoleInfo roleInfo = RoleSystem.getInstance().getRoleInfo();
+        if (roleInfo.getMp() < costMagic) {
+            GameEngine.getInstance().showCenterToast("魔法不足", 1000);
+            return null;
+        }
+        roleInfo.setMp(roleInfo.getMp() - costMagic);
+        player.setLastMagicTime(currentTime);
+
+        SkillStartInfo skillStartInfo = null;
+        switch (skill.getSkillType()) {
+            case MAIN_FIREBALL:
+            case MAIN_ICE_BOLT:
+            case MAIN_LIGHTNING:
+            case MAIN_ROOT: {
+                skillStartInfo = castTripleSpell(skill.getSkillType());
+            }
+            break;
+            case MAIN_WanJianGuiZong: {
+                skillStartInfo = castSwordStorm();
+            }
+            break;
+        }
+        return skillStartInfo;
+    }
+
+    /**
+     * Cast triple spell
+     */
+    public SkillStartInfo castTripleSpell(SkillType skillType) {
+        SkillStartInfo skillStartInfo = new SkillStartInfo();
+        List<Projectile> spells = new ArrayList<>();
+        skillStartInfo.setProjectiles(spells);
+
+        if (skillType == SkillType.MAIN_ROOT) {
+            spells.addAll(castRootSpell());
+        } else {
+            float baseAngle = 0;
+
+            // Determine base angle from facing direction
+            Player player = GameEngine.getInstance().getPlayer();
+            switch (player.getFacingDirection()) {
+                case 0:
+                    baseAngle = 90;
+                    break;  // Down
+                case 1:
+                    baseAngle = -90;
+                    break; // Up
+                case 2:
+                    baseAngle = 180;
+                    break; // Left
+                case 3:
+                    baseAngle = 0;
+                    break;   // Right
+            }
+
+            // Create 3 projectiles with 30 degree separation
+            float[] angles = null;
+            float range = 300;
+            switch (skillType) {
+                case MAIN_FIREBALL:
+                    angles = new float[]{baseAngle - 60, baseAngle - 40, baseAngle - 20, baseAngle,
+                            baseAngle + 20, baseAngle + 40, baseAngle + 60};
+                    range = 400;
+                    break;
+                case MAIN_ICE_BOLT:
+                    angles = new float[12];
+                    for (int i = 0; i < 12; i++) {
+                        angles[i] = baseAngle + 30 * i;
+                    }
+                    range = 300;
+                    break;
+                case MAIN_LIGHTNING:
+                    angles = new float[]{baseAngle - 90, baseAngle, baseAngle + 90, baseAngle + 180};
+                    range = 1000;
+                    break;
+            }
+
+            for (float angle : angles) {
+                // Convert angle to radians
+                double rad = Math.toRadians(angle);
+
+                // Calculate target position
+                float spellTargetX = player.getX() + (float) (Math.cos(rad) * range);
+                float spellTargetY = player.getY() + (float) (Math.sin(rad) * range);
+
+                // Cast triple spell (returns list of 3 projectiles)
+                spells.add(new Projectile(player.getX(), player.getY(), spellTargetX, spellTargetY, skillType));
+            }
+        }
+
+        return skillStartInfo;
+    }
+
+    private List<Projectile> castRootSpell() {
+        // Find the nearest enemy within range
+        Enemy target = null;
+        float minDist = Float.MAX_VALUE;
+        float spellRange = 300f;
+        List<Projectile> projectiles = new ArrayList<>();
+
+        Player player = GameEngine.getInstance().getPlayer();
+        List<Enemy> enemies = GameEngine.getInstance().getEnemies();
+        if (enemies != null) {
+            for (Enemy enemy : enemies) {
+                if (!enemy.isAlive()) continue;
+                float dx = enemy.getX() - player.getX();
+                float dy = enemy.getY() - player.getY();
+                float dist = (float) Math.sqrt(dx * dx + dy * dy);
+
+                if (dist < spellRange && dist < minDist) {
+                    minDist = dist;
+                    target = enemy;
+                }
+            }
+        }
+
+        if (target != null) {
+            Projectile rootProj = new Projectile(
+                    player.getX(),
+                    player.getY(),
+                    target.getX(),
+                    target.getY(),
+                    SkillType.MAIN_ROOT // Use an existing visual type or add a TALISMAN type
+            );
+
+            // Set the effect type to ROOT
+            rootProj.setEffectType(Projectile.EffectType.ROOT);
+            projectiles.add(rootProj);
+        } else {
+            GameEngine.getInstance().showCenterToast("范围内没有目标", 1000);
+        }
+        return projectiles;
+    }
+
+    private SkillStartInfo castSwordStorm() {
+        SkillStartInfo skillStartInfo = new SkillStartInfo();
+        // Center the storm on the player
+        float radius = 800; // Large range
+        long duration = 4000;
+
+        Player player = GameEngine.getInstance().getPlayer();
+        SkillEffect skillEffect = new SkillEffect(
+                SkillEffect.Type.SWORD_STORM,
+                player.getX(),
+                player.getY(),
+                radius,
+                duration,
+                800, // Damage every 0.3s
+                5    // Total 5 hits
+        );
+        skillStartInfo.setSkillEffect(skillEffect);
+
+        GameEngine.getInstance().showCenterToast("万剑归宗", 1000);
+
+        return skillStartInfo;
+    }
 }

@@ -12,6 +12,7 @@ import com.game.dream.bean.AttackResult;
 import com.game.dream.bean.EnemyHitInfo;
 import com.game.dream.bean.RoleInfo;
 import com.game.dream.bean.SkillInfo;
+import com.game.dream.bean.SkillStartInfo;
 import com.game.dream.enemy.Enemy;
 import com.game.dream.enemy.Tiger;
 import com.game.dream.enemy.Wolf;
@@ -21,6 +22,7 @@ import com.game.dream.item.ItemStack;
 import com.game.dream.panel.ItemsPanel;
 import com.game.dream.panel.RoleInfoPanel;
 import com.game.dream.panel.SkillsPanel;
+import com.game.dream.skill.SkillEffect;
 import com.game.dream.system.DayNightCycle;
 import com.game.dream.system.ItemSystem;
 import com.game.dream.system.RoleSystem;
@@ -130,8 +132,28 @@ public class GameEngine {
     private long accumulatedRecoveryTime = 0; // Accumulated game time in milliseconds
     private static final long RECOVERY_INTERVAL = 60000; // 60 seconds (1 minute)
 
+    // Active skill effects on the map
+    private List<SkillEffect> activeSkillEffects = new ArrayList<>();
+
+
+    private static volatile GameEngine instance;
+
+    public static GameEngine getInstance() {
+        if (instance == null) {
+            synchronized (GameEngine.class) {
+                if (instance == null) {
+                    // 注意：第一次调用时必须传入一个 Context
+                    // 建议在 Application 类或 MainActivity.onCreate 中初始化
+                    throw new IllegalStateException("GameEngine not initialized. Call init(Context) first.");
+                }
+            }
+        }
+        return instance;
+    }
+
     public GameEngine(Context context) {
-        this.context = context;
+        instance = this;
+        this.context = context.getApplicationContext();
         this.lastFrameTime = System.currentTimeMillis();
         this.frameCount = 0;
         this.currentFPS = 0;
@@ -141,6 +163,13 @@ public class GameEngine {
         initGame();
 
         ItemSystem.getInstance().setGameEngine(this);
+    }
+
+    public static void release() {
+        if (instance != null) {
+            instance.cleanup(); // 停止游戏循环
+            instance = null;
+        }
     }
 
     private void initGame() {
@@ -280,6 +309,7 @@ public class GameEngine {
     }
 
     public void cleanup() {
+        instance = null;
         // Clean up map renderer
         if (mapRenderer != null) {
             mapRenderer.cleanup();
@@ -377,6 +407,15 @@ public class GameEngine {
 
         // Check and recover huoli/tili every minute (based on game runtime, not system time)
         checkResourceRecovery(deltaTime);
+
+        // Update active skill effects
+        for (int i = activeSkillEffects.size() - 1; i >= 0; i--) {
+            SkillEffect effect = activeSkillEffects.get(i);
+            effect.update(enemies);
+            if (!effect.isActive()) {
+                activeSkillEffects.remove(i);
+            }
+        }
     }
 
     /**
@@ -599,7 +638,7 @@ public class GameEngine {
                             if (attackResult != null) {
                                 if (attackResult.isHit) {
                                     int damage = attackResult.damageValue;
-                                    if(damage > 0){
+                                    if (damage > 0) {
                                         died = player.takeDamage(damage);
 
                                         // Create floating damage number above enemy
@@ -636,35 +675,11 @@ public class GameEngine {
                     } else {
                         for (Enemy enemy : enemies) {
                             if (proj.checkCollision(enemy)) {
-                                AttackResult attackResult = BattleUtil.caculatePlayerCasterDamage(enemy, proj.getSkillType());
-                                if (attackResult != null) {
-                                    if (attackResult.isHit) {
-                                        int damage = attackResult.damageValue;
-                                        if(damage > 0){
-                                            enemy.takeDamage(damage);
-
-                                            // Create floating damage number above enemy
-                                            damageNumbers.add(new DamageNumber(
-                                                    enemy.getX(),
-                                                    enemy.getY() - 30,
-                                                    damage,
-                                                    attackResult.isCrit
-                                            ));
-                                        }
-                                    } else {
-                                        //未命中
-                                        damageNumbers.add(new DamageNumber(
-                                                enemy.getX(),
-                                                enemy.getY() - 30,
-                                                -1
-                                        ));
-                                    }
-                                }
+                                // Handle caster damage
+                                handlePlayerCasterDamageToEnemy(enemy, proj.getSkillType());
 
                                 // Handle Special Effects
-                                if (proj.getEffectType() == Projectile.EffectType.ROOT) {
-                                    enemy.applyCC(Character.CrowdControlType.ROOT, 2000);
-                                }
+                                handlePlayerCasterEffectToEnemy(enemy, proj.getEffectType());
 
                                 proj.deactivate();
                                 break;
@@ -772,6 +787,11 @@ public class GameEngine {
             for (FloatingText text : copyFloatingTexts) {
                 text.draw(canvas, (int) -cameraX, (int) -cameraY);
             }
+        }
+
+        // Draw active skill effects (below UI but above map)
+        for (SkillEffect effect : activeSkillEffects) {
+            effect.draw(canvas, (int) -cameraX, (int) -cameraY);
         }
 
         // Draw center notification (on top of everything except UI panels)
@@ -1013,12 +1033,12 @@ public class GameEngine {
                 (SkillSystem.getInstance().getCurrentPageIndex() + 1) * 5 < SkillSystem.getInstance().getEquippedActiveSkills().size();
 
         paint.setColor(Color.argb(100, 255, 140, 0)); // Orange
-        canvas.drawCircle(switchPageButton.centerX(), switchPageButton.centerY(), switchPageButton.width()/2, paint);
+        canvas.drawCircle(switchPageButton.centerX(), switchPageButton.centerY(), switchPageButton.width() / 2, paint);
 
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(2);
         paint.setColor(Color.WHITE);
-        canvas.drawCircle(switchPageButton.centerX(), switchPageButton.centerY(), switchPageButton.width()/2 - 1, paint);
+        canvas.drawCircle(switchPageButton.centerX(), switchPageButton.centerY(), switchPageButton.width() / 2 - 1, paint);
 
         paint.setStyle(Paint.Style.FILL);
         paint.setTextSize(30);
@@ -1576,35 +1596,14 @@ public class GameEngine {
 
     private void castSkill(SkillInfo skill) {
         LogUtil.d("Casting skill: " + skill.getName());
-        // TODO: Implement actual skill effects based on skill ID or Type
-        switch (skill.getSkillType()) {
-            case MAIN_FIREBALL: {
-                List<Projectile> list = player.castTripleSpell(SkillType.MAIN_FIREBALL);
-                if (list != null) {
-                    projectiles.addAll(list);
-                }
+        SkillStartInfo info = SkillSystem.getInstance().castSkill(skill);
+        if (info != null) {
+            if (info.getProjectiles() != null) {
+                projectiles.addAll(info.getProjectiles());
             }
-            break;
-            case MAIN_ICE_BOLT: {
-                List<Projectile> list = player.castTripleSpell(SkillType.MAIN_ICE_BOLT);
-                if (list != null) {
-                    projectiles.addAll(list);
-                }
+            if (info.getSkillEffect() != null) {
+                activeSkillEffects.add(info.getSkillEffect());
             }
-            break;
-            case MAIN_LIGHTNING: {
-                List<Projectile> list = player.castTripleSpell(SkillType.MAIN_LIGHTNING);
-                if (list != null) {
-                    projectiles.addAll(list);
-                }
-            }
-            case MAIN_ROOT: {
-                List<Projectile> list = player.castTripleSpell(SkillType.MAIN_ROOT);
-                if (list != null) {
-                    projectiles.addAll(list);
-                }
-            }
-            break;
         }
     }
 
@@ -1865,5 +1864,42 @@ public class GameEngine {
 
     public List<Enemy> getEnemies() {
         return enemies;
+    }
+
+    public Player getPlayer() {
+        return player;
+    }
+
+    public void handlePlayerCasterDamageToEnemy(Enemy enemy, SkillType skillType) {
+        AttackResult attackResult = BattleUtil.caculatePlayerCasterDamage(enemy, skillType);
+        if (attackResult != null) {
+            if (attackResult.isHit) {
+                int damage = attackResult.damageValue;
+                if (damage > 0) {
+                    enemy.takeDamage(damage);
+
+                    // Create floating damage number above enemy
+                    damageNumbers.add(new DamageNumber(
+                            enemy.getX(),
+                            enemy.getY() - 30,
+                            damage,
+                            attackResult.isCrit
+                    ));
+                }
+            } else {
+                //未命中
+                damageNumbers.add(new DamageNumber(
+                        enemy.getX(),
+                        enemy.getY() - 30,
+                        -1
+                ));
+            }
+        }
+    }
+
+    public void handlePlayerCasterEffectToEnemy(Enemy enemy, Projectile.EffectType effectType) {
+        if (effectType == Projectile.EffectType.ROOT) {
+            enemy.applyCC(Character.CrowdControlType.ROOT, 2000);
+        }
     }
 }

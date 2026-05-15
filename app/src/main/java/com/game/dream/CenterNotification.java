@@ -26,11 +26,15 @@ public class CenterNotification {
     private Type type;
 
     public CenterNotification(String title, String message, Type type) {
+        this(title, message, type, 3000);
+    }
+
+    public CenterNotification(String title, String message, Type type, long duration) {
         this.title = title;
         this.message = message;
         this.type = type;
         this.createdTime = System.currentTimeMillis();
-        this.duration = 3000; // Display for 3 seconds
+        this.duration = duration; // Display for 3 seconds
         this.fadeDuration = 500; // Fade in/out for 0.5 seconds
     }
 

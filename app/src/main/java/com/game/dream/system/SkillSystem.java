@@ -35,6 +35,7 @@ public class SkillSystem {
         playerMainSkills.add(new SkillInfo(SkillType.MAIN_FIREBALL, 1, 10, "火云术", "发射火焰对敌人造成伤害"));
         playerMainSkills.add(new SkillInfo(SkillType.MAIN_ICE_BOLT, 1, 10, "寒冰术", "发射寒冰对敌人造成伤害"));
         playerMainSkills.add(new SkillInfo(SkillType.MAIN_LIGHTNING, 1, 10, "雷击术", "发射几道闪电对敌人造成伤害"));
+        playerMainSkills.add(new SkillInfo(SkillType.MAIN_ROOT, 1, 10, "定身术", "发射符咒定住敌人，使其无法移动"));
     }
 
     private void initAssistSkills() {

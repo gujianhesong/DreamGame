@@ -8,6 +8,13 @@ import android.graphics.Paint;
  * Base class for all living characters (player and enemies)
  */
 public abstract class Character {
+    public enum CrowdControlType {
+        NONE,
+        ROOT,   // Cannot move, can attack
+        STUN,   // Cannot move, cannot attack
+        SLOW    // Move speed reduced
+    }
+
     protected float x, y;
     protected int size;
 
@@ -24,6 +31,11 @@ public abstract class Character {
     protected int animFrame;
     protected long lastAnimUpdate;
     protected float bobOffset;
+
+    protected CrowdControlType currentCC = CrowdControlType.NONE;
+    protected long ccEndTime = 0;
+
+    Paint ccPaint = new Paint();
 
     public Character(float x, float y, int size) {
         this.x = x;
@@ -53,6 +65,8 @@ public abstract class Character {
 
         // Draw name below player
         drawName(canvas, screenX, screenY, scale);
+
+        drawCCEffects(canvas, screenX, screenY, scale);
     }
 
     public abstract void onDraw(Canvas canvas, int offsetX, int offsetY);
@@ -188,4 +202,47 @@ public abstract class Character {
      */
     public abstract boolean takeDamage(int damage);
 
+    /**
+     * Apply a crowd control effect
+     */
+    public void applyCC(CrowdControlType type, long durationMillis) {
+        this.currentCC = type;
+        this.ccEndTime = System.currentTimeMillis() + durationMillis;
+    }
+
+    /**
+     * Update and clear expired CC effects
+     */
+    public void updateCCState() {
+        if (currentCC != CrowdControlType.NONE && System.currentTimeMillis() > ccEndTime) {
+            currentCC = CrowdControlType.NONE;
+        }
+    }
+
+    public boolean isRooted() { return currentCC == CrowdControlType.ROOT; }
+    public boolean isStunned() { return currentCC == CrowdControlType.STUN; }
+    public boolean isSlowed() { return currentCC == CrowdControlType.SLOW; }
+
+    /**
+     * Draw crowd control effects (like root, stun) above the character
+     */
+    protected void drawCCEffects(Canvas canvas, float cx, float cy, float scale) {
+        if (currentCC == CrowdControlType.NONE) return;
+
+        float centerX = cx;
+        float centerY = cy - 60; // Position slightly above the character
+
+        ccPaint.setAntiAlias(true);
+        ccPaint.setStrokeWidth(4);
+        ccPaint.setTextSize(18 * scale);
+        ccPaint.setColor(Color.YELLOW);
+        ccPaint.setTextAlign(Paint.Align.CENTER);
+        if (currentCC == CrowdControlType.ROOT) {
+            // Draw stars for Root effect
+            canvas.drawText("定身", centerX, centerY + 7, ccPaint);
+        } else if (currentCC == CrowdControlType.STUN) {
+            // Draw stars for Stun effect
+            canvas.drawText("眩晕", centerX, centerY + 7, ccPaint);
+        }
+    }
 }

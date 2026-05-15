@@ -8,6 +8,7 @@ public enum SkillType {
     MAIN_FIREBALL,
     MAIN_ICE_BOLT,
     MAIN_LIGHTNING,
+    MAIN_ROOT,
 
     //辅助技能
     AST_QiangShen,

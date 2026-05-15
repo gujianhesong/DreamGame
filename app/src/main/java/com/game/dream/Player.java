@@ -76,6 +76,16 @@ public class Player extends Character {
     }
 
     public void update(int[][] map, int mapWidth, int mapHeight, int tileSize, long deltaTime) {
+        // Update CC state
+        updateCCState();
+
+        // If stunned or rooted, prevent movement input from taking effect
+        if (isStunned() || isRooted()) {
+            // Still allow animation updates or mana regen, but skip position change
+            //super.update(map, mapWidth, mapHeight, tileSize, deltaTime);
+            return;
+        }
+
         // Update attack animation
         updateAttackAnimation();
 
@@ -86,7 +96,11 @@ public class Player extends Character {
         // Convert speed from pixels/second to pixels/frame
         float deltaSeconds = deltaTime / 1000.0f;
         int speed = RoleSystem.getInstance().getRoleInfo().getSpeed();
-        float moveAmount = (150 + speed * 0.5f) * deltaSeconds;
+        float speedRatio = 1f;
+        if (isSlowed()) {
+            speedRatio = 0.5f;
+        }
+        float moveAmount = (150 + speed * 0.5f) * deltaSeconds * speedRatio;
 
         if (movingLeft) {
             newX -= moveAmount;
@@ -247,61 +261,105 @@ public class Player extends Character {
 
         lastMagicTime = currentTime;
 
-        java.util.List<Projectile> spells = new java.util.ArrayList<>();
+        List<Projectile> spells = new ArrayList<>();
 
-        float baseAngle = 0;
+        if (skillType == SkillType.MAIN_ROOT) {
+            spells.addAll(castRootSpell());
+        } else {
+            float baseAngle = 0;
 
-        // Determine base angle from facing direction
-        switch (getFacingDirection()) {
-            case 0:
-                baseAngle = 90;
-                break;  // Down
-            case 1:
-                baseAngle = -90;
-                break; // Up
-            case 2:
-                baseAngle = 180;
-                break; // Left
-            case 3:
-                baseAngle = 0;
-                break;   // Right
-        }
+            // Determine base angle from facing direction
+            switch (getFacingDirection()) {
+                case 0:
+                    baseAngle = 90;
+                    break;  // Down
+                case 1:
+                    baseAngle = -90;
+                    break; // Up
+                case 2:
+                    baseAngle = 180;
+                    break; // Left
+                case 3:
+                    baseAngle = 0;
+                    break;   // Right
+            }
 
-        // Create 3 projectiles with 30 degree separation
-        float[] angles = null;
-        float range = 300;
-        switch (skillType) {
-            case MAIN_FIREBALL:
-                angles = new float[]{baseAngle - 60, baseAngle - 40, baseAngle - 20, baseAngle,
-                        baseAngle + 20, baseAngle + 40, baseAngle + 60};
-                range = 400;
-                break;
-            case MAIN_ICE_BOLT:
-                angles = new float[12];
-                for (int i = 0; i < 12; i++) {
-                    angles[i] = baseAngle + 30 * i;
-                }
-                range = 300;
-                break;
-            case MAIN_LIGHTNING:
-                angles = new float[]{baseAngle - 90, baseAngle, baseAngle + 90, baseAngle + 180};
-                range = 1000;
-                break;
-        }
+            // Create 3 projectiles with 30 degree separation
+            float[] angles = null;
+            float range = 300;
+            switch (skillType) {
+                case MAIN_FIREBALL:
+                    angles = new float[]{baseAngle - 60, baseAngle - 40, baseAngle - 20, baseAngle,
+                            baseAngle + 20, baseAngle + 40, baseAngle + 60};
+                    range = 400;
+                    break;
+                case MAIN_ICE_BOLT:
+                    angles = new float[12];
+                    for (int i = 0; i < 12; i++) {
+                        angles[i] = baseAngle + 30 * i;
+                    }
+                    range = 300;
+                    break;
+                case MAIN_LIGHTNING:
+                    angles = new float[]{baseAngle - 90, baseAngle, baseAngle + 90, baseAngle + 180};
+                    range = 1000;
+                    break;
+            }
 
-        for (float angle : angles) {
-            // Convert angle to radians
-            double rad = Math.toRadians(angle);
+            for (float angle : angles) {
+                // Convert angle to radians
+                double rad = Math.toRadians(angle);
 
-            // Calculate target position
-            float spellTargetX = getX() + (float) (Math.cos(rad) * range);
-            float spellTargetY = getY() + (float) (Math.sin(rad) * range);
+                // Calculate target position
+                float spellTargetX = getX() + (float) (Math.cos(rad) * range);
+                float spellTargetY = getY() + (float) (Math.sin(rad) * range);
 
-            // Cast triple spell (returns list of 3 projectiles)
-            spells.add(new Projectile(x, y, spellTargetX, spellTargetY, skillType));
+                // Cast triple spell (returns list of 3 projectiles)
+                spells.add(new Projectile(x, y, spellTargetX, spellTargetY, skillType));
+            }
         }
 
         return spells;
+    }
+
+    private List<Projectile> castRootSpell() {
+        // Find the nearest enemy within range
+        Enemy target = null;
+        float minDist = Float.MAX_VALUE;
+        float spellRange = 300f;
+        List<Projectile> projectiles = new ArrayList<>();
+
+        List<Enemy> enemies = gameEngine.getEnemies();
+        if (enemies != null) {
+            for (Enemy enemy : enemies) {
+                if (!enemy.isAlive()) continue;
+                float dx = enemy.getX() - getX();
+                float dy = enemy.getY() - getY();
+                float dist = (float) Math.sqrt(dx * dx + dy * dy);
+
+                if (dist < spellRange && dist < minDist) {
+                    minDist = dist;
+                    target = enemy;
+                }
+            }
+        }
+
+        if (target != null) {
+            Projectile rootProj = new Projectile(
+                    getX(),
+                    getY(),
+                    target.getX(),
+                    target.getY(),
+                    SkillType.MAIN_ROOT // Use an existing visual type or add a TALISMAN type
+            );
+
+            // Set the effect type to ROOT
+            rootProj.setEffectType(Projectile.EffectType.ROOT);
+            projectiles.add(rootProj);
+        } else {
+            gameEngine.showCenterToast("范围内没有目标", 1000);
+        }
+        return projectiles;
     }
 
     /**
@@ -476,7 +534,7 @@ public class Player extends Character {
             return false;
         }
 
-        ConsumableItem consumable = (ConsumableItem)item;
+        ConsumableItem consumable = (ConsumableItem) item;
 
         // Apply effect based on type
         switch (consumable.getEffectType()) {

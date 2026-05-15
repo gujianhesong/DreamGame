@@ -92,6 +92,12 @@ public abstract class Enemy extends Character {
     public void update(long deltaTime, float playerX, float playerY, int[][] map, int mapWidth, int mapHeight) {
         if (!isAlive()) return;
 
+        // Update CC state first (clears expired effects)
+        updateCCState();
+
+        // If stunned, skip all AI logic
+        if (isStunned()) return;
+
         long currentTime = System.currentTimeMillis();
         float deltaSeconds = deltaTime / 1000f;
 
@@ -164,6 +170,11 @@ public abstract class Enemy extends Character {
         targetX = playerX;
         targetY = playerY;
 
+        // If rooted, do not move
+        if (isRooted()) {
+            return;
+        }
+
         // Elite and Leader tigers can cast spells while chasing
         if (enemyLevel == EnemyLevel.ELITE || enemyLevel == EnemyLevel.LEADER) {
             // Check if should cast spell (15% chance per update, with cooldown)
@@ -225,10 +236,14 @@ public abstract class Enemy extends Character {
         float distance = (float) Math.sqrt(dx * dx + dy * dy);
 
         float moveSpeed = (100 + speed * 0.5f);
+        float speedRatio = 1f;
+        if (isSlowed()) {
+            speedRatio = 0.5f;
+        }
 
         if (distance > 5) {
-            float moveX = (dx / distance) * moveSpeed * deltaSeconds;
-            float moveY = (dy / distance) * moveSpeed * deltaSeconds;
+            float moveX = (dx / distance) * moveSpeed * deltaSeconds * speedRatio;
+            float moveY = (dy / distance) * moveSpeed * deltaSeconds * speedRatio;
 
             x += moveX;
             y += moveY;

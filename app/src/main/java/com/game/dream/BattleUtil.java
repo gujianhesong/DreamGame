@@ -103,7 +103,7 @@ public class BattleUtil {
 
         boolean isCrit;
         boolean isHit;
-        int damageValue;
+        int damageValue = 0;
 
         //计算命中
         RoleInfo roleInfo = RoleSystem.getInstance().getRoleInfo();
@@ -116,13 +116,12 @@ public class BattleUtil {
             //未命中
             isHit = false;
             isCrit = false;
-            damageValue = 0;
         } else {
             //命中
             isHit = true;
             isCrit = false;
 
-            float castBaseValue = 10f;
+            float castBaseValue = 0f;
             switch (skillType){
                 case MAIN_FIREBALL:
                     castBaseValue = 20f;
@@ -134,27 +133,30 @@ public class BattleUtil {
                     castBaseValue = 30f;
                     break;
             }
-            //计算法术伤害
-            damageValue = calculateMagicDamage(castBaseValue, roleInfo.getMana(), enemy.getMana(), findSkillInfo.getLevel());
 
-            //计算修炼加成
-            if (roleInfo.getPracticeMagic() > 0) {
-                for (int i = 0; i < roleInfo.getPracticeMagic(); i++) {
-                    damageValue = (int) (damageValue * 1.02 + 5);
+            if(castBaseValue > 0){
+                //计算法术伤害
+                damageValue = calculateMagicDamage(castBaseValue, roleInfo.getMana(), enemy.getMana(), findSkillInfo.getLevel());
+
+                //计算修炼加成
+                if (roleInfo.getPracticeMagic() > 0) {
+                    for (int i = 0; i < roleInfo.getPracticeMagic(); i++) {
+                        damageValue = (int) (damageValue * 1.02 + 5);
+                    }
                 }
+
+                //浮动伤害
+                damageValue = (int) (damageValue * (0.9 + Math.random() * 0.2));
+
+                float critRatio = 0.01f;
+                if (Math.random() < critRatio) {
+                    //暴击几率
+                    isCrit = true;
+                    damageValue *= 2;
+                }
+
+                damageValue = Math.max(damageValue, 1);
             }
-
-            //浮动伤害
-            damageValue = (int) (damageValue * (0.9 + Math.random() * 0.2));
-
-            float critRatio = 0.01f;
-            if (Math.random() < critRatio) {
-                //暴击几率
-                isCrit = true;
-                damageValue *= 2;
-            }
-
-            damageValue = Math.max(damageValue, 1);
         }
 
         AttackResult attackResult = new AttackResult();
@@ -310,9 +312,9 @@ public class BattleUtil {
      * @return
      */
     public static AttackResult caculateEnemyCasterDamage(Enemy enemy, SkillType skillType, int skillLevel) {
-        boolean isCrit;
-        boolean isHit;
-        int damageValue;
+        boolean isCrit = false;
+        boolean isHit = false;
+        int damageValue = 0;
 
         //计算命中
         RoleInfo roleInfo = RoleSystem.getInstance().getRoleInfo();
@@ -331,7 +333,7 @@ public class BattleUtil {
             isHit = true;
             isCrit = false;
 
-            float castBaseValue = 7f;
+            float castBaseValue = 0f;
             switch (skillType){
                 case MAIN_FIREBALL:
                     castBaseValue = 10f;
@@ -343,27 +345,30 @@ public class BattleUtil {
                     castBaseValue = 14f;
                     break;
             }
-            //计算法术伤害
-            damageValue = calculateEnemyMagicDamage(castBaseValue, enemy.getMana(), roleInfo.getMana(), skillLevel);
-            LogUtil.i("aaaaaaaaaaaaaaa 怪物法术输出伤害 " + damageValue);
-            //计算修炼加成
-            if (roleInfo.getPracticeMagicDefense() > 0) {
-                for (int i = 0; i < roleInfo.getPracticeMagicDefense(); i++) {
-                    damageValue = (int) (damageValue * 0.98 - 5);
+
+            if(castBaseValue > 0){
+                //计算法术伤害
+                damageValue = calculateEnemyMagicDamage(castBaseValue, enemy.getMana(), roleInfo.getMana(), skillLevel);
+                LogUtil.i("aaaaaaaaaaaaaaa 怪物法术输出伤害 " + damageValue);
+                //计算修炼加成
+                if (roleInfo.getPracticeMagicDefense() > 0) {
+                    for (int i = 0; i < roleInfo.getPracticeMagicDefense(); i++) {
+                        damageValue = (int) (damageValue * 0.98 - 5);
+                    }
                 }
+
+                //浮动伤害
+                damageValue = (int) (damageValue * (0.9 + Math.random() * 0.2));
+
+                float critRatio = 0.1f;
+                if (Math.random() < critRatio) {
+                    //暴击几率
+                    isCrit = true;
+                    damageValue *= 2;
+                }
+
+                damageValue = Math.max(damageValue, 1);
             }
-
-            //浮动伤害
-            damageValue = (int) (damageValue * (0.9 + Math.random() * 0.2));
-
-            float critRatio = 0.1f;
-            if (Math.random() < critRatio) {
-                //暴击几率
-                isCrit = true;
-                damageValue *= 2;
-            }
-
-            damageValue = Math.max(damageValue, 1);
         }
 
         AttackResult attackResult = new AttackResult();

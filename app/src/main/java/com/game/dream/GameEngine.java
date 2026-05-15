@@ -80,6 +80,7 @@ public class GameEngine {
 
     // Center screen notifications
     private CenterNotification currentNotification;
+    private CenterToast centerToast;
 
     private RoleInfoPanel roleInfoPanel;
 
@@ -214,6 +215,7 @@ public class GameEngine {
 
         // Initialize notification
         currentNotification = null;
+        centerToast = null;
 
         // Initialize role info panel
         roleInfoPanel = new RoleInfoPanel(player);
@@ -362,6 +364,14 @@ public class GameEngine {
             currentNotification.update();
             if (currentNotification.isExpired()) {
                 currentNotification = null;
+            }
+        }
+
+        // Update center toast
+        if (centerToast != null) {
+            centerToast.update();
+            if (centerToast.isExpired()) {
+                centerToast = null;
             }
         }
 
@@ -589,15 +599,17 @@ public class GameEngine {
                             if (attackResult != null) {
                                 if (attackResult.isHit) {
                                     int damage = attackResult.damageValue;
-                                    died = player.takeDamage(damage);
+                                    if(damage > 0){
+                                        died = player.takeDamage(damage);
 
-                                    // Create floating damage number above enemy
-                                    damageNumbers.add(new DamageNumber(
-                                            player.getX(),
-                                            player.getY() - 30,
-                                            damage,
-                                            attackResult.isCrit
-                                    ));
+                                        // Create floating damage number above enemy
+                                        damageNumbers.add(new DamageNumber(
+                                                player.getX(),
+                                                player.getY() - 30,
+                                                damage,
+                                                attackResult.isCrit
+                                        ));
+                                    }
                                 } else {
                                     //未命中
                                     damageNumbers.add(new DamageNumber(
@@ -607,12 +619,18 @@ public class GameEngine {
                                     ));
                                 }
 
-                                proj.deactivate();
-
                                 if (died) {
                                     player.respawn();
                                 }
                             }
+
+                            // Handle Special Effects on Player
+                            if (proj.getEffectType() == Projectile.EffectType.ROOT) {
+                                player.applyCC(Character.CrowdControlType.ROOT, 2000);
+                                showCenterToast("你被定身了!", 1000);
+                            }
+
+                            proj.deactivate();
                             continue;
                         }
                     } else {
@@ -622,15 +640,17 @@ public class GameEngine {
                                 if (attackResult != null) {
                                     if (attackResult.isHit) {
                                         int damage = attackResult.damageValue;
-                                        enemy.takeDamage(damage);
+                                        if(damage > 0){
+                                            enemy.takeDamage(damage);
 
-                                        // Create floating damage number above enemy
-                                        damageNumbers.add(new DamageNumber(
-                                                enemy.getX(),
-                                                enemy.getY() - 30,
-                                                damage,
-                                                attackResult.isCrit
-                                        ));
+                                            // Create floating damage number above enemy
+                                            damageNumbers.add(new DamageNumber(
+                                                    enemy.getX(),
+                                                    enemy.getY() - 30,
+                                                    damage,
+                                                    attackResult.isCrit
+                                            ));
+                                        }
                                     } else {
                                         //未命中
                                         damageNumbers.add(new DamageNumber(
@@ -639,6 +659,11 @@ public class GameEngine {
                                                 -1
                                         ));
                                     }
+                                }
+
+                                // Handle Special Effects
+                                if (proj.getEffectType() == Projectile.EffectType.ROOT) {
+                                    enemy.applyCC(Character.CrowdControlType.ROOT, 2000);
                                 }
 
                                 proj.deactivate();
@@ -683,6 +708,7 @@ public class GameEngine {
     public static int getScreenHeight() {
         return screenHeight;
     }
+
 
     private void updateFPS() {
         frameCount++;
@@ -751,6 +777,11 @@ public class GameEngine {
         // Draw center notification (on top of everything except UI panels)
         if (currentNotification != null) {
             currentNotification.draw(canvas, screenWidth, screenHeight);
+        }
+
+        // Draw center toast (on top of everything except UI panels)
+        if (centerToast != null) {
+            centerToast.draw(canvas, screenWidth, screenHeight);
         }
 
         // Draw weather effects
@@ -1567,6 +1598,12 @@ public class GameEngine {
                     projectiles.addAll(list);
                 }
             }
+            case MAIN_ROOT: {
+                List<Projectile> list = player.castTripleSpell(SkillType.MAIN_ROOT);
+                if (list != null) {
+                    projectiles.addAll(list);
+                }
+            }
             break;
         }
     }
@@ -1808,6 +1845,13 @@ public class GameEngine {
     }
 
     /**
+     * Show center toast
+     */
+    public void showCenterToast(String message, long durationMillis) {
+        centerToast = new CenterToast(message, durationMillis);
+    }
+
+    /**
      * Show float text
      */
     public void showFloatText(String text, FloatingText.Type type) {
@@ -1819,4 +1863,7 @@ public class GameEngine {
         ));
     }
 
+    public List<Enemy> getEnemies() {
+        return enemies;
+    }
 }

@@ -11,6 +11,12 @@ import com.game.dream.enums.SkillType;
  * Projectile for magic attacks (fireballs, ice bolts, etc.)
  */
 public class Projectile {
+    public enum EffectType {
+        NONE,
+        ROOT,      // Root effect (定身)
+        POISON,    // Poison over time
+        STUN       // Stun effect (眩晕)
+    }
 
     private float x, y;
     private float vx, vy;
@@ -26,6 +32,8 @@ public class Projectile {
     private float rotation;
 
     private Enemy fromEnemy;
+
+    private EffectType effectType = EffectType.NONE; // Default to no effect
 
     public Projectile(float x, float y, float targetX, float targetY, SkillType skillType) {
         this.x = x;
@@ -231,5 +239,16 @@ public class Projectile {
 
     public Enemy getFromEnemy() {
         return fromEnemy;
+    }
+
+    /**
+     * Set special effect type for this projectile
+     */
+    public void setEffectType(EffectType type) {
+        this.effectType = type;
+    }
+
+    public EffectType getEffectType() {
+        return effectType;
     }
 }

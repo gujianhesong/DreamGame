@@ -12,6 +12,7 @@ public enum SkillType {
     MAIN_WanJianGuiZong,
     MAIN_JinGangHuTi,
     MAIN_MiaoShouHuiChun,
+    MAIN_LianQiHuaShen,
 
     //辅助技能
     AST_QiangShen,

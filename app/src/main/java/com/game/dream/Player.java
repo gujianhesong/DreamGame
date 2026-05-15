@@ -398,9 +398,9 @@ public class Player extends Character {
     }
 
     /**
-     * Heal the player for a specific amount
+     * Heal the player blood for a specific amount
      */
-    public void heal(int amount) {
+    public void healBlood(int amount) {
         if (amount <= 0) return;
 
         int oldHealth = this.getHealth();
@@ -408,7 +408,22 @@ public class Player extends Character {
         RoleSystem.getInstance().getRoleInfo().setHp(newHealth);
 
         if (newHealth > oldHealth) {
-            lastHealTime = System.currentTimeMillis(); // Trigger visual effect
+            lastHealBloodTime = System.currentTimeMillis(); // Trigger visual effect
+        }
+    }
+
+    /**
+     * Heal the player blood for a specific amount
+     */
+    public void healMagic(int amount) {
+        if (amount <= 0) return;
+
+        int oldMp = RoleSystem.getInstance().getRoleInfo().getMp();
+        int newMp = Math.min(oldMp + amount, RoleSystem.getInstance().getRoleInfo().getMagicCap());
+        RoleSystem.getInstance().getRoleInfo().setMp(newMp);
+
+        if (newMp > oldMp) {
+            lastHealMagicTime = System.currentTimeMillis(); // Trigger visual effect
         }
     }
 

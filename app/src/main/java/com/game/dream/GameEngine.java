@@ -1328,10 +1328,12 @@ public class GameEngine {
 
         // Check Switch Page Button
         if (TouchUtil.checkIsInTouchRectFloat(switchPageButton, x, y)) {
-            SkillSystem.getInstance().nextPage();
-            int page = SkillSystem.getInstance().getCurrentPageIndex() + 1;
-            showNotification("提示", "技能第 " + page + " 页", CenterNotification.Type.INFO);
-            return true;
+            if (action == MotionEvent.ACTION_DOWN) {
+                SkillSystem.getInstance().nextPage();
+                int page = SkillSystem.getInstance().getCurrentPageIndex() + 1;
+                showNotification("提示", "技能第 " + page + " 页", CenterNotification.Type.INFO);
+                return true;
+            }
         }
 
         // Check role info button

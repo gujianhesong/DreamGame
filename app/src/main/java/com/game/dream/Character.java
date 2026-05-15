@@ -40,7 +40,8 @@ public abstract class Character {
     protected long jinGangStateEndTime = 0;
     protected boolean isJinGangState = false;
 
-    protected long lastHealTime = 0;
+    protected long lastHealBloodTime = 0;
+    protected long lastHealMagicTime = 0;
 
     public Character(float x, float y, int size) {
         this.x = x;
@@ -75,7 +76,8 @@ public abstract class Character {
 
         drawJinGangEffect(canvas, screenX, screenY, scale);
 
-        drawHealEffect(canvas, screenX, screenY, scale);
+        drawHealBloodEffect(canvas, screenX, screenY, scale);
+        drawHealMagicEffect(canvas, screenX, screenY, scale);
     }
 
     public abstract void onDraw(Canvas canvas, int offsetX, int offsetY);
@@ -300,17 +302,33 @@ public abstract class Character {
         }
     }
 
-    protected void drawHealEffect(Canvas canvas, float cx, float cy, float scale) {
+    protected void drawHealBloodEffect(Canvas canvas, float cx, float cy, float scale) {
         float centerX = cx;
         float centerY = cy; // Position slightly above the character
 
         // Draw healing flash effect
         long currentTime = System.currentTimeMillis();
-        if (currentTime - lastHealTime < 500) { // Show for 0.5 seconds
+        if (currentTime - lastHealBloodTime < 500) { // Show for 0.5 seconds
             Paint paint = new Paint();
             paint.setAntiAlias(true);
-            float alpha = 1.0f - ((float)(currentTime - lastHealTime) / 500f);
+            float alpha = 1.0f - ((float)(currentTime - lastHealBloodTime) / 500f);
             paint.setColor(Color.argb((int)(150 * alpha), 0, 255, 0)); // Green
+
+            canvas.drawCircle(centerX, centerY, size, paint);
+        }
+    }
+
+    protected void drawHealMagicEffect(Canvas canvas, float cx, float cy, float scale) {
+        float centerX = cx;
+        float centerY = cy; // Position slightly above the character
+
+        // Draw healing flash effect
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - lastHealMagicTime < 500) { // Show for 0.5 seconds
+            Paint paint = new Paint();
+            paint.setAntiAlias(true);
+            float alpha = 1.0f - ((float)(currentTime - lastHealMagicTime) / 500f);
+            paint.setColor(Color.argb((int)(150 * alpha), 0, 0, 200)); // Blue
 
             canvas.drawCircle(centerX, centerY, size, paint);
         }

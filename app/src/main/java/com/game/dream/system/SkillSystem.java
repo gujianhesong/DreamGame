@@ -41,13 +41,14 @@ public class SkillSystem {
     private static final int MAX_EQUIPED_ACTIVE_SKILLS = 15;
 
     private void initMainSkills() {
-        playerMainSkills.add(new SkillInfo(SkillType.MAIN_FIREBALL, 1, 10, 3,  "火云术", "发射火焰对敌人造成伤害"));
+        playerMainSkills.add(new SkillInfo(SkillType.MAIN_FIREBALL, 1, 10, 3, "火云术", "发射火焰对敌人造成伤害"));
         playerMainSkills.add(new SkillInfo(SkillType.MAIN_ICE_BOLT, 1, 10, 4, "寒冰术", "发射寒冰对敌人造成伤害"));
         playerMainSkills.add(new SkillInfo(SkillType.MAIN_LIGHTNING, 1, 10, 5, "雷击术", "发射几道闪电对敌人造成伤害"));
         playerMainSkills.add(new SkillInfo(SkillType.MAIN_ROOT, 1, 10, 8, "定身术", "发射符咒定住敌人，使其无法移动"));
         playerMainSkills.add(new SkillInfo(SkillType.MAIN_WanJianGuiZong, 1, 10, 10, "万剑归宗", "发动剑阵对范围内的敌人造成多次伤害"));
         playerMainSkills.add(new SkillInfo(SkillType.MAIN_JinGangHuTi, 1, 10, 10, "金刚护体", "获得金刚护体效果后大幅降低受到的伤害，期间不会死亡，持续5秒"));
         playerMainSkills.add(new SkillInfo(SkillType.MAIN_MiaoShouHuiChun, 1, 10, 15, "妙手回春", "消耗法力值恢复大量气血"));
+        playerMainSkills.add(new SkillInfo(SkillType.MAIN_LianQiHuaShen, 1, 10, 20, "炼气化神", "消耗气血值恢复大量魔法"));
     }
 
     private void initAssistSkills() {
@@ -201,18 +202,29 @@ public class SkillSystem {
             return null; // Still on cooldown
         }
 
-        int costMagic = 20;
-        if (skill.getSkillType() == SkillType.MAIN_WanJianGuiZong) {
-            costMagic = 40;
-        } else if (skill.getSkillType() == SkillType.MAIN_MiaoShouHuiChun) {
-            costMagic = 30;
+        if (skill.getSkillType() == SkillType.MAIN_LianQiHuaShen) {
+            int costBlood = 50;
+            RoleInfo roleInfo = RoleSystem.getInstance().getRoleInfo();
+            if (roleInfo.getHp() < costBlood * 3) {
+                GameEngine.getInstance().showCenterToast("气血不足", 1000);
+                return null;
+            }
+            roleInfo.setHp(roleInfo.getHp() - costBlood);
+        } else {
+            int costMagic = 20;
+            if (skill.getSkillType() == SkillType.MAIN_WanJianGuiZong) {
+                costMagic = 40;
+            } else if (skill.getSkillType() == SkillType.MAIN_MiaoShouHuiChun) {
+                costMagic = 30;
+            }
+            RoleInfo roleInfo = RoleSystem.getInstance().getRoleInfo();
+            if (roleInfo.getMp() < costMagic) {
+                GameEngine.getInstance().showCenterToast("魔法不足", 1000);
+                return null;
+            }
+            roleInfo.setMp(roleInfo.getMp() - costMagic);
         }
-        RoleInfo roleInfo = RoleSystem.getInstance().getRoleInfo();
-        if (roleInfo.getMp() < costMagic) {
-            GameEngine.getInstance().showCenterToast("魔法不足", 1000);
-            return null;
-        }
-        roleInfo.setMp(roleInfo.getMp() - costMagic);
+
         player.setLastMagicTime(skill.getSkillType(), currentTime);
 
         SkillStartInfo skillStartInfo = null;
@@ -233,11 +245,19 @@ public class SkillSystem {
                 player.activateDiamondBody(5000);
                 GameEngine.getInstance().showCenterToast("获得金刚护体!", 1000);
             }
+            break;
             case MAIN_MiaoShouHuiChun: {
                 float ratio = 0.1f + skill.getLevel() * 0.02f;
                 int healAmount = (int) (RoleSystem.getInstance().getRoleInfo().getBloodCap() * ratio) + 50;
-                player.heal(healAmount);
+                player.healBlood(healAmount);
                 GameEngine.getInstance().showFloatText("恢复气血 +" + healAmount, FloatingText.Type.HEAL);
+            }
+            break;
+            case MAIN_LianQiHuaShen: {
+                float ratio = 0.1f + skill.getLevel() * 0.02f;
+                int healAmount = (int) (RoleSystem.getInstance().getRoleInfo().getMagicCap() * ratio) + 50;
+                player.healMagic(healAmount);
+                GameEngine.getInstance().showFloatText("恢复魔法 +" + healAmount, FloatingText.Type.HEAL_MAGIC);
             }
             break;
         }

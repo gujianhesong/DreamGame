@@ -174,6 +174,14 @@ public class BattleUtil {
             }
         }
 
+        if (skillType == SkillType.MAIN_DuWuZhen) {
+            //根据怪物血量百分比扣除血量
+            isCrit = true;
+            float ratio = 0.02f + 0.002f * findSkillInfo.getLevel();
+            damageValue = (int) (enemy.getHealth() * ratio);
+            damageValue = Math.max(Math.min(damageValue, 200), 1);
+        }
+
         AttackResult attackResult = new AttackResult();
         attackResult.damageValue = damageValue;
         attackResult.isCrit = isCrit;

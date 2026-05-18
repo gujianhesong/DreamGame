@@ -49,6 +49,7 @@ public class SkillSystem {
         playerMainSkills.add(new SkillInfo(SkillType.MAIN_JinGangHuTi, 1, 10, 10, "金刚护体", "获得金刚护体效果后大幅降低受到的伤害，期间不会死亡，持续5秒"));
         playerMainSkills.add(new SkillInfo(SkillType.MAIN_MiaoShouHuiChun, 1, 10, 15, "妙手回春", "消耗法力值恢复大量气血"));
         playerMainSkills.add(new SkillInfo(SkillType.MAIN_LianQiHuaShen, 1, 10, 20, "炼气化神", "消耗气血值恢复大量魔法"));
+        playerMainSkills.add(new SkillInfo(SkillType.MAIN_DuWuZhen, 1, 10, 15, "毒雾阵", "释放一片剧毒雾气，对范围内敌人造成持续伤害"));
     }
 
     private void initAssistSkills() {
@@ -260,6 +261,10 @@ public class SkillSystem {
                 GameEngine.getInstance().showFloatText("恢复魔法 +" + healAmount, FloatingText.Type.HEAL_MAGIC);
             }
             break;
+            case MAIN_DuWuZhen: {
+                skillStartInfo = castPoisonCloud();
+            }
+            break;
         }
         return skillStartInfo;
     }
@@ -392,6 +397,30 @@ public class SkillSystem {
         skillStartInfo.setSkillEffect(skillEffect);
 
         GameEngine.getInstance().showCenterToast("万剑归宗", 1000);
+
+        return skillStartInfo;
+    }
+
+    private SkillStartInfo castPoisonCloud() {
+        // 毒雾持续 6 秒，每 1 秒造成一次伤害，共 6 次
+        SkillStartInfo skillStartInfo = new SkillStartInfo();
+        // Center the storm on the player
+        float radius = 500; // Large range
+        long duration = 6000;
+
+        Player player = GameEngine.getInstance().getPlayer();
+        SkillEffect skillEffect = new SkillEffect(
+                SkillEffect.Type.POISON_CLOUD,
+                player.getX(),
+                player.getY(),
+                radius,
+                duration,
+                1000, // Damage every 1s
+                6    // Total 6 hits
+        );
+        skillStartInfo.setSkillEffect(skillEffect);
+
+        GameEngine.getInstance().showCenterToast("毒雾阵", 1000);
 
         return skillStartInfo;
     }

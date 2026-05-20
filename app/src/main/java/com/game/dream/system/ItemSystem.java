@@ -1,11 +1,14 @@
 package com.game.dream.system;
 
+import android.text.TextUtils;
+
 import com.game.dream.FloatingText;
 import com.game.dream.GameEngine;
 import com.game.dream.LogUtil;
 import com.game.dream.bean.EquipItemInfo;
 import com.game.dream.bean.ItemInfo;
 import com.game.dream.bean.RoleInfo;
+import com.game.dream.enums.SpecialEffect;
 import com.game.dream.item.ConsumableItem;
 import com.game.dream.item.EquipmentItem;
 import com.game.dream.item.Item;
@@ -35,15 +38,9 @@ public class ItemSystem {
     private EquipmentItem belt;
     private EquipmentItem shoes;
 
-    private WeakReference<GameEngine> gameEngineWeakReference;
-
     private ItemSystem() {
         this.maxSize = 500;
         this.items = new ArrayList<>();
-    }
-
-    public void setGameEngine(GameEngine gameEngine) {
-        this.gameEngineWeakReference = new WeakReference<>(gameEngine);
     }
 
     public List<ItemInfo> getItemInfos() {
@@ -210,19 +207,25 @@ public class ItemSystem {
             switch (consumableItem.getEffectType()) {
                 case HEAL_HP: {
                     RoleInfo roleInfo = RoleSystem.getInstance().getRoleInfo();
-                    roleInfo.setHp(Math.min(roleInfo.getBloodCap(), roleInfo.getHp() + consumableItem.getEffectValue()));
-                    if (gameEngineWeakReference != null && gameEngineWeakReference.get() != null) {
-                        gameEngineWeakReference.get().showFloatText("气血+" + consumableItem.getEffectValue(), FloatingText.Type.HEAL);
+                    int effectValue = consumableItem.getEffectValue();
+                    if (ItemSystem.getInstance().isEquipedSpecialEffect(SpecialEffect.SE_ShenNong)) {
+                        //神农
+                        effectValue = (int) (effectValue * 1.2);
                     }
+                    roleInfo.setHp(Math.min(roleInfo.getBloodCap(), roleInfo.getHp() + effectValue));
+                    GameEngine.getInstance().showFloatText("气血+" + effectValue, FloatingText.Type.HEAL);
                     isUsed = true;
                 }
                 break;
                 case HEAL_MP: {
                     RoleInfo roleInfo = RoleSystem.getInstance().getRoleInfo();
-                    roleInfo.setMp(Math.min(roleInfo.getMagicCap(), roleInfo.getMp() + consumableItem.getEffectValue()));
-                    if (gameEngineWeakReference != null && gameEngineWeakReference.get() != null) {
-                        gameEngineWeakReference.get().showFloatText("魔法+" + consumableItem.getEffectValue(), FloatingText.Type.HEAL_MAGIC);
+                    int effectValue = consumableItem.getEffectValue();
+                    if (ItemSystem.getInstance().isEquipedSpecialEffect(SpecialEffect.SE_ShenNong)) {
+                        //神农
+                        effectValue = (int) (effectValue * 1.2);
                     }
+                    roleInfo.setMp(Math.min(roleInfo.getMagicCap(), roleInfo.getMp() + effectValue));
+                    GameEngine.getInstance().showFloatText("魔法+" + effectValue, FloatingText.Type.HEAL_MAGIC);
                     isUsed = true;
                 }
                 break;
@@ -251,6 +254,13 @@ public class ItemSystem {
         if (item.getType() != Item.Type.EQUIPMENT) return false;
 
         EquipmentItem equipment = (EquipmentItem) item;
+
+        //装备等级限制
+        if (!TextUtils.equals(equipment.getEquipItemInfo().getSpecialEffect(), SpecialEffect.SE_WuJiBieXianZhi.name())
+                && RoleSystem.getInstance().getRoleInfo().getLevel() < equipment.getEquipItemInfo().getLevel()) {
+            GameEngine.getInstance().showCenterToast("人物等级不足，无法装备");
+            return false;
+        }
 
         // Unequip current item in that slot first
         unequipSlot(equipment.getSlot());
@@ -391,6 +401,22 @@ public class ItemSystem {
 
     public int getMaxSize() {
         return maxSize;
+    }
+
+    /**
+     * 是否装备了指定特效的装备
+     *
+     * @param specialEffect
+     * @return
+     */
+    public boolean isEquipedSpecialEffect(SpecialEffect specialEffect) {
+        List<EquipItemInfo> equipItemInfos = ItemSystem.getInstance().getEquipInfos();
+        for (EquipItemInfo item : equipItemInfos) {
+            if (item != null && TextUtils.equals(item.getSpecialEffect(), specialEffect.name())) {
+                return true;
+            }
+        }
+        return false;
     }
 
 }

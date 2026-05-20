@@ -25,6 +25,11 @@ public class EquipItemInfo extends ItemInfo {
     private int propNai;
     private int propMin;
 
+    //特效
+    private String specialEffect;
+    //装备评分值
+    private String ratity;
+
     //宝石
     private int hpStoneLevel;
     private int mpStoneLevel;
@@ -168,6 +173,22 @@ public class EquipItemInfo extends ItemInfo {
 
     public void setPropMin(int propMin) {
         this.propMin = propMin;
+    }
+
+    public String getSpecialEffect() {
+        return specialEffect;
+    }
+
+    public void setSpecialEffect(String specialEffect) {
+        this.specialEffect = specialEffect;
+    }
+
+    public String getRatity() {
+        return ratity;
+    }
+
+    public void setRatity(String ratity) {
+        this.ratity = ratity;
     }
 
     public int getHpStoneLevel() {

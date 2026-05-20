@@ -8,6 +8,7 @@ import com.game.dream.bean.RoleInfo;
 import com.game.dream.bean.SkillInfo;
 import com.game.dream.enemy.Enemy;
 import com.game.dream.enums.SkillType;
+import com.game.dream.enums.SpecialEffect;
 import com.game.dream.item.ConsumableItem;
 import com.game.dream.item.Item;
 import com.game.dream.item.ItemStack;
@@ -215,7 +216,15 @@ public class Player extends Character {
 
                     hits.add(new EnemyHitInfo(enemy, damage, attackResult.isCrit));
 
-                    //是否暴击
+                    if (ItemSystem.getInstance().isEquipedSpecialEffect(SpecialEffect.SE_Xixue)) {
+                        //吸血
+                        int takeHp = (int) (damage * 0.1f);
+                        if (takeHp > 0) {
+                            RoleInfo roleInfo = RoleSystem.getInstance().getRoleInfo();
+                            roleInfo.setHp(Math.min(roleInfo.getBloodCap(), roleInfo.getHp() + takeHp));
+                            GameEngine.getInstance().showFloatText("吸血+" + takeHp, FloatingText.Type.HEAL);
+                        }
+                    }
                 } else {
                     //未命中
                     hits.add(new EnemyHitInfo(enemy, -1, false));
@@ -385,6 +394,15 @@ public class Player extends Character {
 
         if (isJinGangState) {
             health = Math.max(1, health);
+        }
+
+        if (health <= 0 && ItemSystem.getInstance().isEquipedSpecialEffect(SpecialEffect.SE_ShenYou)) {
+            //神佑
+            if (Math.random() < 0.2) {
+                health = RoleSystem.getInstance().getRoleInfo().getBloodCap();
+
+                GameEngine.getInstance().showCenterToast("神佑复生！");
+            }
         }
 
         RoleSystem.getInstance().getRoleInfo().setHp(health);

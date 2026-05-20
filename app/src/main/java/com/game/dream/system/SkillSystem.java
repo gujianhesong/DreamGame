@@ -10,6 +10,7 @@ import com.game.dream.bean.SkillInfo;
 import com.game.dream.bean.SkillStartInfo;
 import com.game.dream.enemy.Enemy;
 import com.game.dream.enums.SkillType;
+import com.game.dream.enums.SpecialEffect;
 import com.game.dream.skill.SkillEffect;
 
 import java.util.ArrayList;
@@ -218,11 +219,20 @@ public class SkillSystem {
             } else if (skill.getSkillType() == SkillType.MAIN_MiaoShouHuiChun) {
                 costMagic = 30;
             }
+
+            if (ItemSystem.getInstance().isEquipedSpecialEffect(SpecialEffect.SE_ZhuanZhu)) {
+                //专注
+                if (Math.random() < 0.2) {
+                    costMagic = 0;
+                }
+            }
+
             RoleInfo roleInfo = RoleSystem.getInstance().getRoleInfo();
             if (roleInfo.getMp() < costMagic) {
                 GameEngine.getInstance().showCenterToast("魔法不足", 1000);
                 return null;
             }
+
             roleInfo.setMp(roleInfo.getMp() - costMagic);
         }
 

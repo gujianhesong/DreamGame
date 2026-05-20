@@ -5,6 +5,8 @@ import com.game.dream.bean.RoleInfo;
 import com.game.dream.bean.SkillInfo;
 import com.game.dream.enemy.Enemy;
 import com.game.dream.enums.SkillType;
+import com.game.dream.enums.SpecialEffect;
+import com.game.dream.system.ItemSystem;
 import com.game.dream.system.RoleSystem;
 import com.game.dream.system.SkillSystem;
 
@@ -19,7 +21,7 @@ public class BattleUtil {
      * @return
      */
     public static AttackResult caculatePlayerAttackDamage(Enemy enemy) {
-        boolean isCrit;
+        boolean isCrit = false;
         boolean isHit;
         int damageValue;
 
@@ -30,45 +32,42 @@ public class BattleUtil {
         float value = (playerHit - enemyDodge * 5) / 20000f;
         value = Math.max(-0.1f, Math.min(0.1f, value));
         float dodgeRatio = 0.1f - value;
-        if (Math.random() < dodgeRatio) {
-            //未命中
-            isHit = false;
-            isCrit = false;
-            damageValue = 0;
-        } else {
-            //命中
+
+        //是否命中
+        isHit = Math.random() < dodgeRatio;
+        if (ItemSystem.getInstance().isEquipedSpecialEffect(SpecialEffect.SE_BiZhong)) {
+            //必中武器
             isHit = true;
-            isCrit = false;
-
-            int playerAttack = roleInfo.getAttack();
-            int enemyDefense = enemy.getDefense();
-
-            //计算修炼加成
-            if (roleInfo.getPracticeAttack() > 0) {
-                for (int i = 0; i < roleInfo.getPracticeAttack(); i++) {
-                    playerAttack = (int) (playerAttack * 1.02 + 5);
-                }
-            }
-
-            //计算伤害
-            damageValue = calculateAttackDamage(playerAttack, enemyDefense);
-            damageValue = (int) (damageValue * (0.9 + Math.random() * 0.2));
-
-            float critRatio = 0.05f;
-            if (Math.random() < critRatio) {
-                //暴击几率
-                isCrit = true;
-                damageValue *= 2;
-            }
-
-            if (enemy.isJinGangState) {
-                //金刚护体: Reduce damage by 50% (example)
-                float ratio = 0.5f;
-                damageValue = (int) (damageValue * ratio);
-            }
-
-            damageValue = Math.max(damageValue, 1);
         }
+
+        int playerAttack = roleInfo.getAttack();
+        int enemyDefense = enemy.getDefense();
+
+        //计算修炼加成
+        if (roleInfo.getPracticeAttack() > 0) {
+            for (int i = 0; i < roleInfo.getPracticeAttack(); i++) {
+                playerAttack = (int) (playerAttack * 1.02 + 5);
+            }
+        }
+
+        //计算伤害
+        damageValue = calculateAttackDamage(playerAttack, enemyDefense);
+        damageValue = (int) (damageValue * (0.9 + Math.random() * 0.2));
+
+        float critRatio = 0.05f;
+        if (Math.random() < critRatio) {
+            //暴击几率
+            isCrit = true;
+            damageValue *= 2;
+        }
+
+        if (enemy.isJinGangState) {
+            //金刚护体: Reduce damage by 50% (example)
+            float ratio = 0.5f;
+            damageValue = (int) (damageValue * ratio);
+        }
+
+        damageValue = Math.max(damageValue, 1);
 
         AttackResult attackResult = new AttackResult();
         attackResult.damageValue = damageValue;
@@ -107,7 +106,7 @@ public class BattleUtil {
             return null;
         }
 
-        boolean isCrit;
+        boolean isCrit = false;
         boolean isHit;
         int damageValue = 0;
 
@@ -118,60 +117,58 @@ public class BattleUtil {
         float value = (playerHit - enemyDodge * 5) / 20000f;
         value = Math.max(-0.1f, Math.min(0.1f, value));
         float dodgeRatio = 0.1f - value;
-        if (Math.random() < dodgeRatio) {
-            //未命中
-            isHit = false;
-            isCrit = false;
-        } else {
-            //命中
+
+        //是否命中
+        isHit = Math.random() < dodgeRatio;
+        if (ItemSystem.getInstance().isEquipedSpecialEffect(SpecialEffect.SE_BiZhong)) {
+            //必中武器
             isHit = true;
-            isCrit = false;
+        }
 
-            float castBaseValue = 0f;
-            switch (skillType) {
-                case MAIN_FIREBALL:
-                    castBaseValue = 20f;
-                    break;
-                case MAIN_ICE_BOLT:
-                    castBaseValue = 15f;
-                    break;
-                case MAIN_LIGHTNING:
-                    castBaseValue = 30f;
-                    break;
-                case MAIN_WanJianGuiZong:
-                    castBaseValue = 25f;
-                    break;
+        float castBaseValue = 0f;
+        switch (skillType) {
+            case MAIN_FIREBALL:
+                castBaseValue = 20f;
+                break;
+            case MAIN_ICE_BOLT:
+                castBaseValue = 15f;
+                break;
+            case MAIN_LIGHTNING:
+                castBaseValue = 30f;
+                break;
+            case MAIN_WanJianGuiZong:
+                castBaseValue = 25f;
+                break;
+        }
+
+        if (castBaseValue > 0) {
+            //计算法术伤害
+            damageValue = calculateMagicDamage(castBaseValue, roleInfo.getMana(), enemy.getMana(), findSkillInfo.getLevel());
+
+            //计算修炼加成
+            if (roleInfo.getPracticeMagic() > 0) {
+                for (int i = 0; i < roleInfo.getPracticeMagic(); i++) {
+                    damageValue = (int) (damageValue * 1.02 + 5);
+                }
             }
 
-            if (castBaseValue > 0) {
-                //计算法术伤害
-                damageValue = calculateMagicDamage(castBaseValue, roleInfo.getMana(), enemy.getMana(), findSkillInfo.getLevel());
+            //浮动伤害
+            damageValue = (int) (damageValue * (0.9 + Math.random() * 0.2));
 
-                //计算修炼加成
-                if (roleInfo.getPracticeMagic() > 0) {
-                    for (int i = 0; i < roleInfo.getPracticeMagic(); i++) {
-                        damageValue = (int) (damageValue * 1.02 + 5);
-                    }
-                }
-
-                //浮动伤害
-                damageValue = (int) (damageValue * (0.9 + Math.random() * 0.2));
-
-                float critRatio = 0.01f;
-                if (Math.random() < critRatio) {
-                    //暴击几率
-                    isCrit = true;
-                    damageValue *= 2;
-                }
-
-                if (enemy.isJinGangState) {
-                    //金刚护体: Reduce damage by 50% (example)
-                    float ratio = 0.5f;
-                    damageValue = (int) (damageValue * ratio);
-                }
-
-                damageValue = Math.max(damageValue, 1);
+            float critRatio = 0.01f;
+            if (Math.random() < critRatio) {
+                //暴击几率
+                isCrit = true;
+                damageValue *= 2;
             }
+
+            if (enemy.isJinGangState) {
+                //金刚护体: Reduce damage by 50% (example)
+                float ratio = 0.5f;
+                damageValue = (int) (damageValue * ratio);
+            }
+
+            damageValue = Math.max(damageValue, 1);
         }
 
         if (skillType == SkillType.MAIN_DuWuZhen) {

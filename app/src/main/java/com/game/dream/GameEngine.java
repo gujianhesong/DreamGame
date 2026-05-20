@@ -17,6 +17,7 @@ import com.game.dream.enemy.Enemy;
 import com.game.dream.enemy.Tiger;
 import com.game.dream.enemy.Wolf;
 import com.game.dream.enums.SkillType;
+import com.game.dream.enums.SpecialEffect;
 import com.game.dream.item.EquipmentItem;
 import com.game.dream.item.ItemStack;
 import com.game.dream.panel.ItemsPanel;
@@ -130,6 +131,8 @@ public class GameEngine {
 
     // Resource recovery tracking (every 60 seconds)
     private long accumulatedRecoveryTime = 0; // Accumulated game time in milliseconds
+    private long accumulatedRecoveryTime_ZaiSheng = 0; // Accumulated game time in milliseconds
+    private long accumulatedRecoveryTime_MingSi = 0; // Accumulated game time in milliseconds
     private static final long RECOVERY_INTERVAL = 60000; // 60 seconds (1 minute)
 
     // Active skill effects on the map
@@ -161,8 +164,6 @@ public class GameEngine {
         this.accumulatedRecoveryTime = 0; // Initialize recovery timer
 
         initGame();
-
-        ItemSystem.getInstance().setGameEngine(this);
     }
 
     public static void release() {
@@ -428,6 +429,34 @@ public class GameEngine {
 
             // Reset accumulated time (keep remainder for accuracy)
             accumulatedRecoveryTime -= RECOVERY_INTERVAL;
+        }
+
+        if (ItemSystem.getInstance().isEquipedSpecialEffect(SpecialEffect.SE_ZaiSheng)) {
+            //再生
+            accumulatedRecoveryTime_ZaiSheng += deltaTime;
+            if (accumulatedRecoveryTime_ZaiSheng >= 5000) {
+                RoleInfo roleInfo = RoleSystem.getInstance().getRoleInfo();
+                int recoveryValue = (int) (roleInfo.getBloodCap() * 0.03);
+                roleInfo.setHp(Math.min(roleInfo.getBloodCap(), roleInfo.getHp() + recoveryValue));
+                GameEngine.getInstance().showFloatText("气血+" + recoveryValue, FloatingText.Type.HEAL);
+
+                // Reset accumulated time (keep remainder for accuracy)
+                accumulatedRecoveryTime_ZaiSheng -= 5000;
+            }
+        }
+
+        if (ItemSystem.getInstance().isEquipedSpecialEffect(SpecialEffect.SE_MingSi)) {
+            //冥思
+            accumulatedRecoveryTime_MingSi += deltaTime;
+            if (accumulatedRecoveryTime_MingSi >= 5000) {
+                RoleInfo roleInfo = RoleSystem.getInstance().getRoleInfo();
+                int recoveryValue = (int) (roleInfo.getMagicCap() * 0.03);
+                roleInfo.setMp(Math.min(roleInfo.getMagicCap(), roleInfo.getMp() + recoveryValue));
+                GameEngine.getInstance().showFloatText("魔法+" + recoveryValue, FloatingText.Type.HEAL_MAGIC);
+
+                // Reset accumulated time (keep remainder for accuracy)
+                accumulatedRecoveryTime_MingSi -= 5000;
+            }
         }
     }
 
@@ -1804,6 +1833,13 @@ public class GameEngine {
      */
     public void showWarning(String warning) {
         showNotification("⚠️ 警告", warning, CenterNotification.Type.WARNING);
+    }
+
+    /**
+     * Show center toast
+     */
+    public void showCenterToast(String message) {
+        showCenterToast(message, 1000);
     }
 
     /**

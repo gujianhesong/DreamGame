@@ -3,6 +3,7 @@ package com.game.dream.item;
 import com.game.dream.LogUtil;
 import com.game.dream.bean.EquipItemInfo;
 import com.game.dream.bean.ItemInfo;
+import com.game.dream.enums.SpecialEffect;
 import com.game.dream.system.ItemSystem;
 import com.game.dream.utils.Utils;
 
@@ -49,8 +50,10 @@ public class EquipCreator {
             return null;
         }
 
-        float gradeValue = 0;
-        int gradeCount = 0;
+        float baseGradeValue = 0;
+        float srcPropGradeValue = 0;
+        float specialEffectGradeValue = 0;
+
         EquipItemInfo equipItemInfo = new EquipItemInfo(newId, "");
         switch (slot) {
             case HELMET: {
@@ -63,9 +66,7 @@ public class EquipCreator {
                 equipItemInfo.setDefense((int) (30 * (level / 10 + 1) * waveRatio1));
                 equipItemInfo.setMp((int) (30 * (level / 10 + 1) * waveRatio2));
 
-                gradeValue += waveRatio1;
-                gradeValue += waveRatio2;
-                gradeCount += 2;
+                baseGradeValue = (waveRatio1 + waveRatio2) / 2;
             }
             break;
             case ACCESSORY: {
@@ -77,9 +78,7 @@ public class EquipCreator {
                 equipItemInfo.setMana((int) (25 * (level / 10 + 1) * waveRatio1));
                 equipItemInfo.setMp((int) (30 * (level / 10 + 1) * waveRatio2));
 
-                gradeValue += waveRatio1;
-                gradeValue += waveRatio2;
-                gradeCount += 2;
+                baseGradeValue = (waveRatio1 + waveRatio2) / 2;
             }
             break;
             case WEAPON: {
@@ -91,9 +90,7 @@ public class EquipCreator {
                 equipItemInfo.setHit((int) (45 * (level / 10 + 1) * waveRatio1));
                 equipItemInfo.setAttack((int) (35 * (level / 10 + 1) * waveRatio2));
 
-                gradeValue += waveRatio1;
-                gradeValue += waveRatio2;
-                gradeCount += 2;
+                baseGradeValue = (waveRatio1 + waveRatio2) / 2;
             }
             break;
             case ARMOR: {
@@ -103,8 +100,7 @@ public class EquipCreator {
                 float waveRatio1 = Utils.getWaveValueFloat(1, 0.3f);
                 equipItemInfo.setDefense((int) (45 * (level / 10 + 1) * waveRatio1));
 
-                gradeValue += waveRatio1;
-                gradeCount += 1;
+                baseGradeValue = waveRatio1;
             }
             break;
             case BELT: {
@@ -116,9 +112,7 @@ public class EquipCreator {
                 equipItemInfo.setDefense((int) (20 * (level / 10 + 1) * waveRatio1));
                 equipItemInfo.setHp((int) (50 * (level / 10 + 1) * waveRatio2));
 
-                gradeValue += waveRatio1;
-                gradeValue += waveRatio2;
-                gradeCount += 2;
+                baseGradeValue = (waveRatio1 + waveRatio2) / 2;
             }
             break;
             case SHOES: {
@@ -130,9 +124,7 @@ public class EquipCreator {
                 equipItemInfo.setSpeed((int) (25 * (level / 10 + 1) * waveRatio1));
                 equipItemInfo.setDodge((int) (30 * (level / 10 + 1) * waveRatio2));
 
-                gradeValue += waveRatio1;
-                gradeValue += waveRatio2;
-                gradeCount += 2;
+                baseGradeValue = (waveRatio1 + waveRatio2) / 2;
             }
             break;
         }
@@ -191,9 +183,7 @@ public class EquipCreator {
                     break;
             }
 
-            gradeValue += waveRatio1;
-            gradeValue += waveRatio2;
-            gradeCount += 2;
+            srcPropGradeValue = waveRatio1 + waveRatio2;
         } else if (srcPropRatio < 0.4) {
             //属性单加
             float waveRatio1 = Utils.getWaveValueFloat(1, 0.25f);
@@ -217,19 +207,87 @@ public class EquipCreator {
                     break;
             }
 
-            gradeValue += waveRatio1;
-            gradeCount += 1;
+            srcPropGradeValue = waveRatio1;
         } else {
             //无属性加成
         }
 
+        //特效
+        double specialEffectRatio = Math.random();
+        if (slot == EquipmentItem.Slot.WEAPON) {
+            //武器，有必中
+            if (specialEffectRatio < 0.01) {
+                equipItemInfo.setSpecialEffect(SpecialEffect.SE_WuJiBieXianZhi.name());
+                specialEffectGradeValue = 1.0f;
+            } else if (specialEffectRatio < 0.04) {
+                equipItemInfo.setSpecialEffect(SpecialEffect.SE_ShenNong.name());
+                specialEffectGradeValue = 0.4f;
+            } else if (specialEffectRatio < 0.07) {
+                equipItemInfo.setSpecialEffect(SpecialEffect.SE_ZhenBao.name());
+                specialEffectGradeValue = 0.1f;
+            } else if (specialEffectRatio < 0.10) {
+                equipItemInfo.setSpecialEffect(SpecialEffect.SE_Xixue.name());
+                specialEffectGradeValue = 0.6f;
+            } else if (specialEffectRatio < 0.13) {
+                equipItemInfo.setSpecialEffect(SpecialEffect.SE_ShenYou.name());
+                specialEffectGradeValue = 0.5f;
+            } else if (specialEffectRatio < 0.16) {
+                equipItemInfo.setSpecialEffect(SpecialEffect.SE_ZhuanZhu.name());
+                specialEffectGradeValue = 0.4f;
+            } else if (specialEffectRatio < 0.19) {
+                equipItemInfo.setSpecialEffect(SpecialEffect.SE_ZaiSheng.name());
+                specialEffectGradeValue = 0.4f;
+            } else if (specialEffectRatio < 0.22) {
+                equipItemInfo.setSpecialEffect(SpecialEffect.SE_MingSi.name());
+                specialEffectGradeValue = 0.4f;
+            } else if (specialEffectRatio < 0.25) {
+                equipItemInfo.setSpecialEffect(SpecialEffect.SE_BiZhong.name());
+                specialEffectGradeValue = 0.8f;
+            }
+        } else {
+            if (specialEffectRatio < 0.01) {
+                equipItemInfo.setSpecialEffect(SpecialEffect.SE_WuJiBieXianZhi.name());
+                specialEffectGradeValue = 1.0f;
+            } else if (specialEffectRatio < 0.04) {
+                equipItemInfo.setSpecialEffect(SpecialEffect.SE_ShenNong.name());
+                specialEffectGradeValue = 0.4f;
+            } else if (specialEffectRatio < 0.07) {
+                equipItemInfo.setSpecialEffect(SpecialEffect.SE_ZhenBao.name());
+                specialEffectGradeValue = 0.1f;
+            } else if (specialEffectRatio < 0.10) {
+                equipItemInfo.setSpecialEffect(SpecialEffect.SE_Xixue.name());
+                specialEffectGradeValue = 0.6f;
+            } else if (specialEffectRatio < 0.13) {
+                equipItemInfo.setSpecialEffect(SpecialEffect.SE_ShenYou.name());
+                specialEffectGradeValue = 0.5f;
+            } else if (specialEffectRatio < 0.16) {
+                equipItemInfo.setSpecialEffect(SpecialEffect.SE_ZhuanZhu.name());
+                specialEffectGradeValue = 0.4f;
+            } else if (specialEffectRatio < 0.19) {
+                equipItemInfo.setSpecialEffect(SpecialEffect.SE_ZaiSheng.name());
+                specialEffectGradeValue = 0.4f;
+            } else if (specialEffectRatio < 0.22) {
+                equipItemInfo.setSpecialEffect(SpecialEffect.SE_MingSi.name());
+                specialEffectGradeValue = 0.4f;
+            }
+        }
+
         //装备评分
-        /*float averageGradeValue = gradeValue / gradeCount;
-        if(averageGradeValue < 0.85){
+        float gradeValue = baseGradeValue + srcPropGradeValue * 0.8f + specialEffectGradeValue;
+        float maxGradeValue = 1.3f + 1.3f * 2 * 0.8f + 1.0f;
+        float minGradeValue = 0.7f + 0 + 0;
+        if (gradeValue - minGradeValue > (maxGradeValue - minGradeValue) * 0.8) {
+            equipItemInfo.setRatity(Item.Rarity.Rarity_5.name());
+        } else if (gradeValue - minGradeValue > (maxGradeValue - minGradeValue) * 0.6) {
+            equipItemInfo.setRatity(Item.Rarity.Rarity_4.name());
+        } else if (gradeValue - minGradeValue > (maxGradeValue - minGradeValue) * 0.4) {
+            equipItemInfo.setRatity(Item.Rarity.Rarity_3.name());
+        } else if (gradeValue - minGradeValue > (maxGradeValue - minGradeValue) * 0.2) {
+            equipItemInfo.setRatity(Item.Rarity.Rarity_2.name());
+        } else {
+            equipItemInfo.setRatity(Item.Rarity.Rarity_1.name());
+        }
 
-        }*/
-
-        EquipmentItem equipmentItem = new EquipmentItem(equipItemInfo);
-        return equipmentItem;
+        return new EquipmentItem(equipItemInfo);
     }
 }

@@ -9,6 +9,7 @@ import com.game.dream.bean.EquipItemInfo;
 import com.game.dream.bean.ItemInfo;
 import com.game.dream.bean.RoleInfo;
 import com.game.dream.enums.SpecialEffect;
+import com.game.dream.enums.XiLianType;
 import com.game.dream.item.ConsumableItem;
 import com.game.dream.item.EquipmentItem;
 import com.game.dream.item.Item;
@@ -256,7 +257,7 @@ public class ItemSystem {
         EquipmentItem equipment = (EquipmentItem) item;
 
         //装备等级限制
-        if (!TextUtils.equals(equipment.getEquipItemInfo().getSpecialEffect(), SpecialEffect.SE_WuJiBieXianZhi.name())
+        if (!isEquipHasSpecialEffect(equipment.getEquipItemInfo(), SpecialEffect.SE_WuJiBieXianZhi)
                 && RoleSystem.getInstance().getRoleInfo().getLevel() < equipment.getEquipItemInfo().getLevel()) {
             GameEngine.getInstance().showCenterToast("人物等级不足，无法装备");
             return false;
@@ -412,11 +413,61 @@ public class ItemSystem {
     public boolean isEquipedSpecialEffect(SpecialEffect specialEffect) {
         List<EquipItemInfo> equipItemInfos = ItemSystem.getInstance().getEquipInfos();
         for (EquipItemInfo item : equipItemInfos) {
-            if (item != null && TextUtils.equals(item.getSpecialEffect(), specialEffect.name())) {
-                return true;
+            if (item != null && item.getSpecialEffects() != null) {
+                for (String specialEffectItem : item.getSpecialEffects()) {
+                    if (TextUtils.equals(specialEffectItem, specialEffect.name())) {
+                        return true;
+                    }
+                }
             }
         }
         return false;
     }
 
+    public boolean isEquipHasSpecialEffect(EquipItemInfo equipItemInfo, SpecialEffect specialEffect) {
+        if (equipItemInfo != null && equipItemInfo.getSpecialEffects() != null) {
+            for (String specialEffectItem : equipItemInfo.getSpecialEffects()) {
+                if (TextUtils.equals(specialEffectItem, specialEffect.name())) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public float getTotalXiLianPropWithAllEquiped(XiLianType xiLianType) {
+        List<EquipItemInfo> equipItemInfos = ItemSystem.getInstance().getEquipInfos();
+        float value = 0f;
+        for (EquipItemInfo item : equipItemInfos) {
+            if (item != null) {
+                switch (xiLianType) {
+                    case XL_attackCritRatio:
+                        value += item.getAttackCritRatio();
+                        break;
+                    case XL_magicCritRatio:
+                        value += item.getMagicCritRatio();
+                        break;
+                    case XL_attackSpeedRatio:
+                        value += item.getAttackSpeedRatio();
+                        break;
+                    case XL_magicSpeedRatio:
+                        value += item.getMagicSpeedRatio();
+                        break;
+                    case XL_attackValueRatio:
+                        value += item.getAttackValueRatio();
+                        break;
+                    case XL_magicValueRatio:
+                        value += item.getMagicValueRatio();
+                        break;
+                    case XL_beAttackedValueRatio:
+                        value += item.getBeAttackedValueRatio();
+                        break;
+                    case XL_beMagicedValueRatio:
+                        value += item.getBeMagicedValueRatio();
+                        break;
+                }
+            }
+        }
+        return value;
+    }
 }

@@ -221,6 +221,20 @@ public class EquipInfoPanel {
             canvas.drawText(text, panelBounds.left + 25, currentY, paint);
             currentY += 50;
         }
+
+        //特效
+        String specialEffectText = EquipUtil.getEquipSpecialEffectText(equipItemInfo);
+        if (!specialEffectText.isEmpty()) {
+            canvas.drawText(specialEffectText, panelBounds.left + 25, currentY, paint);
+            currentY += 50;
+        }
+
+        //附加属性
+        String xiLianPropText = EquipUtil.getEquipXiLianPropText(equipItemInfo);
+        if (!xiLianPropText.isEmpty()) {
+            canvas.drawText(xiLianPropText, panelBounds.left + 25, currentY, paint);
+            currentY += 50;
+        }
     }
 
     /**

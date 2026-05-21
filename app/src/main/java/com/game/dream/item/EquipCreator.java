@@ -10,7 +10,11 @@ import com.game.dream.utils.Utils;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class EquipCreator {
 
@@ -213,62 +217,89 @@ public class EquipCreator {
         }
 
         //特效
-        double specialEffectRatio = Math.random();
+        float totalRatioValue = 100f;
+        LinkedHashMap<SpecialEffect, Integer> specialEffectRatioMap = new LinkedHashMap<>();
+        specialEffectRatioMap.put(SpecialEffect.SE_WuJiBieXianZhi, 1);
+        specialEffectRatioMap.put(SpecialEffect.SE_ShenNong, 3);
+        specialEffectRatioMap.put(SpecialEffect.SE_ZhenBao, 3);
+        specialEffectRatioMap.put(SpecialEffect.SE_Xixue, 3);
+        specialEffectRatioMap.put(SpecialEffect.SE_ShenYou, 3);
+        specialEffectRatioMap.put(SpecialEffect.SE_ZhuanZhu, 3);
+        specialEffectRatioMap.put(SpecialEffect.SE_ZaiSheng, 3);
+        specialEffectRatioMap.put(SpecialEffect.SE_MingSi, 3);
         if (slot == EquipmentItem.Slot.WEAPON) {
             //武器，有必中
-            if (specialEffectRatio < 0.01) {
-                equipItemInfo.setSpecialEffect(SpecialEffect.SE_WuJiBieXianZhi.name());
-                specialEffectGradeValue = 1.0f;
-            } else if (specialEffectRatio < 0.04) {
-                equipItemInfo.setSpecialEffect(SpecialEffect.SE_ShenNong.name());
-                specialEffectGradeValue = 0.4f;
-            } else if (specialEffectRatio < 0.07) {
-                equipItemInfo.setSpecialEffect(SpecialEffect.SE_ZhenBao.name());
-                specialEffectGradeValue = 0.1f;
-            } else if (specialEffectRatio < 0.10) {
-                equipItemInfo.setSpecialEffect(SpecialEffect.SE_Xixue.name());
-                specialEffectGradeValue = 0.6f;
-            } else if (specialEffectRatio < 0.13) {
-                equipItemInfo.setSpecialEffect(SpecialEffect.SE_ShenYou.name());
-                specialEffectGradeValue = 0.5f;
-            } else if (specialEffectRatio < 0.16) {
-                equipItemInfo.setSpecialEffect(SpecialEffect.SE_ZhuanZhu.name());
-                specialEffectGradeValue = 0.4f;
-            } else if (specialEffectRatio < 0.19) {
-                equipItemInfo.setSpecialEffect(SpecialEffect.SE_ZaiSheng.name());
-                specialEffectGradeValue = 0.4f;
-            } else if (specialEffectRatio < 0.22) {
-                equipItemInfo.setSpecialEffect(SpecialEffect.SE_MingSi.name());
-                specialEffectGradeValue = 0.4f;
-            } else if (specialEffectRatio < 0.25) {
-                equipItemInfo.setSpecialEffect(SpecialEffect.SE_BiZhong.name());
-                specialEffectGradeValue = 0.8f;
+            specialEffectRatioMap.put(SpecialEffect.SE_BiZhong, 3);
+        }
+
+        List<SpecialEffect> specialEffects = new ArrayList<>();
+
+        //计算特效1
+        double specialEffectRatio = Math.random();
+        int addValue = 0;
+        for (Map.Entry<SpecialEffect, Integer> entry : specialEffectRatioMap.entrySet()) {
+            float startValue = addValue / totalRatioValue;
+            float endValue = (addValue + entry.getValue()) / totalRatioValue;
+            if (specialEffectRatio >= startValue && specialEffectRatio < endValue) {
+                specialEffects.add(entry.getKey());
+                specialEffectRatioMap.remove(entry.getKey());
+                break;
             }
-        } else {
-            if (specialEffectRatio < 0.01) {
-                equipItemInfo.setSpecialEffect(SpecialEffect.SE_WuJiBieXianZhi.name());
-                specialEffectGradeValue = 1.0f;
-            } else if (specialEffectRatio < 0.04) {
-                equipItemInfo.setSpecialEffect(SpecialEffect.SE_ShenNong.name());
-                specialEffectGradeValue = 0.4f;
-            } else if (specialEffectRatio < 0.07) {
-                equipItemInfo.setSpecialEffect(SpecialEffect.SE_ZhenBao.name());
-                specialEffectGradeValue = 0.1f;
-            } else if (specialEffectRatio < 0.10) {
-                equipItemInfo.setSpecialEffect(SpecialEffect.SE_Xixue.name());
-                specialEffectGradeValue = 0.6f;
-            } else if (specialEffectRatio < 0.13) {
-                equipItemInfo.setSpecialEffect(SpecialEffect.SE_ShenYou.name());
-                specialEffectGradeValue = 0.5f;
-            } else if (specialEffectRatio < 0.16) {
-                equipItemInfo.setSpecialEffect(SpecialEffect.SE_ZhuanZhu.name());
-                specialEffectGradeValue = 0.4f;
-            } else if (specialEffectRatio < 0.19) {
-                equipItemInfo.setSpecialEffect(SpecialEffect.SE_ZaiSheng.name());
-                specialEffectGradeValue = 0.4f;
-            } else if (specialEffectRatio < 0.22) {
-                equipItemInfo.setSpecialEffect(SpecialEffect.SE_MingSi.name());
-                specialEffectGradeValue = 0.4f;
+            addValue += entry.getValue();
+        }
+
+        //计算特效2
+        specialEffectRatio = Math.random();
+        addValue = 0;
+        for (Map.Entry<SpecialEffect, Integer> entry : specialEffectRatioMap.entrySet()) {
+            float startValue = addValue / totalRatioValue;
+            float endValue = (addValue + entry.getValue()) / totalRatioValue;
+            if (specialEffectRatio >= startValue && specialEffectRatio < endValue) {
+                specialEffects.add(entry.getKey());
+                specialEffectRatioMap.remove(entry.getKey());
+                break;
+            }
+            addValue += entry.getValue();
+        }
+
+        equipItemInfo.setSpecialEffects(specialEffects.stream().map(new Function<SpecialEffect, String>() {
+            @Override
+            public String apply(SpecialEffect specialEffect) {
+                return specialEffect.name();
+            }
+        }).collect(Collectors.toList()));
+        //特效评分, 因为双特效的概率太小了，因此只用一个最大特效值进行评分，不然评分不太准确
+        if (!specialEffects.isEmpty()) {
+            for(SpecialEffect specialEffect : specialEffects){
+                switch (specialEffect) {
+                    case SE_WuJiBieXianZhi:
+                        specialEffectGradeValue = Math.max(1.0f, specialEffectGradeValue);
+                        break;
+                    case SE_ShenNong:
+                        specialEffectGradeValue = Math.max(0.4f, specialEffectGradeValue);
+                        break;
+                    case SE_ZhenBao:
+                        specialEffectGradeValue = Math.max(0.1f, specialEffectGradeValue);
+                        break;
+                    case SE_Xixue:
+                        specialEffectGradeValue = Math.max(0.6f, specialEffectGradeValue);
+                        break;
+                    case SE_ShenYou:
+                        specialEffectGradeValue = Math.max(0.4f, specialEffectGradeValue);
+                        break;
+                    case SE_ZhuanZhu:
+                        specialEffectGradeValue = Math.max(0.4f, specialEffectGradeValue);
+                        break;
+                    case SE_ZaiSheng:
+                        specialEffectGradeValue = Math.max(0.4f, specialEffectGradeValue);
+                        break;
+                    case SE_MingSi:
+                        specialEffectGradeValue = Math.max(0.4f, specialEffectGradeValue);
+                        break;
+                    case SE_BiZhong:
+                        specialEffectGradeValue = Math.max(0.4f, specialEffectGradeValue);
+                        break;
+                }
             }
         }
 

@@ -2,6 +2,8 @@ package com.game.dream.bean;
 
 import com.game.dream.item.Item;
 
+import java.util.List;
+
 public class EquipItemInfo extends ItemInfo {
     //装备类型，1:头盔,2:项链,3:武器,4:衣服,5:腰带,6:鞋子
     private int equipType;
@@ -26,7 +28,7 @@ public class EquipItemInfo extends ItemInfo {
     private int propMin;
 
     //特效
-    private String specialEffect;
+    private List<String> specialEffects;
     //装备评分值
     private String ratity;
 
@@ -43,12 +45,12 @@ public class EquipItemInfo extends ItemInfo {
     //附加属性
     private float attackCritRatio; //物理暴击几率
     private float magicCritRatio; //法术暴击几率
-    private float attackSpeedRatio; //攻击速度增幅
-    private float magicSpeedRatio; //法术速度增幅
-    private float attackValueRatio; //攻击伤害增幅
-    private float magicValueRatio; //法术伤害增幅
-    private float beAttackedValueRatio; //被攻击伤害减伤
-    private float beMagicedValueRatio; //被法术伤害减伤
+    private float attackSpeedRatio; //攻击速度增加
+    private float magicSpeedRatio; //法术速度增加
+    private float attackValueRatio; //攻击伤害增加
+    private float magicValueRatio; //法术伤害增加
+    private float beAttackedValueRatio; //被攻击伤害减少
+    private float beMagicedValueRatio; //被法术伤害减少
 
 
     public EquipItemInfo(int id, String name) {
@@ -175,12 +177,12 @@ public class EquipItemInfo extends ItemInfo {
         this.propMin = propMin;
     }
 
-    public String getSpecialEffect() {
-        return specialEffect;
+    public List<String> getSpecialEffects() {
+        return specialEffects;
     }
 
-    public void setSpecialEffect(String specialEffect) {
-        this.specialEffect = specialEffect;
+    public void setSpecialEffects(List<String> specialEffects) {
+        this.specialEffects = specialEffects;
     }
 
     public String getRatity() {

@@ -9,6 +9,7 @@ import com.game.dream.bean.SkillInfo;
 import com.game.dream.enemy.Enemy;
 import com.game.dream.enums.SkillType;
 import com.game.dream.enums.SpecialEffect;
+import com.game.dream.enums.XiLianType;
 import com.game.dream.item.ConsumableItem;
 import com.game.dream.item.Item;
 import com.game.dream.item.ItemStack;
@@ -171,7 +172,14 @@ public class Player extends Character {
      */
     public List<EnemyHitInfo> performMeleeAttack(java.util.List<Enemy> enemies) {
         long currentTime = System.currentTimeMillis();
-        if (currentTime - lastAttackTime < attackCooldown) {
+
+        long finalAttackCooldown = attackCooldown;
+        float attackSpeedRatio = ItemSystem.getInstance().getTotalXiLianPropWithAllEquiped(XiLianType.XL_attackSpeedRatio);
+        if (attackSpeedRatio > 0) {
+            finalAttackCooldown = (int) (finalAttackCooldown * (1f - attackSpeedRatio));
+        }
+
+        if (currentTime - lastAttackTime < finalAttackCooldown) {
             return null; // Still on cooldown
         }
 
@@ -241,7 +249,15 @@ public class Player extends Character {
     public float getAttackCooldownProgress() {
         long currentTime = System.currentTimeMillis();
         long elapsed = currentTime - lastAttackTime;
-        return Math.min(1.0f, (float) elapsed / attackCooldown);
+
+        //装备攻击速度加成
+        long finalAttackCooldown = attackCooldown;
+        float attackSpeedRatio = ItemSystem.getInstance().getTotalXiLianPropWithAllEquiped(XiLianType.XL_attackSpeedRatio);
+        if (attackSpeedRatio > 0) {
+            finalAttackCooldown = (int) (finalAttackCooldown * (1f - attackSpeedRatio));
+        }
+
+        return Math.min(1.0f, (float) elapsed / finalAttackCooldown);
     }
 
     /**
@@ -258,6 +274,12 @@ public class Player extends Character {
         SkillInfo skillInfo = SkillSystem.getInstance().getPlayerSkill(skillType);
         if (skillInfo != null) {
             magicCooldown = skillInfo.getCooldownSeconds() * 1000L;
+
+            //装备法术速度加成
+            float magicSpeedRatio = ItemSystem.getInstance().getTotalXiLianPropWithAllEquiped(XiLianType.XL_magicSpeedRatio);
+            if (magicSpeedRatio > 0) {
+                magicCooldown = (int) (magicCooldown * (1f - magicSpeedRatio));
+            }
         }
         long elapsed = currentTime - lastMagicTime;
         return Math.min(1.0f, (float) elapsed / magicCooldown);

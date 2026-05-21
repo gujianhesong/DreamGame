@@ -1,7 +1,10 @@
 package com.game.dream.utils;
 
+import android.text.TextUtils;
+
 import com.game.dream.bean.AddPointResult;
 import com.game.dream.bean.EquipItemInfo;
+import com.game.dream.enums.SpecialEffect;
 
 public class EquipUtil {
     private static final int BASE_HP_VALUE = 40;
@@ -146,6 +149,79 @@ public class EquipUtil {
             }
         }
         return text;
+    }
+
+    public static String getEquipSpecialEffectText(EquipItemInfo equipItemInfo) {
+        String text = "";
+        if (equipItemInfo != null && equipItemInfo.getSpecialEffects() != null && !equipItemInfo.getSpecialEffects().isEmpty()) {
+            boolean isFirst = true;
+            for (String specialEffectItem : equipItemInfo.getSpecialEffects()) {
+                SpecialEffect specialEffect = SpecialEffect.getSpecialEffectWithName(specialEffectItem);
+                if (specialEffect != null) {
+                    if (isFirst) {
+                        text = "特效：";
+                    } else {
+                        text = text + "，";
+                    }
+                    text = text + specialEffect.getDesc();
+
+                    isFirst = false;
+                }
+            }
+        }
+
+        return text;
+    }
+
+    public static String getEquipXiLianPropText(EquipItemInfo equipItemInfo) {
+        String text = "附加属性：";
+        boolean hasXiLianProp = false;
+        if (equipItemInfo.getAttackCritRatio() > 0) {
+            text += "\n";
+            text += "物理暴击几率: +" + equipItemInfo.getAttackCritRatio();
+            hasXiLianProp = true;
+        }
+        if (equipItemInfo.getMagicCritRatio() > 0) {
+            text += "\n";
+            text += "法术暴击几率: +" + equipItemInfo.getMagicCritRatio();
+            hasXiLianProp = true;
+        }
+        if (equipItemInfo.getAttackSpeedRatio() > 0) {
+            text += "\n";
+            text += "攻击速度增幅: +" + equipItemInfo.getAttackSpeedRatio();
+            hasXiLianProp = true;
+        }
+        if (equipItemInfo.getMagicSpeedRatio() > 0) {
+            text += "\n";
+            text += "法术速度增幅: +" + equipItemInfo.getMagicSpeedRatio();
+            hasXiLianProp = true;
+        }
+        if (equipItemInfo.getAttackValueRatio() > 0) {
+            text += "\n";
+            text += "攻击伤害增幅: +" + equipItemInfo.getAttackValueRatio();
+            hasXiLianProp = true;
+        }
+        if (equipItemInfo.getMagicValueRatio() > 0) {
+            text += "\n";
+            text += "法术伤害增幅: +" + equipItemInfo.getMagicValueRatio();
+            hasXiLianProp = true;
+        }
+        if (equipItemInfo.getBeAttackedValueRatio() > 0) {
+            text += "\n";
+            text += "被攻击伤害减伤: +" + equipItemInfo.getBeAttackedValueRatio();
+            hasXiLianProp = true;
+        }
+        if (equipItemInfo.getBeMagicedValueRatio() > 0) {
+            text += "\n";
+            text += "被法术伤害减伤: +" + equipItemInfo.getBeMagicedValueRatio();
+            hasXiLianProp = true;
+        }
+
+        if (hasXiLianProp) {
+            return text;
+        }
+
+        return "";
     }
 
     public static AddPointResult getStoneAddResult(EquipItemInfo equipItemInfo) {

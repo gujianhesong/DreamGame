@@ -6,6 +6,7 @@ import com.game.dream.bean.SkillInfo;
 import com.game.dream.enemy.Enemy;
 import com.game.dream.enums.SkillType;
 import com.game.dream.enums.SpecialEffect;
+import com.game.dream.enums.XiLianType;
 import com.game.dream.system.ItemSystem;
 import com.game.dream.system.RoleSystem;
 import com.game.dream.system.SkillSystem;
@@ -43,18 +44,26 @@ public class BattleUtil {
         int playerAttack = roleInfo.getAttack();
         int enemyDefense = enemy.getDefense();
 
-        //计算修炼加成
-        if (roleInfo.getPracticeAttack() > 0) {
-            for (int i = 0; i < roleInfo.getPracticeAttack(); i++) {
-                playerAttack = (int) (playerAttack * 1.02 + 5);
-            }
+        //装备攻击伤害增加(计算伤害结果前的加成)
+        float attackValueRatio = ItemSystem.getInstance().getTotalXiLianPropWithAllEquiped(XiLianType.XL_attackValueRatio);
+        if (attackValueRatio > 0) {
+            playerAttack = (int) (playerAttack * (1f + attackValueRatio));
         }
 
         //计算伤害
         damageValue = calculateAttackDamage(playerAttack, enemyDefense);
+
+        //计算修炼加成(计算伤害结果后的加成)
+        if (roleInfo.getPracticeAttack() > 0) {
+            for (int i = 0; i < roleInfo.getPracticeAttack(); i++) {
+                damageValue = (int) (damageValue * 1.02 + 5);
+            }
+        }
+
         damageValue = (int) (damageValue * (0.9 + Math.random() * 0.2));
 
         float critRatio = 0.05f;
+        critRatio += ItemSystem.getInstance().getTotalXiLianPropWithAllEquiped(XiLianType.XL_attackCritRatio);
         if (Math.random() < critRatio) {
             //暴击几率
             isCrit = true;
@@ -142,10 +151,19 @@ public class BattleUtil {
         }
 
         if (castBaseValue > 0) {
-            //计算法术伤害
-            damageValue = calculateMagicDamage(castBaseValue, roleInfo.getMana(), enemy.getMana(), findSkillInfo.getLevel());
+            int roleMana = roleInfo.getMana();
+            int enemyMana = roleInfo.getMana();
 
-            //计算修炼加成
+            //装备法术伤害增加(计算伤害结果前的加成)
+            float magicValueRatio = ItemSystem.getInstance().getTotalXiLianPropWithAllEquiped(XiLianType.XL_magicValueRatio);
+            if (magicValueRatio > 0) {
+                roleMana = (int) (roleMana * (1f + magicValueRatio));
+            }
+
+            //计算法术伤害
+            damageValue = calculateMagicDamage(castBaseValue, roleMana, enemyMana, findSkillInfo.getLevel());
+
+            //计算修炼加成(计算伤害结果后的加成)
             if (roleInfo.getPracticeMagic() > 0) {
                 for (int i = 0; i < roleInfo.getPracticeMagic(); i++) {
                     damageValue = (int) (damageValue * 1.02 + 5);
@@ -156,6 +174,7 @@ public class BattleUtil {
             damageValue = (int) (damageValue * (0.9 + Math.random() * 0.2));
 
             float critRatio = 0.01f;
+            critRatio += ItemSystem.getInstance().getTotalXiLianPropWithAllEquiped(XiLianType.XL_magicCritRatio);
             if (Math.random() < critRatio) {
                 //暴击几率
                 isCrit = true;
@@ -173,7 +192,7 @@ public class BattleUtil {
 
         if (skillType == SkillType.MAIN_DuWuZhen) {
             //根据怪物血量百分比扣除血量
-            isCrit = true;
+            isHit = true;
             float ratio = 0.02f + 0.002f * findSkillInfo.getLevel();
             damageValue = (int) (enemy.getHealth() * ratio);
             damageValue = Math.max(Math.min(damageValue, 200), 1);
@@ -294,15 +313,22 @@ public class BattleUtil {
             int enemyAttack = enemy.getAttackDamage();
             int playerDefense = roleInfo.getDefense();
 
-            //计算修炼加成
-            if (roleInfo.getPracticeDefense() > 0) {
-                for (int i = 0; i < roleInfo.getPracticeDefense(); i++) {
-                    playerDefense = (int) (playerDefense * 1.02 + 5);
-                }
+            //装备被攻击伤害减少(计算伤害结果前加成)
+            float beAttackedValueRatio = ItemSystem.getInstance().getTotalXiLianPropWithAllEquiped(XiLianType.XL_beAttackedValueRatio);
+            if (beAttackedValueRatio > 0) {
+                enemyAttack = (int) (enemyAttack * (1f - beAttackedValueRatio));
             }
 
             //计算伤害
             damageValue = calculateAttackDamage(enemyAttack, playerDefense);
+
+            //计算修炼加成(计算伤害结果后加成)
+            if (roleInfo.getPracticeDefense() > 0) {
+                for (int i = 0; i < roleInfo.getPracticeDefense(); i++) {
+                    damageValue = (int) (damageValue * 0.98 - 5);
+                }
+            }
+
             damageValue = (int) (damageValue * (0.9 + Math.random() * 0.2));
 
             float critRatio = 0.05f;
@@ -376,10 +402,20 @@ public class BattleUtil {
             }
 
             if (castBaseValue > 0) {
+                int enemyMana = enemy.getMana();
+                int roleMana = roleInfo.getMana();
+
+                //装备被法术伤害减少(计算伤害结果前加成)
+                float beMagicedValueRatio = ItemSystem.getInstance().getTotalXiLianPropWithAllEquiped(XiLianType.XL_beMagicedValueRatio);
+                if (beMagicedValueRatio > 0) {
+                    enemyMana = (int) (enemyMana * (1f - beMagicedValueRatio));
+                }
+
                 //计算法术伤害
-                damageValue = calculateEnemyMagicDamage(castBaseValue, enemy.getMana(), roleInfo.getMana(), skillLevel);
+                damageValue = calculateEnemyMagicDamage(castBaseValue, enemyMana, roleMana, skillLevel);
                 LogUtil.i("aaaaaaaaaaaaaaa 怪物法术输出伤害 " + damageValue);
-                //计算修炼加成
+
+                //计算修炼加成(计算伤害结果后加成)
                 if (roleInfo.getPracticeMagicDefense() > 0) {
                     for (int i = 0; i < roleInfo.getPracticeMagicDefense(); i++) {
                         damageValue = (int) (damageValue * 0.98 - 5);

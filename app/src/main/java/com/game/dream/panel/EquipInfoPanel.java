@@ -128,6 +128,7 @@ public class EquipInfoPanel {
         Paint paint = new Paint();
         paint.setAntiAlias(true);
 
+        if (selectedEquipment == null) return;
         EquipmentItem equipment = (EquipmentItem) selectedEquipment.getItem();
 
         // Panel background (semi-transparent dark)

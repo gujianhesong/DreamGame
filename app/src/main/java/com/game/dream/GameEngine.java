@@ -18,6 +18,7 @@ import com.game.dream.enemy.Tiger;
 import com.game.dream.enemy.Wolf;
 import com.game.dream.enums.SkillType;
 import com.game.dream.enums.SpecialEffect;
+import com.game.dream.item.EquipCreator;
 import com.game.dream.item.EquipmentItem;
 import com.game.dream.item.ItemStack;
 import com.game.dream.panel.ItemsPanel;
@@ -92,6 +93,11 @@ public class GameEngine {
     // Skills panel
     private SkillsPanel skillsPanel;
 
+
+    // For tracking scroll gestures
+    private float lastSkillsPanelTouchY = 0;
+    private float lastItemsPanelTouchY = 0; // Add this line
+
     // Attack buttons
     private Rect meleeAttackButton;
 
@@ -105,8 +111,6 @@ public class GameEngine {
     // Skills button
     private Rect skillsButton;
     // For tracking scroll gestures
-
-    private float lastSkillsPanelTouchY = 0;
 
     private boolean meleeAttackPressed;
     private boolean magicAttackPressed;
@@ -1333,9 +1337,15 @@ public class GameEngine {
         }
         // If equipment panel is visible, check if touching it first
         if (itemsPanel != null && itemsPanel.isVisible()) {
-            if (action == MotionEvent.ACTION_DOWN && itemsPanel.handleTouch(x, y)) {
-                return true; // Panel handled the touch
+            switch (action) {
+                case MotionEvent.ACTION_DOWN:
+                    return itemsPanel.handleTouchDown(x, y);
+                case MotionEvent.ACTION_MOVE:
+                    return itemsPanel.handleTouchMove(x, y);
+                case MotionEvent.ACTION_UP:
+                    return itemsPanel.handleTouchUp(x, y);
             }
+            return true;
         }
         // If skills panel is visible, check if touching it first
         if (skillsPanel != null && skillsPanel.isVisible()) {

@@ -418,7 +418,7 @@ public class SkillsPanel {
                 drawDowngradeButton(canvas, paint, pair.downgradeButton, skill.canDowngrade());
 
                 if (skill.isMainSkill()) {
-                    drawEquipButton(canvas, paint, skillButtons.get(i).equipButton, skill);
+                    drawEquipButton(canvas, paint, pair.equipButton, skill);
                 }
             }
         }

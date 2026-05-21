@@ -41,6 +41,17 @@ public class ItemsPanel {
     private static final int SLOT_GAP = 8;
     private static final int SLOT_GAP_EQUIP = 20;
 
+    // Scrolling support for inventory
+    private float inventoryScrollOffset = 0;
+    private float maxInventoryScrollOffset = 0;
+    private float lastTouchY = 0;
+    private boolean isDragging = false;
+
+    // For detecting click vs scroll
+    private float touchDownX = 0;
+    private float touchDownY = 0;
+    private boolean isTouchingInventory = false;
+
     // Item info popup
     private ItemInfoPanel itemInfoPanel;
     // Equipment info popup
@@ -301,7 +312,7 @@ public class ItemsPanel {
      * Draw inventory grid
      */
     private void drawInventoryGrid(Canvas canvas, Paint paint) {
-        // Section title - positioned above the grid
+        // Section title
         paint.setColor(Color.rgb(200, 200, 220));
         paint.setTextSize(24);
         paint.setTextAlign(Paint.Align.LEFT);
@@ -310,31 +321,66 @@ public class ItemsPanel {
 
         List<ItemStack> items = ItemSystem.getInstance().getItems();
 
-        // Draw each inventory slot
-        for (int row = 0; row < INVENTORY_ROWS; row++) {
+        // 1. Calculate total rows needed based on actual item count
+        int totalRowsNeeded = (int) Math.ceil((double) items.size() / INVENTORY_COLS);
+        if (totalRowsNeeded < INVENTORY_ROWS) totalRowsNeeded = INVENTORY_ROWS; // Keep at least the visible area
+
+        // 2. Update max scroll offset
+        int totalContentHeight = totalRowsNeeded * (SLOT_SIZE + SLOT_GAP);
+        int visibleHeight = INVENTORY_ROWS * (SLOT_SIZE + SLOT_GAP);
+        maxInventoryScrollOffset = Math.max(0, totalContentHeight - visibleHeight);
+
+        // Clamp scroll offset
+        inventoryScrollOffset = Math.max(0, Math.min(inventoryScrollOffset, maxInventoryScrollOffset));
+
+        // 3. Define the clipping area (the visible inventory box)
+        Rect clipRect = new Rect(
+                inventorySlots[0][0].left - 10,
+                inventorySlots[0][0].top - 30,
+                inventorySlots[INVENTORY_ROWS-1][INVENTORY_COLS-1].right + 10,
+                inventorySlots[INVENTORY_ROWS-1][INVENTORY_COLS-1].bottom + 10
+        );
+        canvas.save();
+        canvas.clipRect(clipRect);
+
+        // 4. Loop through ALL rows needed, not just the visible 5
+        for (int row = 0; row < totalRowsNeeded; row++) {
             for (int col = 0; col < INVENTORY_COLS; col++) {
-                Rect slot = inventorySlots[row][col];
                 int index = row * INVENTORY_COLS + col;
 
-                // Slot background (always draw)
-                paint.setColor(Color.argb(80, 30, 30, 40));
-                canvas.drawRoundRect(slot.left, slot.top, slot.right, slot.bottom, 5, 5, paint);
+                // Optimization: Stop if we've drawn all items
+                if (index >= items.size() && row >= INVENTORY_ROWS) break;
 
-                // Slot border (default)
-                paint.setStyle(Paint.Style.STROKE);
-                paint.setStrokeWidth(2);
-                paint.setColor(Color.rgb(60, 60, 80));
+                // Calculate the Y position with scroll offset
+                // We use the base slot Y as a reference point
+                int baseSlotY = inventorySlots[0][0].top + row * (SLOT_SIZE + SLOT_GAP);
+                int currentY = (int)(baseSlotY - inventoryScrollOffset);
+
+                Rect drawSlot = new Rect(
+                        inventorySlots[0][0].left + col * (SLOT_SIZE + SLOT_GAP),
+                        currentY,
+                        inventorySlots[0][0].left + col * (SLOT_SIZE + SLOT_GAP) + SLOT_SIZE,
+                        currentY + SLOT_SIZE
+                );
+
+                // Skip drawing if completely outside the visible area (Optimization)
+                if (drawSlot.bottom < clipRect.top || drawSlot.top > clipRect.bottom) continue;
+
+                // Slot background
+                paint.setColor(Color.argb(80, 30, 30, 40));
+                canvas.drawRoundRect(drawSlot.left, drawSlot.top, drawSlot.right, drawSlot.bottom, 5, 5, paint);
 
                 // Draw item if exists
                 if (index < items.size()) {
                     ItemStack stack = items.get(index);
                     Item item = stack.getItem();
 
-                    // Item border color based on rarity (draw border only, no fill)
-                    paint.setColor(item.getColor());
+                    // Item border
+                    paint.setStyle(Paint.Style.STROKE);
                     paint.setStrokeWidth(3);
-                    canvas.drawRoundRect(slot.left + 2, slot.top + 2,
-                            slot.right - 2, slot.bottom - 2, 4, 4, paint);
+                    paint.setColor(item.getColor());
+                    canvas.drawRoundRect(drawSlot.left + 2, drawSlot.top + 2,
+                            drawSlot.right - 2, drawSlot.bottom - 2, 4, 4, paint);
 
                     // Item name
                     paint.setStyle(Paint.Style.FILL);
@@ -343,10 +389,8 @@ public class ItemsPanel {
                     paint.setTextAlign(Paint.Align.CENTER);
 
                     String itemName = item.getName();
-                    if (itemName.length() > 5) {
-                        itemName = itemName.substring(0, 5) + "..";
-                    }
-                    canvas.drawText(itemName, slot.centerX(), slot.centerY() - 2, paint);
+                    if (itemName.length() > 5) itemName = itemName.substring(0, 5) + "..";
+                    canvas.drawText(itemName, drawSlot.centerX(), drawSlot.centerY() - 2, paint);
 
                     // Quantity
                     if (stack.getQuantity() > 1) {
@@ -354,17 +398,40 @@ public class ItemsPanel {
                         paint.setColor(Color.YELLOW);
                         paint.setTextAlign(Paint.Align.RIGHT);
                         canvas.drawText("x" + stack.getQuantity(),
-                                slot.right - 5, slot.bottom - 5, paint);
+                                drawSlot.right - 5, drawSlot.bottom - 5, paint);
                     }
                 } else {
-                    // Empty slot - draw default border
-                    canvas.drawRoundRect(slot.left, slot.top, slot.right, slot.bottom, 5, 5, paint);
+                    // Empty slot border
+                    paint.setStyle(Paint.Style.STROKE);
+                    paint.setStrokeWidth(2);
+                    paint.setColor(Color.rgb(60, 60, 80));
+                    canvas.drawRoundRect(drawSlot.left, drawSlot.top, drawSlot.right, drawSlot.bottom, 5, 5, paint);
                 }
-
-                // Reset paint style
                 paint.setStyle(Paint.Style.FILL);
             }
         }
+
+        canvas.restore();
+
+        // Draw scrollbar
+        if (maxInventoryScrollOffset > 0) {
+            drawScrollbar(canvas, paint, clipRect);
+        }
+    }
+
+    private void drawScrollbar(Canvas canvas, Paint paint, Rect area) {
+        int scrollbarWidth = 6;
+        int scrollbarX = area.right - 10;
+
+        float totalHeight = area.height() + maxInventoryScrollOffset;
+        float scrollbarHeight = Math.max(40, (area.height() / totalHeight) * area.height());
+        float scrollbarY = area.top + (inventoryScrollOffset / maxInventoryScrollOffset) * (area.height() - scrollbarHeight);
+
+        paint.setColor(Color.argb(50, 100, 100, 100));
+        canvas.drawRoundRect(scrollbarX, area.top, scrollbarX + scrollbarWidth, area.bottom, 3, 3, paint);
+
+        paint.setColor(Color.argb(150, 150, 150, 150));
+        canvas.drawRoundRect(scrollbarX, scrollbarY, scrollbarX + scrollbarWidth, scrollbarY + scrollbarHeight, 3, 3, paint);
     }
 
     /**
@@ -407,9 +474,9 @@ public class ItemsPanel {
     }
 
     /**
-     * Handle touch event
+     * Handle touch event (Called on ACTION_DOWN)
      */
-    public boolean handleTouch(float x, float y) {
+    public boolean handleTouchDown(float x, float y) {
         if (!isVisible) return false;
 
         // If item info panel is visible, let it handle the touch first
@@ -484,30 +551,100 @@ public class ItemsPanel {
             return true;
         }
 
-        // Check inventory slots (use or equip)
-        for (int row = 0; row < INVENTORY_ROWS; row++) {
-            for (int col = 0; col < INVENTORY_COLS; col++) {
-                if (inventorySlots[row][col].contains((int)x, (int)y)) {
+        // Reset drag state
+        isDragging = false;
+        touchDownX = x;
+        touchDownY = y;
+
+        // Check if touching inventory area
+        Rect inventoryArea = new Rect(
+                inventorySlots[0][0].left,
+                inventorySlots[0][0].top,
+                inventorySlots[INVENTORY_ROWS-1][INVENTORY_COLS-1].right,
+                inventorySlots[INVENTORY_ROWS-1][INVENTORY_COLS-1].bottom
+        );
+
+        if (inventoryArea.contains((int)x, (int)y)) {
+            isTouchingInventory = true;
+            // Don't show popup yet, wait for ACTION_UP or confirm it's not a drag
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Handle touch release (Called on ACTION_UP)
+     */
+    public boolean handleTouchUp(float x, float y) {
+        if (!isVisible) return false;
+        if (!isTouchingInventory) return false;
+
+        // If it wasn't a drag, treat it as a click
+        if (!isDragging) {
+            // Perform the item click logic here
+            List<ItemStack> items = ItemSystem.getInstance().getItems();
+
+            // 1. Calculate total rows needed dynamically
+            int totalRowsNeeded = (int) Math.ceil((double) items.size() / INVENTORY_COLS);
+
+            // 2. Loop through ALL rows that contain items
+            for (int row = 0; row < totalRowsNeeded; row++) {
+                for (int col = 0; col < INVENTORY_COLS; col++) {
                     int index = row * INVENTORY_COLS + col;
-                    if (index < ItemSystem.getInstance().getItems().size()) {
-                        // Show appropriate info panel based on item type
-                        ItemStack stack = ItemSystem.getInstance().getItems().get(index);
-                        int centerX = inventorySlots[row][col].centerX();
-                        int centerY = inventorySlots[row][col].centerY();
+
+                    // Safety check: don't go beyond the list size
+                    if (index >= items.size()) break;
+
+                    // 3. Calculate the EXACT same position as used in drawInventoryGrid
+                    int baseSlotY = inventorySlots[0][0].top + row * (SLOT_SIZE + SLOT_GAP);
+                    int currentTop = (int)(baseSlotY - inventoryScrollOffset);
+
+                    Rect hitSlot = new Rect(
+                            inventorySlots[0][0].left + col * (SLOT_SIZE + SLOT_GAP),
+                            currentTop,
+                            inventorySlots[0][0].left + col * (SLOT_SIZE + SLOT_GAP) + SLOT_SIZE,
+                            currentTop + SLOT_SIZE
+                    );
+
+                    // 4. Check if the touch point is inside this calculated slot
+                    if (hitSlot.contains((int)x, (int)y)) {
+                        ItemStack stack = items.get(index);
+
+                        // Show the appropriate info panel
                         if (stack.getItem().getType() == Item.Type.EQUIPMENT) {
-                            // For equipment in inventory, show item info with equip option
-                            EquipmentItem equipmentItem = (EquipmentItem) stack.getItem();
-                            showEquipmentInfo(equipmentItem, false, index, centerX, centerY);
+                            showEquipmentInfo((EquipmentItem) stack.getItem(), false, index, hitSlot.centerX(), hitSlot.centerY());
                         } else {
-                            // For non-equipment items, show simple item info
-                            showItemInfo(stack, index, centerX, centerY);
+                            showItemInfo(stack, index, hitSlot.centerX(), hitSlot.centerY());
                         }
+
+                        isTouchingInventory = false;
                         return true;
                     }
                 }
             }
         }
 
+        isTouchingInventory = false;
+        return false;
+    }
+
+    /**
+     * Handle move (Called on ACTION_MOVE)
+     */
+    public boolean handleTouchMove(float x, float y) {
+        if (!isVisible || !isTouchingInventory) return false;
+
+        float deltaY = y - touchDownY;
+
+        // If moved more than 10 pixels, consider it a drag
+        if (Math.abs(deltaY) > 10) {
+            isDragging = true;
+            inventoryScrollOffset -= deltaY;
+            inventoryScrollOffset = Math.max(0, Math.min(inventoryScrollOffset, maxInventoryScrollOffset));
+            touchDownY = y; // Reset reference for smooth scrolling
+            return true;
+        }
         return false;
     }
 

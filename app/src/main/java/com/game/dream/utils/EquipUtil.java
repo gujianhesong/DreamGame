@@ -1,10 +1,10 @@
 package com.game.dream.utils;
 
-import android.text.TextUtils;
-
+import com.game.dream.LogUtil;
 import com.game.dream.bean.AddPointResult;
 import com.game.dream.bean.EquipItemInfo;
 import com.game.dream.enums.SpecialEffect;
+import com.game.dream.item.Item;
 
 public class EquipUtil {
     private static final int BASE_HP_VALUE = 40;
@@ -264,5 +264,88 @@ public class EquipUtil {
             value += curValue;
         }
         return (int) value;
+    }
+
+    public static Item.Rarity caculateEquipRarity(EquipItemInfo equipItemInfo) {
+        if (equipItemInfo != null) {
+            float baseRarityValue = 0;
+            float srcPropRarityValue = 0;
+
+            int level = equipItemInfo.getLevel();
+            switch (equipItemInfo.getEquipType()) {
+                case 1: {
+                    float defenseRatio = equipItemInfo.getDefense() * 1f / (30 * (level / 10f + 1));
+                    float mpRatio = equipItemInfo.getMp() * 1f / (30 * (level / 10f + 1));
+
+                    baseRarityValue = ((defenseRatio + mpRatio) - 0.7f * 2) / (1.3f * 2 - 0.7f * 2) * 5;
+                }
+                break;
+                case 2: {
+                    float manaRatio = equipItemInfo.getMana() * 1f / (25 * (level / 10f + 1));
+                    float mpRatio = equipItemInfo.getMp() * 1f / (30 * (level / 10f + 1));
+
+                    baseRarityValue = ((manaRatio + mpRatio) - 0.7f * 2) / (1.3f * 2 - 0.7f * 2) * 5;
+                }
+                break;
+                case 3: {
+                    float hitRatio = equipItemInfo.getHit() * 1f / (45 * (level / 10f + 1));
+                    float attackRatio = equipItemInfo.getAttack() * 1f / (35 * (level / 10f + 1));
+
+                    baseRarityValue = ((hitRatio + attackRatio) - 0.7f * 2) / (1.3f * 2 - 0.7f * 2) * 5;
+                }
+                break;
+                case 4: {
+                    float defenseRatio = equipItemInfo.getDefense() * 1f / (50 * (level / 10f + 1));
+
+                    baseRarityValue = (defenseRatio - 0.7f) / (1.3f - 0.7f) * 5;
+                }
+                break;
+                case 5: {
+                    float defenseRatio = equipItemInfo.getDefense() * 1f / (20 * (level / 10f + 1));
+                    float hpRatio = equipItemInfo.getHp() * 1f / (50 * (level / 10f + 1));
+
+                    baseRarityValue = ((defenseRatio + hpRatio) - 0.7f * 2) / (1.3f * 2 - 0.7f * 2) * 5;
+                }
+                break;
+                case 6: {
+                    float speedRatio = equipItemInfo.getSpeed() * 1f / (25 * (level / 10f + 1));
+                    float dodgeRatio = equipItemInfo.getDodge() * 1f / (30 * (level / 10f + 1));
+
+                    baseRarityValue = ((speedRatio + dodgeRatio) - 0.7f * 2) / (1.3f * 2 - 0.7f * 2) * 5;
+                }
+                break;
+            }
+
+            int srcPropValue = equipItemInfo.getPropTi() + equipItemInfo.getPropMo() + equipItemInfo.getPropLi()
+                    + equipItemInfo.getPropNai() + equipItemInfo.getPropMin();
+            if (srcPropValue > 0) {
+                srcPropRarityValue = (srcPropValue / (10f + 3 * (level / 10f)) - 0.75f) / (2.5f - 0.75f) * 5;
+            }
+
+            float rarityValue = (baseRarityValue + srcPropRarityValue) / 2;
+
+            //LogUtil.i("aaaaaaaaaaaaaaaaaaa " + equipItemInfo.getName() + ", " + baseRarityValue + ", " + srcPropRarityValue + ", " + rarityValue);
+
+            if (equipItemInfo.getSpecialEffects() != null && !equipItemInfo.getSpecialEffects().isEmpty()) {
+                rarityValue += equipItemInfo.getSpecialEffects().size() * 1f;
+                //LogUtil.i("aaaaaaaaaaaaaaaaaaa " + rarityValue);
+            }
+
+            if (rarityValue < 1) {
+                return Item.Rarity.Rarity_1;
+            } else if (rarityValue < 2) {
+                return Item.Rarity.Rarity_2;
+            } else if (rarityValue < 3) {
+                return Item.Rarity.Rarity_3;
+            } else if (rarityValue < 4) {
+                return Item.Rarity.Rarity_4;
+            } else if (rarityValue < 5) {
+                return Item.Rarity.Rarity_5;
+            } else {
+                return Item.Rarity.Rarity_6;
+            }
+        }
+
+        return Item.Rarity.Rarity_1;
     }
 }

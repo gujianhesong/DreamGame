@@ -1,10 +1,10 @@
 package com.game.dream.item;
 
-import com.game.dream.LogUtil;
 import com.game.dream.bean.EquipItemInfo;
 import com.game.dream.bean.ItemInfo;
 import com.game.dream.enums.SpecialEffect;
 import com.game.dream.system.ItemSystem;
+import com.game.dream.utils.EquipUtil;
 import com.game.dream.utils.Utils;
 
 import java.util.ArrayList;
@@ -54,23 +54,17 @@ public class EquipCreator {
             return null;
         }
 
-        float baseGradeValue = 0;
-        float srcPropGradeValue = 0;
-        float specialEffectGradeValue = 0;
-
         EquipItemInfo equipItemInfo = new EquipItemInfo(newId, "");
+        equipItemInfo.setLevel(level);
         switch (slot) {
             case HELMET: {
                 equipItemInfo.setName(level + "级头盔");
-                equipItemInfo.setLevel(level);
                 equipItemInfo.setEquipType(1);
 
                 float waveRatio1 = Utils.getWaveValueFloat(1, 0.3f);
                 float waveRatio2 = Utils.getWaveValueFloat(1, 0.3f);
                 equipItemInfo.setDefense((int) (30 * (level / 10 + 1) * waveRatio1));
                 equipItemInfo.setMp((int) (30 * (level / 10 + 1) * waveRatio2));
-
-                baseGradeValue = (waveRatio1 + waveRatio2) / 2;
             }
             break;
             case ACCESSORY: {
@@ -81,8 +75,6 @@ public class EquipCreator {
                 float waveRatio2 = Utils.getWaveValueFloat(1, 0.3f);
                 equipItemInfo.setMana((int) (25 * (level / 10 + 1) * waveRatio1));
                 equipItemInfo.setMp((int) (30 * (level / 10 + 1) * waveRatio2));
-
-                baseGradeValue = (waveRatio1 + waveRatio2) / 2;
             }
             break;
             case WEAPON: {
@@ -93,8 +85,6 @@ public class EquipCreator {
                 float waveRatio2 = Utils.getWaveValueFloat(1, 0.3f);
                 equipItemInfo.setHit((int) (45 * (level / 10 + 1) * waveRatio1));
                 equipItemInfo.setAttack((int) (35 * (level / 10 + 1) * waveRatio2));
-
-                baseGradeValue = (waveRatio1 + waveRatio2) / 2;
             }
             break;
             case ARMOR: {
@@ -102,9 +92,7 @@ public class EquipCreator {
                 equipItemInfo.setEquipType(4);
 
                 float waveRatio1 = Utils.getWaveValueFloat(1, 0.3f);
-                equipItemInfo.setDefense((int) (45 * (level / 10 + 1) * waveRatio1));
-
-                baseGradeValue = waveRatio1;
+                equipItemInfo.setDefense((int) (50 * (level / 10 + 1) * waveRatio1));
             }
             break;
             case BELT: {
@@ -115,8 +103,6 @@ public class EquipCreator {
                 float waveRatio2 = Utils.getWaveValueFloat(1, 0.3f);
                 equipItemInfo.setDefense((int) (20 * (level / 10 + 1) * waveRatio1));
                 equipItemInfo.setHp((int) (50 * (level / 10 + 1) * waveRatio2));
-
-                baseGradeValue = (waveRatio1 + waveRatio2) / 2;
             }
             break;
             case SHOES: {
@@ -127,8 +113,6 @@ public class EquipCreator {
                 float waveRatio2 = Utils.getWaveValueFloat(1, 0.3f);
                 equipItemInfo.setSpeed((int) (25 * (level / 10 + 1) * waveRatio1));
                 equipItemInfo.setDodge((int) (30 * (level / 10 + 1) * waveRatio2));
-
-                baseGradeValue = (waveRatio1 + waveRatio2) / 2;
             }
             break;
         }
@@ -186,8 +170,6 @@ public class EquipCreator {
                     equipItemInfo.setPropMin(value2);
                     break;
             }
-
-            srcPropGradeValue = waveRatio1 + waveRatio2;
         } else if (srcPropRatio < 0.4) {
             //属性单加
             float waveRatio1 = Utils.getWaveValueFloat(1, 0.25f);
@@ -210,8 +192,6 @@ public class EquipCreator {
                     equipItemInfo.setPropMin(value1);
                     break;
             }
-
-            srcPropGradeValue = waveRatio1;
         } else {
             //无属性加成
         }
@@ -221,7 +201,6 @@ public class EquipCreator {
         LinkedHashMap<SpecialEffect, Integer> specialEffectRatioMap = new LinkedHashMap<>();
         specialEffectRatioMap.put(SpecialEffect.SE_WuJiBieXianZhi, 1);
         specialEffectRatioMap.put(SpecialEffect.SE_ShenNong, 3);
-        specialEffectRatioMap.put(SpecialEffect.SE_ZhenBao, 3);
         specialEffectRatioMap.put(SpecialEffect.SE_Xixue, 3);
         specialEffectRatioMap.put(SpecialEffect.SE_ShenYou, 3);
         specialEffectRatioMap.put(SpecialEffect.SE_ZhuanZhu, 3);
@@ -268,56 +247,6 @@ public class EquipCreator {
                 return specialEffect.name();
             }
         }).collect(Collectors.toList()));
-        //特效评分, 因为双特效的概率太小了，因此只用一个最大特效值进行评分，不然评分不太准确
-        if (!specialEffects.isEmpty()) {
-            for(SpecialEffect specialEffect : specialEffects){
-                switch (specialEffect) {
-                    case SE_WuJiBieXianZhi:
-                        specialEffectGradeValue = Math.max(1.0f, specialEffectGradeValue);
-                        break;
-                    case SE_ShenNong:
-                        specialEffectGradeValue = Math.max(0.4f, specialEffectGradeValue);
-                        break;
-                    case SE_ZhenBao:
-                        specialEffectGradeValue = Math.max(0.1f, specialEffectGradeValue);
-                        break;
-                    case SE_Xixue:
-                        specialEffectGradeValue = Math.max(0.6f, specialEffectGradeValue);
-                        break;
-                    case SE_ShenYou:
-                        specialEffectGradeValue = Math.max(0.4f, specialEffectGradeValue);
-                        break;
-                    case SE_ZhuanZhu:
-                        specialEffectGradeValue = Math.max(0.4f, specialEffectGradeValue);
-                        break;
-                    case SE_ZaiSheng:
-                        specialEffectGradeValue = Math.max(0.4f, specialEffectGradeValue);
-                        break;
-                    case SE_MingSi:
-                        specialEffectGradeValue = Math.max(0.4f, specialEffectGradeValue);
-                        break;
-                    case SE_BiZhong:
-                        specialEffectGradeValue = Math.max(0.4f, specialEffectGradeValue);
-                        break;
-                }
-            }
-        }
-
-        //装备评分
-        float gradeValue = baseGradeValue + srcPropGradeValue * 0.8f + specialEffectGradeValue;
-        float maxGradeValue = 1.3f + 1.3f * 2 * 0.8f + 1.0f;
-        float minGradeValue = 0.7f + 0 + 0;
-        if (gradeValue - minGradeValue > (maxGradeValue - minGradeValue) * 0.8) {
-            equipItemInfo.setRatity(Item.Rarity.Rarity_5.name());
-        } else if (gradeValue - minGradeValue > (maxGradeValue - minGradeValue) * 0.6) {
-            equipItemInfo.setRatity(Item.Rarity.Rarity_4.name());
-        } else if (gradeValue - minGradeValue > (maxGradeValue - minGradeValue) * 0.4) {
-            equipItemInfo.setRatity(Item.Rarity.Rarity_3.name());
-        } else if (gradeValue - minGradeValue > (maxGradeValue - minGradeValue) * 0.2) {
-            equipItemInfo.setRatity(Item.Rarity.Rarity_2.name());
-        } else {
-            equipItemInfo.setRatity(Item.Rarity.Rarity_1.name());
-        }
 
         return new EquipmentItem(equipItemInfo);
     }

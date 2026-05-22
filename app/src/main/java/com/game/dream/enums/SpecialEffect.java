@@ -4,7 +4,6 @@ import android.text.TextUtils;
 
 public enum SpecialEffect {
     SE_WuJiBieXianZhi("无级别限制"), //无级别限制
-    SE_ZhenBao("珍宝"), //珍宝（价格*20倍）
     SE_Xixue("吸血"), //吸血（输出伤害的10%）
     SE_ShenYou("神佑"), //神佑（20%自动复活）
     SE_ZhuanZhu("专注"), //专注（施法20%不消耗蓝）

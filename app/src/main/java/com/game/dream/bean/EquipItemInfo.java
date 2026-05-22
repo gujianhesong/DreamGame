@@ -30,7 +30,7 @@ public class EquipItemInfo extends ItemInfo {
     //特效
     private List<String> specialEffects;
     //装备评分值
-    private String ratity;
+    private transient String ratity;
 
     //宝石
     private int hpStoneLevel;

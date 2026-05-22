@@ -10,6 +10,7 @@ import com.game.dream.item.EquipmentItem;
 import com.game.dream.item.Item;
 import com.game.dream.item.ItemStack;
 import com.game.dream.utils.EquipUtil;
+import com.game.dream.utils.ItemsUtil;
 import com.game.dream.utils.TouchUtil;
 
 /**
@@ -159,7 +160,7 @@ public class EquipInfoPanel {
         paint.setTextSize(18);
         paint.setColor(Color.WHITE);
         String slotText = getSlotText(equipment.getSlot());
-        canvas.drawText(getRarityText(equipment.getRarity()) + " · " + slotText,
+        canvas.drawText(ItemsUtil.getRarityText(equipment.getRarity()) + " · " + slotText,
                 panelBounds.centerX(), panelBounds.top + 78, paint);
 
         // Divider line
@@ -306,25 +307,7 @@ public class EquipInfoPanel {
         }
     }
 
-    /**
-     * Get rarity text
-     */
-    private String getRarityText(Item.Rarity rarity) {
-        switch (rarity) {
-            case Rarity_1:
-                return "普通";
-            case Rarity_2:
-                return "优秀";
-            case Rarity_3:
-                return "稀有";
-            case Rarity_4:
-                return "史诗";
-            case Rarity_5:
-                return "传说";
-            default:
-                return "";
-        }
-    }
+
 
     /**
      * Get slot text

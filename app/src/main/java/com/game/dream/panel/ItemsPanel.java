@@ -10,6 +10,7 @@ import com.game.dream.item.Item;
 import com.game.dream.item.ItemStack;
 import com.game.dream.system.ItemSystem;
 import com.game.dream.system.RoleSystem;
+import com.game.dream.utils.ItemsUtil;
 import com.game.dream.utils.TouchUtil;
 
 import java.util.List;
@@ -262,15 +263,12 @@ public class ItemsPanel {
 
             // Item name (truncated if too long)
             String itemName = equipped.getName();
-            if (itemName.length() > 5) {
-                itemName = itemName.substring(0, 5) + "..";
-            }
             canvas.drawText(itemName, slot.centerX(), slot.centerY() + 5, paint);
 
             // Rarity indicator
             paint.setTextSize(14);
             paint.setColor(Color.WHITE);
-            canvas.drawText(getRarityText(equipped.getRarity()),
+            canvas.drawText(ItemsUtil.getRarityText(equipped.getRarity()),
                     slot.centerX(), slot.bottom - 8, paint);
         } else {
             // Empty slot - draw label with brighter color
@@ -389,7 +387,6 @@ public class ItemsPanel {
                     paint.setTextAlign(Paint.Align.CENTER);
 
                     String itemName = item.getName();
-                    if (itemName.length() > 5) itemName = itemName.substring(0, 5) + "..";
                     canvas.drawText(itemName, drawSlot.centerX(), drawSlot.centerY() - 2, paint);
 
                     // Quantity
@@ -457,20 +454,6 @@ public class ItemsPanel {
                 closeButton.right - padding, closeButton.bottom - padding, paint);
         canvas.drawLine(closeButton.right - padding, closeButton.top + padding,
                 closeButton.left + padding, closeButton.bottom - padding, paint);
-    }
-
-    /**
-     * Get rarity text
-     */
-    private String getRarityText(Item.Rarity rarity) {
-        switch (rarity) {
-            case Rarity_1: return "普通";
-            case Rarity_2: return "优秀";
-            case Rarity_3: return "稀有";
-            case Rarity_4: return "史诗";
-            case Rarity_5: return "传说";
-            default: return "";
-        }
     }
 
     /**

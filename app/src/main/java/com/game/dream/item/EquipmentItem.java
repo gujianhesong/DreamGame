@@ -1,6 +1,7 @@
 package com.game.dream.item;
 
 import com.game.dream.bean.EquipItemInfo;
+import com.game.dream.utils.EquipUtil;
 
 /**
  * Equipment item (weapons, armor, accessories)
@@ -30,6 +31,10 @@ public class EquipmentItem extends Item {
     public EquipmentItem(EquipItemInfo equipItemInfo) {
         super(equipItemInfo.getId(), equipItemInfo.getName(), "", Type.EQUIPMENT, Rarity.Rarity_1, 1, 100000);
         this.equipItemInfo = equipItemInfo;
+
+        Item.Rarity rarity = EquipUtil.caculateEquipRarity(equipItemInfo);
+        equipItemInfo.setRatity(rarity.name());
+        this.rarity = rarity;
     }
 
     public EquipItemInfo getEquipItemInfo() {

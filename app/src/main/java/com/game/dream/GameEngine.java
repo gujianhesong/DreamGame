@@ -438,28 +438,30 @@ public class GameEngine {
         if (ItemSystem.getInstance().isEquipedSpecialEffect(SpecialEffect.SE_ZaiSheng)) {
             //再生
             accumulatedRecoveryTime_ZaiSheng += deltaTime;
-            if (accumulatedRecoveryTime_ZaiSheng >= 5000) {
+            int limitTime = (int) (5000 + Math.random() * 2000);
+            if (accumulatedRecoveryTime_ZaiSheng >= limitTime) {
                 RoleInfo roleInfo = RoleSystem.getInstance().getRoleInfo();
                 int recoveryValue = (int) (roleInfo.getBloodCap() * 0.03);
                 roleInfo.setHp(Math.min(roleInfo.getBloodCap(), roleInfo.getHp() + recoveryValue));
                 GameEngine.getInstance().showFloatText("气血+" + recoveryValue, FloatingText.Type.HEAL);
 
                 // Reset accumulated time (keep remainder for accuracy)
-                accumulatedRecoveryTime_ZaiSheng -= 5000;
+                accumulatedRecoveryTime_ZaiSheng -= limitTime;
             }
         }
 
         if (ItemSystem.getInstance().isEquipedSpecialEffect(SpecialEffect.SE_MingSi)) {
             //冥思
             accumulatedRecoveryTime_MingSi += deltaTime;
-            if (accumulatedRecoveryTime_MingSi >= 5000) {
+            int limitTime = (int) (5000 + Math.random() * 2000);
+            if (accumulatedRecoveryTime_MingSi >= limitTime) {
                 RoleInfo roleInfo = RoleSystem.getInstance().getRoleInfo();
                 int recoveryValue = (int) (roleInfo.getMagicCap() * 0.03);
                 roleInfo.setMp(Math.min(roleInfo.getMagicCap(), roleInfo.getMp() + recoveryValue));
                 GameEngine.getInstance().showFloatText("魔法+" + recoveryValue, FloatingText.Type.HEAL_MAGIC);
 
                 // Reset accumulated time (keep remainder for accuracy)
-                accumulatedRecoveryTime_MingSi -= 5000;
+                accumulatedRecoveryTime_MingSi -= limitTime;
             }
         }
     }
@@ -826,16 +828,6 @@ public class GameEngine {
             effect.draw(canvas, (int) -cameraX, (int) -cameraY);
         }
 
-        // Draw center notification (on top of everything except UI panels)
-        if (currentNotification != null) {
-            currentNotification.draw(canvas, screenWidth, screenHeight);
-        }
-
-        // Draw center toast (on top of everything except UI panels)
-        if (centerToast != null) {
-            centerToast.draw(canvas, screenWidth, screenHeight);
-        }
-
         // Draw weather effects
         if (weatherSystem != null) {
             weatherSystem.draw(canvas);
@@ -865,6 +857,16 @@ public class GameEngine {
         // Draw skills panel (on top of everything)
         if (skillsPanel != null && skillsPanel.isVisible()) {
             skillsPanel.draw(canvas);
+        }
+
+        // Draw center notification (on top of everything except UI panels)
+        if (currentNotification != null) {
+            currentNotification.draw(canvas, screenWidth, screenHeight);
+        }
+
+        // Draw center toast (on top of everything except UI panels)
+        if (centerToast != null) {
+            centerToast.draw(canvas, screenWidth, screenHeight);
         }
     }
 

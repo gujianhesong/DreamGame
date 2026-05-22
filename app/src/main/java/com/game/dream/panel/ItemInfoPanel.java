@@ -7,6 +7,7 @@ import android.graphics.Rect;
 
 import com.game.dream.item.Item;
 import com.game.dream.item.ItemStack;
+import com.game.dream.utils.ItemsUtil;
 import com.game.dream.utils.TouchUtil;
 
 /**
@@ -134,7 +135,7 @@ public class ItemInfoPanel {
         // Rarity label
         paint.setTextSize(18);
         paint.setColor(Color.WHITE);
-        canvas.drawText(getRarityText(item.getRarity()), panelBounds.centerX(), panelBounds.top + 70, paint);
+        canvas.drawText(ItemsUtil.getRarityText(item.getRarity()), panelBounds.centerX(), panelBounds.top + 70, paint);
 
         // Divider line
         paint.setStrokeWidth(2);
@@ -231,26 +232,6 @@ public class ItemInfoPanel {
 
         if (line.length() > 0) {
             canvas.drawText(line.toString(), x, currentY, paint);
-        }
-    }
-
-    /**
-     * Get rarity text
-     */
-    private String getRarityText(Item.Rarity rarity) {
-        switch (rarity) {
-            case Rarity_1:
-                return "普通";
-            case Rarity_2:
-                return "优秀";
-            case Rarity_3:
-                return "稀有";
-            case Rarity_4:
-                return "史诗";
-            case Rarity_5:
-                return "传说";
-            default:
-                return "";
         }
     }
 

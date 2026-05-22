@@ -1,5 +1,7 @@
 package com.game.dream.item;
 
+import android.text.TextUtils;
+
 /**
  * Base item class for all items in the game
  */
@@ -13,11 +15,23 @@ public class Item {
     }
 
     public enum Rarity {
-        Rarity_1,           // White - Common
-        Rarity_2,           // Green - Uncommon
-        Rarity_3,           // Blue - Rare
-        Rarity_4,           // Purple - Epic
-        Rarity_5            // Orange - Legendary
+        Rarity_1,           // White
+        Rarity_2,           // Green
+        Rarity_3,           // Blue
+        Rarity_4,           // Purple
+        Rarity_5,           // Gold
+        Rarity_6            // Orange
+
+        ;
+
+        public static Rarity getRarityWithName(String name) {
+            for (Rarity item : Rarity.values()) {
+                if (TextUtils.equals(item.name(), name)) {
+                    return item;
+                }
+            }
+            return Rarity_1;
+        }
     }
 
     protected int id;
@@ -69,6 +83,8 @@ public class Item {
             case Rarity_4:
                 return android.graphics.Color.rgb(200, 100, 255); // Purple
             case Rarity_5:
+                return android.graphics.Color.rgb(255, 215, 0); // Gold
+            case Rarity_6:
                 return android.graphics.Color.rgb(255, 165, 0); // Orange
             default:
                 return android.graphics.Color.WHITE;

@@ -45,7 +45,7 @@ public class CenterToast {
         paint.setTextAlign(Paint.Align.CENTER);
 
         // Calculate text size based on screen width
-        float textSize = screenWidth / 40f;
+        float textSize = screenWidth / 60f;
         paint.setTextSize(textSize);
 
         // Measure text to draw background box

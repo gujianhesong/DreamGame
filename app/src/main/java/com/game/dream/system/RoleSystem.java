@@ -60,6 +60,10 @@ public class RoleSystem {
         roleInfo.setMoney(roleInfo.getMoney() + money);
     }
 
+    public void removeMoney(int money) {
+        roleInfo.setMoney(Math.max(roleInfo.getMoney() - money, 0));
+    }
+
     public int getExpForNextLevel() {
         return calculateExpForLevel(roleInfo.getLevel() + 1);
     }
@@ -154,4 +158,5 @@ public class RoleSystem {
         // Recover tili
         roleInfo.setTili(Math.min(roleInfo.getTili() + 10, roleInfo.getTiliMax()));
     }
+
 }

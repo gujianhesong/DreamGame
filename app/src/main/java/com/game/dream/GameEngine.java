@@ -18,9 +18,9 @@ import com.game.dream.enemy.Tiger;
 import com.game.dream.enemy.Wolf;
 import com.game.dream.enums.SkillType;
 import com.game.dream.enums.SpecialEffect;
-import com.game.dream.item.EquipCreator;
 import com.game.dream.item.EquipmentItem;
 import com.game.dream.item.ItemStack;
+import com.game.dream.panel.BuildEquipPanel;
 import com.game.dream.panel.ItemsPanel;
 import com.game.dream.panel.RoleInfoPanel;
 import com.game.dream.panel.SkillsPanel;
@@ -92,6 +92,9 @@ public class GameEngine {
 
     // Skills panel
     private SkillsPanel skillsPanel;
+
+    private BuildEquipPanel buildEquipPanel;
+    private Rect craftingButton;
 
 
     // For tracking scroll gestures
@@ -257,7 +260,9 @@ public class GameEngine {
         itemsPanel = new ItemsPanel();
 
         // Initialize skills panel
-        this.skillsPanel = new SkillsPanel();
+        skillsPanel = new SkillsPanel();
+
+        buildEquipPanel = new BuildEquipPanel();
     }
 
     /**
@@ -859,6 +864,11 @@ public class GameEngine {
             skillsPanel.draw(canvas);
         }
 
+        // Draw buildEquipPanel panel (on top of everything)
+        if (buildEquipPanel != null && buildEquipPanel.isVisible()) {
+            buildEquipPanel.draw(canvas);
+        }
+
         // Draw center notification (on top of everything except UI panels)
         if (currentNotification != null) {
             currentNotification.draw(canvas, screenWidth, screenHeight);
@@ -1096,6 +1106,11 @@ public class GameEngine {
         if (skillsButton != null) {
             drawSkillsButton(canvas, skillsButton, skillsPanel != null && skillsPanel.isVisible());
         }
+
+        // Draw crafting button
+        if (craftingButton != null) {
+            drawCraftingButton(canvas, craftingButton, buildEquipPanel != null && buildEquipPanel.isVisible());
+        }
     }
 
     private void drawDpadButton(Canvas canvas, Rect button, boolean pressed, String label) {
@@ -1227,7 +1242,7 @@ public class GameEngine {
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(2);
         paint.setColor(Color.WHITE);
-        canvas.drawRoundRect(button.left, button.top, button.right, button.bottom, 10, 10, paint);
+        canvas.drawRoundRect(button.left, button.top, button.right, button.bottom, 9, 9, paint);
 
         // Icon (ℹ️ or 👤)
         paint.setStyle(Paint.Style.FILL);
@@ -1263,7 +1278,7 @@ public class GameEngine {
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(2);
         paint.setColor(Color.WHITE);
-        canvas.drawRoundRect(button.left, button.top, button.right, button.bottom, 10, 10, paint);
+        canvas.drawRoundRect(button.left, button.top, button.right, button.bottom, 9, 9, paint);
 
         // Label (backpack icon)
         paint.setStyle(Paint.Style.FILL);
@@ -1298,7 +1313,7 @@ public class GameEngine {
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(2);
         paint.setColor(Color.WHITE);
-        canvas.drawRoundRect(button.left, button.top, button.right, button.bottom, 10, 10, paint);
+        canvas.drawRoundRect(button.left, button.top, button.right, button.bottom, 9, 9, paint);
 
         // Label (star icon for skills)
         paint.setStyle(Paint.Style.FILL);
@@ -1307,6 +1322,35 @@ public class GameEngine {
         paint.setTextAlign(Paint.Align.CENTER);
         float textY = centerY + 8;
         canvas.drawText("⭐", centerX, textY, paint);
+    }
+
+    /**
+     * Draw Crafting button
+     */
+    private void drawCraftingButton(Canvas canvas, Rect button, boolean isOpen) {
+        Paint paint = new Paint();
+        paint.setAntiAlias(true);
+
+        // Background circle
+        if (isOpen) {
+            paint.setColor(Color.argb(180, 255, 140, 0)); // Orange/Bronze color
+        } else {
+            paint.setColor(Color.argb(150, 80, 80, 80));
+        }
+        canvas.drawRoundRect(button.left, button.top, button.right, button.bottom, 10, 10, paint);
+
+        // Border
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(2);
+        paint.setColor(Color.WHITE);
+        canvas.drawRoundRect(button.left, button.top, button.right, button.bottom, 9, 9, paint);
+
+        // Hammer Icon (Simple representation using text or shapes)
+        paint.setStyle(Paint.Style.FILL);
+        paint.setTextSize(30);
+        paint.setTextAlign(Paint.Align.CENTER);
+        paint.setColor(Color.WHITE);
+        canvas.drawText("🔨", craftingButton.centerX(), craftingButton.centerY() + 10, paint);
     }
 
     private void drawCooldownIndicator(Canvas canvas, Rect button, float progress, int color) {
@@ -1367,6 +1411,19 @@ public class GameEngine {
             return true; // Consume all events when skills panel is open
         }
 
+        // 1. Handle Crafting Panel (Priority if visible)
+        if (buildEquipPanel != null && buildEquipPanel.isVisible()) {
+            switch (action) {
+                case MotionEvent.ACTION_DOWN:
+                    return buildEquipPanel.handleTouchDown(x, y);
+                case MotionEvent.ACTION_MOVE:
+                    return buildEquipPanel.handleTouchMove(x, y);
+                case MotionEvent.ACTION_UP:
+                    return buildEquipPanel.handleTouchUp(x, y);
+            }
+            return true;
+        }
+
         // Check Switch Page Button
         if (TouchUtil.checkIsInTouchRectFloat(switchPageButton, x, y)) {
             if (action == MotionEvent.ACTION_DOWN) {
@@ -1380,22 +1437,24 @@ public class GameEngine {
         // Check role info button
         if (roleInfoButton != null && TouchUtil.checkIsInTouchRectFloat(roleInfoButton, x, y)) {
             if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_POINTER_DOWN) {
-                roleInfoPanel.toggleVisibility();
                 return true;
             }
             if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_POINTER_UP) {
+                if (roleInfoPanel != null) {
+                    roleInfoPanel.toggleVisibility();
+                }
                 return true;
             }
         }
         // Check equipment button
         if (equipmentButton != null && TouchUtil.checkIsInTouchRectFloat(equipmentButton, x, y)) {
             if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_POINTER_DOWN) {
-                if (itemsPanel != null) {
-                    itemsPanel.toggleVisibility();
-                }
                 return true;
             }
             if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_POINTER_UP) {
+                if (itemsPanel != null) {
+                    itemsPanel.toggleVisibility();
+                }
                 return true;
             }
         }
@@ -1403,12 +1462,25 @@ public class GameEngine {
         // Check skills button
         if (skillsButton != null && TouchUtil.checkIsInTouchRectFloat(skillsButton, x, y)) {
             if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_POINTER_DOWN) {
+                return true;
+            }
+            if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_POINTER_UP) {
                 if (skillsPanel != null) {
                     skillsPanel.toggleVisibility();
                 }
                 return true;
             }
+        }
+
+        // Check Crafting button
+        if (craftingButton != null && TouchUtil.checkIsInTouchRectFloat(craftingButton, x, y)) {
+            if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_POINTER_DOWN) {
+                return true;
+            }
             if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_POINTER_UP) {
+                if (buildEquipPanel != null) {
+                    buildEquipPanel.toggleVisibility();
+                }
                 return true;
             }
         }
@@ -1635,7 +1707,7 @@ public class GameEngine {
 
         // Initialize role info panel (center of screen)
         if (roleInfoPanel != null) {
-            int panelWidth = Math.min(600, width - 40); // Increased from 600 to 900
+            int panelWidth = Math.min(600, width - 40);
             int panelHeight = Math.min(900, height - 100);
             int panelX = (width - panelWidth) / 2;
             int panelY = (height - panelHeight) / 2;
@@ -1644,7 +1716,7 @@ public class GameEngine {
 
         // Initialize equipment panel (center of screen)
         if (itemsPanel != null) {
-            int panelWidth = Math.min(1200, width - 40); // Increased from 600 to 900
+            int panelWidth = Math.min(1200, width - 40);
             int panelHeight = Math.min(900, height - 100);
             int panelX = (width - panelWidth) / 2;
             int panelY = (height - panelHeight) / 2;
@@ -1653,11 +1725,20 @@ public class GameEngine {
 
         // Initialize skills panel (center of screen)
         if (skillsPanel != null) {
-            int panelWidth = Math.min(1200, width - 40); // Increased from 600 to 900
+            int panelWidth = Math.min(1200, width - 40);
             int panelHeight = Math.min(900, height - 100);
             int panelX = (width - panelWidth) / 2;
             int panelY = (height - panelHeight) / 2;
             skillsPanel.setBounds(panelX, panelY, panelWidth, panelHeight);
+        }
+
+        // Initialize crafting panel (center of screen)
+        if (buildEquipPanel != null) {
+            int panelWidth = Math.min(1200, width - 40);
+            int panelHeight = Math.min(900, height - 100);
+            int panelX = (width - panelWidth) / 2;
+            int panelY = (height - panelHeight) / 2;
+            buildEquipPanel.setBounds(panelX, panelY, panelWidth, panelHeight);
         }
     }
 
@@ -1719,6 +1800,15 @@ public class GameEngine {
         // Skills button (next to equipment button)
         startX += infoButtonSize + infoPadding;
         skillsButton = new Rect(
+                startX,
+                screenHeight - infoPadding - infoButtonSize,
+                startX + infoButtonSize,
+                screenHeight - infoPadding
+        );
+
+        // Crafting button (next to Skills button)
+        startX += infoButtonSize + infoPadding;
+        craftingButton = new Rect(
                 startX,
                 screenHeight - infoPadding - infoButtonSize,
                 startX + infoButtonSize,

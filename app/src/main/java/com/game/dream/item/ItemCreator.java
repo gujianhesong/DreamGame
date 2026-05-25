@@ -1,8 +1,11 @@
 package com.game.dream.item;
 
-import com.game.dream.LogUtil;
 import com.game.dream.bean.EquipItemInfo;
 import com.game.dream.bean.ItemInfo;
+import com.game.dream.utils.PriceUtil;
+import com.game.dream.utils.Utils;
+
+import java.util.Arrays;
 
 public class ItemCreator {
     public static Item createItemWithInfo(ItemInfo itemInfo) {
@@ -652,6 +655,50 @@ public class ItemCreator {
                 99, 6000,
                 ConsumableItem.EffectType.BUFF_SPEED,
                 400, 30 * 60 * 1000
+        );
+    }
+
+    public static Item createBuildEquipIron(int level) {
+        int id = 200000 + level * 10;
+        return new Item(
+                id, level + "级精铁", "制造装备的必备材料", Item.Type.MATERIAL,
+                Item.Rarity.Rarity_0,
+                99, PriceUtil.getItemPriceWith10Level(2000, level)
+        );
+    }
+
+    public static Item createBuildEquipBook(int level, EquipmentItem.Slot slot) {
+        if (slot == null) {
+            slot = Utils.getRandomItem(Arrays.asList(EquipmentItem.Slot.HELMET, EquipmentItem.Slot.ACCESSORY,
+                    EquipmentItem.Slot.WEAPON, EquipmentItem.Slot.ARMOR,
+                    EquipmentItem.Slot.BELT, EquipmentItem.Slot.SHOES));
+        }
+        int id = 201001 + level * 10 + slot.ordinal();
+        String name = "";
+        switch (slot) {
+            case HELMET:
+                name = level + "级头盔制造书";
+                break;
+            case ACCESSORY:
+                name = level + "级项链制造书";
+                break;
+            case WEAPON:
+                name = level + "级武器制造书";
+                break;
+            case ARMOR:
+                name = level + "级铠甲制造书";
+                break;
+            case BELT:
+                name = level + "级腰带制造书";
+                break;
+            case SHOES:
+                name = level + "级鞋子制造书";
+                break;
+        }
+        return new Item(
+                id, name, "制造装备的必备材料", Item.Type.MATERIAL,
+                Item.Rarity.Rarity_0,
+                99, PriceUtil.getItemPriceWith10Level(2000, level)
         );
     }
 

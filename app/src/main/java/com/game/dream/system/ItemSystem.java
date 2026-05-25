@@ -190,6 +190,14 @@ public class ItemSystem {
         return totalRemoved;
     }
 
+    public int removeItem(String itemName, int quantity) {
+        ItemStack itemStack = getItemByName(itemName);
+        if (itemStack != null) {
+            return removeItem(itemStack.getItem().getId(), quantity);
+        }
+        return 0;
+    }
+
     /**
      * Use consumable item at index
      */
@@ -469,5 +477,24 @@ public class ItemSystem {
             }
         }
         return value;
+    }
+
+    public int getItemCountByName(String name) {
+        int count = 0;
+        for (ItemStack stack : items) {
+            if (stack.getItem().getName().equals(name)) {
+                count += stack.getQuantity();
+            }
+        }
+        return count;
+    }
+
+    public ItemStack getItemByName(String name) {
+        for (ItemStack stack : items) {
+            if (stack.getItem().getName().equals(name)) {
+                return stack;
+            }
+        }
+        return null;
     }
 }

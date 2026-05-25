@@ -1,5 +1,7 @@
 package com.game.dream.utils;
 
+import java.util.List;
+
 public class Utils {
 
     /**
@@ -33,4 +35,27 @@ public class Utils {
         return value;
     }
 
+    public static <T> T getRandomItem(T[] items) {
+        if (items == null || items.length == 0) {
+            return null;
+        }
+        if (items.length == 1) {
+            return items[0];
+        }
+
+        int randomIndex = (int) (Math.random() * items.length);
+        return items[randomIndex];
+    }
+
+    public static <T> T getRandomItem(List<T> items) {
+        if (items == null || items.isEmpty()) {
+            return null;
+        }
+        if (items.size() == 1) {
+            return items.get(0);
+        }
+
+        int randomIndex = (int) (Math.random() * items.size());
+        return items.get(randomIndex);
+    }
 }

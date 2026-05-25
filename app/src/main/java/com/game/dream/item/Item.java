@@ -15,6 +15,7 @@ public class Item {
     }
 
     public enum Rarity {
+        Rarity_0,           // None Level
         Rarity_1,           // White
         Rarity_2,           // Green
         Rarity_3,           // Blue

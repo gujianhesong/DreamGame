@@ -30,6 +30,7 @@ import com.game.dream.system.ItemSystem;
 import com.game.dream.system.RoleSystem;
 import com.game.dream.system.SkillSystem;
 import com.game.dream.system.WeatherSystem;
+import com.game.dream.ui.DialogBox;
 import com.game.dream.utils.TouchUtil;
 
 import java.util.ArrayList;
@@ -95,6 +96,8 @@ public class GameEngine {
 
     private BuildEquipPanel buildEquipPanel;
     private Rect craftingButton;
+
+    private DialogBox currentDialog;
 
 
     // For tracking scroll gestures
@@ -263,6 +266,8 @@ public class GameEngine {
         skillsPanel = new SkillsPanel();
 
         buildEquipPanel = new BuildEquipPanel();
+
+        currentDialog = new DialogBox();
     }
 
     /**
@@ -869,6 +874,10 @@ public class GameEngine {
             buildEquipPanel.draw(canvas);
         }
 
+        if (currentDialog != null && currentDialog.isVisible()) {
+            currentDialog.draw(canvas);
+        }
+
         // Draw center notification (on top of everything except UI panels)
         if (currentNotification != null) {
             currentNotification.draw(canvas, screenWidth, screenHeight);
@@ -1375,6 +1384,12 @@ public class GameEngine {
         float x = event.getX(pointerIndex);
         float y = event.getY(pointerIndex);
 
+        if (currentDialog != null && currentDialog.isVisible()) {
+            if (action == MotionEvent.ACTION_DOWN && currentDialog.handleTouch(x, y)) {
+                return true; // currentDialog handled the touch (closed itself)
+            }
+        }
+
         // If role info panel is visible, check if touching it first
         if (roleInfoPanel != null && roleInfoPanel.isVisible()) {
             if (action == MotionEvent.ACTION_DOWN && roleInfoPanel.handleTouch(x, y)) {
@@ -1740,6 +1755,15 @@ public class GameEngine {
             int panelY = (height - panelHeight) / 2;
             buildEquipPanel.setBounds(panelX, panelY, panelWidth, panelHeight);
         }
+
+        if (currentDialog != null) {
+            int panelWidth = Math.min(1000, width - 40);
+            int panelHeight = Math.min(600, height - 100);
+            int panelX = (width - panelWidth) / 2;
+            int panelY = (height - panelHeight) / 2;
+            currentDialog.setBounds(panelX, panelY, panelWidth, panelHeight);
+        }
+
     }
 
     private void initControlButtons() {
@@ -2002,5 +2026,13 @@ public class GameEngine {
         if (effectType == Projectile.EffectType.ROOT) {
             enemy.applyCC(Character.CrowdControlType.ROOT, 2000);
         }
+    }
+
+    public DialogBox showDialog(String title, String msg, List<String> options, DialogBox.DialogListener listener) {
+        if (currentDialog != null) {
+            currentDialog.show(title, msg, options, listener);
+            return currentDialog;
+        }
+        return null;
     }
 }

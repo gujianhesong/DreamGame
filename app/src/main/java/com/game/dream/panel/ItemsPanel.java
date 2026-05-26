@@ -5,14 +5,20 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
 
+import com.game.dream.GameEngine;
+import com.game.dream.bean.EquipItemInfo;
+import com.game.dream.enums.GemtoneType;
 import com.game.dream.item.EquipmentItem;
 import com.game.dream.item.Item;
 import com.game.dream.item.ItemStack;
 import com.game.dream.system.ItemSystem;
 import com.game.dream.system.RoleSystem;
+import com.game.dream.ui.DialogBox;
+import com.game.dream.utils.EquipUtil;
 import com.game.dream.utils.ItemsUtil;
 import com.game.dream.utils.TouchUtil;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -74,9 +80,17 @@ public class ItemsPanel {
         isVisible = !isVisible;
     }
 
-    public void show() { isVisible = true; }
-    public void hide() { isVisible = false; }
-    public boolean isVisible() { return isVisible; }
+    public void show() {
+        isVisible = true;
+    }
+
+    public void hide() {
+        isVisible = false;
+    }
+
+    public boolean isVisible() {
+        return isVisible;
+    }
 
     /**
      * Set panel bounds and calculate slot positions
@@ -321,7 +335,8 @@ public class ItemsPanel {
 
         // 1. Calculate total rows needed based on actual item count
         int totalRowsNeeded = (int) Math.ceil((double) items.size() / INVENTORY_COLS);
-        if (totalRowsNeeded < INVENTORY_ROWS) totalRowsNeeded = INVENTORY_ROWS; // Keep at least the visible area
+        if (totalRowsNeeded < INVENTORY_ROWS)
+            totalRowsNeeded = INVENTORY_ROWS; // Keep at least the visible area
 
         // 2. Update max scroll offset
         int totalContentHeight = totalRowsNeeded * (SLOT_SIZE + SLOT_GAP);
@@ -335,8 +350,8 @@ public class ItemsPanel {
         Rect clipRect = new Rect(
                 inventorySlots[0][0].left - 10,
                 inventorySlots[0][0].top - 30,
-                inventorySlots[INVENTORY_ROWS-1][INVENTORY_COLS-1].right + 10,
-                inventorySlots[INVENTORY_ROWS-1][INVENTORY_COLS-1].bottom + 10
+                inventorySlots[INVENTORY_ROWS - 1][INVENTORY_COLS - 1].right + 10,
+                inventorySlots[INVENTORY_ROWS - 1][INVENTORY_COLS - 1].bottom + 10
         );
         canvas.save();
         canvas.clipRect(clipRect);
@@ -352,7 +367,7 @@ public class ItemsPanel {
                 // Calculate the Y position with scroll offset
                 // We use the base slot Y as a reference point
                 int baseSlotY = inventorySlots[0][0].top + row * (SLOT_SIZE + SLOT_GAP);
-                int currentY = (int)(baseSlotY - inventoryScrollOffset);
+                int currentY = (int) (baseSlotY - inventoryScrollOffset);
 
                 Rect drawSlot = new Rect(
                         inventorySlots[0][0].left + col * (SLOT_SIZE + SLOT_GAP),
@@ -387,7 +402,12 @@ public class ItemsPanel {
                     paint.setTextAlign(Paint.Align.CENTER);
 
                     String itemName = item.getName();
-                    canvas.drawText(itemName, drawSlot.centerX(), drawSlot.centerY() - 2, paint);
+                    if (itemName.length() > 6) {
+                        canvas.drawText(itemName.substring(0, 6), drawSlot.centerX(), drawSlot.centerY() - 2, paint);
+                        canvas.drawText(itemName.substring(6), drawSlot.centerX(), drawSlot.centerY() - 2 + 20, paint);
+                    } else {
+                        canvas.drawText(itemName, drawSlot.centerX(), drawSlot.centerY() - 2, paint);
+                    }
 
                     // Quantity
                     if (stack.getQuantity() > 1) {
@@ -483,7 +503,7 @@ public class ItemsPanel {
         }
 
         // Check equipment slots - show info or unequip
-        if (helmetSlot.contains((int)x, (int)y)) {
+        if (helmetSlot.contains((int) x, (int) y)) {
             EquipmentItem equipped = ItemSystem.getInstance().getEquippedItem(EquipmentItem.Slot.HELMET);
             if (equipped != null) {
                 // Show item info for equipped item
@@ -494,7 +514,7 @@ public class ItemsPanel {
             return true;
         }
 
-        if (necklaceSlot.contains((int)x, (int)y)) {
+        if (necklaceSlot.contains((int) x, (int) y)) {
             EquipmentItem equipped = ItemSystem.getInstance().getEquippedItem(EquipmentItem.Slot.ACCESSORY);
             if (equipped != null) {
                 showEquipmentInfo(equipped, true, -1, necklaceSlot.centerX(), necklaceSlot.centerY());
@@ -502,7 +522,7 @@ public class ItemsPanel {
             return true;
         }
 
-        if (weaponSlot.contains((int)x, (int)y)) {
+        if (weaponSlot.contains((int) x, (int) y)) {
             EquipmentItem equipped = ItemSystem.getInstance().getEquippedItem(EquipmentItem.Slot.WEAPON);
             if (equipped != null) {
                 showEquipmentInfo(equipped, true, -1, weaponSlot.centerX(), weaponSlot.centerY());
@@ -510,7 +530,7 @@ public class ItemsPanel {
             return true;
         }
 
-        if (armorSlot.contains((int)x, (int)y)) {
+        if (armorSlot.contains((int) x, (int) y)) {
             EquipmentItem equipped = ItemSystem.getInstance().getEquippedItem(EquipmentItem.Slot.ARMOR);
             if (equipped != null) {
                 showEquipmentInfo(equipped, true, -1, armorSlot.centerX(), armorSlot.centerY());
@@ -518,7 +538,7 @@ public class ItemsPanel {
             return true;
         }
 
-        if (beltSlot.contains((int)x, (int)y)) {
+        if (beltSlot.contains((int) x, (int) y)) {
             EquipmentItem equipped = ItemSystem.getInstance().getEquippedItem(EquipmentItem.Slot.BELT);
             if (equipped != null) {
                 showEquipmentInfo(equipped, true, -1, beltSlot.centerX(), beltSlot.centerY());
@@ -526,7 +546,7 @@ public class ItemsPanel {
             return true;
         }
 
-        if (shoesSlot.contains((int)x, (int)y)) {
+        if (shoesSlot.contains((int) x, (int) y)) {
             EquipmentItem equipped = ItemSystem.getInstance().getEquippedItem(EquipmentItem.Slot.SHOES);
             if (equipped != null) {
                 showEquipmentInfo(equipped, true, -1, shoesSlot.centerX(), shoesSlot.centerY());
@@ -543,11 +563,11 @@ public class ItemsPanel {
         Rect inventoryArea = new Rect(
                 inventorySlots[0][0].left,
                 inventorySlots[0][0].top,
-                inventorySlots[INVENTORY_ROWS-1][INVENTORY_COLS-1].right,
-                inventorySlots[INVENTORY_ROWS-1][INVENTORY_COLS-1].bottom
+                inventorySlots[INVENTORY_ROWS - 1][INVENTORY_COLS - 1].right,
+                inventorySlots[INVENTORY_ROWS - 1][INVENTORY_COLS - 1].bottom
         );
 
-        if (inventoryArea.contains((int)x, (int)y)) {
+        if (inventoryArea.contains((int) x, (int) y)) {
             isTouchingInventory = true;
             // Don't show popup yet, wait for ACTION_UP or confirm it's not a drag
             return true;
@@ -581,7 +601,7 @@ public class ItemsPanel {
 
                     // 3. Calculate the EXACT same position as used in drawInventoryGrid
                     int baseSlotY = inventorySlots[0][0].top + row * (SLOT_SIZE + SLOT_GAP);
-                    int currentTop = (int)(baseSlotY - inventoryScrollOffset);
+                    int currentTop = (int) (baseSlotY - inventoryScrollOffset);
 
                     Rect hitSlot = new Rect(
                             inventorySlots[0][0].left + col * (SLOT_SIZE + SLOT_GAP),
@@ -591,7 +611,7 @@ public class ItemsPanel {
                     );
 
                     // 4. Check if the touch point is inside this calculated slot
-                    if (hitSlot.contains((int)x, (int)y)) {
+                    if (hitSlot.contains((int) x, (int) y)) {
                         ItemStack stack = items.get(index);
 
                         // Show the appropriate info panel
@@ -652,6 +672,16 @@ public class ItemsPanel {
                         public void onDrop(EquipmentItem equipment, int index) {
                             ItemSystem.getInstance().removeItem(equipment.getId(), 1);
                         }
+
+                        @Override
+                        public void onXiangqian(EquipmentItem equipment, int index) {
+                            showEquipXiangQianDialog(equipment, index);
+                        }
+
+                        @Override
+                        public void onRonglian(EquipmentItem equipment, int index) {
+
+                        }
                     }
             );
         }
@@ -678,5 +708,81 @@ public class ItemsPanel {
                     }
             );
         }
+    }
+
+    private void showEquipXiangQianDialog(EquipmentItem equipment, int index) {
+        List<String> options = new ArrayList<>();
+        EquipItemInfo equipItemInfo = equipment.getEquipItemInfo();
+        switch (equipment.getSlot()) {
+            case HELMET: {
+                // 头盔可镶嵌太阳石，红玛瑙
+                options.add((equipItemInfo.getAttackStoneLevel() + 1) + "级太阳石（增加攻击伤害）");
+                options.add((equipItemInfo.getHitStoneLevel() + 1) + "级红玛瑙（增加攻击和法术命中）");
+            }
+            break;
+            case ACCESSORY: {
+                // 项链可镶嵌舍利子，蓝宝石
+                options.add((equipItemInfo.getManaStoneLevel() + 1) + "级舍利子（增加法术伤害）");
+                options.add((equipItemInfo.getMpStoneLevel() + 1) + "级蓝宝石（增加魔法上限）");
+            }
+            break;
+            case WEAPON: {
+                // 武器可镶嵌太阳石，舍利子
+                options.add((equipItemInfo.getAttackStoneLevel() + 1) + "级太阳石（增加攻击伤害）");
+                options.add((equipItemInfo.getManaStoneLevel() + 1) + "级舍利子（增加法术伤害）");
+            }
+            break;
+            case ARMOR: {
+                // 铠甲可镶嵌月亮石，光芒石
+                options.add((equipItemInfo.getDefenseStoneLevel() + 1) + "级月亮石（增加防御）");
+                options.add((equipItemInfo.getHpStoneLevel() + 1) + "级光芒石（增加气血上限）");
+            }
+            break;
+            case BELT: {
+                // 腰带可镶嵌光芒石，黑宝石
+                options.add((equipItemInfo.getHpStoneLevel() + 1) + "级光芒石（增加气血上限）");
+                options.add((equipItemInfo.getSpeedStoneLevel() + 1) + "级黑宝石（增加速度）");
+            }
+            break;
+            case SHOES: {
+                // 鞋子可镶嵌黑宝石，神秘石
+                options.add((equipItemInfo.getSpeedStoneLevel() + 1) + "级黑宝石（增加速度）");
+                options.add((equipItemInfo.getDodgeStoneLevel() + 1) + "级神秘石（增加闪避）");
+            }
+            break;
+        }
+
+        String msg = "请选择你要镶嵌的宝石，当前装备 " + EquipUtil.getStoneAddResultText(equipment.getEquipItemInfo());
+        GameEngine.getInstance().showDialog("宝石镶嵌", msg, options, new DialogBox.DialogListener() {
+            @Override
+            public void onOptionSelected(int optionIndex) {
+                String option = options.get(optionIndex);
+                GemtoneType gemtoneType = null;
+                if (option.startsWith("太阳石")) {
+                    gemtoneType = GemtoneType.GT_TaiYangShi;
+                } else if (option.startsWith("红玛瑙")) {
+                    gemtoneType = GemtoneType.GT_HoneMaNao;
+                } else if (option.startsWith("舍利子")) {
+                    gemtoneType = GemtoneType.GT_SheLiZi;
+                } else if (option.startsWith("蓝宝石")) {
+                    gemtoneType = GemtoneType.GT_LanBaoShi;
+                } else if (option.startsWith("月亮石")) {
+                    gemtoneType = GemtoneType.GT_YueLiangShi;
+                } else if (option.startsWith("光芒石")) {
+                    gemtoneType = GemtoneType.GT_GuangMangShi;
+                } else if (option.startsWith("黑宝石")) {
+                    gemtoneType = GemtoneType.GT_HeiBaoShi;
+                } else if (option.startsWith("神秘石")) {
+                    gemtoneType = GemtoneType.GT_ShenMiShi;
+                }
+
+                if (gemtoneType != null) {
+                    boolean success = ItemSystem.getInstance().xiangqianEquip(equipment, index, gemtoneType);
+                    if (success) {
+                        showEquipXiangQianDialog(equipment, index);
+                    }
+                }
+            }
+        });
     }
 }

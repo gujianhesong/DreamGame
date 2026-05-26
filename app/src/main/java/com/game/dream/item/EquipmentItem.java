@@ -1,5 +1,7 @@
 package com.game.dream.item;
 
+import android.text.TextUtils;
+
 import com.game.dream.bean.EquipItemInfo;
 import com.game.dream.utils.EquipUtil;
 
@@ -14,6 +16,25 @@ public class EquipmentItem extends Item {
         ARMOR,      //盔甲
         BELT,       //腰带
         SHOES,       //鞋子
+
+        ;
+
+        public static Slot getSlotWithName(String name) {
+            for (Slot item : Slot.values()) {
+                if (TextUtils.equals(item.name(), name)) {
+                    return item;
+                }
+            }
+            return null;
+        }
+
+        public static Slot getSlotWithIndex(int index) {
+            Slot[] arr = Slot.values();
+            if (index < arr.length) {
+                return arr[index];
+            }
+            return null;
+        }
     }
 
     private EquipItemInfo equipItemInfo;

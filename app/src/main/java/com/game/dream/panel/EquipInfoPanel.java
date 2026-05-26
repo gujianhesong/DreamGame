@@ -24,6 +24,8 @@ public class EquipInfoPanel {
     // Buttons
     private Rect actionButton;
     private Rect dropButton;
+    private Rect xiangqianButton;
+    private Rect ronglianButton;
 
     // Track if this is an equipped item
     private boolean isEquipped;
@@ -36,6 +38,10 @@ public class EquipInfoPanel {
         void onEquip(EquipmentItem equipment, int index);
 
         void onDrop(EquipmentItem equipment, int index);
+
+        void onXiangqian(EquipmentItem equipment, int index);
+
+        void onRonglian(EquipmentItem equipment, int index);
     }
 
     private EquipActionListener listener;
@@ -45,6 +51,8 @@ public class EquipInfoPanel {
         this.panelBounds = new Rect();
         this.actionButton = new Rect();
         this.dropButton = new Rect();
+        this.xiangqianButton = new Rect();
+        this.ronglianButton = new Rect();
         this.isEquipped = false;
         this.inventoryIndex = -1;
     }
@@ -61,7 +69,7 @@ public class EquipInfoPanel {
 
         // Calculate panel size (larger than item info for more stats)
         int panelWidth = 420;
-        int panelHeight = 480;
+        int panelHeight = 540;
 
         // Position panel to the right of the click position
         int offsetX = 70;
@@ -104,6 +112,20 @@ public class EquipInfoPanel {
                     panelBounds.bottom - bottomMargin - buttonHeight,
                     panelBounds.right - 30,
                     panelBounds.bottom - bottomMargin
+            );
+
+            xiangqianButton.set(
+                    panelBounds.left + 30,
+                    panelBounds.bottom - bottomMargin - buttonHeight - 60,
+                    panelBounds.left + 30 + buttonWidth,
+                    panelBounds.bottom - bottomMargin - 60
+            );
+
+            ronglianButton.set(
+                    panelBounds.right - 30 - buttonWidth,
+                    panelBounds.bottom - bottomMargin - buttonHeight - 60,
+                    panelBounds.right - 30,
+                    panelBounds.bottom - bottomMargin - 60
             );
         }
     }
@@ -220,8 +242,16 @@ public class EquipInfoPanel {
         //宝石属性
         String text = EquipUtil.getStoneAddResultText(equipItemInfo);
         if (!text.isEmpty()) {
-            canvas.drawText(text, panelBounds.left + 25, currentY, paint);
-            currentY += 50;
+            String[] textArr = text.split("\n");
+            if (textArr.length > 1) {
+                canvas.drawText(textArr[0], panelBounds.left + 25, currentY, paint);
+                currentY += 30;
+                canvas.drawText(textArr[1], panelBounds.left + 25, currentY, paint);
+                currentY += 50;
+            } else {
+                canvas.drawText(text, panelBounds.left + 25, currentY, paint);
+                currentY += 50;
+            }
         }
 
         //特效
@@ -250,6 +280,8 @@ public class EquipInfoPanel {
             // For inventory items: show "穿戴" and "丢弃"
             drawButton(canvas, paint, actionButton, "🛡️ 穿戴", Color.rgb(50, 150, 255));
             drawButton(canvas, paint, dropButton, "🗑️ 丢弃", Color.rgb(200, 80, 80));
+            drawButton(canvas, paint, xiangqianButton, "镶嵌", Color.rgb(150, 150, 0));
+            drawButton(canvas, paint, ronglianButton, "熔炼", Color.rgb(150, 150, 0));
         }
     }
 
@@ -308,7 +340,6 @@ public class EquipInfoPanel {
     }
 
 
-
     /**
      * Get slot text
      */
@@ -363,6 +394,24 @@ public class EquipInfoPanel {
             if (listener != null && selectedEquipment != null) {
                 EquipmentItem equipment = (EquipmentItem) selectedEquipment.getItem();
                 listener.onDrop(equipment, inventoryIndex);
+            }
+            hide();
+            return true;
+        }
+
+        if (!isEquipped && TouchUtil.checkIsInTouchRectFloat(xiangqianButton, x, y)) {
+            if (listener != null && selectedEquipment != null) {
+                EquipmentItem equipment = (EquipmentItem) selectedEquipment.getItem();
+                listener.onXiangqian(equipment, inventoryIndex);
+            }
+            hide();
+            return true;
+        }
+
+        if (!isEquipped && TouchUtil.checkIsInTouchRectFloat(ronglianButton, x, y)) {
+            if (listener != null && selectedEquipment != null) {
+                EquipmentItem equipment = (EquipmentItem) selectedEquipment.getItem();
+                listener.onRonglian(equipment, inventoryIndex);
             }
             hide();
             return true;

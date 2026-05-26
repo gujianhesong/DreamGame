@@ -102,50 +102,91 @@ public class EquipUtil {
         String text = "";
         AddPointResult addPointResult = getStoneAddResult(equipItemInfo);
         if (addPointResult != null) {
-            if (addPointResult.getBlood() > 0) {
-                text += equipItemInfo.getHpStoneLevel() + "级光芒石 +" + addPointResult.getBlood() + "气血";
-            }
-            if (addPointResult.getMagic() > 0) {
-                if (!text.isEmpty()) {
-                    text += "，";
+            switch (equipItemInfo.getEquipType()) {
+                case 1: {
+                    if (equipItemInfo.getAttackStoneLevel() > 0) {
+                        text += "太阳石镶嵌等级：" + equipItemInfo.getAttackStoneLevel() + "级  +" + addPointResult.getAttack() + "伤害";
+                    } else {
+                        text += "太阳石镶嵌等级：未镶嵌";
+                    }
+                    text += "\n";
+                    if (equipItemInfo.getHitStoneLevel() > 0) {
+                        text += "红玛瑙镶嵌等级：" + equipItemInfo.getHitStoneLevel() + "级  +" + addPointResult.getHit() + "命中";
+                    } else {
+                        text += "红玛瑙镶嵌等级：未镶嵌";
+                    }
                 }
-                text += equipItemInfo.getMpStoneLevel() + "级蓝宝石 +" + addPointResult.getMagic() + "魔法";
-            }
-            if (addPointResult.getHit() > 0) {
-                if (!text.isEmpty()) {
-                    text += "，";
+                break;
+                case 2: {
+                    if (equipItemInfo.getManaStoneLevel() > 0) {
+                        text += "舍利子镶嵌等级：" + equipItemInfo.getManaStoneLevel() + "级  +" + addPointResult.getMana() + "灵力";
+                    } else {
+                        text += "舍利子镶嵌等级：未镶嵌";
+                    }
+                    text += "\n";
+                    if (equipItemInfo.getMpStoneLevel() > 0) {
+                        text += "蓝宝石镶嵌等级：" + equipItemInfo.getMpStoneLevel() + "级  +" + addPointResult.getMagic() + "魔法";
+                    } else {
+                        text += "蓝宝石镶嵌等级：未镶嵌";
+                    }
                 }
-                text += equipItemInfo.getHpStoneLevel() + "级红玛瑙 +" + addPointResult.getHit() + "命中";
-            }
-            if (addPointResult.getAttack() > 0) {
-                if (!text.isEmpty()) {
-                    text += "，";
+                break;
+                case 3: {
+                    if (equipItemInfo.getAttackStoneLevel() > 0) {
+                        text += "太阳石镶嵌等级：" + equipItemInfo.getAttackStoneLevel() + "级  +" + addPointResult.getAttack() + "伤害";
+                    } else {
+                        text += "太阳石镶嵌等级：未镶嵌";
+                    }
+                    text += "\n";
+                    if (equipItemInfo.getManaStoneLevel() > 0) {
+                        text += "舍利子镶嵌等级：" + equipItemInfo.getManaStoneLevel() + "级  +" + addPointResult.getMana() + "灵力";
+                    } else {
+                        text += "舍利子镶嵌等级：未镶嵌";
+                    }
                 }
-                text += equipItemInfo.getAttackStoneLevel() + "级太阳石 +" + addPointResult.getAttack() + "伤害";
-            }
-            if (addPointResult.getDefense() > 0) {
-                if (!text.isEmpty()) {
-                    text += "，";
+                break;
+                case 4: {
+                    if (equipItemInfo.getDefenseStoneLevel() > 0) {
+                        text += "月亮石镶嵌等级：" + equipItemInfo.getDefenseStoneLevel() + "级  +" + addPointResult.getDefense() + "防御";
+                    } else {
+                        text += "月亮石镶嵌等级：未镶嵌";
+                    }
+                    text += "\n";
+                    if (equipItemInfo.getHpStoneLevel() > 0) {
+                        text += "光芒石镶嵌等级：" + equipItemInfo.getHpStoneLevel() + "级  +" + addPointResult.getBlood() + "气血";
+                    } else {
+                        text += "光芒石镶嵌等级：未镶嵌";
+                    }
                 }
-                text += equipItemInfo.getDefenseStoneLevel() + "级月亮石 +" + addPointResult.getDefense() + "防御";
-            }
-            if (addPointResult.getSpeed() > 0) {
-                if (!text.isEmpty()) {
-                    text += "，";
+                break;
+                case 5: {
+                    if (equipItemInfo.getHpStoneLevel() > 0) {
+                        text += "光芒石镶嵌等级：" + equipItemInfo.getHpStoneLevel() + "级  +" + addPointResult.getBlood() + "气血";
+                    } else {
+                        text += "光芒石镶嵌等级：未镶嵌";
+                    }
+                    text += "\n";
+                    if (equipItemInfo.getSpeedStoneLevel() > 0) {
+                        text += "黑宝石镶嵌等级：" + equipItemInfo.getSpeedStoneLevel() + "级  +" + addPointResult.getSpeed() + "速度";
+                    } else {
+                        text += "黑宝石镶嵌等级：未镶嵌";
+                    }
                 }
-                text += equipItemInfo.getSpeedStoneLevel() + "级黑宝石 +" + addPointResult.getSpeed() + "速度";
-            }
-            if (addPointResult.getMana() > 0) {
-                if (!text.isEmpty()) {
-                    text += "，";
+                break;
+                case 6: {
+                    if (equipItemInfo.getSpeedStoneLevel() > 0) {
+                        text += "黑宝石镶嵌等级：" + equipItemInfo.getSpeedStoneLevel() + "级  +" + addPointResult.getSpeed() + "速度";
+                    } else {
+                        text += "黑宝石镶嵌等级：未镶嵌";
+                    }
+                    text += "\n";
+                    if (equipItemInfo.getDodgeStoneLevel() > 0) {
+                        text += "神秘石镶嵌等级：" + equipItemInfo.getDodgeStoneLevel() + "级  +" + addPointResult.getDodge() + "闪避";
+                    } else {
+                        text += "神秘石镶嵌等级：未镶嵌";
+                    }
                 }
-                text += equipItemInfo.getManaStoneLevel() + "级舍利子 +" + addPointResult.getMana() + "灵力";
-            }
-            if (addPointResult.getDodge() > 0) {
-                if (!text.isEmpty()) {
-                    text += "，";
-                }
-                text += equipItemInfo.getDodgeStoneLevel() + "级红宝石 +" + addPointResult.getDodge() + "闪避";
+                break;
             }
         }
         return text;

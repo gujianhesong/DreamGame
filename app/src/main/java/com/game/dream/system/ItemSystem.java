@@ -8,6 +8,7 @@ import com.game.dream.LogUtil;
 import com.game.dream.bean.EquipItemInfo;
 import com.game.dream.bean.ItemInfo;
 import com.game.dream.bean.RoleInfo;
+import com.game.dream.enums.GemtoneType;
 import com.game.dream.enums.SpecialEffect;
 import com.game.dream.enums.XiLianType;
 import com.game.dream.item.ConsumableItem;
@@ -16,7 +17,6 @@ import com.game.dream.item.Item;
 import com.game.dream.item.ItemCreator;
 import com.game.dream.item.ItemStack;
 
-import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -64,6 +64,7 @@ public class ItemSystem {
             for (ItemInfo itemInfo : itemInfos) {
                 Item item = ItemCreator.createItemWithInfo(itemInfo);
                 if (item != null) {
+                    LogUtil.i("item " + item.getId() + ", " + itemInfo.getName() + ", " + itemInfo.getAmount());
                     items.add(new ItemStack(item, itemInfo.getAmount()));
                 } else {
                     LogUtil.i("无法创建item, itemId:" + itemInfo.getId() + ", " + itemInfo.getName());
@@ -338,6 +339,264 @@ public class ItemSystem {
 
             RoleSystem.getInstance().updateRoleEquipProperty();
         }
+    }
+
+    public boolean xiangqianEquip(EquipmentItem equipment, int index, GemtoneType gemtoneType) {
+        if (index < 0 || index >= items.size()) return false;
+
+        ItemStack stack = items.get(index);
+        Item item = stack.getItem();
+
+        if (item.getType() != Item.Type.EQUIPMENT) return false;
+        if (equipment != item) return false;
+
+        EquipItemInfo equipItemInfo = equipment.getEquipItemInfo();
+
+        if (equipItemInfo.getLevel() == 0) {
+            GameEngine.getInstance().showCenterToast("0级装备无法镶嵌宝石");
+            return false;
+        }
+
+        switch (equipment.getSlot()) {
+            case HELMET: {
+                // 头盔可镶嵌太阳石，红玛瑙
+                if (!(gemtoneType == GemtoneType.GT_TaiYangShi || gemtoneType == GemtoneType.GT_HoneMaNao)) {
+                    GameEngine.getInstance().showCenterToast("头盔只能镶嵌太阳石和红玛瑙");
+                    return false;
+                }
+                if (!isEquipHasSpecialEffect(equipItemInfo, SpecialEffect.SE_WuJiBieXianZhi)
+                        && gemtoneType == GemtoneType.GT_TaiYangShi
+                        && equipItemInfo.getAttackStoneLevel() >= equipItemInfo.getLevel() / 10) {
+                    GameEngine.getInstance().showCenterToast("当前非无级别装备最高只能镶嵌" + (equipItemInfo.getLevel() / 10) + "级太阳石");
+                    return false;
+                }
+                if (!isEquipHasSpecialEffect(equipItemInfo, SpecialEffect.SE_WuJiBieXianZhi)
+                        && gemtoneType == GemtoneType.GT_HoneMaNao
+                        && equipItemInfo.getHitStoneLevel() >= equipItemInfo.getLevel() / 10) {
+                    GameEngine.getInstance().showCenterToast("当前非无级别装备最高只能镶嵌" + (equipItemInfo.getLevel() / 10) + "级红玛瑙");
+                    return false;
+                }
+            }
+            break;
+            case ACCESSORY: {
+                // 项链可镶嵌舍利子，蓝宝石
+                if (!(gemtoneType == GemtoneType.GT_SheLiZi || gemtoneType == GemtoneType.GT_LanBaoShi)) {
+                    GameEngine.getInstance().showCenterToast("头盔只能镶嵌舍利子和蓝宝石");
+                    return false;
+                }
+                if (!isEquipHasSpecialEffect(equipItemInfo, SpecialEffect.SE_WuJiBieXianZhi)
+                        && gemtoneType == GemtoneType.GT_SheLiZi
+                        && equipItemInfo.getManaStoneLevel() >= equipItemInfo.getLevel() / 10) {
+                    GameEngine.getInstance().showCenterToast("当前非无级别装备最高只能镶嵌" + (equipItemInfo.getLevel() / 10) + "级舍利子");
+                    return false;
+                }
+                if (!isEquipHasSpecialEffect(equipItemInfo, SpecialEffect.SE_WuJiBieXianZhi)
+                        && gemtoneType == GemtoneType.GT_LanBaoShi
+                        && equipItemInfo.getMpStoneLevel() >= equipItemInfo.getLevel() / 10) {
+                    GameEngine.getInstance().showCenterToast("当前非无级别装备最高只能镶嵌" + (equipItemInfo.getLevel() / 10) + "级蓝宝石");
+                    return false;
+                }
+            }
+            break;
+            case WEAPON: {
+                // 武器可镶嵌太阳石，舍利子
+                if (!(gemtoneType == GemtoneType.GT_TaiYangShi || gemtoneType == GemtoneType.GT_SheLiZi)) {
+                    GameEngine.getInstance().showCenterToast("头盔只能镶嵌太阳石和舍利子");
+                    return false;
+                }
+                if (!isEquipHasSpecialEffect(equipItemInfo, SpecialEffect.SE_WuJiBieXianZhi)
+                        && gemtoneType == GemtoneType.GT_TaiYangShi
+                        && equipItemInfo.getAttackStoneLevel() >= equipItemInfo.getLevel() / 10) {
+                    GameEngine.getInstance().showCenterToast("当前非无级别装备最高只能镶嵌" + (equipItemInfo.getLevel() / 10) + "级太阳石");
+                    return false;
+                }
+                if (!isEquipHasSpecialEffect(equipItemInfo, SpecialEffect.SE_WuJiBieXianZhi)
+                        && gemtoneType == GemtoneType.GT_SheLiZi
+                        && equipItemInfo.getManaStoneLevel() >= equipItemInfo.getLevel() / 10) {
+                    GameEngine.getInstance().showCenterToast("当前非无级别装备最高只能镶嵌" + (equipItemInfo.getLevel() / 10) + "级舍利子");
+                    return false;
+                }
+            }
+            break;
+            case ARMOR: {
+                // 铠甲可镶嵌月亮石，光芒石
+                if (!(gemtoneType == GemtoneType.GT_YueLiangShi || gemtoneType == GemtoneType.GT_GuangMangShi)) {
+                    GameEngine.getInstance().showCenterToast("头盔只能镶嵌月亮石和光芒石");
+                    return false;
+                }
+                if (!isEquipHasSpecialEffect(equipItemInfo, SpecialEffect.SE_WuJiBieXianZhi)
+                        && gemtoneType == GemtoneType.GT_YueLiangShi
+                        && equipItemInfo.getDefenseStoneLevel() >= equipItemInfo.getLevel() / 10) {
+                    GameEngine.getInstance().showCenterToast("当前非无级别装备最高只能镶嵌" + (equipItemInfo.getLevel() / 10) + "级月亮石");
+                    return false;
+                }
+                if (!isEquipHasSpecialEffect(equipItemInfo, SpecialEffect.SE_WuJiBieXianZhi)
+                        && gemtoneType == GemtoneType.GT_GuangMangShi
+                        && equipItemInfo.getHpStoneLevel() >= equipItemInfo.getLevel() / 10) {
+                    GameEngine.getInstance().showCenterToast("当前非无级别装备最高只能镶嵌" + (equipItemInfo.getLevel() / 10) + "级光芒石");
+                    return false;
+                }
+            }
+            break;
+            case BELT: {
+                // 腰带可镶嵌光芒石，黑宝石
+                if (!(gemtoneType == GemtoneType.GT_GuangMangShi || gemtoneType == GemtoneType.GT_HeiBaoShi)) {
+                    GameEngine.getInstance().showCenterToast("头盔只能镶嵌光芒石和黑宝石");
+                    return false;
+                }
+                if (!isEquipHasSpecialEffect(equipItemInfo, SpecialEffect.SE_WuJiBieXianZhi)
+                        && gemtoneType == GemtoneType.GT_GuangMangShi
+                        && equipItemInfo.getHpStoneLevel() >= equipItemInfo.getLevel() / 10) {
+                    GameEngine.getInstance().showCenterToast("当前非无级别装备最高只能镶嵌" + (equipItemInfo.getLevel() / 10) + "级光芒石");
+                    return false;
+                }
+                if (!isEquipHasSpecialEffect(equipItemInfo, SpecialEffect.SE_WuJiBieXianZhi)
+                        && gemtoneType == GemtoneType.GT_HeiBaoShi
+                        && equipItemInfo.getSpeedStoneLevel() >= equipItemInfo.getLevel() / 10) {
+                    GameEngine.getInstance().showCenterToast("当前非无级别装备最高只能镶嵌" + (equipItemInfo.getLevel() / 10) + "级黑宝石");
+                    return false;
+                }
+            }
+            break;
+            case SHOES: {
+                // 鞋子可镶嵌黑宝石，神秘石
+                if (!(gemtoneType == GemtoneType.GT_HeiBaoShi || gemtoneType == GemtoneType.GT_ShenMiShi)) {
+                    GameEngine.getInstance().showCenterToast("头盔只能镶嵌黑宝石和神秘石");
+                    return false;
+                }
+                if (!isEquipHasSpecialEffect(equipItemInfo, SpecialEffect.SE_WuJiBieXianZhi)
+                        && gemtoneType == GemtoneType.GT_HeiBaoShi
+                        && equipItemInfo.getSpeedStoneLevel() >= equipItemInfo.getLevel() / 10) {
+                    GameEngine.getInstance().showCenterToast("当前非无级别装备最高只能镶嵌" + (equipItemInfo.getLevel() / 10) + "级黑宝石");
+                    return false;
+                }
+                if (!isEquipHasSpecialEffect(equipItemInfo, SpecialEffect.SE_WuJiBieXianZhi)
+                        && gemtoneType == GemtoneType.GT_ShenMiShi
+                        && equipItemInfo.getDodgeStoneLevel() >= equipItemInfo.getLevel() / 10) {
+                    GameEngine.getInstance().showCenterToast("当前非无级别装备最高只能镶嵌" + (equipItemInfo.getLevel() / 10) + "级神秘石");
+                    return false;
+                }
+            }
+            break;
+        }
+
+        switch (gemtoneType) {
+            case GT_TaiYangShi: {
+                int needStoneLevel = equipItemInfo.getAttackStoneLevel() + 1;
+                String stoneName = needStoneLevel + "级" + gemtoneType.getDesc();
+                ItemStack itemStack = ItemSystem.getInstance().getItemByName(stoneName);
+                if (itemStack != null && itemStack.getQuantity() > 1) {
+                    equipItemInfo.setAttackStoneLevel(equipItemInfo.getAttackStoneLevel() + 1);
+                    ItemSystem.getInstance().removeItem(stoneName, 1);
+                    GameEngine.getInstance().showCenterToast(stoneName + "镶嵌成功");
+                } else {
+                    GameEngine.getInstance().showCenterToast("缺少" + stoneName);
+                    return false;
+                }
+            }
+            break;
+            case GT_HoneMaNao: {
+                int needStoneLevel = equipItemInfo.getHitStoneLevel() + 1;
+                String stoneName = needStoneLevel + "级" + gemtoneType.getDesc();
+                ItemStack itemStack = ItemSystem.getInstance().getItemByName(stoneName);
+                if (itemStack != null && itemStack.getQuantity() > 1) {
+                    equipItemInfo.setHitStoneLevel(equipItemInfo.getHitStoneLevel() + 1);
+                    ItemSystem.getInstance().removeItem(stoneName, 1);
+                    GameEngine.getInstance().showCenterToast(stoneName + "镶嵌成功");
+                } else {
+                    GameEngine.getInstance().showCenterToast("缺少" + stoneName);
+                    return false;
+                }
+            }
+            break;
+            case GT_SheLiZi: {
+                int needStoneLevel = equipItemInfo.getManaStoneLevel() + 1;
+                String stoneName = needStoneLevel + "级" + gemtoneType.getDesc();
+                ItemStack itemStack = ItemSystem.getInstance().getItemByName(stoneName);
+                if (itemStack != null && itemStack.getQuantity() > 1) {
+                    equipItemInfo.setManaStoneLevel(equipItemInfo.getManaStoneLevel() + 1);
+                    ItemSystem.getInstance().removeItem(stoneName, 1);
+                    GameEngine.getInstance().showCenterToast(stoneName + "镶嵌成功");
+                } else {
+                    GameEngine.getInstance().showCenterToast("缺少" + stoneName);
+                    return false;
+                }
+            }
+
+            break;
+            case GT_YueLiangShi: {
+                int needStoneLevel = equipItemInfo.getDefenseStoneLevel() + 1;
+                String stoneName = needStoneLevel + "级" + gemtoneType.getDesc();
+                ItemStack itemStack = ItemSystem.getInstance().getItemByName(stoneName);
+                if (itemStack != null && itemStack.getQuantity() > 1) {
+                    equipItemInfo.setDefenseStoneLevel(equipItemInfo.getDefenseStoneLevel() + 1);
+                    ItemSystem.getInstance().removeItem(stoneName, 1);
+                    GameEngine.getInstance().showCenterToast(stoneName + "镶嵌成功");
+                } else {
+                    GameEngine.getInstance().showCenterToast("缺少" + stoneName);
+                    return false;
+                }
+            }
+            break;
+            case GT_GuangMangShi: {
+                int needStoneLevel = equipItemInfo.getHpStoneLevel() + 1;
+                String stoneName = needStoneLevel + "级" + gemtoneType.getDesc();
+                ItemStack itemStack = ItemSystem.getInstance().getItemByName(stoneName);
+                if (itemStack != null && itemStack.getQuantity() > 1) {
+                    equipItemInfo.setHpStoneLevel(equipItemInfo.getHpStoneLevel() + 1);
+                    ItemSystem.getInstance().removeItem(stoneName, 1);
+                    GameEngine.getInstance().showCenterToast(stoneName + "镶嵌成功");
+                } else {
+                    GameEngine.getInstance().showCenterToast("缺少" + stoneName);
+                    return false;
+                }
+            }
+            break;
+            case GT_HeiBaoShi: {
+                int needStoneLevel = equipItemInfo.getSpeedStoneLevel() + 1;
+                String stoneName = needStoneLevel + "级" + gemtoneType.getDesc();
+                ItemStack itemStack = ItemSystem.getInstance().getItemByName(stoneName);
+                if (itemStack != null && itemStack.getQuantity() > 1) {
+                    equipItemInfo.setSpeedStoneLevel(equipItemInfo.getSpeedStoneLevel() + 1);
+                    ItemSystem.getInstance().removeItem(stoneName, 1);
+                    GameEngine.getInstance().showCenterToast(stoneName + "镶嵌成功");
+                } else {
+                    GameEngine.getInstance().showCenterToast("缺少" + stoneName);
+                    return false;
+                }
+            }
+            break;
+            case GT_LanBaoShi: {
+                int needStoneLevel = equipItemInfo.getMpStoneLevel() + 1;
+                String stoneName = needStoneLevel + "级" + gemtoneType.getDesc();
+                ItemStack itemStack = ItemSystem.getInstance().getItemByName(stoneName);
+                if (itemStack != null && itemStack.getQuantity() > 1) {
+                    equipItemInfo.setMpStoneLevel(equipItemInfo.getMpStoneLevel() + 1);
+                    ItemSystem.getInstance().removeItem(stoneName, 1);
+                    GameEngine.getInstance().showCenterToast(stoneName + "镶嵌成功");
+                } else {
+                    GameEngine.getInstance().showCenterToast("缺少" + stoneName);
+                    return false;
+                }
+            }
+            break;
+            case GT_ShenMiShi: {
+                int needStoneLevel = equipItemInfo.getDodgeStoneLevel() + 1;
+                String stoneName = needStoneLevel + "级" + gemtoneType.getDesc();
+                ItemStack itemStack = ItemSystem.getInstance().getItemByName(stoneName);
+                if (itemStack != null && itemStack.getQuantity() > 1) {
+                    equipItemInfo.setDodgeStoneLevel(equipItemInfo.getDodgeStoneLevel() + 1);
+                    ItemSystem.getInstance().removeItem(stoneName, 1);
+                    GameEngine.getInstance().showCenterToast(stoneName + "镶嵌成功");
+                } else {
+                    GameEngine.getInstance().showCenterToast("缺少" + stoneName);
+                    return false;
+                }
+            }
+            break;
+        }
+
+        return true;
     }
 
     /**

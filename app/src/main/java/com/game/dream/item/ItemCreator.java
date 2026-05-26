@@ -2,12 +2,45 @@ package com.game.dream.item;
 
 import com.game.dream.bean.EquipItemInfo;
 import com.game.dream.bean.ItemInfo;
+import com.game.dream.enums.GemtoneType;
+import com.game.dream.system.ItemSystem;
 import com.game.dream.utils.PriceUtil;
 import com.game.dream.utils.Utils;
 
 import java.util.Arrays;
+import java.util.List;
 
 public class ItemCreator {
+    public static void testAddSomething() {
+        //添加宝石
+        List<GemtoneType> stoneTypes = Arrays.asList(GemtoneType.GT_TaiYangShi, GemtoneType.GT_HoneMaNao, GemtoneType.GT_SheLiZi,
+                GemtoneType.GT_YueLiangShi, GemtoneType.GT_GuangMangShi, GemtoneType.GT_HeiBaoShi,
+                GemtoneType.GT_LanBaoShi, GemtoneType.GT_ShenMiShi);
+        for (int i = 1; i <= 10; i++) {
+            for (GemtoneType gemtoneType : stoneTypes) {
+                Item item = ItemCreator.createGemstone(gemtoneType, i);
+                ItemSystem.getInstance().addItem(item, 50);
+            }
+        }
+
+        //添加制造书
+        List<EquipmentItem.Slot> slots = Arrays.asList(EquipmentItem.Slot.HELMET, EquipmentItem.Slot.ACCESSORY,
+                EquipmentItem.Slot.WEAPON, EquipmentItem.Slot.ARMOR,
+                EquipmentItem.Slot.BELT, EquipmentItem.Slot.SHOES);
+        for (int i = 1; i <= 10; i++) {
+            for (EquipmentItem.Slot slot : slots) {
+                Item item = ItemCreator.createBuildEquipBook(i * 10, slot);
+                ItemSystem.getInstance().addItem(item, 50);
+            }
+        }
+
+        //添加精铁
+        for (int i = 1; i <= 10; i++) {
+            Item item = ItemCreator.createBuildEquipIron(i * 10);
+            ItemSystem.getInstance().addItem(item, 50);
+        }
+    }
+
     public static Item createItemWithInfo(ItemInfo itemInfo) {
         if (itemInfo == null) {
             return null;
@@ -33,6 +66,32 @@ public class ItemCreator {
             case 104:
                 item = createMedicineRestoreState(id);
                 break;
+            case 210:
+            case 211: {
+                int level = (id - 210000) / 10;
+                item = createBuildEquipIron(level);
+            }
+            break;
+            case 220:
+            case 221: {
+                int level = (id - 220001) / 10;
+                int slotIndex = id % 10 - 1;
+                EquipmentItem.Slot slot = EquipmentItem.Slot.getSlotWithIndex(slotIndex);
+                if (slot != null) {
+                    item = createBuildEquipBook(level, slot);
+                }
+            }
+            break;
+            case 230:
+            case 231: {
+                int level = (id - 230001) / 100;
+                int stoneIndex = id % 10 - 1;
+                GemtoneType gemtoneType = GemtoneType.getGemtoneTypeWithIndex(stoneIndex);
+                if (gemtoneType != null) {
+                    item = createGemstone(gemtoneType, level);
+                }
+            }
+            break;
         }
 
         return item;
@@ -659,10 +718,24 @@ public class ItemCreator {
     }
 
     public static Item createBuildEquipIron(int level) {
-        int id = 200000 + level * 10;
+        int id = 210000 + level * 10;
+        Item.Rarity rarity;
+        if (level <= 20) {
+            rarity = Item.Rarity.Rarity_1;
+        } else if (level <= 40) {
+            rarity = Item.Rarity.Rarity_2;
+        } else if (level <= 60) {
+            rarity = Item.Rarity.Rarity_3;
+        } else if (level <= 90) {
+            rarity = Item.Rarity.Rarity_4;
+        } else if (level <= 120) {
+            rarity = Item.Rarity.Rarity_5;
+        } else {
+            rarity = Item.Rarity.Rarity_6;
+        }
         return new Item(
                 id, level + "级精铁", "制造装备的必备材料", Item.Type.MATERIAL,
-                Item.Rarity.Rarity_0,
+                rarity,
                 99, PriceUtil.getItemPriceWith10Level(2000, level)
         );
     }
@@ -673,7 +746,7 @@ public class ItemCreator {
                     EquipmentItem.Slot.WEAPON, EquipmentItem.Slot.ARMOR,
                     EquipmentItem.Slot.BELT, EquipmentItem.Slot.SHOES));
         }
-        int id = 201001 + level * 10 + slot.ordinal();
+        int id = 220001 + level * 10 + slot.ordinal();
         String name = "";
         switch (slot) {
             case HELMET:
@@ -695,11 +768,75 @@ public class ItemCreator {
                 name = level + "级鞋子制造书";
                 break;
         }
+        Item.Rarity rarity;
+        if (level <= 20) {
+            rarity = Item.Rarity.Rarity_1;
+        } else if (level <= 40) {
+            rarity = Item.Rarity.Rarity_2;
+        } else if (level <= 60) {
+            rarity = Item.Rarity.Rarity_3;
+        } else if (level <= 90) {
+            rarity = Item.Rarity.Rarity_4;
+        } else if (level <= 120) {
+            rarity = Item.Rarity.Rarity_5;
+        } else {
+            rarity = Item.Rarity.Rarity_6;
+        }
         return new Item(
                 id, name, "制造装备的必备材料", Item.Type.MATERIAL,
-                Item.Rarity.Rarity_0,
+                rarity,
                 99, PriceUtil.getItemPriceWith10Level(2000, level)
         );
     }
 
+    public static Item createGemstone(GemtoneType gemtoneType, int level) {
+        int id = 230001 + level * 100 + gemtoneType.ordinal();
+
+        String desc = "";
+        switch (gemtoneType) {
+            case GT_TaiYangShi:
+                desc = "镶嵌装备的太阳宝石，镶嵌后可增加攻击伤害";
+                break;
+            case GT_HoneMaNao:
+                desc = "镶嵌装备的红玛瑙宝石，镶嵌后可增加攻击和法术命中";
+                break;
+            case GT_SheLiZi:
+                desc = "镶嵌装备的舍利子宝石，镶嵌后可增加灵力";
+                break;
+            case GT_YueLiangShi:
+                desc = "镶嵌装备的月亮宝石，镶嵌后可增加防御";
+                break;
+            case GT_GuangMangShi:
+                desc = "镶嵌装备的光芒宝石，镶嵌后可增加气血";
+                break;
+            case GT_HeiBaoShi:
+                desc = "镶嵌装备的黑色宝石，镶嵌后可增加速度";
+                break;
+            case GT_LanBaoShi:
+                desc = "镶嵌装备的蓝色宝石，镶嵌后可增加魔法";
+                break;
+            case GT_ShenMiShi:
+                desc = "镶嵌装备的神秘宝石，镶嵌后可增加闪避";
+                break;
+        }
+        Item.Rarity rarity;
+        if (level <= 2) {
+            rarity = Item.Rarity.Rarity_1;
+        } else if (level <= 4) {
+            rarity = Item.Rarity.Rarity_2;
+        } else if (level <= 6) {
+            rarity = Item.Rarity.Rarity_3;
+        } else if (level <= 9) {
+            rarity = Item.Rarity.Rarity_4;
+        } else if (level <= 12) {
+            rarity = Item.Rarity.Rarity_5;
+        } else {
+            rarity = Item.Rarity.Rarity_6;
+        }
+        return new Item(
+                id, level + "级" + gemtoneType.getDesc(), desc, Item.Type.MATERIAL,
+                rarity,
+                99, PriceUtil.getItemPriceWith10Level(2000, level)
+        );
+    }
 }

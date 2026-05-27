@@ -84,7 +84,7 @@ public class DialogBox {
         int startX = bounds.left + 30;
 
         // Calculate starting Y based on message length (simple estimation)
-        int startY = bounds.top + 150;
+        int startY = bounds.top + 250;
 
         for (int i = 0; i < options.size(); i++) {
             int yPos = startY + i * (btnHeight + gap);

@@ -99,91 +99,97 @@ public class EquipUtil {
     }
 
     public static String getStoneAddResultText(EquipItemInfo equipItemInfo) {
-        String text = "";
+        String text = "宝石镶嵌等级：";
         AddPointResult addPointResult = getStoneAddResult(equipItemInfo);
         if (addPointResult != null) {
             switch (equipItemInfo.getEquipType()) {
                 case 1: {
+                    text += "\n";
                     if (equipItemInfo.getAttackStoneLevel() > 0) {
-                        text += "太阳石镶嵌等级：" + equipItemInfo.getAttackStoneLevel() + "级  +" + addPointResult.getAttack() + "伤害";
+                        text += "太阳石：" + equipItemInfo.getAttackStoneLevel() + "级  +" + addPointResult.getAttack() + "伤害";
                     } else {
-                        text += "太阳石镶嵌等级：未镶嵌";
+                        text += "太阳石：未镶嵌";
                     }
                     text += "\n";
                     if (equipItemInfo.getHitStoneLevel() > 0) {
-                        text += "红玛瑙镶嵌等级：" + equipItemInfo.getHitStoneLevel() + "级  +" + addPointResult.getHit() + "命中";
+                        text += "红玛瑙：" + equipItemInfo.getHitStoneLevel() + "级  +" + addPointResult.getHit() + "命中";
                     } else {
-                        text += "红玛瑙镶嵌等级：未镶嵌";
+                        text += "红玛瑙：未镶嵌";
                     }
                 }
                 break;
                 case 2: {
+                    text += "\n";
                     if (equipItemInfo.getManaStoneLevel() > 0) {
-                        text += "舍利子镶嵌等级：" + equipItemInfo.getManaStoneLevel() + "级  +" + addPointResult.getMana() + "灵力";
+                        text += "舍利子：" + equipItemInfo.getManaStoneLevel() + "级  +" + addPointResult.getMana() + "灵力";
                     } else {
-                        text += "舍利子镶嵌等级：未镶嵌";
+                        text += "舍利子：未镶嵌";
                     }
                     text += "\n";
                     if (equipItemInfo.getMpStoneLevel() > 0) {
-                        text += "蓝宝石镶嵌等级：" + equipItemInfo.getMpStoneLevel() + "级  +" + addPointResult.getMagic() + "魔法";
+                        text += "蓝宝石：" + equipItemInfo.getMpStoneLevel() + "级  +" + addPointResult.getMagic() + "魔法";
                     } else {
-                        text += "蓝宝石镶嵌等级：未镶嵌";
+                        text += "蓝宝石：未镶嵌";
                     }
                 }
                 break;
                 case 3: {
+                    text += "\n";
                     if (equipItemInfo.getAttackStoneLevel() > 0) {
-                        text += "太阳石镶嵌等级：" + equipItemInfo.getAttackStoneLevel() + "级  +" + addPointResult.getAttack() + "伤害";
+                        text += "太阳石：" + equipItemInfo.getAttackStoneLevel() + "级  +" + addPointResult.getAttack() + "伤害";
                     } else {
-                        text += "太阳石镶嵌等级：未镶嵌";
+                        text += "太阳石：未镶嵌";
                     }
                     text += "\n";
                     if (equipItemInfo.getManaStoneLevel() > 0) {
-                        text += "舍利子镶嵌等级：" + equipItemInfo.getManaStoneLevel() + "级  +" + addPointResult.getMana() + "灵力";
+                        text += "舍利子：" + equipItemInfo.getManaStoneLevel() + "级  +" + addPointResult.getMana() + "灵力";
                     } else {
-                        text += "舍利子镶嵌等级：未镶嵌";
+                        text += "舍利子：未镶嵌";
                     }
                 }
                 break;
                 case 4: {
+                    text += "\n";
                     if (equipItemInfo.getDefenseStoneLevel() > 0) {
-                        text += "月亮石镶嵌等级：" + equipItemInfo.getDefenseStoneLevel() + "级  +" + addPointResult.getDefense() + "防御";
+                        text += "月亮石：" + equipItemInfo.getDefenseStoneLevel() + "级  +" + addPointResult.getDefense() + "防御";
                     } else {
-                        text += "月亮石镶嵌等级：未镶嵌";
+                        text += "月亮石：未镶嵌";
                     }
                     text += "\n";
                     if (equipItemInfo.getHpStoneLevel() > 0) {
-                        text += "光芒石镶嵌等级：" + equipItemInfo.getHpStoneLevel() + "级  +" + addPointResult.getBlood() + "气血";
+                        text += "光芒石：" + equipItemInfo.getHpStoneLevel() + "级  +" + addPointResult.getBlood() + "气血";
                     } else {
-                        text += "光芒石镶嵌等级：未镶嵌";
+                        text += "光芒石：未镶嵌";
                     }
                 }
                 break;
                 case 5: {
+                    text += "\n";
                     if (equipItemInfo.getHpStoneLevel() > 0) {
-                        text += "光芒石镶嵌等级：" + equipItemInfo.getHpStoneLevel() + "级  +" + addPointResult.getBlood() + "气血";
+                        text += "光芒石：" + equipItemInfo.getHpStoneLevel() + "级  +" + addPointResult.getBlood() + "气血";
                     } else {
-                        text += "光芒石镶嵌等级：未镶嵌";
+                        text += "光芒石：未镶嵌";
                     }
                     text += "\n";
                     if (equipItemInfo.getSpeedStoneLevel() > 0) {
-                        text += "黑宝石镶嵌等级：" + equipItemInfo.getSpeedStoneLevel() + "级  +" + addPointResult.getSpeed() + "速度";
+                        text += "黑宝石：" + equipItemInfo.getSpeedStoneLevel() + "级  +" + addPointResult.getSpeed() + "速度";
                     } else {
-                        text += "黑宝石镶嵌等级：未镶嵌";
+                        text += "黑宝石：未镶嵌";
                     }
                 }
                 break;
                 case 6: {
+                    text += "\n";
                     if (equipItemInfo.getSpeedStoneLevel() > 0) {
-                        text += "黑宝石镶嵌等级：" + equipItemInfo.getSpeedStoneLevel() + "级  +" + addPointResult.getSpeed() + "速度";
+                        text += "黑宝石：" + equipItemInfo.getSpeedStoneLevel() + "级  +" + addPointResult.getSpeed() + "速度";
                     } else {
-                        text += "黑宝石镶嵌等级：未镶嵌";
+                        text += "黑宝石：未镶嵌";
                     }
                     text += "\n";
                     if (equipItemInfo.getDodgeStoneLevel() > 0) {
-                        text += "神秘石镶嵌等级：" + equipItemInfo.getDodgeStoneLevel() + "级  +" + addPointResult.getDodge() + "闪避";
+                        text += "神秘石：" + equipItemInfo.getDodgeStoneLevel() + "级  +" + addPointResult.getDodge() + "闪避";
                     } else {
-                        text += "神秘石镶嵌等级：未镶嵌";
+                        text += "神秘石：未镶嵌";
                     }
                 }
                 break;
@@ -219,42 +225,42 @@ public class EquipUtil {
         boolean hasXiLianProp = false;
         if (equipItemInfo.getAttackCritRatio() > 0) {
             text += "\n";
-            text += "物理暴击几率: +" + equipItemInfo.getAttackCritRatio();
+            text += "物理暴击几率: +" + Utils.format100Ratio(equipItemInfo.getAttackCritRatio());
             hasXiLianProp = true;
         }
         if (equipItemInfo.getMagicCritRatio() > 0) {
             text += "\n";
-            text += "法术暴击几率: +" + equipItemInfo.getMagicCritRatio();
+            text += "法术暴击几率: +" + Utils.format100Ratio(equipItemInfo.getMagicCritRatio());
             hasXiLianProp = true;
         }
         if (equipItemInfo.getAttackSpeedRatio() > 0) {
             text += "\n";
-            text += "攻击速度增幅: +" + equipItemInfo.getAttackSpeedRatio();
+            text += "攻击速度增幅: +" + Utils.format100Ratio(equipItemInfo.getAttackSpeedRatio());
             hasXiLianProp = true;
         }
         if (equipItemInfo.getMagicSpeedRatio() > 0) {
             text += "\n";
-            text += "法术速度增幅: +" + equipItemInfo.getMagicSpeedRatio();
+            text += "法术速度增幅: +" + Utils.format100Ratio(equipItemInfo.getMagicSpeedRatio());
             hasXiLianProp = true;
         }
         if (equipItemInfo.getAttackValueRatio() > 0) {
             text += "\n";
-            text += "攻击伤害增幅: +" + equipItemInfo.getAttackValueRatio();
+            text += "攻击伤害增幅: +" + Utils.format100Ratio(equipItemInfo.getAttackValueRatio());
             hasXiLianProp = true;
         }
         if (equipItemInfo.getMagicValueRatio() > 0) {
             text += "\n";
-            text += "法术伤害增幅: +" + equipItemInfo.getMagicValueRatio();
+            text += "法术伤害增幅: +" + Utils.format100Ratio(equipItemInfo.getMagicValueRatio());
             hasXiLianProp = true;
         }
         if (equipItemInfo.getBeAttackedValueRatio() > 0) {
             text += "\n";
-            text += "被攻击伤害减伤: +" + equipItemInfo.getBeAttackedValueRatio();
+            text += "被攻击伤害减伤: +" + Utils.format100Ratio(equipItemInfo.getBeAttackedValueRatio());
             hasXiLianProp = true;
         }
         if (equipItemInfo.getBeMagicedValueRatio() > 0) {
             text += "\n";
-            text += "被法术伤害减伤: +" + equipItemInfo.getBeMagicedValueRatio();
+            text += "被法术伤害减伤: +" + Utils.format100Ratio(equipItemInfo.getBeMagicedValueRatio());
             hasXiLianProp = true;
         }
 

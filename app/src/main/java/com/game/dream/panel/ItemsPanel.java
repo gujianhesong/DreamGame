@@ -4,12 +4,14 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
+import android.text.TextUtils;
 
 import com.game.dream.GameEngine;
 import com.game.dream.bean.EquipItemInfo;
 import com.game.dream.enums.GemtoneType;
 import com.game.dream.item.EquipmentItem;
 import com.game.dream.item.Item;
+import com.game.dream.item.ItemCreator;
 import com.game.dream.item.ItemStack;
 import com.game.dream.system.ItemSystem;
 import com.game.dream.system.RoleSystem;
@@ -675,12 +677,12 @@ public class ItemsPanel {
 
                         @Override
                         public void onXiangqian(EquipmentItem equipment, int index) {
-                            showEquipXiangQianDialog(equipment, index);
+                            showEquipXiangQianDialog(equipment);
                         }
 
                         @Override
-                        public void onRonglian(EquipmentItem equipment, int index) {
-
+                        public void onXilian(EquipmentItem equipment, int index) {
+                            showEquipXiLianDialog(equipment);
                         }
                     }
             );
@@ -710,7 +712,7 @@ public class ItemsPanel {
         }
     }
 
-    private void showEquipXiangQianDialog(EquipmentItem equipment, int index) {
+    private void showEquipXiangQianDialog(EquipmentItem equipment) {
         List<String> options = new ArrayList<>();
         EquipItemInfo equipItemInfo = equipment.getEquipItemInfo();
         switch (equipment.getSlot()) {
@@ -777,10 +779,34 @@ public class ItemsPanel {
                 }
 
                 if (gemtoneType != null) {
-                    boolean success = ItemSystem.getInstance().xiangqianEquip(equipment, index, gemtoneType);
+                    boolean success = ItemSystem.getInstance().equipXiangQian(equipment, gemtoneType);
                     if (success) {
-                        showEquipXiangQianDialog(equipment, index);
+                        showEquipXiangQianDialog(equipment);
                     }
+                }
+            }
+        });
+    }
+
+    private void showEquipXiLianDialog(EquipmentItem equipment) {
+        List<String> options = new ArrayList<>();
+        EquipItemInfo equipItemInfo = equipment.getEquipItemInfo();
+        options.add("使用 " + equipItemInfo.getLevel() + "级洗炼石 洗炼");
+
+        String xilianInfo = EquipUtil.getEquipXiLianPropText(equipItemInfo);
+        String msg;
+        if (TextUtils.isEmpty(xilianInfo)) {
+            msg = "对装备进行洗炼可以获得附加属性加成，当前装备 洗炼属性：无 ";
+        } else {
+            msg = "对装备进行洗炼可以获得附加属性加成，当前装备 " + xilianInfo;
+        }
+
+        GameEngine.getInstance().showDialog("装备洗炼", msg, options, new DialogBox.DialogListener() {
+            @Override
+            public void onOptionSelected(int optionIndex) {
+                boolean success = ItemSystem.getInstance().equipXiLian(equipment);
+                if (success) {
+                    showEquipXiLianDialog(equipment);
                 }
             }
         });

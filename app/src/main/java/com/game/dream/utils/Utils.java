@@ -1,5 +1,7 @@
 package com.game.dream.utils;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class Utils {
@@ -30,7 +32,7 @@ public class Utils {
 
     public static float getRangeValue(float minValue, float maxValue) {
         float newMinValue = Math.min(minValue, maxValue);
-        float newMaxValue = Math.min(minValue, maxValue);
+        float newMaxValue = Math.max(minValue, maxValue);
         float value = (float) (newMinValue + (newMaxValue - newMinValue) * Math.random());
         return value;
     }
@@ -57,5 +59,23 @@ public class Utils {
 
         int randomIndex = (int) (Math.random() * items.size());
         return items.get(randomIndex);
+    }
+
+    /**
+     * 从列表中随机获取指定数量的元素
+     */
+    public static <T> List<T> getRandomItems(List<T> originalList, int count) {
+        if (count > originalList.size()) {
+            throw new IllegalArgumentException("请求的元素数量大于列表中的元素数量");
+        }
+
+        List<T> copyList = new ArrayList<>(originalList);
+        Collections.shuffle(copyList); // 打乱列表顺序
+
+        return copyList.subList(0, count); // 返回前count个元素
+    }
+
+    public static String format100Ratio(float ratio) {
+        return (int)(ratio * 10000) / 100f + "%";
     }
 }

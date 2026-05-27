@@ -7,7 +7,6 @@ import android.graphics.Rect;
 
 import com.game.dream.bean.EquipItemInfo;
 import com.game.dream.item.EquipmentItem;
-import com.game.dream.item.Item;
 import com.game.dream.item.ItemStack;
 import com.game.dream.utils.EquipUtil;
 import com.game.dream.utils.ItemsUtil;
@@ -25,7 +24,7 @@ public class EquipInfoPanel {
     private Rect actionButton;
     private Rect dropButton;
     private Rect xiangqianButton;
-    private Rect ronglianButton;
+    private Rect xilianButton;
 
     // Track if this is an equipped item
     private boolean isEquipped;
@@ -41,7 +40,7 @@ public class EquipInfoPanel {
 
         void onXiangqian(EquipmentItem equipment, int index);
 
-        void onRonglian(EquipmentItem equipment, int index);
+        void onXilian(EquipmentItem equipment, int index);
     }
 
     private EquipActionListener listener;
@@ -52,7 +51,7 @@ public class EquipInfoPanel {
         this.actionButton = new Rect();
         this.dropButton = new Rect();
         this.xiangqianButton = new Rect();
-        this.ronglianButton = new Rect();
+        this.xilianButton = new Rect();
         this.isEquipped = false;
         this.inventoryIndex = -1;
     }
@@ -69,7 +68,7 @@ public class EquipInfoPanel {
 
         // Calculate panel size (larger than item info for more stats)
         int panelWidth = 420;
-        int panelHeight = 540;
+        int panelHeight = 600;
 
         // Position panel to the right of the click position
         int offsetX = 70;
@@ -121,7 +120,7 @@ public class EquipInfoPanel {
                     panelBounds.bottom - bottomMargin - 60
             );
 
-            ronglianButton.set(
+            xilianButton.set(
                     panelBounds.right - 30 - buttonWidth,
                     panelBounds.bottom - bottomMargin - buttonHeight - 60,
                     panelBounds.right - 30,
@@ -175,7 +174,7 @@ public class EquipInfoPanel {
         paint.setTextSize(30);
         paint.setTextAlign(Paint.Align.CENTER);
         paint.setFakeBoldText(true);
-        canvas.drawText(equipment.getName(), panelBounds.centerX(), panelBounds.top + 50, paint);
+        canvas.drawText(equipment.getName(), panelBounds.centerX(), panelBounds.top + 40, paint);
         paint.setFakeBoldText(false);
 
         // Rarity and slot label
@@ -183,16 +182,16 @@ public class EquipInfoPanel {
         paint.setColor(Color.WHITE);
         String slotText = getSlotText(equipment.getSlot());
         canvas.drawText(ItemsUtil.getRarityText(equipment.getRarity()) + " · " + slotText,
-                panelBounds.centerX(), panelBounds.top + 78, paint);
+                panelBounds.centerX(), panelBounds.top + 68, paint);
 
         // Divider line
         paint.setStrokeWidth(2);
         paint.setColor(Color.rgb(150, 150, 150));
-        canvas.drawLine(panelBounds.left + 25, panelBounds.top + 95,
-                panelBounds.right - 25, panelBounds.top + 95, paint);
+        canvas.drawLine(panelBounds.left + 25, panelBounds.top + 85,
+                panelBounds.right - 25, panelBounds.top + 85, paint);
 
         // Description section
-        int descStartY = panelBounds.top + 130;
+        int descStartY = panelBounds.top + 120;
 
         paint.setColor(Color.WHITE);
         paint.setTextSize(18);
@@ -205,7 +204,7 @@ public class EquipInfoPanel {
                 panelBounds.width() - 50, 26);
 
         // Stats section
-        int statsStartY = panelBounds.top + 200;
+        int statsStartY = panelBounds.top + 190;
         drawStatsSection(canvas, paint, equipment, statsStartY);
 
         // Draw action buttons (Equip/Unequip + Drop)
@@ -221,7 +220,6 @@ public class EquipInfoPanel {
         paint.setColor(Color.rgb(255, 255, 0));
 
         int currentY = startY;
-        int lineHeight = 35;
 
         EquipItemInfo equipItemInfo = equipment.getEquipItemInfo();
 
@@ -229,43 +227,43 @@ public class EquipInfoPanel {
         String equipAddValue = EquipUtil.getEquipValueText(equipItemInfo);
         if (!equipAddValue.isEmpty()) {
             canvas.drawText(equipAddValue, panelBounds.left + 25, currentY, paint);
-            currentY += 50;
+            currentY += 40;
         }
 
         // 附加原始属性
         String srcPropText = EquipUtil.getEquipPropText(equipItemInfo);
         if (!srcPropText.isEmpty()) {
             canvas.drawText(srcPropText, panelBounds.left + 25, currentY, paint);
-            currentY += 50;
+            currentY += 40;
         }
 
         //宝石属性
         String text = EquipUtil.getStoneAddResultText(equipItemInfo);
         if (!text.isEmpty()) {
-            String[] textArr = text.split("\n");
-            if (textArr.length > 1) {
-                canvas.drawText(textArr[0], panelBounds.left + 25, currentY, paint);
+            String[] lines = text.split("\n");
+            for (String line : lines) {
+                canvas.drawText(line, panelBounds.left + 25, currentY, paint);
                 currentY += 30;
-                canvas.drawText(textArr[1], panelBounds.left + 25, currentY, paint);
-                currentY += 50;
-            } else {
-                canvas.drawText(text, panelBounds.left + 25, currentY, paint);
-                currentY += 50;
             }
+            currentY += 10;
         }
 
         //特效
         String specialEffectText = EquipUtil.getEquipSpecialEffectText(equipItemInfo);
         if (!specialEffectText.isEmpty()) {
             canvas.drawText(specialEffectText, panelBounds.left + 25, currentY, paint);
-            currentY += 50;
+            currentY += 40;
         }
 
         //附加属性
         String xiLianPropText = EquipUtil.getEquipXiLianPropText(equipItemInfo);
         if (!xiLianPropText.isEmpty()) {
-            canvas.drawText(xiLianPropText, panelBounds.left + 25, currentY, paint);
-            currentY += 50;
+            String[] lines = xiLianPropText.split("\n");
+            for (String line : lines) {
+                canvas.drawText(line, panelBounds.left + 25, currentY, paint);
+                currentY += 30;
+            }
+            currentY += 10;
         }
     }
 
@@ -281,7 +279,7 @@ public class EquipInfoPanel {
             drawButton(canvas, paint, actionButton, "🛡️ 穿戴", Color.rgb(50, 150, 255));
             drawButton(canvas, paint, dropButton, "🗑️ 丢弃", Color.rgb(200, 80, 80));
             drawButton(canvas, paint, xiangqianButton, "镶嵌", Color.rgb(150, 150, 0));
-            drawButton(canvas, paint, ronglianButton, "熔炼", Color.rgb(150, 150, 0));
+            drawButton(canvas, paint, xilianButton, "洗炼", Color.rgb(150, 150, 0));
         }
     }
 
@@ -408,10 +406,10 @@ public class EquipInfoPanel {
             return true;
         }
 
-        if (!isEquipped && TouchUtil.checkIsInTouchRectFloat(ronglianButton, x, y)) {
+        if (!isEquipped && TouchUtil.checkIsInTouchRectFloat(xilianButton, x, y)) {
             if (listener != null && selectedEquipment != null) {
                 EquipmentItem equipment = (EquipmentItem) selectedEquipment.getItem();
-                listener.onRonglian(equipment, inventoryIndex);
+                listener.onXilian(equipment, inventoryIndex);
             }
             hide();
             return true;

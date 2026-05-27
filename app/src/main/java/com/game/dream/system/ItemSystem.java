@@ -16,8 +16,10 @@ import com.game.dream.item.EquipmentItem;
 import com.game.dream.item.Item;
 import com.game.dream.item.ItemCreator;
 import com.game.dream.item.ItemStack;
+import com.game.dream.utils.Utils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class ItemSystem {
@@ -341,15 +343,7 @@ public class ItemSystem {
         }
     }
 
-    public boolean xiangqianEquip(EquipmentItem equipment, int index, GemtoneType gemtoneType) {
-        if (index < 0 || index >= items.size()) return false;
-
-        ItemStack stack = items.get(index);
-        Item item = stack.getItem();
-
-        if (item.getType() != Item.Type.EQUIPMENT) return false;
-        if (equipment != item) return false;
-
+    public boolean equipXiangQian(EquipmentItem equipment, GemtoneType gemtoneType) {
         EquipItemInfo equipItemInfo = equipment.getEquipItemInfo();
 
         if (equipItemInfo.getLevel() == 0) {
@@ -597,6 +591,104 @@ public class ItemSystem {
         }
 
         return true;
+    }
+
+    public boolean equipXiLian(EquipmentItem equipment) {
+        EquipItemInfo equipItemInfo = equipment.getEquipItemInfo();
+
+        if (equipItemInfo.getLevel() == 0) {
+            GameEngine.getInstance().showCenterToast("0级装备无法洗炼");
+            return false;
+        }
+
+        int level = equipItemInfo.getLevel();
+        int needStoneLevel = equipItemInfo.getLevel();
+        String stoneName = needStoneLevel + "级洗炼石";
+        ItemStack itemStack = ItemSystem.getInstance().getItemByName(stoneName);
+        if (itemStack != null && itemStack.getQuantity() > 1) {
+            //重置附加属性
+            equipItemInfo.setAttackCritRatio(0);
+            equipItemInfo.setMagicCritRatio(0);
+            equipItemInfo.setAttackSpeedRatio(0);
+            equipItemInfo.setMagicSpeedRatio(0);
+            equipItemInfo.setAttackValueRatio(0);
+            equipItemInfo.setMagicValueRatio(0);
+            equipItemInfo.setBeAttackedValueRatio(0);
+            equipItemInfo.setBeMagicedValueRatio(0);
+
+            //生成洗炼附加属性
+            double ratio = Math.random();
+            if (ratio < 0.2) {
+                //3属性
+                List<Integer> indexList = Utils.getRandomItems(Arrays.asList(0, 1, 2, 3, 4, 5, 6, 7), 3);
+                for (Integer index : indexList) {
+                    generateSingleXiLianProp(equipItemInfo, index);
+                }
+            } else if (ratio < 0.5) {
+                //2属性
+                List<Integer> indexList = Utils.getRandomItems(Arrays.asList(0, 1, 2, 3, 4, 5, 6, 7), 2);
+                for (Integer index : indexList) {
+                    generateSingleXiLianProp(equipItemInfo, index);
+                }
+            } else {
+                //单属性
+                List<Integer> indexList = Utils.getRandomItems(Arrays.asList(0, 1, 2, 3, 4, 5, 6, 7), 1);
+                for (Integer index : indexList) {
+                    generateSingleXiLianProp(equipItemInfo, index);
+                }
+            }
+
+            ItemSystem.getInstance().removeItem(stoneName, 1);
+            GameEngine.getInstance().showCenterToast("装备洗炼成功");
+        } else {
+            GameEngine.getInstance().showCenterToast("缺少" + stoneName);
+            return false;
+        }
+        return true;
+    }
+
+    private void generateSingleXiLianProp(EquipItemInfo equipItemInfo, int index) {
+        int level = equipItemInfo.getLevel();
+        // 最高几率在4%-8%之间，根据level提升几率
+        float maxValue = (Math.min(4f + level * 0.04f, 8f)) / 100f;
+        float minValue = 0.01f;
+        float value = Utils.getRangeValue(minValue, maxValue);
+        value = ((int) (value * 10000)) / 10000f;
+
+        switch (index) {
+            case 0:
+                //物理暴击几率
+                equipItemInfo.setAttackCritRatio(value);
+                break;
+            case 1:
+                //法术暴击几率
+                equipItemInfo.setMagicCritRatio(value);
+                break;
+            case 2:
+                //攻击速度增加
+                equipItemInfo.setAttackSpeedRatio(value);
+                break;
+            case 3:
+                //法术速度增加
+                equipItemInfo.setMagicSpeedRatio(value);
+                break;
+            case 4:
+                //攻击伤害增加
+                equipItemInfo.setAttackValueRatio(value);
+                break;
+            case 5:
+                //法术伤害增加
+                equipItemInfo.setMagicValueRatio(value);
+                break;
+            case 6:
+                //被攻击伤害减少
+                equipItemInfo.setBeAttackedValueRatio(value);
+                break;
+            case 7:
+                //被法术伤害减少
+                equipItemInfo.setBeMagicedValueRatio(value);
+                break;
+        }
     }
 
     /**

@@ -13,7 +13,7 @@ import java.util.List;
 public class ItemCreator {
     public static void testAddSomething() {
         //添加宝石
-        List<GemtoneType> stoneTypes = Arrays.asList(GemtoneType.GT_TaiYangShi, GemtoneType.GT_HoneMaNao, GemtoneType.GT_SheLiZi,
+        /*List<GemtoneType> stoneTypes = Arrays.asList(GemtoneType.GT_TaiYangShi, GemtoneType.GT_HoneMaNao, GemtoneType.GT_SheLiZi,
                 GemtoneType.GT_YueLiangShi, GemtoneType.GT_GuangMangShi, GemtoneType.GT_HeiBaoShi,
                 GemtoneType.GT_LanBaoShi, GemtoneType.GT_ShenMiShi);
         for (int i = 1; i <= 10; i++) {
@@ -38,6 +38,12 @@ public class ItemCreator {
         for (int i = 1; i <= 10; i++) {
             Item item = ItemCreator.createBuildEquipIron(i * 10);
             ItemSystem.getInstance().addItem(item, 50);
+        }*/
+
+        //添加洗炼石
+        for (int i = 1; i <= 10; i++) {
+            Item item = ItemCreator.createXiLianStone(i * 10);
+            ItemSystem.getInstance().addItem(item, 50);
         }
     }
 
@@ -55,25 +61,31 @@ public class ItemCreator {
 
         switch (type) {
             case 101:
+                //红药
                 item = createMedicineHp(id);
                 break;
             case 102:
+                //蓝药
                 item = createMedicineMp(id);
                 break;
             case 103:
+                //增益药品
                 item = createMedicineGain(id);
                 break;
             case 104:
+                //解除药品
                 item = createMedicineRestoreState(id);
                 break;
             case 210:
             case 211: {
+                //精铁
                 int level = (id - 210000) / 10;
                 item = createBuildEquipIron(level);
             }
             break;
             case 220:
             case 221: {
+                //制造书
                 int level = (id - 220001) / 10;
                 int slotIndex = id % 10 - 1;
                 EquipmentItem.Slot slot = EquipmentItem.Slot.getSlotWithIndex(slotIndex);
@@ -84,6 +96,7 @@ public class ItemCreator {
             break;
             case 230:
             case 231: {
+                //宝石
                 int level = (id - 230001) / 100;
                 int stoneIndex = id % 10 - 1;
                 GemtoneType gemtoneType = GemtoneType.getGemtoneTypeWithIndex(stoneIndex);
@@ -92,6 +105,12 @@ public class ItemCreator {
                 }
             }
             break;
+            case 240:
+            case 241: {
+                //洗炼石
+                int level = (id - 240000) / 10;
+                item = createXiLianStone(level);
+            }
         }
 
         return item;
@@ -835,6 +854,29 @@ public class ItemCreator {
         }
         return new Item(
                 id, level + "级" + gemtoneType.getDesc(), desc, Item.Type.MATERIAL,
+                rarity,
+                99, PriceUtil.getItemPriceWith10Level(2000, level)
+        );
+    }
+
+    public static Item createXiLianStone(int level) {
+        int id = 240000 + level * 10;
+        Item.Rarity rarity;
+        if (level <= 20) {
+            rarity = Item.Rarity.Rarity_1;
+        } else if (level <= 40) {
+            rarity = Item.Rarity.Rarity_2;
+        } else if (level <= 60) {
+            rarity = Item.Rarity.Rarity_3;
+        } else if (level <= 90) {
+            rarity = Item.Rarity.Rarity_4;
+        } else if (level <= 120) {
+            rarity = Item.Rarity.Rarity_5;
+        } else {
+            rarity = Item.Rarity.Rarity_6;
+        }
+        return new Item(
+                id, level + "级洗炼石", "洗炼装备附加属性的必备材料", Item.Type.MATERIAL,
                 rarity,
                 99, PriceUtil.getItemPriceWith10Level(2000, level)
         );

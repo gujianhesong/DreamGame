@@ -71,60 +71,7 @@ public class BuildEquipPanel {
         setListener(new BuildEquipListener() {
             @Override
             public void onBuildEquip(Recipe recipe) {
-                int level = recipe.level;
-                String buildIronName = recipe.level + "级精铁";
-                String buildBookName = "";
-                switch (recipe.slot) {
-                    case HELMET:
-                        buildBookName = level + "级头盔制造书";
-                        break;
-                    case ACCESSORY:
-                        buildBookName = level + "级项链制造书";
-                        break;
-                    case WEAPON:
-                        buildBookName = level + "级武器制造书";
-                        break;
-                    case ARMOR:
-                        buildBookName = level + "级铠甲制造书";
-                        break;
-                    case BELT:
-                        buildBookName = level + "级腰带制造书";
-                        break;
-                    case SHOES:
-                        buildBookName = level + "级鞋子制造书";
-                        break;
-                }
-                int buildBookCount = ItemSystem.getInstance().getItemCountByName(buildBookName);
-                int buildIronCount = ItemSystem.getInstance().getItemCountByName(buildIronName);
-
-                if (RoleSystem.getInstance().getRoleInfo().getTili() < 20) {
-                    GameEngine.getInstance().showCenterToast("打造需要20点体力");
-                    return;
-                }
-                if (RoleSystem.getInstance().getRoleInfo().getMoney() < recipe.costMoney) {
-                    GameEngine.getInstance().showCenterToast("打造需要" + recipe.costMoney + "金钱");
-                    return;
-                }
-                if (buildBookCount < 1) {
-                    GameEngine.getInstance().showCenterToast("你缺少" + buildBookName);
-                    return;
-                }
-                if (buildIronCount < 1) {
-                    GameEngine.getInstance().showCenterToast("你缺少" + buildIronName);
-                    return;
-                }
-
-                EquipmentItem buildEquip = EquipCreator.createEquip(recipe.level, recipe.slot);
-                if (buildEquip != null) {
-                    if (ItemSystem.getInstance().addItem(buildEquip, 1)) {
-                        String msg = "你获得了" + buildEquip.getName();
-                        GameEngine.getInstance().showCenterToast(msg);
-                    }
-                    ItemSystem.getInstance().removeItem(buildIronName, 1);
-                    ItemSystem.getInstance().removeItem(buildBookName, 1);
-
-                    RoleSystem.getInstance().removeMoney(recipe.costMoney);
-                }
+                doBuildEquip(recipe);
             }
         });
     }
@@ -361,5 +308,62 @@ public class BuildEquipPanel {
             }
         }
         return false;
+    }
+
+    private void doBuildEquip(Recipe recipe) {
+        int level = recipe.level;
+        String buildIronName = recipe.level + "级精铁";
+        String buildBookName = "";
+        switch (recipe.slot) {
+            case HELMET:
+                buildBookName = level + "级头盔制造书";
+                break;
+            case ACCESSORY:
+                buildBookName = level + "级项链制造书";
+                break;
+            case WEAPON:
+                buildBookName = level + "级武器制造书";
+                break;
+            case ARMOR:
+                buildBookName = level + "级铠甲制造书";
+                break;
+            case BELT:
+                buildBookName = level + "级腰带制造书";
+                break;
+            case SHOES:
+                buildBookName = level + "级鞋子制造书";
+                break;
+        }
+        int buildBookCount = ItemSystem.getInstance().getItemCountByName(buildBookName);
+        int buildIronCount = ItemSystem.getInstance().getItemCountByName(buildIronName);
+
+        if (RoleSystem.getInstance().getRoleInfo().getTili() < 20) {
+            GameEngine.getInstance().showCenterToast("打造需要20点体力");
+            return;
+        }
+        if (RoleSystem.getInstance().getRoleInfo().getMoney() < recipe.costMoney) {
+            GameEngine.getInstance().showCenterToast("打造需要" + recipe.costMoney + "金钱");
+            return;
+        }
+        if (buildBookCount < 1) {
+            GameEngine.getInstance().showCenterToast("你缺少" + buildBookName);
+            return;
+        }
+        if (buildIronCount < 1) {
+            GameEngine.getInstance().showCenterToast("你缺少" + buildIronName);
+            return;
+        }
+
+        EquipmentItem buildEquip = EquipCreator.createEquip(recipe.level, recipe.slot);
+        if (buildEquip != null) {
+            if (ItemSystem.getInstance().addItem(buildEquip, 1)) {
+                String msg = "你获得了" + buildEquip.getName();
+                GameEngine.getInstance().showCenterToast(msg);
+            }
+            ItemSystem.getInstance().removeItem(buildIronName, 1);
+            ItemSystem.getInstance().removeItem(buildBookName, 1);
+
+            RoleSystem.getInstance().removeMoney(recipe.costMoney);
+        }
     }
 }

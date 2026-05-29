@@ -12,6 +12,8 @@ public class GameView extends SurfaceView implements Runnable {
     private volatile boolean running;
     private GameEngine gameEngine;
 
+    private boolean isFirst;
+
     public GameView(Context context) {
         super(context);
         this.holder = getHolder();
@@ -20,15 +22,18 @@ public class GameView extends SurfaceView implements Runnable {
 
     @Override
     public void run() {
+        isFirst = true;
         while (running) {
-            update();
+            update(isFirst);
             draw();
             controlFPS();
+
+            isFirst = false;
         }
     }
 
-    private void update() {
-        gameEngine.update();
+    private void update(boolean isFirst) {
+        gameEngine.update(isFirst);
     }
 
     private void draw() {

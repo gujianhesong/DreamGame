@@ -34,13 +34,13 @@ public class BuildEquipPanel {
     private float lastTouchY = 0;
     private boolean isDragging = false;
 
-    public interface CraftingListener {
-        void onCraft(Recipe recipe);
+    public interface BuildEquipListener {
+        void onBuildEquip(Recipe recipe);
     }
 
-    private CraftingListener listener;
+    private BuildEquipListener listener;
 
-    // Sample Recipes (In a real game, this would come from a CraftingSystem)
+    // Sample Recipes
     private static class Recipe {
         String name;
         int level;
@@ -68,10 +68,9 @@ public class BuildEquipPanel {
         this.recipes = new ArrayList<>();
         initializeRecipes();
 
-        setListener(new CraftingListener() {
+        setListener(new BuildEquipListener() {
             @Override
-            public void onCraft(Recipe recipe) {
-                LogUtil.printStack("aaaaaaaaaaaaaaaaaaaa");
+            public void onBuildEquip(Recipe recipe) {
                 int level = recipe.level;
                 String buildIronName = recipe.level + "级精铁";
                 String buildBookName = "";
@@ -174,7 +173,7 @@ public class BuildEquipPanel {
         updateRecipeButtons();
     }
 
-    public void setListener(CraftingListener listener) {
+    public void setListener(BuildEquipListener listener) {
         this.listener = listener;
     }
 
@@ -357,7 +356,7 @@ public class BuildEquipPanel {
             Rect craftBtn = new Rect(btn.right - 100, btn.top + 25, btn.right - 10, btn.bottom - 25);
 
             if (craftBtn.contains((int) x, (int) y)) {
-                if (listener != null) listener.onCraft(recipes.get(i));
+                if (listener != null) listener.onBuildEquip(recipes.get(i));
                 return true;
             }
         }

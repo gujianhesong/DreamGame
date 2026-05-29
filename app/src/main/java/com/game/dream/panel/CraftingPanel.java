@@ -136,7 +136,7 @@ public class CraftingPanel {
         paint.setColor(Color.WHITE);
         paint.setTextSize(32);
         paint.setTextAlign(Paint.Align.CENTER);
-        canvas.drawText("打造工坊", panelBounds.centerX(), panelBounds.top + 50, paint);
+        canvas.drawText("合成工坊", panelBounds.centerX(), panelBounds.top + 50, paint);
 
         // Close button
         drawCloseButton(canvas, paint);

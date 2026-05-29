@@ -6,7 +6,6 @@ import android.graphics.Paint;
 import android.graphics.Rect;
 
 import com.game.dream.GameEngine;
-import com.game.dream.LogUtil;
 import com.game.dream.enums.GemtoneType;
 import com.game.dream.item.EquipmentItem;
 import com.game.dream.item.Item;

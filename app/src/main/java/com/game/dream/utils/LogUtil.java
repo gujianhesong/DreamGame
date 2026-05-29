@@ -1,4 +1,4 @@
-package com.game.dream;
+package com.game.dream.utils;
 
 import android.os.Handler;
 import android.os.Looper;

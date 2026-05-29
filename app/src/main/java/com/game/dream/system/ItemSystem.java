@@ -2,9 +2,9 @@ package com.game.dream.system;
 
 import android.text.TextUtils;
 
-import com.game.dream.FloatingText;
+import com.game.dream.ui.FloatingText;
 import com.game.dream.GameEngine;
-import com.game.dream.LogUtil;
+import com.game.dream.utils.LogUtil;
 import com.game.dream.bean.EquipItemInfo;
 import com.game.dream.bean.ItemInfo;
 import com.game.dream.bean.RoleInfo;

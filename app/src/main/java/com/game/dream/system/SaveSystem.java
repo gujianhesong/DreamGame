@@ -2,7 +2,7 @@ package com.game.dream.system;
 
 import android.content.Context;
 
-import com.game.dream.LogUtil;
+import com.game.dream.utils.LogUtil;
 import com.game.dream.bean.EquipItemInfo;
 import com.game.dream.bean.ItemInfo;
 import com.game.dream.bean.SaveInfo;

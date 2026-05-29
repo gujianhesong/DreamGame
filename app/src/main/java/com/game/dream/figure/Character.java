@@ -1,4 +1,4 @@
-package com.game.dream;
+package com.game.dream.figure;
 
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -233,6 +233,10 @@ public abstract class Character {
     public boolean isRooted() { return currentCC == CrowdControlType.ROOT; }
     public boolean isStunned() { return currentCC == CrowdControlType.STUN; }
     public boolean isSlowed() { return currentCC == CrowdControlType.SLOW; }
+
+    public boolean isJinGangState(){
+        return isJinGangState;
+    }
 
     /**
      * Draw crowd control effects (like root, stun) above the character

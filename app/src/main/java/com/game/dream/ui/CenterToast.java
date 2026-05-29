@@ -1,4 +1,4 @@
-package com.game.dream;
+package com.game.dream.ui;
 
 import android.graphics.Canvas;
 import android.graphics.Color;

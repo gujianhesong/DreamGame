@@ -5,7 +5,6 @@ import android.graphics.Color;
 import android.graphics.Paint;
 
 import com.game.dream.GameEngine;
-import com.game.dream.LogUtil;
 import com.game.dream.enemy.Enemy;
 import com.game.dream.enums.SkillType;
 

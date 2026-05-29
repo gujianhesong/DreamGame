@@ -1,7 +1,8 @@
-package com.game.dream;
+package com.game.dream.figure;
 
 import android.graphics.Canvas;
 
+import com.game.dream.GameEngine;
 import com.game.dream.bean.AttackResult;
 import com.game.dream.bean.EnemyHitInfo;
 import com.game.dream.bean.RoleInfo;
@@ -16,6 +17,8 @@ import com.game.dream.item.ItemStack;
 import com.game.dream.system.ItemSystem;
 import com.game.dream.system.RoleSystem;
 import com.game.dream.system.SkillSystem;
+import com.game.dream.ui.FloatingText;
+import com.game.dream.utils.BattleUtil;
 
 import java.util.ArrayList;
 import java.util.HashMap;

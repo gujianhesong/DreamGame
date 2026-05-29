@@ -7,12 +7,10 @@ import android.graphics.Rect;
 import android.graphics.RectF;
 import android.view.MotionEvent;
 
-import com.game.dream.CenterNotification;
-import com.game.dream.CenterToast;
 import com.game.dream.GameEngine;
-import com.game.dream.LogUtil;
-import com.game.dream.Minimap;
-import com.game.dream.Player;
+import com.game.dream.utils.LogUtil;
+import com.game.dream.map.Minimap;
+import com.game.dream.figure.Player;
 import com.game.dream.bean.SkillInfo;
 import com.game.dream.panel.BuildEquipPanel;
 import com.game.dream.panel.CraftingPanel;

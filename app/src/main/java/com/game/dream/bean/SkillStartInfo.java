@@ -1,6 +1,6 @@
 package com.game.dream.bean;
 
-import com.game.dream.Projectile;
+import com.game.dream.ui.Projectile;
 import com.game.dream.skill.SkillEffect;
 
 import java.util.List;

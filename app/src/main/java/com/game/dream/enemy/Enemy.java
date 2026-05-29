@@ -1,7 +1,7 @@
 package com.game.dream.enemy;
 
-import com.game.dream.Character;
-import com.game.dream.LogUtil;
+import com.game.dream.figure.Character;
+import com.game.dream.utils.LogUtil;
 import com.game.dream.item.EquipmentItem;
 import com.game.dream.item.Item;
 import com.game.dream.item.ItemStack;

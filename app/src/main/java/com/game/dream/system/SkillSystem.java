@@ -1,10 +1,10 @@
 package com.game.dream.system;
 
-import com.game.dream.FloatingText;
+import com.game.dream.ui.FloatingText;
 import com.game.dream.GameEngine;
-import com.game.dream.LogUtil;
-import com.game.dream.Player;
-import com.game.dream.Projectile;
+import com.game.dream.utils.LogUtil;
+import com.game.dream.figure.Player;
+import com.game.dream.ui.Projectile;
 import com.game.dream.bean.RoleInfo;
 import com.game.dream.bean.SkillInfo;
 import com.game.dream.bean.SkillStartInfo;

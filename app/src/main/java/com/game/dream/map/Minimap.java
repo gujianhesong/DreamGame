@@ -1,4 +1,4 @@
-package com.game.dream;
+package com.game.dream.map;
 
 import android.graphics.Bitmap;
 import android.graphics.Canvas;

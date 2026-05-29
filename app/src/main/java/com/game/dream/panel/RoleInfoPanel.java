@@ -5,7 +5,7 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
 
-import com.game.dream.Player;
+import com.game.dream.figure.Player;
 import com.game.dream.bean.AddPointResult;
 import com.game.dream.bean.RoleInfo;
 import com.game.dream.system.RoleSystem;

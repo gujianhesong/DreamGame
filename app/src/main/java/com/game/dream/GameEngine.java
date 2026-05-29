@@ -15,16 +15,26 @@ import com.game.dream.enemy.Tiger;
 import com.game.dream.enemy.Wolf;
 import com.game.dream.enums.SkillType;
 import com.game.dream.enums.SpecialEffect;
+import com.game.dream.figure.Character;
+import com.game.dream.figure.Player;
 import com.game.dream.item.EquipmentItem;
 import com.game.dream.item.ItemStack;
+import com.game.dream.map.MapGenerator;
+import com.game.dream.map.MapRenderer;
 import com.game.dream.skill.SkillEffect;
 import com.game.dream.system.DayNightCycle;
 import com.game.dream.system.ItemSystem;
 import com.game.dream.system.RoleSystem;
 import com.game.dream.system.SkillSystem;
 import com.game.dream.system.WeatherSystem;
+import com.game.dream.ui.CenterNotification;
+import com.game.dream.ui.DamageNumber;
 import com.game.dream.ui.DialogBox;
+import com.game.dream.ui.FloatingText;
 import com.game.dream.ui.GameUI;
+import com.game.dream.ui.Projectile;
+import com.game.dream.utils.BattleUtil;
+import com.game.dream.utils.LogUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -606,7 +616,7 @@ public class GameEngine {
 
                             // Handle Special Effects on Player
                             if (proj.getEffectType() == Projectile.EffectType.ROOT) {
-                                player.applyCC(Character.CrowdControlType.ROOT, 2000);
+                                player.applyCC(com.game.dream.figure.Character.CrowdControlType.ROOT, 2000);
                                 showCenterToast("你被定身了!", 1000);
                             }
 

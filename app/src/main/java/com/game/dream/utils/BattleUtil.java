@@ -1,5 +1,6 @@
-package com.game.dream;
+package com.game.dream.utils;
 
+import com.game.dream.GameEngine;
 import com.game.dream.bean.AttackResult;
 import com.game.dream.bean.RoleInfo;
 import com.game.dream.bean.SkillInfo;
@@ -70,7 +71,7 @@ public class BattleUtil {
             damageValue *= 2;
         }
 
-        if (enemy.isJinGangState) {
+        if (enemy.isJinGangState()) {
             //金刚护体: Reduce damage by 50% (example)
             float ratio = 0.5f;
             damageValue = (int) (damageValue * ratio);
@@ -181,7 +182,7 @@ public class BattleUtil {
                 damageValue *= 2;
             }
 
-            if (enemy.isJinGangState) {
+            if (enemy.isJinGangState()) {
                 //金刚护体: Reduce damage by 50% (example)
                 float ratio = 0.5f;
                 damageValue = (int) (damageValue * ratio);
@@ -338,7 +339,7 @@ public class BattleUtil {
                 damageValue *= 2;
             }
 
-            if (GameEngine.getInstance().getPlayer().isJinGangState) {
+            if (GameEngine.getInstance().getPlayer().isJinGangState()) {
                 //金刚护体: Reduce damage by 50% (example)
                 SkillInfo skillInfo = SkillSystem.getInstance().getPlayerSkill(SkillType.MAIN_JinGangHuTi);
                 if (skillInfo != null && skillInfo.getLevel() > 0) {
@@ -432,7 +433,7 @@ public class BattleUtil {
                     damageValue *= 2;
                 }
 
-                if (GameEngine.getInstance().getPlayer().isJinGangState) {
+                if (GameEngine.getInstance().getPlayer().isJinGangState()) {
                     //金刚护体: Reduce damage by 50% (example)
                     SkillInfo skillInfo = SkillSystem.getInstance().getPlayerSkill(SkillType.MAIN_JinGangHuTi);
                     if (skillInfo != null && skillInfo.getLevel() > 0) {

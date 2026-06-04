@@ -90,30 +90,6 @@ public class Wolf extends Enemy {
     }
 
     @Override
-    protected void updateIdle(long deltaTime, float deltaSeconds, int[][] map, int mapWidth, int mapHeight) {
-        long currentTime = System.currentTimeMillis();
-
-        // Change direction every 2-4 seconds
-        if (currentTime - stateTimer > 2000 + (int) (Math.random() * 2000)) {
-            // Pick a random nearby position
-            float angle = (float) (Math.random() * Math.PI * 2);
-            float distance = 50 + (float) (Math.random() * 100);
-
-            targetX = x + (float) Math.cos(angle) * distance;
-            targetY = y + (float) Math.sin(angle) * distance;
-
-            // Clamp to map bounds
-            targetX = Math.max(size, Math.min(targetX, mapWidth - size));
-            targetY = Math.max(size, Math.min(targetY, mapHeight - size));
-
-            stateTimer = currentTime;
-        }
-
-        // Move towards target
-        moveToTarget(deltaSeconds);
-    }
-
-    @Override
     protected void performAttack() {
         // Wolf attack logic - deal damage to player
         // This will be handled by GameEngine
@@ -123,7 +99,6 @@ public class Wolf extends Enemy {
     public void onDraw(Canvas canvas, int offsetX, int offsetY) {
         if (!isAlive()) return;
 
-        Paint paint = new Paint();
         paint.setAntiAlias(true);
 
         float screenX = x + offsetX;

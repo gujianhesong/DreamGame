@@ -1,6 +1,8 @@
 package com.game.dream.figure;
 
 import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
 
 import com.game.dream.GameEngine;
 import com.game.dream.bean.AttackResult;
@@ -14,6 +16,7 @@ import com.game.dream.enums.XiLianType;
 import com.game.dream.item.ConsumableItem;
 import com.game.dream.item.Item;
 import com.game.dream.item.ItemStack;
+import com.game.dream.map.MapGenerator;
 import com.game.dream.system.ItemSystem;
 import com.game.dream.system.RoleSystem;
 import com.game.dream.system.SkillSystem;
@@ -52,7 +55,7 @@ public class Player extends Character {
 
 
     public Player(float x, float y) {
-        super(x, y, 80);
+        super(x, y, 85);
 
         this.walkCycle = 0;
         this.facingDirection = 0;
@@ -157,7 +160,7 @@ public class Player extends Character {
 
         if (gridX >= 0 && gridX < mapWidth && gridY >= 0 && gridY < mapHeight) {
             int terrain = map[gridY][gridX];
-            if (terrain != LAKE && terrain != LAVA) {
+            if (terrain != MapGenerator.LAKE && terrain != MapGenerator.LAVA && terrain != MapGenerator.VILLAGE_NO_PASS) {
                 x = newX;
                 y = newY;
             }

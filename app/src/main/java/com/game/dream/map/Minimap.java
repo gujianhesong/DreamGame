@@ -7,11 +7,13 @@ import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.RectF;
 
+import com.game.dream.bean.MapInfo;
+
 /**
  * Renders a minimap showing the player's position in the world
  */
 public class Minimap {
-    private int[][] map;
+    private MapInfo map;
     private int mapWidth;
     private int mapHeight;
     private int tileSize;
@@ -29,8 +31,8 @@ public class Minimap {
     private Paint borderPaint;
     private Paint backgroundPaint;
 
-    public Minimap(int[][] map, int mapWidth, int mapHeight, int tileSize) {
-        this.map = map;
+    public Minimap(MapInfo mapInfo, int mapWidth, int mapHeight, int tileSize) {
+        this.map = mapInfo;
         this.mapWidth = mapWidth;
         this.mapHeight = mapHeight;
         this.tileSize = tileSize;
@@ -79,7 +81,7 @@ public class Minimap {
 
         for (int y = 0; y < mapTilesY; y++) {
             for (int x = 0; x < mapTilesX; x++) {
-                int terrain = map[y][x];
+                int terrain = map.getMapData()[y][x];
 
                 // Set color based on terrain
                 switch (terrain) {

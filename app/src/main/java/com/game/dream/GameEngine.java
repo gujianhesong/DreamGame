@@ -3,10 +3,12 @@ package com.game.dream;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.util.Pair;
 import android.view.MotionEvent;
 
 import com.game.dream.bean.AttackResult;
 import com.game.dream.bean.EnemyHitInfo;
+import com.game.dream.bean.MapInfo;
 import com.game.dream.bean.RoleInfo;
 import com.game.dream.bean.SkillInfo;
 import com.game.dream.bean.SkillStartInfo;
@@ -20,10 +22,12 @@ import com.game.dream.figure.Player;
 import com.game.dream.item.EquipmentItem;
 import com.game.dream.item.ItemStack;
 import com.game.dream.map.MapGenerator;
-import com.game.dream.map.MapRenderer;
+import com.game.dream.npc.Npc;
 import com.game.dream.skill.SkillEffect;
 import com.game.dream.system.DayNightCycle;
 import com.game.dream.system.ItemSystem;
+import com.game.dream.system.MapSystem;
+import com.game.dream.system.NpcSystem;
 import com.game.dream.system.RoleSystem;
 import com.game.dream.system.SkillSystem;
 import com.game.dream.system.WeatherSystem;
@@ -56,14 +60,6 @@ public class GameEngine {
 
     // Player
     private Player player;
-
-    // Map data
-    private int[][] map; // 0=plain, 1=grassland, 2=forest, 3=lake, 4=snow, 5=swamp, 6=lava
-    // Map generator
-    private MapGenerator mapGenerator;
-    // Map renderer (extracted to separate class)
-    private MapRenderer mapRenderer;
-
 
     // Day-night cycle
     private DayNightCycle dayNightCycle;
@@ -128,40 +124,27 @@ public class GameEngine {
     }
 
     private void initGame() {
-        // Initialize map generator and generate map
-        mapGenerator = new MapGenerator(MAP_WIDTH, MAP_HEIGHT, TILE_SIZE);
-        map = mapGenerator.generateMap();
-
-        // Find a valid starting position (not on lake or lava)
-        int startX = MAP_WIDTH / TILE_SIZE / 2;
-        int startY = MAP_HEIGHT / TILE_SIZE / 2;
-
-        // Search for a valid position near the center
-        boolean foundValidPosition = false;
-        for (int radius = 0; radius < 50 && !foundValidPosition; radius++) {
-            for (int dy = -radius; dy <= radius && !foundValidPosition; dy++) {
-                for (int dx = -radius; dx <= radius && !foundValidPosition; dx++) {
-                    int checkX = startX + dx;
-                    int checkY = startY + dy;
-
-                    if (checkX >= 0 && checkX < map[0].length && checkY >= 0 && checkY < map.length) {
-                        int terrain = map[checkY][checkX];
-                        if (terrain != MapGenerator.LAKE && terrain != MapGenerator.LAVA) {
-                            startX = checkX;
-                            startY = checkY;
-                            foundValidPosition = true;
-                        }
-                    }
-                }
-            }
-        }
-
-        // Create player at center of map
         RoleInfo roleInfo = RoleSystem.getInstance().getRoleInfo();
-        if (roleInfo.getMapX() < 0 || roleInfo.getMapY() < 0) {
-            roleInfo.setMapX(startX * TILE_SIZE + TILE_SIZE / 2);
-            roleInfo.setMapY(startY * TILE_SIZE + TILE_SIZE / 2);
+
+        // Initialize map generator and generate map
+        int mapId = roleInfo.getMapId();
+        if (mapId <= 0) {
+            mapId = MapSystem.getInstance().getBornMap().getMapId();
         }
+        MapSystem.getInstance().loadMap(mapId);
+
+        if (roleInfo.getMapX() < 0 || roleInfo.getMapY() < 0) {
+            // Create player at center of map
+            // Find a valid starting position (not on lake or lava)
+            Pair<Integer, Integer> startPos = MapSystem.getInstance().getStartPosition();
+            int startX = startPos.first;
+            int startY = startPos.second;
+
+            Pair<Integer, Integer> mapXY = MapSystem.getInstance().getMapXY(startX, startY);
+            roleInfo.setMapX(mapXY.first);
+            roleInfo.setMapY(mapXY.second);
+        }
+
         player = new Player(roleInfo.getMapX(), roleInfo.getMapY());
         player.setName("剑侠客");
         // Set initial respawn point
@@ -169,9 +152,6 @@ public class GameEngine {
 
         // Initialize camera to center on player
         updateCamera();
-
-        // Initialize map renderer
-        mapRenderer = new MapRenderer(map, MAP_WIDTH, MAP_HEIGHT, TILE_SIZE);
 
         // Initialize day-night cycle
         dayNightCycle = new DayNightCycle();
@@ -207,6 +187,7 @@ public class GameEngine {
         Random random = new Random(67890);
         int enemyCount = 100;
 
+        int[][] map = MapSystem.getInstance().getCurMapInfo().getMapData();
         for (int i = 0; i < enemyCount; i++) {
             boolean foundValidSpawn = false;
             float spawnX = 0, spawnY = 0;
@@ -219,7 +200,8 @@ public class GameEngine {
                 int terrain = map[gridY][gridX];
 
                 // Spawn on land (not lake/lava) and not too close to player start
-                if (terrain != MapGenerator.LAKE && terrain != MapGenerator.LAVA) {
+                if (terrain != MapGenerator.LAKE && terrain != MapGenerator.LAVA && terrain != MapGenerator.VILLAGE_CAN_PASS
+                        && terrain != MapGenerator.VILLAGE_NO_PASS) {
                     spawnX = gridX * TILE_SIZE + TILE_SIZE / 2;
                     spawnY = gridY * TILE_SIZE + TILE_SIZE / 2;
 
@@ -251,10 +233,9 @@ public class GameEngine {
 
     public void cleanup() {
         instance = null;
+
         // Clean up map renderer
-        if (mapRenderer != null) {
-            mapRenderer.cleanup();
-        }
+        MapSystem.getInstance().cleanup();
 
         if (gameUI != null) {
             gameUI.cleanup();
@@ -273,7 +254,7 @@ public class GameEngine {
         lastUpdateTime = currentTime;
 
         // Update player movement (pass deltaTime)
-        player.update(map, MAP_WIDTH / TILE_SIZE, MAP_HEIGHT / TILE_SIZE, TILE_SIZE, deltaTime);
+        player.update(MapSystem.getInstance().getCurMapInfo().getMapData(), MAP_WIDTH / TILE_SIZE, MAP_HEIGHT / TILE_SIZE, TILE_SIZE, deltaTime);
 
         // Update camera to follow player
         updateCamera();
@@ -471,6 +452,7 @@ public class GameEngine {
                 // 只对距离玩家 2000 像素内的怪物更新 AI
                 float updateThreshold = 2000 * 2000; // 2000^2 to avoid sqrt
                 if (distanceSquared < updateThreshold) {
+                    int[][] map = MapSystem.getInstance().getCurMapInfo().getMapData();
                     enemy.update(deltaTime, player.getX(), player.getY(), map, MAP_WIDTH, MAP_HEIGHT);
 
                     // Check if elite/leader enemy is casting spell while chasing
@@ -680,7 +662,7 @@ public class GameEngine {
         canvas.drawColor(Color.BLACK);
 
         // Draw map using MapRenderer
-        mapRenderer.draw(canvas, cameraX, cameraY, screenWidth, screenHeight);
+        MapSystem.getInstance().render(canvas, cameraX, cameraY, screenWidth, screenHeight);
 
         // Draw day-night overlay (after map, before player)
         if (dayNightCycle != null) {
@@ -697,6 +679,13 @@ public class GameEngine {
                     enemy.draw(canvas, (int) -cameraX, (int) -cameraY);
                 }
             }
+        }
+
+        // Draw npcs
+        List<Npc> npcList = NpcSystem.getInstance().getMapNpcList(MapSystem.getInstance().getCurMapInfo().getMapId());
+        npcList.sort((n1, n2) -> Float.compare(n1.getY(), n2.getY()));
+        for (Npc npc : npcList) {
+            npc.draw(canvas, -cameraX, -cameraY);
         }
 
         // Draw projectiles
@@ -754,8 +743,18 @@ public class GameEngine {
 
         if (gameUI != null) {
             handled = gameUI.handleTouch(event);
-            if (handled) {
-                return true;
+        }
+
+        // 检查是否点击了 Npc
+        if (!handled && event.getAction() == MotionEvent.ACTION_DOWN) {
+            float worldX = event.getX() + cameraX;
+            float worldY = event.getY() + cameraY;
+            List<Npc> npcList = NpcSystem.getInstance().getMapNpcList(MapSystem.getInstance().getCurMapInfo().getMapId());
+            for (Npc npc : npcList) {
+                if (npc.isTouched(worldX, worldY)) {
+                    NpcSystem.getInstance().startConversation(npc);
+                    return true;
+                }
             }
         }
 
@@ -864,8 +863,8 @@ public class GameEngine {
         return player;
     }
 
-    public int[][] getMap() {
-        return map;
+    public MapInfo getMap() {
+        return MapSystem.getInstance().getCurMapInfo();
     }
 
     public DayNightCycle getDayNightCycle() {

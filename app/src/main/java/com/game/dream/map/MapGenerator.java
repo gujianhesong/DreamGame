@@ -20,6 +20,9 @@ public class MapGenerator {
     public static final int SWAMP = 5;
     public static final int LAVA = 6;
 
+    public static final int VILLAGE_CAN_PASS = 100;
+    public static final int VILLAGE_NO_PASS = 101;
+
     /**
      * Create a new terrain generator
      */
@@ -235,5 +238,13 @@ public class MapGenerator {
             case LAVA: return "Lava";
             default: return "Unknown";
         }
+    }
+
+    public static boolean checkCanPass(int[][] mapData, int x, int y) {
+        int terrain = mapData[y][x];
+        if (terrain == MapGenerator.LAKE || terrain == MapGenerator.LAVA || terrain == MapGenerator.VILLAGE_NO_PASS) {
+            return false;
+        }
+        return true;
     }
 }

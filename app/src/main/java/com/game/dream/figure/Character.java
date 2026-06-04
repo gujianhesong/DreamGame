@@ -20,6 +20,8 @@ public abstract class Character {
 
     protected String name;
 
+    protected Paint paint = new Paint();
+
     protected boolean isInvincible;
     protected long invincibleEndTime;
     protected long lastDamageTime;
@@ -60,11 +62,19 @@ public abstract class Character {
     }
 
     public final void draw(Canvas canvas, int offsetX, int offsetY){
+        float screenX = getX() + offsetX;
+        float screenY = getY() + offsetY;
+
+        // 1. 阴影
+        float cx = screenX;
+        float cy = screenY;
+        paint.setColor(Color.argb(40, 0, 0, 0));
+        canvas.drawOval(cx - size * 0.5f, cy + size * 0.2f, cx + size * 0.5f, cy + size * 0.8f, paint);
+
         onDraw(canvas, offsetX, offsetY);
 
         // Draw health bar above player (using inherited method)
-        float screenX = getX() + offsetX;
-        float screenY = getY() + offsetY;
+
         //float scale = getSize() / 40f;
         float scale = 2f;
         drawHealthBar(canvas, screenX, screenY, scale);

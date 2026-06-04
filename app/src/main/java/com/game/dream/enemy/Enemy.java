@@ -1,6 +1,7 @@
 package com.game.dream.enemy;
 
 import com.game.dream.figure.Character;
+import com.game.dream.system.MapSystem;
 import com.game.dream.utils.LogUtil;
 import com.game.dream.item.EquipmentItem;
 import com.game.dream.item.Item;
@@ -21,7 +22,7 @@ public abstract class Enemy extends Character {
         ATTACKING
     }
 
-    public enum EnemyLevel{
+    public enum EnemyLevel {
         NORMAL,
         LEADER,
         ELITE
@@ -116,7 +117,7 @@ public abstract class Enemy extends Character {
             case IDLE:
                 updateIdle(deltaTime, deltaSeconds, map, mapWidth, mapHeight);
 
-                if (distanceToPlayer < detectionRange) {
+                if (!MapSystem.getInstance().isLocationSafe(playerX, playerY) && distanceToPlayer < detectionRange) {
                     currentState = State.CHASING;
                     stateTimer = currentTime;
                 }
@@ -126,7 +127,7 @@ public abstract class Enemy extends Character {
                 updateChasing(deltaSeconds, playerX, playerY, map, mapWidth, mapHeight);
 
                 // Only return to idle if not aggroed AND player is far away
-                if (!isAggroed && distanceToPlayer > detectionRange * 1.5f) {
+                if (!isAggroed && distanceToPlayer > detectionRange * 1.5f || MapSystem.getInstance().isLocationSafe(playerX, playerY)) {
                     currentState = State.IDLE;
                     stateTimer = currentTime;
                 } else if (distanceToPlayer < attackRange) {
@@ -149,18 +150,59 @@ public abstract class Enemy extends Character {
         updateAnimation(currentTime);
     }
 
-    public int getAttackDamage() { return attackDamage; }
+    public int getAttackDamage() {
+        return attackDamage;
+    }
 
-    public int getMagicDamage() { return magicDamage; }
-    public int getDefense() { return defense; }
-    public float getSpeed() { return speed; }
-    public int getMana() { return mana; }
-    public float getAttackRange() { return attackRange; }
+    public int getMagicDamage() {
+        return magicDamage;
+    }
+
+    public int getDefense() {
+        return defense;
+    }
+
+    public float getSpeed() {
+        return speed;
+    }
+
+    public int getMana() {
+        return mana;
+    }
+
+    public float getAttackRange() {
+        return attackRange;
+    }
 
     /**
-     * Update idle behavior - must be implemented by subclass
+     * Update idle behavior
      */
-    protected abstract void updateIdle(long deltaTime, float deltaSeconds, int[][] map, int mapWidth, int mapHeight);
+    protected void updateIdle(long deltaTime, float deltaSeconds, int[][] map, int mapWidth, int mapHeight) {
+        long currentTime = System.currentTimeMillis();
+
+        // Tigers are more active - change direction every 2-5 seconds
+        if (currentTime - stateTimer > 2000 + (int) (Math.random() * 3000)) {
+            // Pick a random nearby position
+            float angle = (float) (Math.random() * Math.PI * 2);
+            float distance = 80 + (float) (Math.random() * 150);
+
+            targetX = x + (float) Math.cos(angle) * distance;
+            targetY = y + (float) Math.sin(angle) * distance;
+
+            // Clamp to map bounds
+            targetX = Math.max(size, Math.min(targetX, mapWidth - size));
+            targetY = Math.max(size, Math.min(targetY, mapHeight - size));
+
+            if (MapSystem.getInstance().isLocationSafe(targetX, targetY)) {
+                return;
+            }
+
+            stateTimer = currentTime;
+        }
+
+        // Move towards target
+        moveToTarget(deltaSeconds);
+    }
 
     /**
      * Update chasing behavior - common implementation
@@ -317,7 +359,7 @@ public abstract class Enemy extends Character {
             return 1.0f; // Ready to attack
         }
 
-        return (float)timeSinceLastAttack / attackCooldown;
+        return (float) timeSinceLastAttack / attackCooldown;
     }
 
     /**
@@ -434,13 +476,13 @@ public abstract class Enemy extends Character {
 
         if (Math.random() < dropChance && !possibleDrops.isEmpty()) {
             // Drop 1-2 items
-            int numDrops = 1 + (int)(Math.random() * 2);
+            int numDrops = 1 + (int) (Math.random() * 2);
 
             for (int i = 0; i < numDrops && i < possibleDrops.size(); i++) {
-                Item item = possibleDrops.get((int)(Math.random() * possibleDrops.size()));
-                int quantity = 1 + (int)(Math.random() * 3); // 1-3 quantity
+                Item item = possibleDrops.get((int) (Math.random() * possibleDrops.size()));
+                int quantity = 1 + (int) (Math.random() * 3); // 1-3 quantity
 
-                if(item instanceof EquipmentItem){
+                if (item instanceof EquipmentItem) {
                     quantity = 1;
                 }
 

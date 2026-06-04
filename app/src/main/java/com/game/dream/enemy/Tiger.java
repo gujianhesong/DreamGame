@@ -9,6 +9,7 @@ import com.game.dream.item.EquipCreator;
 import com.game.dream.item.EquipmentItem;
 import com.game.dream.item.Item;
 import com.game.dream.item.ItemCreator;
+import com.game.dream.system.MapSystem;
 import com.game.dream.utils.Utils;
 
 import java.util.Collections;
@@ -93,30 +94,6 @@ public class Tiger extends Enemy {
     }
 
     @Override
-    protected void updateIdle(long deltaTime, float deltaSeconds, int[][] map, int mapWidth, int mapHeight) {
-        long currentTime = System.currentTimeMillis();
-
-        // Tigers are more active - change direction every 1-3 seconds
-        if (currentTime - stateTimer > 1000 + (int) (Math.random() * 2000)) {
-            // Pick a random nearby position
-            float angle = (float) (Math.random() * Math.PI * 2);
-            float distance = 80 + (float) (Math.random() * 150);
-
-            targetX = x + (float) Math.cos(angle) * distance;
-            targetY = y + (float) Math.sin(angle) * distance;
-
-            // Clamp to map bounds
-            targetX = Math.max(size, Math.min(targetX, mapWidth - size));
-            targetY = Math.max(size, Math.min(targetY, mapHeight - size));
-
-            stateTimer = currentTime;
-        }
-
-        // Move towards target
-        moveToTarget(deltaSeconds);
-    }
-
-    @Override
     protected void performAttack() {
         // Tiger has a powerful attack
         // Damage will be handled by GameEngine
@@ -126,7 +103,6 @@ public class Tiger extends Enemy {
     public void onDraw(Canvas canvas, int offsetX, int offsetY) {
         if (!isAlive()) return;
 
-        Paint paint = new Paint();
         paint.setAntiAlias(true);
 
         float screenX = x + offsetX;

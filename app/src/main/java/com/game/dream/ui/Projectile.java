@@ -120,7 +120,7 @@ public class Projectile {
     /**
      * Draw the projectile
      */
-    public void draw(Canvas canvas, int offsetX, int offsetY) {
+    public void draw(Canvas canvas, float offsetX, float offsetY) {
         if (!isActive) return;
 
         Paint paint = new Paint();

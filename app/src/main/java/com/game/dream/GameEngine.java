@@ -14,6 +14,8 @@ import com.game.dream.bean.SkillInfo;
 import com.game.dream.bean.SkillStartInfo;
 import com.game.dream.enemy.Enemy;
 import com.game.dream.enemy.Tiger;
+import com.game.dream.enemy.Viper;
+import com.game.dream.enemy.WildBoar;
 import com.game.dream.enemy.Wolf;
 import com.game.dream.enums.SkillType;
 import com.game.dream.enums.SpecialEffect;
@@ -218,11 +220,19 @@ public class GameEngine {
 
             if (foundValidSpawn) {
                 double rand = Math.random();
-                if (rand < 0.4) {
+                if (rand < 0.25) {
                     Enemy enemy = new Tiger(spawnX, spawnY);
                     enemy.setName("猛虎");
                     enemies.add(enemy);
-                } else {
+                } else if(rand < 0.5) {
+                    Enemy enemy = new WildBoar(spawnX, spawnY);
+                    enemy.setName("野猪");
+                    enemies.add(enemy);
+                }else if(rand < 0.75) {
+                    Enemy enemy = new Viper(spawnX, spawnY);
+                    enemy.setName("毒蛇");
+                    enemies.add(enemy);
+                }else {
                     Enemy enemy = new Wolf(spawnX, spawnY);
                     enemy.setName("野狼");
                     enemies.add(enemy);

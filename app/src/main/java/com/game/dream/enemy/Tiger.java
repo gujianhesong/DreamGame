@@ -21,7 +21,7 @@ import java.util.List;
 public class Tiger extends Enemy {
 
     public Tiger(float x, float y) {
-        super(x, y, 100, 300, 150, 50, 200);
+        super(x, y, 120, 300, 150, 50, 200);
         attackCooldown = 1200; // Faster attacks than wolf
 
         int health = Utils.getWaveValueInt(350, 0.2f);

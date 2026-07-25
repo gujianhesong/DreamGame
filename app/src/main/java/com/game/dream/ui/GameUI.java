@@ -73,6 +73,11 @@ public class GameUI {
     // Track which pointer IDs are controlling the D-pad
     private Integer dpadPointerId = null;
 
+    // Dash double-tap detection
+    private int lastDpadTapDirection = -1;
+    private long lastDpadTapTime = 0;
+    private static final long DOUBLE_TAP_WINDOW = 300; // 300ms window for double-tap
+
     // FPS tracking
     private long lastFrameTime;
     private int frameCount;
@@ -560,20 +565,37 @@ public class GameUI {
                     float dx = x - dpadBounds.centerX();
                     float dy = y - dpadBounds.centerY();
 
+                    int direction;
                     GameEngine.getInstance().updatePlayerDirection(false, false, false, false);
 
                     if (Math.abs(dx) > Math.abs(dy)) {
                         if (dx > 0) {
+                            direction = 3; // Right
                             GameEngine.getInstance().updatePlayerDirection(false, false, false, true);
                         } else {
+                            direction = 2; // Left
                             GameEngine.getInstance().updatePlayerDirection(false, false, true, false);
                         }
                     } else {
                         if (dy > 0) {
+                            direction = 0; // Down
                             GameEngine.getInstance().updatePlayerDirection(false, true, false, false);
                         } else {
+                            direction = 1; // Up
                             GameEngine.getInstance().updatePlayerDirection(true, false, false, false);
                         }
+                    }
+
+                    // Check for double-tap dash trigger
+                    long currentTime = System.currentTimeMillis();
+                    if (direction == lastDpadTapDirection && (currentTime - lastDpadTapTime) < DOUBLE_TAP_WINDOW) {
+                        // Double-tap detected - trigger dash!
+                        GameEngine.getInstance().triggerPlayerDash(direction);
+                        lastDpadTapDirection = -1;
+                        lastDpadTapTime = 0;
+                    } else {
+                        lastDpadTapDirection = direction;
+                        lastDpadTapTime = currentTime;
                     }
                 }
                 break;

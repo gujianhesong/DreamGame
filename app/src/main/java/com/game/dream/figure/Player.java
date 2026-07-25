@@ -34,6 +34,20 @@ public class Player extends Character {
     // Movement
     private boolean movingUp, movingDown, movingLeft, movingRight;
 
+    // Dash (冲刺)
+    private boolean isDashing;
+    private long dashStartTime;
+    private int dashDirection; // 0=down, 1=up, 2=left, 3=right
+    private float dashDistanceRemaining;
+    private static final float DASH_DISTANCE = 400f; // 冲刺总距离(像素)
+    private static final float DASH_SPEED = 800f;   // 冲刺速度(像素/秒)
+    private static final long DASH_COOLDOWN = 2000;  // 冲刺冷却(毫秒)
+    private long lastDashTime;
+
+    // Dash trail for visual effect
+    private java.util.List<DashTrailPoint> dashTrail = new java.util.ArrayList<>();
+    private static final int MAX_TRAIL_POINTS = 8;
+
     // Animation
     private int walkCycle;
     private int facingDirection; // 0=down, 1=up, 2=left, 3=right
@@ -95,6 +109,12 @@ public class Player extends Character {
 
         // Update attack animation
         updateAttackAnimation();
+
+        // Update dash
+        if (isDashing) {
+            updateDash(map, mapWidth, mapHeight, tileSize, deltaTime);
+            return;
+        }
 
         boolean isMoving = false;
         float newX = x;
@@ -171,6 +191,120 @@ public class Player extends Character {
 
         RoleSystem.getInstance().getRoleInfo().setMapX((int) x);
         RoleSystem.getInstance().getRoleInfo().setMapY((int) y);
+    }
+
+    /**
+     * Start a dash in the given direction
+     * @param direction 0=down, 1=up, 2=left, 3=right
+     */
+    public void startDash(int direction) {
+        long currentTime = System.currentTimeMillis();
+
+        // Check cooldown
+        if (currentTime - lastDashTime < DASH_COOLDOWN) {
+            return;
+        }
+
+        // Cannot dash while stunned or rooted
+        if (isStunned() || isRooted()) {
+            return;
+        }
+
+        isDashing = true;
+        dashStartTime = currentTime;
+        dashDirection = direction;
+        dashDistanceRemaining = DASH_DISTANCE;
+        facingDirection = direction;
+        lastDashTime = currentTime;
+
+        // Clear trail
+        dashTrail.clear();
+
+        android.util.Log.d("Player", "Dash started in direction: " + direction);
+    }
+
+    /**
+     * Update dash movement
+     */
+    private void updateDash(int[][] map, int mapWidth, int mapHeight, int tileSize, long deltaTime) {
+        float deltaSeconds = deltaTime / 1000.0f;
+        float dashMoveAmount = DASH_SPEED * deltaSeconds;
+
+        // Add trail point before moving
+        if (dashTrail.size() >= MAX_TRAIL_POINTS) {
+            dashTrail.remove(0);
+        }
+        dashTrail.add(new DashTrailPoint(x, y, System.currentTimeMillis()));
+
+        float newX = x;
+        float newY = y;
+
+        switch (dashDirection) {
+            case 0: newY += dashMoveAmount; break; // Down
+            case 1: newY -= dashMoveAmount; break; // Up
+            case 2: newX -= dashMoveAmount; break; // Left
+            case 3: newX += dashMoveAmount; break; // Right
+        }
+
+        dashDistanceRemaining -= dashMoveAmount;
+
+        // Collision detection with map boundaries
+        newX = Math.max(size / 2, Math.min(newX, mapWidth * tileSize - size / 2));
+        newY = Math.max(size / 2, Math.min(newY, mapHeight * tileSize - size / 2));
+
+        // Check collision with impassable terrain
+        int gridX = (int) (newX / tileSize);
+        int gridY = (int) (newY / tileSize);
+
+        if (gridX >= 0 && gridX < mapWidth && gridY >= 0 && gridY < mapHeight) {
+            int terrain = map[gridY][gridX];
+            if (terrain == MapGenerator.LAKE || terrain == MapGenerator.LAVA || terrain == MapGenerator.VILLAGE_NO_PASS) {
+                // Hit impassable, stop dash
+                dashDistanceRemaining = 0;
+            } else {
+                x = newX;
+                y = newY;
+            }
+        } else {
+            x = newX;
+            y = newY;
+        }
+
+        // Fast walk cycle during dash
+        walkCycle = (walkCycle + 4) % 60;
+
+        RoleSystem.getInstance().getRoleInfo().setMapX((int) x);
+        RoleSystem.getInstance().getRoleInfo().setMapY((int) y);
+
+        // Check if dash is complete
+        if (dashDistanceRemaining <= 0) {
+            isDashing = false;
+            // Fade out trail
+            dashTrail.clear();
+        }
+    }
+
+    /**
+     * Check if dash is on cooldown
+     */
+    public boolean isDashOnCooldown() {
+        return System.currentTimeMillis() - lastDashTime < DASH_COOLDOWN;
+    }
+
+    /**
+     * Get dash cooldown progress (0-1, 1 = ready)
+     */
+    public float getDashCooldownProgress() {
+        long elapsed = System.currentTimeMillis() - lastDashTime;
+        return Math.min(1.0f, (float) elapsed / DASH_COOLDOWN);
+    }
+
+    public boolean isDashing() {
+        return isDashing;
+    }
+
+    public java.util.List<DashTrailPoint> getDashTrail() {
+        return dashTrail;
     }
 
     /**
@@ -383,7 +517,7 @@ public class Player extends Character {
     }
 
     public boolean isMoving() {
-        return movingUp || movingDown || movingLeft || movingRight;
+        return isDashing || movingUp || movingDown || movingLeft || movingRight;
     }
 
     public int getWalkCycle() {
@@ -521,6 +655,21 @@ public class Player extends Character {
 
     public void setFacingDirection(int facingDirection) {
         this.facingDirection = facingDirection;
+    }
+
+    /**
+     * Represents a point in the dash trail for visual effect
+     */
+    public static class DashTrailPoint {
+        public final float x;
+        public final float y;
+        public final long timestamp;
+
+        public DashTrailPoint(float x, float y, long timestamp) {
+            this.x = x;
+            this.y = y;
+            this.timestamp = timestamp;
+        }
     }
 
 }

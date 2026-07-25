@@ -29,6 +29,11 @@ public class PlayerRenderer {
             }
         }
 
+        // Draw dash trail (afterimages) before the main player
+        if (player.isDashing()) {
+            drawDashTrail(canvas, offsetX, offsetY);
+        }
+
         Paint paint = new Paint();
         paint.setAntiAlias(true);
 
@@ -106,6 +111,100 @@ public class PlayerRenderer {
 
         // Floating energy particles (always animated)
         drawEnergyParticles(canvas, paint, screenX, screenY, scale, isMoving);
+
+        // Draw dash speed lines effect
+        if (player.isDashing()) {
+            drawDashSpeedLines(canvas, paint, screenX, screenY, scale);
+        }
+    }
+
+    /**
+     * Draw dash trail (afterimages)
+     */
+    private void drawDashTrail(Canvas canvas, int offsetX, int offsetY) {
+        java.util.List<Player.DashTrailPoint> trail = player.getDashTrail();
+        if (trail == null || trail.isEmpty()) return;
+
+        Paint trailPaint = new Paint();
+        trailPaint.setAntiAlias(true);
+
+        long currentTime = System.currentTimeMillis();
+        int size = player.getSize();
+
+        for (int i = 0; i < trail.size(); i++) {
+            Player.DashTrailPoint point = trail.get(i);
+            float trailX = point.x + offsetX;
+            float trailY = point.y + offsetY;
+
+            // Fade based on age and position in trail
+            float ageRatio = (float)(currentTime - point.timestamp) / 300f; // 300ms fade
+            float indexRatio = (float)(i + 1) / trail.size();
+            int alpha = (int) (Math.max(0, 1.0f - ageRatio) * indexRatio * 120);
+
+            if (alpha <= 0) continue;
+
+            // Draw semi-transparent afterimage
+            trailPaint.setColor(Color.argb(alpha, 100, 181, 246));
+            canvas.drawCircle(trailX, trailY - 5, size * 0.5f * indexRatio, trailPaint);
+
+            // Inner glow
+            trailPaint.setColor(Color.argb(alpha / 2, 200, 230, 255));
+            canvas.drawCircle(trailX, trailY - 5, size * 0.3f * indexRatio, trailPaint);
+        }
+    }
+
+    /**
+     * Draw speed lines during dash
+     */
+    private void drawDashSpeedLines(Canvas canvas, Paint paint, float cx, float cy, float scale) {
+        paint.setAntiAlias(true);
+        int dashDirection = player.getFacingDirection();
+        int walkCycle = player.getWalkCycle();
+
+        // Draw 4 speed lines behind the player
+        for (int i = 0; i < 4; i++) {
+            float offset = (i - 1.5f) * 8 * scale;
+            // Use walkCycle for deterministic animation
+            float lineLength = (15 + ((walkCycle + i * 7) % 10)) * scale;
+            int alpha = 100 + ((walkCycle + i * 13) % 80);
+
+            paint.setColor(Color.argb(alpha, 200, 230, 255));
+            paint.setStrokeWidth(2 * scale);
+
+            float startX, startY, endX, endY;
+
+            switch (dashDirection) {
+                case 0: // Down - lines above
+                    startX = cx + offset;
+                    startY = cy - 20 * scale - i * 5 * scale;
+                    endX = cx + offset;
+                    endY = startY - lineLength;
+                    break;
+                case 1: // Up - lines below
+                    startX = cx + offset;
+                    startY = cy + 20 * scale + i * 5 * scale;
+                    endX = cx + offset;
+                    endY = startY + lineLength;
+                    break;
+                case 2: // Left - lines to right
+                    startX = cx + 20 * scale + i * 5 * scale;
+                    startY = cy + offset;
+                    endX = startX + lineLength;
+                    endY = cy + offset;
+                    break;
+                case 3: // Right - lines to left
+                    startX = cx - 20 * scale - i * 5 * scale;
+                    startY = cy + offset;
+                    endX = startX - lineLength;
+                    endY = cy + offset;
+                    break;
+                default:
+                    continue;
+            }
+
+            canvas.drawLine(startX, startY, endX, endY, paint);
+        }
+        paint.setStrokeWidth(1);
     }
 
 // ... existing code ...

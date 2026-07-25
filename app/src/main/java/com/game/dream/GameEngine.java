@@ -926,6 +926,16 @@ public class GameEngine {
         player.setMovingRight(rightPressed);
     }
 
+    /**
+     * Trigger player dash in the given direction
+     * @param direction 0=down, 1=up, 2=left, 3=right
+     */
+    public void triggerPlayerDash(int direction) {
+        if (player != null) {
+            player.startDash(direction);
+        }
+    }
+
     public void doAttackAction() {
         // Trigger attack animation
         player.triggerAttackAnimation();

@@ -30,13 +30,15 @@ public class BattleUtil {
         //计算命中
         RoleInfo roleInfo = RoleSystem.getInstance().getRoleInfo();
         int playerHit = roleInfo.getHit();
-        int enemyDodge = (int) (enemy.getSpeed() * 1.2);
-        float value = (playerHit - enemyDodge * 5) / 20000f;
-        value = Math.max(-0.1f, Math.min(0.1f, value));
-        float dodgeRatio = 0.1f - value;
+        // 敌人闪避由速度和攻击力共同决定, 攻击力代表敌人强度, 后期敌人攻击力更高则闪避也更高
+        int enemyDodge = (int) (enemy.getSpeed() * 0.2f + enemy.getAttackDamage() * 0.2f);
+        // 比率公式: missRate = dodge / (hit + dodge)
+        float total = playerHit + enemyDodge;
+        float missRate = total > 0 ? (float) enemyDodge / total : 0.05f;
+        missRate = Math.max(0.03f, Math.min(0.30f, missRate));
 
         //是否命中
-        isHit = Math.random() < dodgeRatio;
+        isHit = Math.random() >= missRate;
         if (ItemSystem.getInstance().isEquipedSpecialEffect(SpecialEffect.SE_BiZhong)) {
             //必中武器
             isHit = true;
@@ -123,13 +125,15 @@ public class BattleUtil {
         //计算命中
         RoleInfo roleInfo = RoleSystem.getInstance().getRoleInfo();
         int playerHit = roleInfo.getHit();
-        int enemyDodge = (int) (enemy.getSpeed() * 1.2);
-        float value = (playerHit - enemyDodge * 5) / 20000f;
-        value = Math.max(-0.1f, Math.min(0.1f, value));
-        float dodgeRatio = 0.1f - value;
+        // 敌人闪避由速度和攻击力共同决定, 攻击力代表敌人强度, 后期敌人攻击力更高则闪避也更高
+        int enemyDodge = (int) (enemy.getSpeed() * 0.2f + enemy.getAttackDamage() * 0.2f);
+        // 比率公式: missRate = dodge / (hit + dodge)
+        float total = playerHit + enemyDodge;
+        float missRate = total > 0 ? (float) enemyDodge / total : 0.05f;
+        missRate = Math.max(0.03f, Math.min(0.30f, missRate));
 
         //是否命中
-        isHit = Math.random() < dodgeRatio;
+        isHit = Math.random() >= missRate;
         if (ItemSystem.getInstance().isEquipedSpecialEffect(SpecialEffect.SE_BiZhong)) {
             //必中武器
             isHit = true;

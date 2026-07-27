@@ -20,7 +20,8 @@ public class Wolf extends Enemy {
 
     public Wolf(float x, float y) {
         super(x, y, 80, 250, 110, 30, 150);
-        attackCooldown = 1500;
+        attackCooldown = 2300;
+        setAttackShape(AttackShape.ARC); // 狼爪横扫 - 扇形
 
         int health = Utils.getWaveValueInt(200, 0.2f);
         this.maxHealth = health;

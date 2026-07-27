@@ -45,6 +45,14 @@ public abstract class Character {
     protected long lastHealBloodTime = 0;
     protected long lastHealMagicTime = 0;
 
+    // Knockback (击退)
+    protected float knockbackVelX = 0;
+    protected float knockbackVelY = 0;
+    protected long knockbackEndTime = 0;
+
+    // Hit flash (受击闪红)
+    protected long lastHitFlashTime = 0;
+
     public Character(float x, float y, int size) {
         this.x = x;
         this.y = y;
@@ -61,7 +69,7 @@ public abstract class Character {
         this.bobOffset = 0;
     }
 
-    public final void draw(Canvas canvas, int offsetX, int offsetY){
+    public void draw(Canvas canvas, int offsetX, int offsetY){
         float screenX = getX() + offsetX;
         float screenY = getY() + offsetY;
 
@@ -88,6 +96,9 @@ public abstract class Character {
 
         drawHealBloodEffect(canvas, screenX, screenY, scale);
         drawHealMagicEffect(canvas, screenX, screenY, scale);
+
+        // Draw hit flash overlay (red tint when recently hit)
+        drawHitFlash(canvas, screenX, screenY, scale);
     }
 
     public abstract void onDraw(Canvas canvas, int offsetX, int offsetY);
@@ -243,6 +254,72 @@ public abstract class Character {
     public boolean isRooted() { return currentCC == CrowdControlType.ROOT; }
     public boolean isStunned() { return currentCC == CrowdControlType.STUN; }
     public boolean isSlowed() { return currentCC == CrowdControlType.SLOW; }
+
+    /**
+     * Apply knockback to this character
+     * @param fromX X position of the knockback source
+     * @param fromY Y position of the knockback source
+     * @param force knockback strength (pixels/second)
+     * @param durationMillis how long the knockback lasts
+     */
+    public void applyKnockback(float fromX, float fromY, float force, long durationMillis) {
+        float dx = this.x - fromX;
+        float dy = this.y - fromY;
+        float dist = (float) Math.sqrt(dx * dx + dy * dy);
+        if (dist > 0) {
+            knockbackVelX = (dx / dist) * force;
+            knockbackVelY = (dy / dist) * force;
+            knockbackEndTime = System.currentTimeMillis() + durationMillis;
+        }
+    }
+
+    /**
+     * Update knockback movement. Returns the delta movement applied.
+     */
+    protected float[] updateKnockback(long deltaTime) {
+        long currentTime = System.currentTimeMillis();
+        if (currentTime > knockbackEndTime) {
+            knockbackVelX = 0;
+            knockbackVelY = 0;
+            return null;
+        }
+        float deltaSeconds = deltaTime / 1000f;
+        float moveX = knockbackVelX * deltaSeconds;
+        float moveY = knockbackVelY * deltaSeconds;
+        // Apply friction (knockback decays)
+        knockbackVelX *= 0.9f;
+        knockbackVelY *= 0.9f;
+        return new float[]{moveX, moveY};
+    }
+
+    public boolean isBeingKnockedBack() {
+        return System.currentTimeMillis() < knockbackEndTime;
+    }
+
+    /**
+     * Trigger hit flash effect (red tint)
+     */
+    public void triggerHitFlash() {
+        lastHitFlashTime = System.currentTimeMillis();
+    }
+
+    /**
+     * Draw red flash overlay when character was recently hit
+     */
+    protected void drawHitFlash(Canvas canvas, float cx, float cy, float scale) {
+        if (lastHitFlashTime <= 0) return;
+        long currentTime = System.currentTimeMillis();
+        long elapsed = currentTime - lastHitFlashTime;
+        if (elapsed > 300) {
+            lastHitFlashTime = 0;
+            return;
+        }
+        float alpha = 1.0f - (elapsed / 300f);
+        Paint flashPaint = new Paint();
+        flashPaint.setAntiAlias(true);
+        flashPaint.setColor(Color.argb((int)(alpha * 120), 255, 50, 50));
+        canvas.drawCircle(cx, cy, size * 0.8f, flashPaint);
+    }
 
     public boolean isJinGangState(){
         return isJinGangState;

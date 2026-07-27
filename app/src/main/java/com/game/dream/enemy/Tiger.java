@@ -22,7 +22,8 @@ public class Tiger extends Enemy {
 
     public Tiger(float x, float y) {
         super(x, y, 120, 300, 150, 50, 200);
-        attackCooldown = 1200; // Faster attacks than wolf
+        attackCooldown = 2000; // Faster attacks than wolf
+        setAttackShape(AttackShape.ARC); // 虎掌拍击 - 扇形
 
         int health = Utils.getWaveValueInt(350, 0.2f);
         this.maxHealth = health;

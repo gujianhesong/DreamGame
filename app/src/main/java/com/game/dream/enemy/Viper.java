@@ -20,6 +20,7 @@ public class Viper extends Enemy {
 
     public Viper(float x, float y) {
         super(x, y, 60, 180f, 35f, 30, 100); // size=40, detection=180, attack=35
+        setAttackShape(AttackShape.RECT); // 蛇头前咬 - 矩形
 
         int health = Utils.getWaveValueInt(200, 0.2f);
         this.health = health;

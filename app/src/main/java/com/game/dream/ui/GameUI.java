@@ -881,6 +881,9 @@ public class GameUI {
         canvas.drawText("◀", dpadBounds.centerX() - dpadBounds.width() / 4, dpadBounds.centerY() + 15, paint);
         canvas.drawText("▶", dpadBounds.centerX() + dpadBounds.width() / 4, dpadBounds.centerY() + 15, paint);
 
+        // Draw dash cooldown indicator (top-left of D-pad)
+        drawDashCooldownIndicator(canvas, paint);
+
         // Draw attack buttons cluster
         if (meleeAttackButton != null) {
             // Draw connection lines from magic buttons to physical button
@@ -1052,6 +1055,67 @@ public class GameUI {
         paint.setStrokeWidth(2);
         paint.setColor(Color.argb(100, 255, 255, 255));
         canvas.drawArc(oval, -90, sweepAngle, false, paint);
+    }
+
+    /**
+     * Draw dash charge indicator at top-left of D-pad
+     */
+    private void drawDashCooldownIndicator(Canvas canvas, Paint paint) {
+        Player player = GameEngine.getInstance().getPlayer();
+        if (player == null) return;
+
+        float charge = player.getDashCharge();
+        float maxCharge = player.getDashChargeMax();
+        float cost = player.getDashChargeCost();
+        float chargeRatio = charge / maxCharge;
+        boolean canDash = charge >= cost;
+
+        // Position: top-left of D-pad
+        float dpadRadius = dpadBounds.width() / 2f;
+        float indicatorRadius = dpadRadius * 0.28f;
+        float indicatorCX = dpadBounds.centerX() - dpadRadius * 1.15f;
+        float indicatorCY = dpadBounds.centerY() - dpadRadius * 0.65f;
+
+        // Background circle (dark)
+        paint.setAntiAlias(true);
+        paint.setColor(Color.argb(100, 0, 0, 0));
+        paint.setStyle(Paint.Style.FILL);
+        canvas.drawCircle(indicatorCX, indicatorCY, indicatorRadius, paint);
+
+        // Charge arc (fills clockwise from top based on charge ratio)
+        float sweepAngle = 360 * chargeRatio;
+        RectF oval = new RectF(
+                indicatorCX - indicatorRadius,
+                indicatorCY - indicatorRadius,
+                indicatorCX + indicatorRadius,
+                indicatorCY + indicatorRadius);
+
+        // Color based on whether can dash
+        int arcColor;
+        if (canDash) {
+            // Cyan/green when enough charge
+            arcColor = Color.argb(200, 0, 220, 255);
+        } else {
+            // Red/orange when low charge
+            arcColor = Color.argb(200, 255, 100, 50);
+        }
+        paint.setColor(arcColor);
+        paint.setStyle(Paint.Style.FILL);
+        canvas.drawArc(oval, -90, sweepAngle, true, paint);
+
+        // Outer ring
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(2);
+        paint.setColor(canDash ? Color.argb(180, 0, 200, 255) : Color.argb(180, 255, 80, 30));
+        canvas.drawCircle(indicatorCX, indicatorCY, indicatorRadius, paint);
+
+        // Charge number in center
+        paint.setStyle(Paint.Style.FILL);
+        paint.setColor(Color.argb(230, 255, 255, 255));
+        paint.setTextSize(indicatorRadius * 0.7f);
+        paint.setTextAlign(Paint.Align.CENTER);
+        paint.setFakeBoldText(true);
+        canvas.drawText(String.valueOf((int) charge), indicatorCX, indicatorCY + indicatorRadius * 0.25f, paint);
     }
 
     /**

@@ -32,6 +32,10 @@ public class PlayerRenderer {
         // Draw dash trail (afterimages) before the main player
         if (player.isDashing()) {
             drawDashTrail(canvas, offsetX, offsetY);
+            // 冲刺无敌帧金色护盾
+            if (player.isDashInvincible()) {
+                drawDashIFrameShield(canvas, offsetX, offsetY);
+            }
         }
 
         Paint paint = new Paint();
@@ -130,6 +134,7 @@ public class PlayerRenderer {
 
         long currentTime = System.currentTimeMillis();
         int size = player.getSize();
+        boolean isIFrame = player.isDashInvincible();
 
         for (int i = 0; i < trail.size(); i++) {
             Player.DashTrailPoint point = trail.get(i);
@@ -143,14 +148,51 @@ public class PlayerRenderer {
 
             if (alpha <= 0) continue;
 
-            // Draw semi-transparent afterimage
-            trailPaint.setColor(Color.argb(alpha, 100, 181, 246));
+            // 无敌帧时残影为金色，否则为蓝色
+            if (isIFrame) {
+                trailPaint.setColor(Color.argb(alpha, 255, 215, 0));
+            } else {
+                trailPaint.setColor(Color.argb(alpha, 100, 181, 246));
+            }
             canvas.drawCircle(trailX, trailY - 5, size * 0.5f * indexRatio, trailPaint);
 
             // Inner glow
-            trailPaint.setColor(Color.argb(alpha / 2, 200, 230, 255));
+            if (isIFrame) {
+                trailPaint.setColor(Color.argb(alpha / 2, 255, 245, 150));
+            } else {
+                trailPaint.setColor(Color.argb(alpha / 2, 200, 230, 255));
+            }
             canvas.drawCircle(trailX, trailY - 5, size * 0.3f * indexRatio, trailPaint);
         }
+    }
+
+    /**
+     * Draw golden shield effect during dash i-frames
+     */
+    private void drawDashIFrameShield(Canvas canvas, int offsetX, int offsetY) {
+        float screenX = player.getX() + offsetX;
+        float screenY = player.getY() + offsetY;
+        float scale = player.getSize() / 40f;
+        int size = player.getSize();
+
+        Paint shieldPaint = new Paint();
+        shieldPaint.setAntiAlias(true);
+
+        // 金色脉冲护盾
+        long time = System.currentTimeMillis();
+        float pulse = 1.0f + 0.15f * (float) Math.sin(time / 80.0);
+
+        shieldPaint.setColor(Color.argb(100, 255, 215, 0));
+        shieldPaint.setStyle(Paint.Style.FILL);
+        canvas.drawCircle(screenX, screenY - 5, size * 0.7f * pulse, shieldPaint);
+
+        // 外圈金色描边
+        shieldPaint.setStyle(Paint.Style.STROKE);
+        shieldPaint.setStrokeWidth(3 * scale);
+        shieldPaint.setColor(Color.argb(180, 255, 235, 59));
+        canvas.drawCircle(screenX, screenY - 5, size * 0.7f * pulse, shieldPaint);
+
+        shieldPaint.setStyle(Paint.Style.FILL);
     }
 
     /**

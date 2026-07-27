@@ -1,5 +1,11 @@
 package com.game.dream.enemy;
 
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Path;
+import android.graphics.RectF;
+
 import com.game.dream.figure.Character;
 import com.game.dream.system.MapSystem;
 import com.game.dream.utils.LogUtil;
@@ -61,6 +67,16 @@ public abstract class Enemy extends Character {
 
     protected boolean isCastingSpell;
 
+    // Attack wind-up (攻击前摇)
+    protected boolean isWindingUp = false;
+    protected long windUpStartTime = 0;
+    protected long windUpDuration = 400; // 前摇时长(ms)
+    protected boolean attackJustFired = false; // 前摇结束后攻击已触发标记
+
+    // Attack range shape (攻击范围形状)
+    public enum AttackShape { CIRCLE, ARC, RECT }
+    protected AttackShape attackShape = AttackShape.CIRCLE;
+
     public Enemy(float x, float y, int size, float detectionRange, float attackRange, int rewardExp, int rewardMoney) {
         super(x, y, size); // attack=10, defense=0, size=30
 
@@ -72,7 +88,7 @@ public abstract class Enemy extends Character {
 
         this.detectionRange = detectionRange;
         this.attackRange = attackRange;
-        this.attackCooldown = 1500;
+        this.attackCooldown = 2000;
         this.lastAttackTime = 0;
 
         this.rewardExp = rewardExp;
@@ -95,6 +111,23 @@ public abstract class Enemy extends Character {
 
         // Update CC state first (clears expired effects)
         updateCCState();
+
+        // Handle knockback movement FIRST (overrides everything, including stun)
+        if (isBeingKnockedBack()) {
+            float[] kbMove = updateKnockback(deltaTime);
+            if (kbMove != null) {
+                float newX = x + kbMove[0];
+                float newY = y + kbMove[1];
+                // Clamp to map bounds
+                newX = Math.max(size, Math.min(newX, mapWidth - size));
+                newY = Math.max(size, Math.min(newY, mapHeight - size));
+                x = newX;
+                y = newY;
+            }
+            // Still update animation during knockback
+            updateAnimation(System.currentTimeMillis());
+            return;
+        }
 
         // If stunned, skip all AI logic
         if (isStunned()) return;
@@ -133,14 +166,35 @@ public abstract class Enemy extends Character {
                 } else if (distanceToPlayer < attackRange) {
                     currentState = State.ATTACKING;
                     stateTimer = currentTime;
+                    // 开始攻击前摇
+                    isWindingUp = true;
+                    windUpStartTime = currentTime;
                 }
                 break;
 
             case ATTACKING:
-                updateAttacking(deltaSeconds, playerX, playerY);
+                // 前摇期间不移动，让玩家有机会走出范围
+                if (isWindingUp) {
+                    // 更新目标方向用于显示攻击方向
+                    targetX = playerX;
+                    targetY = playerY;
+                    if (currentTime - windUpStartTime >= windUpDuration) {
+                        // 前摇结束，检查玩家是否还在攻击范围内
+                        isWindingUp = false;
+                        if (distanceToPlayer < attackRange) {
+                            // 玩家仍在范围内，执行攻击
+                            attackJustFired = true;
+                        }
+                        // 玩家不在范围内 = 闪避成功，不攻击
+                    }
+                    // 前摇中不移动
+                } else {
+                    updateAttacking(deltaSeconds, playerX, playerY);
+                }
 
                 if (distanceToPlayer > attackRange * 1.5f) {
                     currentState = State.CHASING;
+                    isWindingUp = false;
                     stateTimer = currentTime;
                 }
                 break;
@@ -349,6 +403,22 @@ public abstract class Enemy extends Character {
     }
 
     /**
+     * Get last attack time
+     */
+    public long getLastAttackTime() {
+        return lastAttackTime;
+    }
+
+    /**
+     * Check if attack just fired (consumed once by GameEngine)
+     */
+    public boolean consumeAttackFired() {
+        boolean fired = attackJustFired;
+        attackJustFired = false;
+        return fired;
+    }
+
+    /**
      * Get attack cooldown progress (0-1)
      */
     public float getAttackCooldownProgress() {
@@ -424,6 +494,9 @@ public abstract class Enemy extends Character {
         health -= damage;
         lastDamageTime = currentTime;
 
+        // Trigger hit flash (red tint)
+        triggerHitFlash();
+
         if (isJinGangState) {
             health = Math.max(1, health);
         }
@@ -494,4 +567,142 @@ public abstract class Enemy extends Character {
     }
 
     public abstract List<Item> getPossibleDropList();
+
+    /**
+     * Set attack shape
+     */
+    public void setAttackShape(AttackShape shape) {
+        this.attackShape = shape;
+    }
+
+    /**
+     * Check if enemy is currently in attack wind-up phase
+     */
+    public boolean isWindingUp() {
+        return isWindingUp;
+    }
+
+    /**
+     * Cancel wind-up (e.g., when stunned by dash)
+     */
+    public void setWindingUpFalse() {
+        isWindingUp = false;
+    }
+
+    /**
+     * Get wind-up progress (0-1, 1 = about to attack)
+     */
+    public float getWindUpProgress() {
+        if (!isWindingUp) return 0f;
+        long elapsed = System.currentTimeMillis() - windUpStartTime;
+        return Math.min(1.0f, (float) elapsed / windUpDuration);
+    }
+
+    /**
+     * Draw attack wind-up warning indicator above enemy
+     */
+    @Override
+    public void draw(Canvas canvas, int offsetX, int offsetY) {
+        super.draw(canvas, offsetX, offsetY);
+
+        if (isWindingUp) {
+            float screenX = getX() + offsetX;
+            float screenY = getY() + offsetY;
+            float progress = getWindUpProgress();
+
+            // 绘制警告标记: 红色感叹号，随前摇进度变大变亮
+            Paint warnPaint = new Paint();
+            warnPaint.setAntiAlias(true);
+            int alpha = (int) (80 + progress * 175);
+            warnPaint.setColor(Color.argb(alpha, 255, 50, 50));
+            warnPaint.setTextSize(16 + progress * 10);
+            warnPaint.setTextAlign(Paint.Align.CENTER);
+            warnPaint.setFakeBoldText(true);
+            canvas.drawText("!", screenX, screenY - getSize() - 25 - (int)(progress * 8), warnPaint);
+
+            // 脚下红色警告圈
+            Paint circlePaint = new Paint();
+            circlePaint.setAntiAlias(true);
+            circlePaint.setColor(Color.argb((int)(progress * 60), 255, 0, 0));
+            circlePaint.setStyle(Paint.Style.FILL);
+            canvas.drawCircle(screenX, screenY, getSize() * (0.5f + progress * 0.3f), circlePaint);
+
+            // 攻击范围预警: 根据攻击形状绘制不同区域
+            Paint rangePaint = new Paint();
+            rangePaint.setAntiAlias(true);
+            int strokeAlpha = (int) (100 + progress * 155);  // 100~255
+            int fillAlpha = (int) (30 + progress * 50);      // 30~80
+
+            switch (attackShape) {
+                case ARC: {
+                    // 扇形: 朝玩家方向的120度角区域
+                    float dx = targetX - getX();
+                    float dy = targetY - getY();
+                    float angleToTarget = (float) Math.toDegrees(Math.atan2(dy, dx));
+                    float arcSpan = 120f;
+                    RectF arcRect = new RectF(
+                            screenX - attackRange, screenY - attackRange,
+                            screenX + attackRange, screenY + attackRange);
+                    // 描边
+                    rangePaint.setColor(Color.argb(strokeAlpha, 255, 60, 60));
+                    rangePaint.setStyle(Paint.Style.STROKE);
+                    rangePaint.setStrokeWidth(3);
+                    canvas.drawArc(arcRect, angleToTarget - arcSpan / 2, arcSpan, true, rangePaint);
+                    // 填充
+                    rangePaint.setColor(Color.argb(fillAlpha, 255, 0, 0));
+                    rangePaint.setStyle(Paint.Style.FILL);
+                    canvas.drawArc(arcRect, angleToTarget - arcSpan / 2, arcSpan, true, rangePaint);
+                    break;
+                }
+                case RECT: {
+                    // 矩形: 朝玩家方向的长方形区域
+                    float dx = targetX - getX();
+                    float dy = targetY - getY();
+                    float dist = (float) Math.sqrt(dx * dx + dy * dy);
+                    float dirX = dist > 0 ? dx / dist : 1;
+                    float dirY = dist > 0 ? dy / dist : 0;
+                    float perpX = -dirY;
+                    float perpY = dirX;
+                    float halfW = attackRange * 0.5f;
+                    float len = attackRange * 1.5f;
+                    // 矩形四个顶点 (从敌人前方延伸)
+                    Path rectPath = new Path();
+                    float x1 = screenX + perpX * halfW;
+                    float y1 = screenY + perpY * halfW;
+                    float x2 = screenX + dirX * len + perpX * halfW;
+                    float y2 = screenY + dirY * len + perpY * halfW;
+                    float x3 = screenX + dirX * len - perpX * halfW;
+                    float y3 = screenY + dirY * len - perpY * halfW;
+                    float x4 = screenX - perpX * halfW;
+                    float y4 = screenY - perpY * halfW;
+                    rectPath.moveTo(x1, y1);
+                    rectPath.lineTo(x2, y2);
+                    rectPath.lineTo(x3, y3);
+                    rectPath.lineTo(x4, y4);
+                    rectPath.close();
+                    // 描边
+                    rangePaint.setColor(Color.argb(strokeAlpha, 255, 60, 60));
+                    rangePaint.setStyle(Paint.Style.STROKE);
+                    rangePaint.setStrokeWidth(3);
+                    canvas.drawPath(rectPath, rangePaint);
+                    // 填充
+                    rangePaint.setColor(Color.argb(fillAlpha, 255, 0, 0));
+                    rangePaint.setStyle(Paint.Style.FILL);
+                    canvas.drawPath(rectPath, rangePaint);
+                    break;
+                }
+                default: {
+                    // 圆形: 以敌人为中心的圆
+                    rangePaint.setColor(Color.argb(strokeAlpha, 255, 60, 60));
+                    rangePaint.setStyle(Paint.Style.STROKE);
+                    rangePaint.setStrokeWidth(3);
+                    canvas.drawCircle(screenX, screenY, attackRange, rangePaint);
+                    rangePaint.setStyle(Paint.Style.FILL);
+                    rangePaint.setColor(Color.argb(fillAlpha, 255, 0, 0));
+                    canvas.drawCircle(screenX, screenY, attackRange, rangePaint);
+                    break;
+                }
+            }
+        }
+    }
 }

@@ -34,19 +34,27 @@ public class Player extends Character {
     // Movement
     private boolean movingUp, movingDown, movingLeft, movingRight;
 
-    // Dash (冲刺)
+    // Dash (冲刺) - 集气系统
     private boolean isDashing;
     private long dashStartTime;
     private int dashDirection; // 0=down, 1=up, 2=left, 3=right
     private float dashDistanceRemaining;
     private static final float DASH_DISTANCE = 400f; // 冲刺总距离(像素)
     private static final float DASH_SPEED = 800f;   // 冲刺速度(像素/秒)
-    private static final long DASH_COOLDOWN = 2000;  // 冲刺冷却(毫秒)
-    private long lastDashTime;
+    private static final long DASH_IFRAME_DURATION = 250; // 冲刺无敌帧时长(毫秒)
+    // 集气系统
+    private static final float DASH_CHARGE_MAX = 100f;   // 集气上限
+    private static final float DASH_CHARGE_COST = 20f;   // 每次冲刺消耗
+    private static final float DASH_CHARGE_REGEN = 10f;  // 每秒回复量
+    private float dashCharge = DASH_CHARGE_MAX;
+    private long lastChargeUpdateTime;
 
     // Dash trail for visual effect
     private java.util.List<DashTrailPoint> dashTrail = new java.util.ArrayList<>();
     private static final int MAX_TRAIL_POINTS = 8;
+
+    // Track enemies hit during current dash (prevent repeated hits)
+    private java.util.Set<com.game.dream.enemy.Enemy> dashHitEnemies = new java.util.HashSet<>();
 
     // Animation
     private int walkCycle;
@@ -57,6 +65,15 @@ public class Player extends Character {
     private long attackStartTime;
     private int attackAnimationFrame;
     private static final int ATTACK_ANIMATION_DURATION = 300; // 300ms
+
+    // Attack lunge (攻击前冲)
+    private float attackLungeRemaining = 0;
+    private float attackLungeDirX = 0;
+    private float attackLungeDirY = 0;
+    private static final float ATTACK_LUNGE_DISTANCE = 120f; // 前冲距离(比冲刺400短很多)
+    private static final float ATTACK_LUNGE_SPEED = 600f;    // 前冲速度(像素/秒)
+    // 前冲过程中已撞过的敌人(防止重复击退)
+    private java.util.Set<com.game.dream.enemy.Enemy> lungeHitEnemies = new java.util.HashSet<>();
 
     // Respawn
     private float respawnX;
@@ -100,10 +117,39 @@ public class Player extends Character {
         // Update CC state
         updateCCState();
 
+        // 集气回复: 每秒回复 DASH_CHARGE_REGEN
+        if (dashCharge < DASH_CHARGE_MAX && deltaTime > 0) {
+            float deltaSeconds = deltaTime / 1000.0f;
+            dashCharge = Math.min(DASH_CHARGE_MAX, dashCharge + DASH_CHARGE_REGEN * deltaSeconds);
+        }
+
+        // Handle knockback movement FIRST (overrides everything, including stun/root)
+        if (isBeingKnockedBack()) {
+            float[] kbMove = updateKnockback(deltaTime);
+            if (kbMove != null) {
+                float newX = x + kbMove[0];
+                float newY = y + kbMove[1];
+                // Collision detection with map boundaries
+                newX = Math.max(size / 2, Math.min(newX, mapWidth * tileSize - size / 2));
+                newY = Math.max(size / 2, Math.min(newY, mapHeight * tileSize - size / 2));
+                // Check impassable terrain
+                int gridX = (int) (newX / tileSize);
+                int gridY = (int) (newY / tileSize);
+                if (gridX >= 0 && gridX < mapWidth && gridY >= 0 && gridY < mapHeight) {
+                    int terrain = map[gridY][gridX];
+                    if (terrain != MapGenerator.LAKE && terrain != MapGenerator.LAVA && terrain != MapGenerator.VILLAGE_NO_PASS) {
+                        x = newX;
+                        y = newY;
+                    }
+                }
+                RoleSystem.getInstance().getRoleInfo().setMapX((int) x);
+                RoleSystem.getInstance().getRoleInfo().setMapY((int) y);
+            }
+            return;
+        }
+
         // If stunned or rooted, prevent movement input from taking effect
         if (isStunned() || isRooted()) {
-            // Still allow animation updates or mana regen, but skip position change
-            //super.update(map, mapWidth, mapHeight, tileSize, deltaTime);
             return;
         }
 
@@ -114,6 +160,39 @@ public class Player extends Character {
         if (isDashing) {
             updateDash(map, mapWidth, mapHeight, tileSize, deltaTime);
             return;
+        }
+
+        // 攻击前冲移动
+        if (attackLungeRemaining > 0) {
+            float deltaSeconds = deltaTime / 1000.0f;
+            float lungeMove = ATTACK_LUNGE_SPEED * deltaSeconds;
+            lungeMove = Math.min(lungeMove, attackLungeRemaining);
+
+            float newX = x + attackLungeDirX * lungeMove;
+            float newY = y + attackLungeDirY * lungeMove;
+            // 边界限制
+            newX = Math.max(size / 2, Math.min(newX, mapWidth * tileSize - size / 2));
+            newY = Math.max(size / 2, Math.min(newY, mapHeight * tileSize - size / 2));
+            // 地形检测
+            boolean terrainBlocked = false;
+            int gridX = (int) (newX / tileSize);
+            int gridY = (int) (newY / tileSize);
+            if (gridX >= 0 && gridX < mapWidth && gridY >= 0 && gridY < mapHeight) {
+                int terrain = map[gridY][gridX];
+                if (terrain == MapGenerator.LAKE || terrain == MapGenerator.LAVA || terrain == MapGenerator.VILLAGE_NO_PASS) {
+                    terrainBlocked = true;
+                }
+            }
+
+            if (terrainBlocked) {
+                attackLungeRemaining = 0; // 地形阻挡停止前冲
+            } else {
+                x = newX;
+                y = newY;
+                attackLungeRemaining -= lungeMove;
+            }
+            RoleSystem.getInstance().getRoleInfo().setMapX((int) x);
+            RoleSystem.getInstance().getRoleInfo().setMapY((int) y);
         }
 
         boolean isMoving = false;
@@ -200,8 +279,8 @@ public class Player extends Character {
     public void startDash(int direction) {
         long currentTime = System.currentTimeMillis();
 
-        // Check cooldown
-        if (currentTime - lastDashTime < DASH_COOLDOWN) {
+        // Check charge (集气系统)
+        if (dashCharge < DASH_CHARGE_COST) {
             return;
         }
 
@@ -215,10 +294,15 @@ public class Player extends Character {
         dashDirection = direction;
         dashDistanceRemaining = DASH_DISTANCE;
         facingDirection = direction;
-        lastDashTime = currentTime;
+
+        // 消耗集气
+        dashCharge -= DASH_CHARGE_COST;
+        lastChargeUpdateTime = currentTime;
 
         // Clear trail
         dashTrail.clear();
+        // Clear dash hit tracking
+        dashHitEnemies.clear();
 
         android.util.Log.d("Player", "Dash started in direction: " + direction);
     }
@@ -285,22 +369,63 @@ public class Player extends Character {
     }
 
     /**
-     * Check if dash is on cooldown
+     * Check if dash has enough charge
      */
     public boolean isDashOnCooldown() {
-        return System.currentTimeMillis() - lastDashTime < DASH_COOLDOWN;
+        return dashCharge < DASH_CHARGE_COST;
     }
 
     /**
-     * Get dash cooldown progress (0-1, 1 = ready)
+     * Get dash charge progress (0-1, 1 = full charge)
      */
     public float getDashCooldownProgress() {
-        long elapsed = System.currentTimeMillis() - lastDashTime;
-        return Math.min(1.0f, (float) elapsed / DASH_COOLDOWN);
+        return dashCharge / DASH_CHARGE_MAX;
+    }
+
+    /**
+     * Get current dash charge value
+     */
+    public float getDashCharge() {
+        return dashCharge;
+    }
+
+    /**
+     * Get max dash charge
+     */
+    public float getDashChargeMax() {
+        return DASH_CHARGE_MAX;
+    }
+
+    /**
+     * Get dash charge cost per dash
+     */
+    public float getDashChargeCost() {
+        return DASH_CHARGE_COST;
     }
 
     public boolean isDashing() {
         return isDashing;
+    }
+
+    /**
+     * Check if player is in dash invincibility window (i-frames)
+     */
+    public boolean isDashInvincible() {
+        return isDashing && (System.currentTimeMillis() - dashStartTime) < DASH_IFRAME_DURATION;
+    }
+
+    /**
+     * Get current dash direction (0=down, 1=up, 2=left, 3=right)
+     */
+    public int getDashDirection() {
+        return dashDirection;
+    }
+
+    /**
+     * Get set of enemies hit during current dash
+     */
+    public java.util.Set<com.game.dream.enemy.Enemy> getDashHitEnemies() {
+        return dashHitEnemies;
     }
 
     public java.util.List<DashTrailPoint> getDashTrail() {
@@ -451,6 +576,16 @@ public class Player extends Character {
         isAttacking = true;
         attackStartTime = System.currentTimeMillis();
         attackAnimationFrame = 0;
+
+        // 设置攻击前冲方向
+        attackLungeRemaining = ATTACK_LUNGE_DISTANCE;
+        lungeHitEnemies.clear();
+        switch (facingDirection) {
+            case 0: attackLungeDirX = 0;  attackLungeDirY = 1;  break; // down
+            case 1: attackLungeDirX = 0;  attackLungeDirY = -1; break; // up
+            case 2: attackLungeDirX = -1; attackLungeDirY = 0;  break; // left
+            case 3: attackLungeDirX = 1;  attackLungeDirY = 0;  break; // right
+        }
     }
 
     /**
@@ -483,6 +618,20 @@ public class Player extends Character {
             return false;
         }
         return true;
+    }
+
+    /**
+     * Check if attack lunge is still in progress
+     */
+    public boolean isAttackLunging() {
+        return attackLungeRemaining > 0;
+    }
+
+    /**
+     * Get set of enemies already hit by current attack lunge
+     */
+    public java.util.Set<com.game.dream.enemy.Enemy> getLungeHitEnemies() {
+        return lungeHitEnemies;
     }
 
     /**
@@ -548,11 +697,19 @@ public class Player extends Character {
             return false; // No damage taken
         }
 
+        // 冲刺无敌帧期间免疫伤害
+        if (isDashing && (currentTime - dashStartTime) < DASH_IFRAME_DURATION) {
+            return false;
+        }
+
         // Apply damage
         int health = getHealth();
         health -= damage;
         health = Math.max(0, health);
         lastDamageTime = currentTime;
+
+        // Trigger hit flash (red tint)
+        triggerHitFlash();
 
         if (isJinGangState) {
             health = Math.max(1, health);

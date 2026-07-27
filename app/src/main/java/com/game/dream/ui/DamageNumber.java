@@ -113,7 +113,15 @@ public class DamageNumber {
         }
 
         String showText;
-        if (damage >= 0) {
+        if (damage == -2) {
+            showText = "撞退";
+            // Use blue color for knockback indicator
+            textColor = Color.rgb(100, 180, 255);
+        } else if (damage == -3) {
+            showText = "招架";
+            // Use golden color for parry indicator
+            textColor = Color.rgb(255, 215, 0);
+        } else if (damage >= 0) {
             showText = "-" + damage;
         } else {
             showText = "未命中";

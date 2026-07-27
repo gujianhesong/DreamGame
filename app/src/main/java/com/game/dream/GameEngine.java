@@ -73,6 +73,9 @@ public class GameEngine {
     // Enemies
     private java.util.List<Enemy> enemies;
 
+    // Pending melee attack (wait for lunge to complete before dealing damage)
+    private boolean pendingMeleeAttack = false;
+
     // Projectiles (magic attacks)
     private java.util.List<Projectile> projectiles;
 
@@ -282,6 +285,15 @@ public class GameEngine {
         // Update enemies
         checkEnemiesUpdate(deltaTime);
 
+        // Check if pending melee attack should apply damage (after lunge completes)
+        applyPendingMeleeAttack();
+
+        // Check dash-enemy collision (撞退敌人)
+        checkDashEnemyCollision();
+
+        // Check attack lunge-enemy collision (前冲撞退敌人)
+        checkAttackLungeEnemyCollision();
+
         // Update projectiles
         checkProjectileUpdate(deltaTime);
 
@@ -391,7 +403,19 @@ public class GameEngine {
 
                 // If within attack range, deal damage
                 if (distance < enemy.getAttackRange()) { // Attack range
-                    if (enemy.canAttack()) {
+                    // 检测敌人前摇结束刚刚攻击
+                    if (enemy.consumeAttackFired()) {
+                        // 攻击对抗: 玩家正面攻击时免疫敌人物理攻击
+                        if (player.isAttacking() && isEnemyInFrontOfPlayer(enemy)) {
+                            // 玩家正面攻击中，免疫该次物理伤害
+                            damageNumbers.add(new DamageNumber(
+                                    player.getX(),
+                                    player.getY() - 50,
+                                    -3 // 特殊值: 招架
+                            ));
+                            continue;
+                        }
+
                         // Elite/Leader enemys have chance to use magic attacks
                         boolean usedMagic = false;
                         if (enemy.canCastSpell() && Math.random() < 0.9f) {
@@ -412,8 +436,6 @@ public class GameEngine {
                             }
                         }
 
-                        enemy.setLastAttackTime(currentTime);
-
                         // If didn't use magic, perform physical attack
                         if (!usedMagic) {
                             boolean died = false;
@@ -429,6 +451,9 @@ public class GameEngine {
                                         damage,
                                         attackResult.isCrit
                                 ));
+
+                                // 敌人攻击玩家击退效果: 从敌人位置推开玩家
+                                player.applyKnockback(enemy.getX(), enemy.getY(), 150f, 150);
                             } else {
                                 //未命中
                                 damageNumbers.add(new DamageNumber(
@@ -445,6 +470,134 @@ public class GameEngine {
                         }
                     }
                 }
+            }
+        }
+    }
+
+    /**
+     * Check attack lunge-enemy collision: push back enemies when player lunges through them
+     */
+    private void checkAttackLungeEnemyCollision() {
+        if (!player.isAttackLunging()) return;
+
+        java.util.Set<Enemy> hitSet = player.getLungeHitEnemies();
+        float playerX = player.getX();
+        float playerY = player.getY();
+        int playerSize = player.getSize();
+
+        for (Enemy enemy : enemies) {
+            if (!enemy.isAlive()) continue;
+            if (hitSet.contains(enemy)) continue; // Already knocked back this lunge
+
+            float ex = enemy.getX();
+            float ey = enemy.getY();
+            int eSize = enemy.getSize();
+
+            float dx = ex - playerX;
+            float dy = ey - playerY;
+            float dist = (float) Math.sqrt(dx * dx + dy * dy);
+            float collisionDist = (playerSize + eSize) * 0.5f;
+
+            if (dist < collisionDist) {
+                // Mark as hit
+                hitSet.add(enemy);
+
+                // Knockback enemy away from player
+                float knockbackForce = 400f;
+                long knockbackDuration = 350;
+                enemy.applyKnockback(playerX, playerY, knockbackForce, knockbackDuration);
+
+                // Brief stagger (stun) so enemy doesn't immediately act
+                enemy.applyCC(Character.CrowdControlType.STUN, 250);
+
+                // Cancel enemy's wind-up if active
+                if (enemy.isWindingUp()) {
+                    enemy.setWindingUpFalse();
+                }
+
+                LogUtil.d("Attack lunge hit enemy: " + enemy.getName());
+            }
+        }
+    }
+
+    /**
+     * Check if enemy is in front of the player (based on facing direction)
+     */
+    private boolean isEnemyInFrontOfPlayer(Enemy enemy) {
+        float dx = enemy.getX() - player.getX();
+        float dy = enemy.getY() - player.getY();
+        int facing = player.getFacingDirection();
+
+        // Check if enemy is in the general direction the player is facing
+        switch (facing) {
+            case 0: return dy > -20;  // Player facing down, enemy below
+            case 1: return dy < 20;   // Player facing up, enemy above
+            case 2: return dx < 20;   // Player facing left, enemy to the left
+            case 3: return dx > -20;  // Player facing right, enemy to the right
+            default: return true;
+        }
+    }
+
+    /**
+     * Check dash-enemy collision: knock back and stun enemies without dealing damage
+     */
+    private void checkDashEnemyCollision() {
+        if (!player.isDashing()) return;
+
+        java.util.Set<Enemy> hitSet = player.getDashHitEnemies();
+        float playerX = player.getX();
+        float playerY = player.getY();
+        int playerSize = player.getSize();
+
+        // Calculate dash direction vector
+        float dirX = 0, dirY = 0;
+        switch (player.getDashDirection()) {
+            case 0: dirY = 1; break;  // Down
+            case 1: dirY = -1; break; // Up
+            case 2: dirX = -1; break; // Left
+            case 3: dirX = 1; break;  // Right
+        }
+
+        for (Enemy enemy : enemies) {
+            if (!enemy.isAlive()) continue;
+            if (hitSet.contains(enemy)) continue; // Already hit this dash
+
+            float ex = enemy.getX();
+            float ey = enemy.getY();
+            int eSize = enemy.getSize();
+
+            // Circle collision detection
+            float dx = ex - playerX;
+            float dy = ey - playerY;
+            float dist = (float) Math.sqrt(dx * dx + dy * dy);
+            float collisionDist = (playerSize + eSize) * 0.5f;
+
+            if (dist < collisionDist) {
+                // Mark as hit
+                hitSet.add(enemy);
+
+                // Knockback enemy in dash direction
+                float knockbackForce = 500f;
+                long knockbackDuration = 300;
+                // Apply knockback from player position
+                enemy.applyKnockback(playerX, playerY, knockbackForce, knockbackDuration);
+
+                // Stun enemy (cannot move or attack)
+                enemy.applyCC(Character.CrowdControlType.STUN, 500);
+
+                // Cancel enemy's wind-up if active
+                if (enemy.isWindingUp()) {
+                    enemy.setWindingUpFalse();
+                }
+
+                // Show visual feedback (no damage number, just a text indicator)
+                damageNumbers.add(new DamageNumber(
+                        ex,
+                        ey - eSize - 10,
+                        -2 // Special value for "撞退" indicator
+                ));
+
+                LogUtil.d("Dash hit enemy: " + enemy.getName());
             }
         }
     }
@@ -591,6 +744,9 @@ public class GameEngine {
                                                 damage,
                                                 attackResult.isCrit
                                         ));
+
+                                        // 法术弹幕击退玩家
+                                        player.applyKnockback(proj.getX(), proj.getY(), 120f, 150);
                                     }
                                 } else {
                                     //未命中
@@ -900,6 +1056,11 @@ public class GameEngine {
                             damage,
                             attackResult.isCrit
                     ));
+
+                    // 法术击退效果: 从玩家位置推开敌人
+                    enemy.applyKnockback(player.getX(), player.getY(), 200f, 200);
+                    // 法术受击硬直
+                    enemy.applyCC(Character.CrowdControlType.STUN, 200);
                 }
             } else {
                 //未命中
@@ -937,19 +1098,49 @@ public class GameEngine {
     }
 
     public void doAttackAction() {
-        // Trigger attack animation
+        // Trigger attack animation and lunge
         player.triggerAttackAnimation();
 
-        // Trigger melee attack
+        // Set pending attack - damage will be applied after lunge completes
+        pendingMeleeAttack = true;
+    }
+
+    /**
+     * Apply melee attack damage after lunge completes
+     */
+    private void applyPendingMeleeAttack() {
+        if (!pendingMeleeAttack) return;
+
+        // Wait for lunge to finish (or be blocked by enemy/terrain)
+        if (player.isAttackLunging()) return;
+
+        pendingMeleeAttack = false;
+
+        // Now apply melee damage from player's current position
         List<EnemyHitInfo> hits = player.performMeleeAttack(enemies);
         if (hits != null) {
             for (EnemyHitInfo hit : hits) {
-                damageNumbers.add(new DamageNumber(
-                        hit.enemy.getX(),
-                        hit.enemy.getY() - 30,
-                        hit.damage,
-                        hit.isCrit
-                ));
+                if (hit.damage > 0) {
+                    damageNumbers.add(new DamageNumber(
+                            hit.enemy.getX(),
+                            hit.enemy.getY() - 30,
+                            hit.damage,
+                            hit.isCrit
+                    ));
+
+                    // 击退效果: 从玩家位置推开敌人
+                    hit.enemy.applyKnockback(player.getX(), player.getY(), 300f, 200);
+                    // 受击硬直: 短暂停顿
+                    hit.enemy.applyCC(Character.CrowdControlType.STUN, 150);
+                } else {
+                    // 未命中也显示
+                    damageNumbers.add(new DamageNumber(
+                            hit.enemy.getX(),
+                            hit.enemy.getY() - 30,
+                            hit.damage,
+                            hit.isCrit
+                    ));
+                }
             }
         }
     }

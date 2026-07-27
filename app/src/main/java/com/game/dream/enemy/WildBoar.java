@@ -27,6 +27,7 @@ public class WildBoar extends Enemy {
 
     public WildBoar(float x, float y) {
         super(x, y, 100, 200f, 45f, 40, 150); // size=55, detection=200, attack=45, exp=30, money=15
+        setAttackShape(AttackShape.RECT); // 野猪冲锋 - 矩形
 
         int health = Utils.getWaveValueInt(300, 0.2f);
         this.maxHealth = health;

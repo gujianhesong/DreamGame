@@ -10,6 +10,7 @@ public class SaveInfo {
     private List<SkillInfo> assistSkillInfos;
     private List<SkillInfo> practiseSkillInfos;
     private List<SkillInfo> equipedSkillInfos;
+    private List<QuestInfo> questInfos;
 
     public RoleInfo getRoleInfo() {
         return roleInfo;
@@ -65,5 +66,13 @@ public class SaveInfo {
 
     public void setEquipedSkillInfos(List<SkillInfo> equipedSkillInfos) {
         this.equipedSkillInfos = equipedSkillInfos;
+    }
+
+    public List<QuestInfo> getQuestInfos() {
+        return questInfos;
+    }
+
+    public void setQuestInfos(List<QuestInfo> questInfos) {
+        this.questInfos = questInfos;
     }
 }

@@ -11,7 +11,8 @@ public class Item {
         EQUIPMENT,      // Weapons, armor, accessories
         MATERIAL,       // Crafting materials
         QUEST_ITEM,     // Quest-related items
-        SPECIAL         // Special unique items
+        SPECIAL,        // Special unique items
+        FOOD,           // food
     }
 
     public enum Rarity {

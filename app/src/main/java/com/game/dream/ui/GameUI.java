@@ -15,7 +15,9 @@ import com.game.dream.bean.SkillInfo;
 import com.game.dream.panel.BuildEquipPanel;
 import com.game.dream.panel.CraftingPanel;
 import com.game.dream.panel.ItemsPanel;
+import com.game.dream.panel.QuestPanel;
 import com.game.dream.panel.RoleInfoPanel;
+import com.game.dream.panel.ShopPanel;
 import com.game.dream.panel.SkillsPanel;
 import com.game.dream.system.RoleSystem;
 import com.game.dream.system.SkillSystem;
@@ -47,6 +49,10 @@ public class GameUI {
 
     private CraftingPanel craftingPanel;
 
+    private QuestPanel questPanel;
+
+    private ShopPanel shopPanel;
+
     private DialogBox currentDialog;
 
     // Attack buttons
@@ -62,10 +68,12 @@ public class GameUI {
     private Rect skillsButton;
     private Rect buildEquipButton;
     private Rect craftButton;
+    private Rect questButton;
 
     // For tracking scroll gestures
     private float lastSkillsPanelTouchY = 0;
     private float lastItemsPanelTouchY = 0; // Add this line
+    private float lastQuestPanelTouchY = 0;
 
     private boolean meleeAttackPressed;
     private boolean magicAttackPressed;
@@ -118,6 +126,12 @@ public class GameUI {
 
         // Initialize Crafting panel
         craftingPanel = new CraftingPanel();
+
+        // Initialize Quest panel
+        questPanel = new QuestPanel();
+
+        // Initialize Shop panel
+        shopPanel = new ShopPanel();
 
         // Initialize DialogBox
         currentDialog = new DialogBox();
@@ -202,9 +216,27 @@ public class GameUI {
             craftingPanel.setBounds(panelX, panelY, panelWidth, panelHeight);
         }
 
-        if (currentDialog != null) {
+        // Initialize quest panel (center of screen)
+        if (questPanel != null) {
+            int panelWidth = Math.min(1200, width - 40);
+            int panelHeight = Math.min(900, height - 100);
+            int panelX = (width - panelWidth) / 2;
+            int panelY = (height - panelHeight) / 2;
+            questPanel.setBounds(panelX, panelY, panelWidth, panelHeight);
+        }
+
+        // Initialize shop panel (center of screen)
+        if (shopPanel != null) {
             int panelWidth = Math.min(1000, width - 40);
-            int panelHeight = Math.min(600, height - 100);
+            int panelHeight = Math.min(900, height - 100);
+            int panelX = (width - panelWidth) / 2;
+            int panelY = (height - panelHeight) / 2;
+            shopPanel.setBounds(panelX, panelY, panelWidth, panelHeight);
+        }
+
+        if (currentDialog != null) {
+            int panelWidth = Math.min(1200, width - 40);
+            int panelHeight = Math.min(700, height - 100);
             int panelX = (width - panelWidth) / 2;
             int panelY = (height - panelHeight) / 2;
             currentDialog.setBounds(panelX, panelY, panelWidth, panelHeight);
@@ -346,6 +378,15 @@ public class GameUI {
                 screenHeight - infoPadding
         );
 
+        // Quest button (next to Crafting button)
+        startX += infoButtonSize + infoPadding;
+        questButton = new Rect(
+                startX,
+                screenHeight - infoPadding - infoButtonSize,
+                startX + infoButtonSize,
+                screenHeight - infoPadding
+        );
+
     }
 
     public void draw(Canvas canvas) {
@@ -384,6 +425,16 @@ public class GameUI {
             craftingPanel.draw(canvas);
         }
 
+        // Draw questPanel panel
+        if (questPanel != null && questPanel.isVisible()) {
+            questPanel.draw(canvas);
+        }
+
+        // Draw ShopPanel
+        if (shopPanel != null && shopPanel.isVisible()) {
+            shopPanel.draw(canvas);
+        }
+
         // Draw DialoBox
         if (currentDialog != null && currentDialog.isVisible()) {
             currentDialog.draw(canvas);
@@ -414,6 +465,19 @@ public class GameUI {
             if (action == MotionEvent.ACTION_DOWN && currentDialog.handleTouch(x, y)) {
                 return true; // currentDialog handled the touch (closed itself)
             }
+        }
+
+        // Handle Shop Panel
+        if (shopPanel != null && shopPanel.isVisible()) {
+            switch (action) {
+                case MotionEvent.ACTION_DOWN:
+                    return shopPanel.handleTouchDown(x, y);
+                case MotionEvent.ACTION_MOVE:
+                    return shopPanel.handleTouchMove(x, y);
+                case MotionEvent.ACTION_UP:
+                    return shopPanel.handleTouchUp(x, y);
+            }
+            return true;
         }
 
         // If role info panel is visible, check if touching it first
@@ -476,6 +540,24 @@ public class GameUI {
                     return craftingPanel.handleTouchUp(x, y);
             }
             return true;
+        }
+
+        // Handle Quest Panel (Priority if visible)
+        if (questPanel != null && questPanel.isVisible()) {
+            if (action == MotionEvent.ACTION_DOWN) {
+                lastQuestPanelTouchY = y;
+                if (questPanel.handleTouch(x, y)) {
+                    return true;
+                }
+            } else if (action == MotionEvent.ACTION_MOVE) {
+                float deltaY = y - lastQuestPanelTouchY;
+                if (Math.abs(deltaY) > 5) {
+                    questPanel.handleScroll(0, deltaY);
+                    lastQuestPanelTouchY = y;
+                    return true;
+                }
+            }
+            return true; // Consume all events when quest panel is open
         }
 
         // Check Switch Page Button
@@ -547,6 +629,19 @@ public class GameUI {
             if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_POINTER_UP) {
                 if (craftingPanel != null) {
                     craftingPanel.toggleVisibility();
+                }
+                return true;
+            }
+        }
+
+        // Check Quest button
+        if (questButton != null && TouchUtil.checkIsInTouchRectFloat(questButton, x, y)) {
+            if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_POINTER_DOWN) {
+                return true;
+            }
+            if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_POINTER_UP) {
+                if (questPanel != null) {
+                    questPanel.toggleVisibility();
                 }
                 return true;
             }
@@ -977,6 +1072,11 @@ public class GameUI {
         if (craftButton != null) {
             drawMenuButton("🔥", canvas, craftButton, craftingPanel != null && craftingPanel.isVisible());
         }
+
+        // Draw quest button
+        if (questButton != null) {
+            drawMenuButton("📜", canvas, questButton, questPanel != null && questPanel.isVisible());
+        }
     }
 
     /**
@@ -1162,6 +1262,12 @@ public class GameUI {
     public void showNotification(String title, String message, CenterNotification.Type type) {
         currentNotification = new CenterNotification(title, message, type);
         LogUtil.d("GameEngine", "Notification: " + title + " - " + message);
+    }
+
+    public void showShopPanel() {
+        if (shopPanel != null) {
+            shopPanel.show();
+        }
     }
 
     public DialogBox showDialog(String title, String msg, List<String> options, DialogBox.DialogListener listener) {

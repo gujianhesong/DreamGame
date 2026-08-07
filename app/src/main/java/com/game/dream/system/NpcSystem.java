@@ -3,10 +3,17 @@ package com.game.dream.system;
 import android.graphics.Color;
 
 import com.game.dream.GameEngine;
+import com.game.dream.bean.QuestInfo;
+import com.game.dream.enums.FoodType;
 import com.game.dream.enums.NpcType;
+import com.game.dream.item.Item;
+import com.game.dream.item.ItemCreator;
 import com.game.dream.npc.AnimalNpc;
 import com.game.dream.npc.Npc;
+import com.game.dream.quest.SideQuestManager;
+import com.game.dream.system.QuestSystem;
 import com.game.dream.ui.DialogBox;
+import com.game.dream.ui.CenterNotification;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -43,6 +50,8 @@ public class NpcSystem {
                 npcList.add(new Npc(100101, "青溪村村长", NpcType.OLD_MAN, 5200, 5300));
                 npcList.add(new Npc(100102, "云游商人", NpcType.MERCHANT, 5000, 5300));
                 npcList.add(new Npc(100103, "小虎子", NpcType.CHILD_BOY, 4800, 5300));
+                // 小虎子有任务
+                npcList.get(2).setHasQuest(true);
                 npcList.add(new Npc(100104, "小花", NpcType.CHILD_GIRL, 4600, 5300));
                 npcList.add(new Npc(100105, "赵大哥", NpcType.MAN, 4400, 5300));
                 npcList.add(new Npc(100106, "李婶", NpcType.WOMAN, 4200, 5300));
@@ -77,14 +86,26 @@ public class NpcSystem {
     }
 
     public void startConversation(Npc npc) {
-        //npc.setInteracting(true); // 停止头顶的感叹号动画
-        List<String> options = Arrays.asList("你好", "有什么事吗？", "再见");
+        boolean handle = SideQuestManager.getInstance().handleQuestConversation(npc);
+        if (handle) {
+            return;
+        }
+
+        handle = ShopSystem.getInstance().handleNpcClick(npc);
+        if (handle) {
+            return;
+        }
+
+        // 默认对话
+        /*List<String> options = Arrays.asList("你好", "有什么事吗？", "再见");
         String message = "欢迎来到青溪村！\n最近村外妖兽横行，少侠可要当心。";
         GameEngine.getInstance().showDialog(null, message, options, new DialogBox.DialogListener() {
             @Override
             public void onOptionSelected(int optionIndex) {
 
             }
-        });
+        });*/
     }
+
+
 }

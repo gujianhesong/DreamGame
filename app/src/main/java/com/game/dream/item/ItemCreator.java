@@ -2,6 +2,7 @@ package com.game.dream.item;
 
 import com.game.dream.bean.EquipItemInfo;
 import com.game.dream.bean.ItemInfo;
+import com.game.dream.enums.FoodType;
 import com.game.dream.enums.GemtoneType;
 import com.game.dream.system.ItemSystem;
 import com.game.dream.utils.PriceUtil;
@@ -111,6 +112,21 @@ public class ItemCreator {
                 int level = (id - 240000) / 10;
                 item = createXiLianStone(level);
             }
+            break;
+            case 250: {
+                //金刚石等特殊材料
+                if (id == 250001) {
+                    item = createJinGangShi();
+                }
+            }
+            break;
+            case 310: {
+                //食物
+                int ordinal = id - 310000;
+                FoodType foodType = FoodType.values()[ordinal];
+                item = createCookFood(foodType);
+            }
+            break;
         }
 
         return item;
@@ -879,6 +895,28 @@ public class ItemCreator {
                 id, level + "级洗炼石", "洗炼装备附加属性的必备材料", Item.Type.MATERIAL,
                 rarity,
                 99, PriceUtil.getItemPriceWith10Level(2000, level)
+        );
+    }
+
+    public static Item createCookFood(FoodType foodType) {
+        int id = 310000 + foodType.ordinal();
+        Item.Rarity rarity = Item.Rarity.Rarity_0;
+
+        return new Item(
+                id, foodType.getName(), foodType.getDesc(), Item.Type.FOOD,
+                rarity,
+                99, 1000
+        );
+    }
+
+    /**
+     * 创建金刚石 - 任务奖励物品
+     */
+    public static Item createJinGangShi() {
+        return new Item(
+                250001, "金刚石", "坚硬无比的宝石，散发着耀眼的光芒，是极其珍贵的材料", Item.Type.MATERIAL,
+                Item.Rarity.Rarity_5,
+                99, 50000
         );
     }
 }

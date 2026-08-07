@@ -49,7 +49,9 @@ public class DialogBox {
         this.title = title;
         this.message = message;
         this.options.clear();
-        this.options.addAll(options);
+        if(options != null){
+            this.options.addAll(options);
+        }
         this.listener = listener;
         this.isVisible = true;
         calculateButtonBounds();
@@ -78,18 +80,31 @@ public class DialogBox {
         optionButtons.clear();
         if (options.isEmpty()) return;
 
-        int btnWidth = bounds.width() - 60;
-        int btnHeight = 50;
-        int gap = 15;
+        int btnHeight = 45;
+        int gap = 20;
+
+        // Calculate button widths based on text
+        Paint tempPaint = new Paint();
+        tempPaint.setAntiAlias(true);
+        tempPaint.setTextSize(28);
+        int totalBtnWidth = 0;
+        int[] btnWidths = new int[options.size()];
+        for (int i = 0; i < options.size(); i++) {
+            btnWidths[i] = (int) tempPaint.measureText(options.get(i)) + 60;
+            totalBtnWidth += btnWidths[i];
+        }
+        totalBtnWidth += (options.size() - 1) * gap;
+
+        // Center buttons horizontally
         int startX = bounds.left + 30;
 
-        // Calculate starting Y based on message length (simple estimation)
-        int startY = bounds.top + 250;
+        // Calculate starting Y based on message
+        int startY = bounds.top + 300;
 
         for (int i = 0; i < options.size(); i++) {
             int yPos = startY + i * (btnHeight + gap);
-            if (yPos + btnHeight > bounds.bottom - 20) break; // Don't go out of bounds
-            optionButtons.add(new Rect(startX, yPos, startX + btnWidth, yPos + btnHeight));
+            if (yPos + btnHeight > bounds.bottom - 20) break;
+            optionButtons.add(new Rect(startX, yPos, startX + btnWidths[i], yPos + btnHeight));
         }
 
         // Close button
@@ -123,25 +138,24 @@ public class DialogBox {
         // Title
         if (title != null) {
             paint.setColor(Color.rgb(255, 215, 0)); // Gold title
-            paint.setTextSize(28);
+            paint.setTextSize(40);
             paint.setTextAlign(Paint.Align.CENTER);
             posY += 45;
             canvas.drawText(title, bounds.centerX(), posY, paint);
         }
 
         if (message != null) {
-            // Message (Simple auto-wrap logic could be added here)
             paint.setColor(TEXT_COLOR);
-            paint.setTextSize(22);
+            paint.setTextSize(30);
             paint.setTextAlign(Paint.Align.LEFT);
 
-            posY += 45;
+            posY += 60;
 
             // Draw message with simple line breaking
             String[] lines = message.split("\n");
             for (String line : lines) {
                 canvas.drawText(line, bounds.left + 30, posY, paint);
-                posY += 30;
+                posY += 45;
             }
         }
 
@@ -162,9 +176,9 @@ public class DialogBox {
 
             // Button text
             paint.setColor(Color.WHITE);
-            paint.setTextSize(20);
+            paint.setTextSize(30);
             paint.setTextAlign(Paint.Align.CENTER);
-            canvas.drawText(options.get(i), btn.centerX(), btn.centerY() + 7, paint);
+            canvas.drawText(options.get(i), btn.centerX(), btn.centerY() + 10, paint);
         }
     }
 
@@ -191,6 +205,7 @@ public class DialogBox {
 
         for (int i = 0; i < optionButtons.size(); i++) {
             if (optionButtons.get(i).contains((int) x, (int) y)) {
+                hide();
                 if (listener != null) {
                     listener.onOptionSelected(i);
                 }

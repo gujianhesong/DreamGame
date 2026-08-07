@@ -5,6 +5,7 @@ import android.content.Context;
 import com.game.dream.utils.LogUtil;
 import com.game.dream.bean.EquipItemInfo;
 import com.game.dream.bean.ItemInfo;
+import com.game.dream.bean.QuestInfo;
 import com.game.dream.bean.SaveInfo;
 import com.game.dream.utils.StorageHelper;
 import com.google.gson.Gson;
@@ -50,6 +51,7 @@ public class SaveSystem {
             saveInfo.setAssistSkillInfos(SkillSystem.getInstance().getAssistSkillInfos());
             saveInfo.setPractiseSkillInfos(SkillSystem.getInstance().getPractiseSkillInfos());
             saveInfo.setEquipedSkillInfos(SkillSystem.getInstance().getEquippedActiveSkills());
+            saveInfo.setQuestInfos(QuestSystem.getInstance().getAcceptedQuests());
 
             // Convert to JSON and save
             String jsonData = gson.toJson(saveInfo);
@@ -96,6 +98,7 @@ public class SaveSystem {
         SkillSystem.getInstance().setAssistSkillInfos(saveInfo.getAssistSkillInfos());
         SkillSystem.getInstance().setPractiseSkillInfos(saveInfo.getPractiseSkillInfos());
         SkillSystem.getInstance().setEquippedActiveSkills(saveInfo.getEquipedSkillInfos());
+        QuestSystem.getInstance().setAcceptedQuests(saveInfo.getQuestInfos());
     }
 
     private SaveInfo getInitData() {

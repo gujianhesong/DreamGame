@@ -1009,6 +1009,12 @@ public class GameEngine {
         return null;
     }
 
+    public void showShopPanel() {
+        if (gameUI != null) {
+            gameUI.showShopPanel();
+        }
+    }
+
     /**
      * Show float text
      */

@@ -1,5 +1,7 @@
 package com.game.dream.item;
 
+import android.text.TextUtils;
+
 import com.game.dream.bean.EquipItemInfo;
 import com.game.dream.bean.ItemInfo;
 import com.game.dream.enums.SpecialEffect;
@@ -8,6 +10,7 @@ import com.game.dream.utils.EquipUtil;
 import com.game.dream.utils.Utils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -17,6 +20,9 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class EquipCreator {
+    public static class EquipCreatorExtraInfo {
+        public boolean isWuJiBie;
+    }
 
     public static EquipmentItem createEquipWithInfo(ItemInfo itemInfo) {
         if (itemInfo instanceof EquipItemInfo) {
@@ -28,6 +34,10 @@ public class EquipCreator {
     }
 
     public static EquipmentItem createEquip(int level, EquipmentItem.Slot slot) {
+        return createEquip(level, slot, null);
+    }
+
+    public static EquipmentItem createEquip(int level, EquipmentItem.Slot slot, EquipCreatorExtraInfo extraInfo) {
         if (slot == null) {
             EquipmentItem.Slot[] slots = {EquipmentItem.Slot.HELMET, EquipmentItem.Slot.ACCESSORY, EquipmentItem.Slot.WEAPON,
                     EquipmentItem.Slot.ARMOR, EquipmentItem.Slot.BELT, EquipmentItem.Slot.SHOES};
@@ -247,6 +257,22 @@ public class EquipCreator {
                 return specialEffect.name();
             }
         }).collect(Collectors.toList()));
+
+        if (extraInfo != null && extraInfo.isWuJiBie) {
+            List<String> effects = equipItemInfo.getSpecialEffects();
+            if (effects == null || effects.isEmpty()) {
+                equipItemInfo.setSpecialEffects(Arrays.asList(SpecialEffect.SE_WuJiBieXianZhi.name()));
+            } else {
+                List<String> newEffects = Arrays.asList(SpecialEffect.SE_WuJiBieXianZhi.name());
+                for (String effect : effects) {
+                    if (!TextUtils.equals(effect, SpecialEffect.SE_WuJiBieXianZhi.name())) {
+                        newEffects.add(effect);
+                        break;
+                    }
+                }
+                equipItemInfo.setSpecialEffects(newEffects);
+            }
+        }
 
         return new EquipmentItem(equipItemInfo);
     }

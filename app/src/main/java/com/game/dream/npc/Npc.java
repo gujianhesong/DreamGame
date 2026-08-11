@@ -249,6 +249,24 @@ public class Npc {
                 paint.setColor(Color.rgb(100, 80, 60));
                 canvas.drawRoundRect(bodyRect, 10, 10, paint);
                 break;
+
+            case PHARMACIST:
+                // 药店老板：干净的青绿色长袍，带有草药气息
+                paint.setColor(Color.rgb(120, 180, 140));
+                canvas.drawRoundRect(bodyRect, 10, 10, paint);
+                break;
+
+            case TAVERN_KEEPER:
+                // 酒馆老板：暖棕色粗布衣，带着酒香气息
+                paint.setColor(Color.rgb(180, 120, 60));
+                canvas.drawRoundRect(bodyRect, 10, 10, paint);
+                break;
+
+            case DOCTOR:
+                // 郎中：素净的白色长衫，体现医者仁心
+                paint.setColor(Color.rgb(230, 230, 240));
+                canvas.drawRoundRect(bodyRect, 10, 10, paint);
+                break;
         }
 
         // 2. 绘制脚部/鞋子（在所有身体之后，配饰之前）
@@ -318,6 +336,27 @@ public class Npc {
                 paint.setColor(Color.rgb(80, 50, 30));
                 canvas.drawRect(cx - size / 4.5f, cy + size / 3.5f, cx - size / 10f, cy + size / 2.2f, paint);
                 canvas.drawRect(cx + size / 10f, cy + size / 3.5f, cx + size / 4.5f, cy + size / 2.2f, paint);
+                break;
+
+            case PHARMACIST:
+                // 干净的布鞋，朴素整洁
+                paint.setColor(Color.rgb(80, 100, 80));
+                canvas.drawOval(cx - footWidth * 1.2f, footY, cx - footWidth * 0.2f, footY + footHeight, paint);
+                canvas.drawOval(cx + footWidth * 0.2f, footY, cx + footWidth * 1.2f, footY + footHeight, paint);
+                break;
+
+            case TAVERN_KEEPER:
+                // 厚实的皮靴，站得稳
+                paint.setColor(Color.rgb(120, 80, 40));
+                canvas.drawRect(cx - footWidth * 1.3f, footY - footHeight / 2, cx - footWidth * 0.3f, footY + footHeight, paint);
+                canvas.drawRect(cx + footWidth * 0.3f, footY - footHeight / 2, cx + footWidth * 1.3f, footY + footHeight, paint);
+                break;
+
+            case DOCTOR:
+                // 整洁的黑色布鞋，低调稳重
+                paint.setColor(Color.rgb(50, 50, 50));
+                canvas.drawOval(cx - footWidth * 1.2f, footY, cx - footWidth * 0.2f, footY + footHeight, paint);
+                canvas.drawOval(cx + footWidth * 0.2f, footY, cx + footWidth * 1.2f, footY + footHeight, paint);
                 break;
 
             default:
@@ -448,6 +487,37 @@ public class Npc {
                 paint.setStrokeWidth(1);
                 canvas.drawLine(cx + size / 1.2f, cy + size / 4, cx + size / 1.3f, cy + size / 3, paint);
                 break;
+
+            case PHARMACIST:
+                // 药葫芦：腰间挂着的褐色小葫芦
+                paint.setColor(Color.rgb(139, 90, 43));
+                canvas.drawOval(cx - size / 3f, cy + size / 5f, cx - size / 5f, cy + size / 2.5f, paint);
+                // 葫芦口
+                paint.setColor(Color.rgb(100, 60, 30));
+                canvas.drawRect(cx - size / 3.5f, cy + size / 6f, cx - size / 5.5f, cy + size / 5f, paint);
+                break;
+
+            case TAVERN_KEEPER:
+                // 酒葫芦：手里提着的酒壶
+                paint.setColor(Color.rgb(160, 100, 40));
+                canvas.drawOval(cx + size / 3f, cy + size / 5f, cx + size / 2f, cy + size / 2.5f, paint);
+                // 壶嘴
+                paint.setColor(Color.rgb(140, 80, 30));
+                canvas.drawRect(cx + size / 2.5f, cy + size / 6f, cx + size / 2.2f, cy + size / 5f, paint);
+                break;
+
+            case DOCTOR:
+                // 药箱：手里提着的方形药箱
+                paint.setColor(Color.rgb(139, 69, 19));
+                canvas.drawRect(cx + size / 4f, cy + size / 5f, cx + size / 1.8f, cy + size / 2.5f, paint);
+                // 药箱上的十字
+                paint.setColor(Color.WHITE);
+                paint.setStrokeWidth(2);
+                float boxCx = (cx + size / 4f + cx + size / 1.8f) / 2;
+                float boxCy = (cy + size / 5f + cy + size / 2.5f) / 2;
+                canvas.drawLine(boxCx - 4, boxCy, boxCx + 4, boxCy, paint);
+                canvas.drawLine(boxCx, boxCy - 4, boxCx, boxCy + 4, paint);
+                break;
         }
     }
 
@@ -569,6 +639,30 @@ public class Npc {
                 // 帽檐
                 paint.setColor(Color.rgb(60, 40, 20));
                 canvas.drawRect(cx - radius * 1.2f, cy - radius * 0.9f, cx + radius * 1.2f, cy - radius * 0.7f, paint);
+                break;
+
+            case PHARMACIST:
+                // 整洁的发髻，用一根木簪固定
+                canvas.drawArc(cx - radius, cy - radius * 1.1f, cx + radius, cy - radius / 3, 180, 180, true, paint);
+                canvas.drawCircle(cx, cy - radius * 1.2f, radius / 2.5f, paint);
+                // 木簪
+                paint.setColor(Color.rgb(139, 90, 43));
+                canvas.drawLine(cx - radius / 2, cy - radius * 1.2f, cx + radius / 2, cy - radius * 1.2f, paint);
+                break;
+
+            case TAVERN_KEEPER:
+                // 随意扎起的头发，略显凌乱
+                canvas.drawArc(cx - radius, cy - radius * 1.1f, cx + radius, cy - radius / 3, 180, 180, true, paint);
+                // 几缕翘起的头发
+                canvas.drawLine(cx - radius / 3, cy - radius, cx - radius / 2, cy - radius * 1.2f, paint);
+                canvas.drawLine(cx + radius / 4, cy - radius, cx + radius / 3, cy - radius * 1.15f, paint);
+                break;
+
+            case DOCTOR:
+                // 传统的书生式发冠，但更简洁
+                canvas.drawArc(cx - radius, cy - radius * 1.1f, cx + radius, cy - radius / 3, 180, 180, true, paint);
+                // 小发髻
+                canvas.drawCircle(cx, cy - radius * 1.25f, radius / 3f, paint);
                 break;
         }
         paint.setStyle(Paint.Style.FILL);
@@ -810,6 +904,44 @@ public class Npc {
                 for (int i = 0; i < 5; i++) {
                     canvas.drawLine(cx - radius / 2 + i * 5, cy + radius / 4, cx - radius / 2 + 2 + i * 5, cy + radius / 3, paint);
                 }
+                break;
+
+            case PHARMACIST:
+                // 和善的面容，戴着圆框眼镜
+                paint.setColor(Color.BLACK);
+                paint.setStrokeWidth(1);
+                canvas.drawCircle(cx - radius / 2.5f, cy - radius / 5, radius / 4, paint);
+                canvas.drawCircle(cx + radius / 2.5f, cy - radius / 5, radius / 4, paint);
+                canvas.drawLine(cx - radius / 4, cy - radius / 5, cx + radius / 4, cy - radius / 5, paint);
+                // 温和的微笑
+                paint.setStrokeWidth(2);
+                canvas.drawArc(cx - radius / 3, cy + radius / 5, cx + radius / 3, cy + radius / 1.5f, 200, 140, false, paint);
+                break;
+
+            case TAVERN_KEEPER:
+                // 红光满面， jovial 的笑容
+                paint.setColor(Color.BLACK);
+                canvas.drawCircle(cx - radius / 2.5f, cy - radius / 5, radius / 7, paint);
+                canvas.drawCircle(cx + radius / 2.5f, cy - radius / 5, radius / 7, paint);
+                // 红扑扑的脸颊
+                paint.setColor(Color.argb(80, 255, 80, 80));
+                canvas.drawCircle(cx - radius / 2, cy + radius / 6, radius / 4, paint);
+                canvas.drawCircle(cx + radius / 2, cy + radius / 6, radius / 4, paint);
+                // 开怀大笑
+                paint.setColor(Color.BLACK);
+                paint.setStrokeWidth(2);
+                canvas.drawArc(cx - radius / 2, cy, cx + radius / 2, cy + radius, 0, -180, false, paint);
+                break;
+
+            case DOCTOR:
+                // 专注而睿智的眼神
+                paint.setColor(Color.BLACK);
+                canvas.drawCircle(cx - radius / 2.5f, cy - radius / 5, radius / 7, paint);
+                canvas.drawCircle(cx + radius / 2.5f, cy - radius / 5, radius / 7, paint);
+                // 淡淡的八字胡
+                paint.setStrokeWidth(2);
+                canvas.drawArc(cx - radius / 1.5f, cy + radius / 6, cx - radius / 6, cy + radius / 2, 0, -180, false, paint);
+                canvas.drawArc(cx + radius / 6, cy + radius / 6, cx + radius / 1.5f, cy + radius / 2, 0, -180, false, paint);
                 break;
         }
         paint.setStyle(Paint.Style.FILL); // Reset style

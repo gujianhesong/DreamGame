@@ -28,4 +28,7 @@ public enum NpcType {
     GIRL, //少女
     BEAUTY, //美人
     COACHMAN, //车夫
+    PHARMACIST, //药店老板
+    TAVERN_KEEPER, //酒馆老板
+    DOCTOR, //郎中
 }

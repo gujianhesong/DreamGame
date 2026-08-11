@@ -25,6 +25,7 @@ import com.game.dream.item.EquipmentItem;
 import com.game.dream.item.ItemStack;
 import com.game.dream.map.MapGenerator;
 import com.game.dream.npc.Npc;
+import com.game.dream.panel.ShopPanel;
 import com.game.dream.skill.SkillEffect;
 import com.game.dream.system.DayNightCycle;
 import com.game.dream.system.ItemSystem;
@@ -1002,6 +1003,13 @@ public class GameEngine {
         }
     }
 
+    public DialogBox showDialog(String title, String msg) {
+        if (gameUI != null) {
+            return gameUI.showDialog(title, msg, null, null);
+        }
+        return null;
+    }
+
     public DialogBox showDialog(String title, String msg, List<String> options, DialogBox.DialogListener listener) {
         if (gameUI != null) {
             return gameUI.showDialog(title, msg, options, listener);
@@ -1009,9 +1017,9 @@ public class GameEngine {
         return null;
     }
 
-    public void showShopPanel() {
+    public void showShopPanel(List<ShopPanel.ShopItem> shopItems) {
         if (gameUI != null) {
-            gameUI.showShopPanel();
+            gameUI.showShopPanel(shopItems);
         }
     }
 

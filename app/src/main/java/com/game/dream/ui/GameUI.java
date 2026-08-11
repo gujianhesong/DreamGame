@@ -1264,9 +1264,9 @@ public class GameUI {
         LogUtil.d("GameEngine", "Notification: " + title + " - " + message);
     }
 
-    public void showShopPanel() {
+    public void showShopPanel(List<ShopPanel.ShopItem> shopItems) {
         if (shopPanel != null) {
-            shopPanel.show();
+            shopPanel.showShopItems(shopItems);
         }
     }
 

@@ -9,6 +9,7 @@ import com.game.dream.enums.NpcType;
 import com.game.dream.item.Item;
 import com.game.dream.item.ItemCreator;
 import com.game.dream.npc.AnimalNpc;
+import com.game.dream.npc.FunctionNpcManager;
 import com.game.dream.npc.Npc;
 import com.game.dream.quest.SideQuestManager;
 import com.game.dream.system.QuestSystem;
@@ -47,11 +48,13 @@ public class NpcSystem {
         switch (mapId) {
             case 1001: {
                 //清溪
+                npcList.add(new Npc(100151, "药店老板", NpcType.PHARMACIST, 4000, 4000));
+                npcList.add(new Npc(100152, "酒馆老板", NpcType.TAVERN_KEEPER, 4200, 4000));
+                npcList.add(new Npc(100153, "妙手郎中", NpcType.DOCTOR, 4400, 4000));
+
                 npcList.add(new Npc(100101, "青溪村村长", NpcType.OLD_MAN, 5200, 5300));
                 npcList.add(new Npc(100102, "云游商人", NpcType.MERCHANT, 5000, 5300));
                 npcList.add(new Npc(100103, "小虎子", NpcType.CHILD_BOY, 4800, 5300));
-                // 小虎子有任务
-                npcList.get(2).setHasQuest(true);
                 npcList.add(new Npc(100104, "小花", NpcType.CHILD_GIRL, 4600, 5300));
                 npcList.add(new Npc(100105, "赵大哥", NpcType.MAN, 4400, 5300));
                 npcList.add(new Npc(100106, "李婶", NpcType.WOMAN, 4200, 5300));
@@ -62,7 +65,7 @@ public class NpcSystem {
                 npcList.add(new Npc(100113, "王护卫", NpcType.SOLDIER, 4800, 5100));
                 npcList.add(new Npc(100114, "张大伯", NpcType.FARMER, 4600, 5100));
                 npcList.add(new Npc(100115, "李猎户", NpcType.HUNTER, 4400, 5100));
-                npcList.add(new Npc(100116, "黑风", NpcType.BANDIT, 4200, 5100));
+                npcList.add(new Npc(100116, "黑风强盗", NpcType.BANDIT, 4200, 5100));
                 npcList.add(new Npc(100117, "驿站车夫", NpcType.COACHMAN, 4000, 5100));
 
                 npcList.add(new Npc(100121, "老丐", NpcType.BEGGAR, 5200, 5500));
@@ -92,6 +95,11 @@ public class NpcSystem {
         }
 
         handle = ShopSystem.getInstance().handleNpcClick(npc);
+        if (handle) {
+            return;
+        }
+
+        handle = FunctionNpcManager.getInstance().handleNpcClick(npc);
         if (handle) {
             return;
         }

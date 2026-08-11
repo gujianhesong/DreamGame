@@ -50,7 +50,11 @@ public class ShopPanel {
         }
     }
 
-    public void show() {
+    public void showShopItems(List<ShopItem> shopItems) {
+        this.shopItems.clear();
+        if(shopItems != null){
+            this.shopItems.addAll(shopItems);
+        }
         isVisible = true;
         scrollOffset = 0;
     }
@@ -345,13 +349,13 @@ public class ShopPanel {
         return lines.toArray(new String[0]);
     }
 
-    private static class ShopItem {
+    public static class ShopItem {
         Item item;
         int price;
         Rect itemRect;
         Rect buyBtnRect;
 
-        ShopItem(Item item, int price) {
+        public ShopItem(Item item, int price) {
             this.item = item;
             this.price = price;
         }

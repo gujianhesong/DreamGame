@@ -132,7 +132,7 @@ public class ItemCreator {
         return item;
     }
 
-    private static Item createMedicineHp(int id) {
+    public static Item createMedicineHp(int id) {
         Item item = null;
 
         //气血药品
@@ -168,7 +168,7 @@ public class ItemCreator {
         return item;
     }
 
-    private static Item createMedicineMp(int id) {
+    public static Item createMedicineMp(int id) {
         Item item = null;
 
         //魔法药品

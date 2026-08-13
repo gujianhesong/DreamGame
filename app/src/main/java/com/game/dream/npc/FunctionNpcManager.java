@@ -20,6 +20,20 @@ public class FunctionNpcManager {
 
     public boolean handleNpcClick(Npc npc) {
         switch (npc.getId()) {
+            case 100101: {
+                // 清溪村村长 - 迷宫入口
+                List<String> options = Arrays.asList("探索迷宫", "不了");
+                String message = "村外有一处迷雾迷宫，里面有很多宝藏，但也有危险的怪物。少侠要去探索一番吗？";
+                GameEngine.getInstance().showDialog(npc.getName(), message, options, new DialogBox.DialogListener() {
+                    @Override
+                    public void onOptionSelected(int optionIndex) {
+                        if (optionIndex == 0) {
+                            GameEngine.getInstance().teleportToMaze();
+                        }
+                    }
+                });
+                return true;
+            }
             case 100153: {
                 //清溪-妙手郎中
                 int costMoney = 500;

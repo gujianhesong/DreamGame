@@ -24,12 +24,15 @@ import com.game.dream.figure.Player;
 import com.game.dream.item.EquipmentItem;
 import com.game.dream.item.ItemStack;
 import com.game.dream.map.MapGenerator;
+import com.game.dream.map.MazeGenerator;
 import com.game.dream.npc.Npc;
+import com.game.dream.npc.TreasureChest;
 import com.game.dream.panel.ShopPanel;
 import com.game.dream.skill.SkillEffect;
 import com.game.dream.system.DayNightCycle;
 import com.game.dream.system.ItemSystem;
 import com.game.dream.system.MapSystem;
+import com.game.dream.system.MazeSystem;
 import com.game.dream.system.NpcSystem;
 import com.game.dream.system.RoleSystem;
 import com.game.dream.system.SkillSystem;
@@ -189,10 +192,10 @@ public class GameEngine {
     private void initializeEnemies() {
         enemies = new java.util.ArrayList<>();
 
-        // Spawn 10 wolves at random positions
-        Random random = new Random(67890);
-        int enemyCount = 100;
+        int currentMapId = MapSystem.getInstance().getCurrentMapId();
+        int enemyCount = (currentMapId == 1002) ? 40 : 100; // 迷宫中怪物少一些
 
+        Random random = new Random(67890);
         int[][] map = MapSystem.getInstance().getCurMapInfo().getMapData();
         for (int i = 0; i < enemyCount; i++) {
             boolean foundValidSpawn = false;
@@ -205,9 +208,18 @@ public class GameEngine {
 
                 int terrain = map[gridY][gridX];
 
-                // Spawn on land (not lake/lava) and not too close to player start
-                if (terrain != MapGenerator.LAKE && terrain != MapGenerator.LAVA && terrain != MapGenerator.VILLAGE_CAN_PASS
-                        && terrain != MapGenerator.VILLAGE_NO_PASS) {
+                // Spawn on passable terrain
+                boolean canSpawn = false;
+                if (currentMapId == 1002) {
+                    // 迷宫: 只能在地板上生成
+                    canSpawn = (terrain == MazeGenerator.MAZE_FLOOR || terrain == MazeGenerator.MAZE_ENTRANCE || terrain == MazeGenerator.MAZE_EXIT);
+                } else {
+                    // 普通地图: 不能在水/岩浆/村庄建筑上生成
+                    canSpawn = (terrain != MapGenerator.LAKE && terrain != MapGenerator.LAVA
+                            && terrain != MapGenerator.VILLAGE_CAN_PASS && terrain != MapGenerator.VILLAGE_NO_PASS);
+                }
+
+                if (canSpawn) {
                     spawnX = gridX * TILE_SIZE + TILE_SIZE / 2;
                     spawnY = gridY * TILE_SIZE + TILE_SIZE / 2;
 
@@ -224,22 +236,36 @@ public class GameEngine {
 
             if (foundValidSpawn) {
                 double rand = Math.random();
-                if (rand < 0.25) {
-                    Enemy enemy = new Tiger(spawnX, spawnY);
-                    enemy.setName("猛虎");
-                    enemies.add(enemy);
-                } else if(rand < 0.5) {
-                    Enemy enemy = new WildBoar(spawnX, spawnY);
-                    enemy.setName("野猪");
-                    enemies.add(enemy);
-                }else if(rand < 0.75) {
-                    Enemy enemy = new Viper(spawnX, spawnY);
-                    enemy.setName("毒蛇");
-                    enemies.add(enemy);
-                }else {
-                    Enemy enemy = new Wolf(spawnX, spawnY);
-                    enemy.setName("野狼");
-                    enemies.add(enemy);
+                if (currentMapId == 1002) {
+                    // 迷宫怪物: 以狼和猛虎为主
+                    if (rand < 0.5) {
+                        Enemy enemy = new Tiger(spawnX, spawnY);
+                        enemy.setName("迷宫猛虎");
+                        enemies.add(enemy);
+                    } else {
+                        Enemy enemy = new Wolf(spawnX, spawnY);
+                        enemy.setName("迷宫野狼");
+                        enemies.add(enemy);
+                    }
+                } else {
+                    // 普通地图怪物
+                    if (rand < 0.25) {
+                        Enemy enemy = new Tiger(spawnX, spawnY);
+                        enemy.setName("猛虎");
+                        enemies.add(enemy);
+                    } else if(rand < 0.5) {
+                        Enemy enemy = new WildBoar(spawnX, spawnY);
+                        enemy.setName("野猪");
+                        enemies.add(enemy);
+                    }else if(rand < 0.75) {
+                        Enemy enemy = new Viper(spawnX, spawnY);
+                        enemy.setName("毒蛇");
+                        enemies.add(enemy);
+                    }else {
+                        Enemy enemy = new Wolf(spawnX, spawnY);
+                        enemy.setName("野狼");
+                        enemies.add(enemy);
+                    }
                 }
             }
         }
@@ -272,6 +298,14 @@ public class GameEngine {
 
         // Update camera to follow player
         updateCamera();
+
+        // 检查迷宫出口传送
+        if (MapSystem.getInstance().getCurrentMapId() == 1002 && MazeSystem.getInstance().isInitialized()) {
+            if (MazeSystem.getInstance().checkExitPortal(player.getX(), player.getY())) {
+                teleportToVillage();
+                return; // 传送后本帧不再继续更新
+            }
+        }
 
         // Update day-night cycle
         if (dayNightCycle != null) {
@@ -855,6 +889,13 @@ public class GameEngine {
             npc.draw(canvas, -cameraX, -cameraY);
         }
 
+        // Draw treasure chests (in maze)
+        if (MapSystem.getInstance().getCurrentMapId() == 1002 && MazeSystem.getInstance().isInitialized()) {
+            for (TreasureChest chest : MazeSystem.getInstance().getTreasureChests()) {
+                chest.draw(canvas, -cameraX, -cameraY);
+            }
+        }
+
         // Draw projectiles
         if (projectiles != null) {
             List<Projectile> projectilesCopy = new ArrayList<>(projectiles);
@@ -920,6 +961,15 @@ public class GameEngine {
             for (Npc npc : npcList) {
                 if (npc.isTouched(worldX, worldY)) {
                     NpcSystem.getInstance().startConversation(npc);
+                    return true;
+                }
+            }
+
+            // 检查是否点击了宝箱 (迷宫中)
+            if (MapSystem.getInstance().getCurrentMapId() == 1002 && MazeSystem.getInstance().isInitialized()) {
+                TreasureChest chest = MazeSystem.getInstance().checkTreasureChestClick(worldX, worldY);
+                if (chest != null) {
+                    chest.open();
                     return true;
                 }
             }
@@ -1033,6 +1083,65 @@ public class GameEngine {
                 text,
                 type
         ));
+    }
+
+    /**
+     * Show floating text at specific position
+     */
+    public void showFloatingText(float x, float y, String text, FloatingText.Type type) {
+        floatingTexts.add(new FloatingText(x, y, text, type));
+    }
+
+    /**
+     * 传送到迷宫地图
+     */
+    public void teleportToMaze() {
+        int mazeMapId = 1002;
+        MapSystem.getInstance().loadMap(mazeMapId);
+
+        // 设置玩家位置到迷宫入口
+        MazeGenerator mazeGen = MapSystem.getInstance().getMazeGenerator();
+        if (mazeGen != null) {
+            player.setX(mazeGen.getEntranceX());
+            player.setY(mazeGen.getEntranceY() + 100); // 入口下方一点
+        }
+
+        // 重新初始化敌人
+        initializeEnemies();
+
+        // 更新小地图
+        if (gameUI != null) {
+            gameUI.initUI();
+        }
+
+        showCenterToast("进入了迷雾迷宫...");
+    }
+
+    /**
+     * 传送回村庄
+     */
+    public void teleportToVillage() {
+        int villageMapId = 1001;
+        MapSystem.getInstance().loadMap(villageMapId);
+
+        // 设置玩家位置到村庄中心
+        Pair<Integer, Integer> startPos = MapSystem.getInstance().getStartPosition();
+        Pair<Integer, Integer> mapXY = MapSystem.getInstance().getMapXY(startPos.first, startPos.second);
+        player.setX(mapXY.first);
+        player.setY(mapXY.second);
+
+        // 重新初始化敌人
+        initializeEnemies();
+
+        // 重置迷宫系统
+        MazeSystem.getInstance().reset();
+
+        // 更新小地图
+        if (gameUI != null) {
+            gameUI.initUI();
+        }
+
+        showCenterToast("回到了青溪村");
     }
 
     public List<Enemy> getEnemies() {

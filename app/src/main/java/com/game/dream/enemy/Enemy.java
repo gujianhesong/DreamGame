@@ -7,6 +7,8 @@ import android.graphics.Path;
 import android.graphics.RectF;
 
 import com.game.dream.figure.Character;
+import com.game.dream.map.MapGenerator;
+import com.game.dream.map.MazeGenerator;
 import com.game.dream.system.MapSystem;
 import com.game.dream.utils.LogUtil;
 import com.game.dream.item.EquipmentItem;
@@ -341,8 +343,32 @@ public abstract class Enemy extends Character {
             float moveX = (dx / distance) * moveSpeed * deltaSeconds * speedRatio;
             float moveY = (dy / distance) * moveSpeed * deltaSeconds * speedRatio;
 
-            x += moveX;
-            y += moveY;
+            float newX = x + moveX;
+            float newY = y + moveY;
+
+            // 地形检测
+            int tileSize = MapSystem.TILE_SIZE;
+            int[][] map = MapSystem.getInstance().getCurMapInfo().getMapData();
+            if (map != null) {
+                int gridX = (int) (newX / tileSize);
+                int gridY = (int) (newY / tileSize);
+                if (gridX >= 0 && gridX < map[0].length && gridY >= 0 && gridY < map.length) {
+                    int terrain = map[gridY][gridX];
+                    // 检查是否可通行
+                    boolean blocked = (terrain == MapGenerator.LAKE || terrain == MapGenerator.LAVA
+                            || terrain == MapGenerator.VILLAGE_NO_PASS || terrain == MazeGenerator.MAZE_WALL);
+                    if (!blocked) {
+                        x = newX;
+                        y = newY;
+                    }
+                } else {
+                    x = newX;
+                    y = newY;
+                }
+            } else {
+                x = newX;
+                y = newY;
+            }
         }
     }
 

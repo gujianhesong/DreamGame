@@ -106,6 +106,18 @@ public class Minimap {
                     case 6: // LAVA
                         paint.setColor(Color.rgb(255, 69, 0));
                         break;
+                    case 200: // MAZE_WALL
+                        paint.setColor(Color.rgb(85, 80, 95));
+                        break;
+                    case 201: // MAZE_FLOOR
+                        paint.setColor(Color.rgb(160, 150, 130));
+                        break;
+                    case 202: // MAZE_ENTRANCE
+                        paint.setColor(Color.rgb(60, 120, 255));
+                        break;
+                    case 203: // MAZE_EXIT
+                        paint.setColor(Color.rgb(255, 200, 50));
+                        break;
                     default:
                         paint.setColor(Color.GRAY);
                         break;

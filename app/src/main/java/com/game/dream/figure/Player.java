@@ -17,6 +17,7 @@ import com.game.dream.item.ConsumableItem;
 import com.game.dream.item.Item;
 import com.game.dream.item.ItemStack;
 import com.game.dream.map.MapGenerator;
+import com.game.dream.map.MazeGenerator;
 import com.game.dream.system.ItemSystem;
 import com.game.dream.system.RoleSystem;
 import com.game.dream.system.SkillSystem;
@@ -132,12 +133,13 @@ public class Player extends Character {
                 // Collision detection with map boundaries
                 newX = Math.max(size / 2, Math.min(newX, mapWidth * tileSize - size / 2));
                 newY = Math.max(size / 2, Math.min(newY, mapHeight * tileSize - size / 2));
-                // Check impassable terrain
+                // Check impassable terrain (Y轴以脚底检测)
                 int gridX = (int) (newX / tileSize);
-                int gridY = (int) (newY / tileSize);
+                int gridY = (int) ((newY + size / 2f) / tileSize);
                 if (gridX >= 0 && gridX < mapWidth && gridY >= 0 && gridY < mapHeight) {
                     int terrain = map[gridY][gridX];
-                    if (terrain != MapGenerator.LAKE && terrain != MapGenerator.LAVA && terrain != MapGenerator.VILLAGE_NO_PASS) {
+                    if (terrain != MapGenerator.LAKE && terrain != MapGenerator.LAVA && terrain != MapGenerator.VILLAGE_NO_PASS
+                            && terrain != MazeGenerator.MAZE_WALL) {
                         x = newX;
                         y = newY;
                     }
@@ -173,13 +175,14 @@ public class Player extends Character {
             // 边界限制
             newX = Math.max(size / 2, Math.min(newX, mapWidth * tileSize - size / 2));
             newY = Math.max(size / 2, Math.min(newY, mapHeight * tileSize - size / 2));
-            // 地形检测
+            // 地形检测 (Y轴以脚底检测)
             boolean terrainBlocked = false;
             int gridX = (int) (newX / tileSize);
-            int gridY = (int) (newY / tileSize);
+            int gridY = (int) ((newY + size / 2f) / tileSize);
             if (gridX >= 0 && gridX < mapWidth && gridY >= 0 && gridY < mapHeight) {
                 int terrain = map[gridY][gridX];
-                if (terrain == MapGenerator.LAKE || terrain == MapGenerator.LAVA || terrain == MapGenerator.VILLAGE_NO_PASS) {
+                if (terrain == MapGenerator.LAKE || terrain == MapGenerator.LAVA || terrain == MapGenerator.VILLAGE_NO_PASS
+                        || terrain == MazeGenerator.MAZE_WALL) {
                     terrainBlocked = true;
                 }
             }
@@ -253,13 +256,14 @@ public class Player extends Character {
         newX = Math.max(size / 2, Math.min(newX, mapWidth * tileSize - size / 2));
         newY = Math.max(size / 2, Math.min(newY, mapHeight * tileSize - size / 2));
 
-        // Check collision with impassable terrain (lake, lava)
+        // Check collision with impassable terrain (lake, lava) - Y轴以脚底检测
         int gridX = (int) (newX / tileSize);
-        int gridY = (int) (newY / tileSize);
+        int gridY = (int) ((newY + size / 2f) / tileSize);
 
         if (gridX >= 0 && gridX < mapWidth && gridY >= 0 && gridY < mapHeight) {
             int terrain = map[gridY][gridX];
-            if (terrain != MapGenerator.LAKE && terrain != MapGenerator.LAVA && terrain != MapGenerator.VILLAGE_NO_PASS) {
+            if (terrain != MapGenerator.LAKE && terrain != MapGenerator.LAVA && terrain != MapGenerator.VILLAGE_NO_PASS
+                    && terrain != MazeGenerator.MAZE_WALL) {
                 x = newX;
                 y = newY;
             }
@@ -336,13 +340,14 @@ public class Player extends Character {
         newX = Math.max(size / 2, Math.min(newX, mapWidth * tileSize - size / 2));
         newY = Math.max(size / 2, Math.min(newY, mapHeight * tileSize - size / 2));
 
-        // Check collision with impassable terrain
+        // Check collision with impassable terrain - Y轴以脚底检测
         int gridX = (int) (newX / tileSize);
-        int gridY = (int) (newY / tileSize);
+        int gridY = (int) ((newY + size / 2f) / tileSize);
 
         if (gridX >= 0 && gridX < mapWidth && gridY >= 0 && gridY < mapHeight) {
             int terrain = map[gridY][gridX];
-            if (terrain == MapGenerator.LAKE || terrain == MapGenerator.LAVA || terrain == MapGenerator.VILLAGE_NO_PASS) {
+            if (terrain == MapGenerator.LAKE || terrain == MapGenerator.LAVA || terrain == MapGenerator.VILLAGE_NO_PASS
+                    || terrain == MazeGenerator.MAZE_WALL) {
                 // Hit impassable, stop dash
                 dashDistanceRemaining = 0;
             } else {

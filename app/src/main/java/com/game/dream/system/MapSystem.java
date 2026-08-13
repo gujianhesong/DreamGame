@@ -7,6 +7,8 @@ import android.util.Pair;
 import com.game.dream.bean.MapInfo;
 import com.game.dream.map.MapGenerator;
 import com.game.dream.map.MapRenderer;
+import com.game.dream.map.MazeGenerator;
+import com.game.dream.map.MazeRenderer;
 import com.game.dream.map.VillageRenderer;
 import com.game.dream.utils.LogUtil;
 
@@ -31,17 +33,21 @@ public class MapSystem {
     public static final int TILE_SIZE = 20;
 
     private static final int BORN_MAP_ID = 1001;
+    private static final int MAZE_MAP_ID = 1002;
 
     // Map data
     private int[][] mapData; // 0=plain, 1=grassland, 2=forest, 3=lake, 4=snow, 5=swamp, 6=lava
     // Map generator
     private MapGenerator mapGenerator;
+    private MazeGenerator mazeGenerator;
     // Map renderer (extracted to separate class)
     private MapRenderer mapRenderer;
+    private MazeRenderer mazeRenderer;
     private VillageRenderer villageRenderer;
 
     private List<MapInfo> mapInfoList = new ArrayList<>();
     private MapInfo curMapInfo;
+    private int currentMapId = BORN_MAP_ID;
 
     public void loadMap(int mapId) {
         MapInfo findMap = null;
@@ -52,37 +58,52 @@ public class MapSystem {
         }
         if (findMap != null) {
             curMapInfo = findMap;
-            // Initialize map generator and generate map
-            mapGenerator = new MapGenerator(findMap.getMapWidth(), findMap.getMapHeight(), TILE_SIZE);
-            mapData = mapGenerator.generateMap();
-            curMapInfo.setMapData(mapData);
+            currentMapId = mapId;
+            // 同步更新角色记录的地图ID, 确保存档能保存当前地图
+            RoleSystem.getInstance().getRoleInfo().setMapId(mapId);
 
-            // Initialize map renderer
-            mapRenderer = new MapRenderer(mapData, MAP_WIDTH, MAP_HEIGHT, TILE_SIZE);
-            villageRenderer = new VillageRenderer();
-            villageRenderer.initVillage(MAP_WIDTH / 2, MAP_WIDTH / 2, MAP_WIDTH, MAP_HEIGHT);
+            if (mapId == MAZE_MAP_ID) {
+                // 迷宫地图
+                mazeGenerator = new MazeGenerator(findMap.getMapWidth(), findMap.getMapHeight(), TILE_SIZE);
+                mapData = mazeGenerator.generateMap();
+                curMapInfo.setMapData(mapData);
+                mazeRenderer = new MazeRenderer(mapData, MAP_WIDTH, MAP_HEIGHT, TILE_SIZE);
+                // 清除村庄渲染器
+                mapRenderer = null;
+                villageRenderer = null;
+                // 初始化迷宫对象
+                MazeSystem.getInstance().initMazeObjects(mapData, mazeGenerator);
+            } else {
+                // 普通地图 (清溪村)
+                mapGenerator = new MapGenerator(findMap.getMapWidth(), findMap.getMapHeight(), TILE_SIZE);
+                mapData = mapGenerator.generateMap();
+                curMapInfo.setMapData(mapData);
+                mapRenderer = new MapRenderer(mapData, MAP_WIDTH, MAP_HEIGHT, TILE_SIZE);
+                villageRenderer = new VillageRenderer();
+                villageRenderer.initVillage(MAP_WIDTH / 2, MAP_WIDTH / 2, MAP_WIDTH, MAP_HEIGHT);
+                // 清除迷宫渲染器
+                mazeRenderer = null;
+                mazeGenerator = null;
 
-
-            // Mark village houses as non-walkable in the map array
-            Rect villageBounds = villageRenderer.getVillageBounds();
-            for (int i = villageBounds.left; i <= villageBounds.right; i += TILE_SIZE) {
-                for (int j = villageBounds.top; j <= villageBounds.bottom; j += TILE_SIZE) {
-                    mapData[i/TILE_SIZE][j/TILE_SIZE] = MapGenerator.VILLAGE_CAN_PASS;
+                // Mark village houses as non-walkable in the map array
+                Rect villageBounds = villageRenderer.getVillageBounds();
+                for (int i = villageBounds.left; i <= villageBounds.right; i += TILE_SIZE) {
+                    for (int j = villageBounds.top; j <= villageBounds.bottom; j += TILE_SIZE) {
+                        mapData[i/TILE_SIZE][j/TILE_SIZE] = MapGenerator.VILLAGE_CAN_PASS;
+                    }
                 }
-            }
-            int tileSize = TILE_SIZE;
-            for (Rect obs : villageRenderer.getObstacles()) {
-                // Convert pixel coordinates to tile indices
-                int startCol = obs.left / tileSize;
-                int endCol = obs.right / tileSize;
-                int startRow = obs.top / tileSize;
-                int endRow = obs.bottom / tileSize;
+                int tileSize = TILE_SIZE;
+                for (Rect obs : villageRenderer.getObstacles()) {
+                    int startCol = obs.left / tileSize;
+                    int endCol = obs.right / tileSize;
+                    int startRow = obs.top / tileSize;
+                    int endRow = obs.bottom / tileSize;
 
-                for (int r = startRow; r <= endRow; r++) {
-                    for (int c = startCol; c <= endCol; c++) {
-                        if (r >= 0 && r < curMapInfo.getMapHeight() && c >= 0 && c < curMapInfo.getMapWidth()) {
-                            // Assuming 1 is a wall/obstacle in your map array
-                            mapData[r][c] = MapGenerator.VILLAGE_NO_PASS;
+                    for (int r = startRow; r <= endRow; r++) {
+                        for (int c = startCol; c <= endCol; c++) {
+                            if (r >= 0 && r < curMapInfo.getMapHeight() && c >= 0 && c < curMapInfo.getMapWidth()) {
+                                mapData[r][c] = MapGenerator.VILLAGE_NO_PASS;
+                            }
                         }
                     }
                 }
@@ -92,6 +113,7 @@ public class MapSystem {
 
     private void initMapList() {
         mapInfoList.add(new MapInfo(1001, "清溪", 10000, 10000));
+        mapInfoList.add(new MapInfo(1002, "迷雾迷宫", 10000, 10000));
     }
 
     public MapInfo getBornMap() {
@@ -149,16 +171,25 @@ public class MapSystem {
         if (mapRenderer != null) {
             mapRenderer.cleanup();
         }
+        if (mazeRenderer != null) {
+            mazeRenderer.cleanup();
+        }
     }
 
     public void render(Canvas canvas, float cameraX, float cameraY, int screenWidth, int screenHeight) {
-        if (mapRenderer != null) {
-            mapRenderer.draw(canvas, cameraX, cameraY, screenWidth, screenHeight);
-        }
-
-        // 2. 绘制村庄地面和装饰物 (Y-sorting 已经在 VillageRenderer 内部处理了)
-        if (villageRenderer != null) {
-            villageRenderer.draw(canvas, cameraX, cameraY);
+        if (currentMapId == MAZE_MAP_ID) {
+            // 迷宫地图渲染
+            if (mazeRenderer != null) {
+                mazeRenderer.draw(canvas, cameraX, cameraY, screenWidth, screenHeight);
+            }
+        } else {
+            // 普通地图渲染
+            if (mapRenderer != null) {
+                mapRenderer.draw(canvas, cameraX, cameraY, screenWidth, screenHeight);
+            }
+            if (villageRenderer != null) {
+                villageRenderer.draw(canvas, cameraX, cameraY);
+            }
         }
     }
 
@@ -166,6 +197,10 @@ public class MapSystem {
      * 检查坐标是否在村庄安全区内（供 Enemy 调用）
      */
     public boolean isLocationSafe(float x, float y) {
+        // 迷宫中没有安全区
+        if (currentMapId == MAZE_MAP_ID) {
+            return false;
+        }
         if (villageRenderer == null || villageRenderer.getVillageBounds() == null) {
             return false;
         }
@@ -173,5 +208,13 @@ public class MapSystem {
         int padding = 20; // 留一点缓冲距离
         return x >= bounds.left - padding && x <= bounds.right + padding &&
                 y >= bounds.top - padding && y <= bounds.bottom + padding;
+    }
+
+    public int getCurrentMapId() {
+        return currentMapId;
+    }
+
+    public MazeGenerator getMazeGenerator() {
+        return mazeGenerator;
     }
 }

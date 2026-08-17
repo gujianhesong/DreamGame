@@ -26,7 +26,7 @@ public class WildBoar extends Enemy {
     private float bodyBob;  // 身体起伏
 
     public WildBoar(float x, float y) {
-        super(x, y, 100, 200f, 45f, 40, 150); // size=55, detection=200, attack=45, exp=30, money=15
+        super(x, y, 100);
         setAttackShape(AttackShape.RECT); // 野猪冲锋 - 矩形
 
         int health = Utils.getWaveValueInt(300, 0.2f);
@@ -41,30 +41,33 @@ public class WildBoar extends Enemy {
         this.legAngle = 0;
         this.bodyBob = 0;
 
-        if (Math.random() < 0.05) {
+        EnemyPropertyExtra enemyPropertyExtra = new EnemyPropertyExtra();
+        enemyPropertyExtra.detectionRange = 200f;
+        enemyPropertyExtra.attackRange = 60;
+        enemyPropertyExtra.rewardExp = 100;
+        enemyPropertyExtra.rewardMoney = 100;
+        setPropertyExtra(enemyPropertyExtra);
+
+        setProperty(300, 40, 50, 70, 40);
+
+        if (Math.random() < 0.02) {
+            //BOSS
+            enemyLevel = EnemyLevel.BOSS;
+            size = size * 3;
+
+            setProperty(300 * 50, 350, 320, 350, 320);
+        } else if (Math.random() < 0.07) {
             //精英
             enemyLevel = EnemyLevel.ELITE;
             size = size * 2;
 
-            health = Utils.getWaveValueInt(300 * 10, 0.2f);
-            this.maxHealth = health;
-            this.health = health;
-            this.attackDamage = 80;
-            this.defense = 80;
-            this.speed = 140;
-            this.mana = 80;
-        } else if (Math.random() < 0.25) {
+            setProperty(300 * 10, 160, 160, 220, 160);
+        } else if (Math.random() < 0.30) {
             //首领
             enemyLevel = EnemyLevel.LEADER;
             size = (int) (size * 1.3f);
 
-            health = Utils.getWaveValueInt(300 * 3, 0.2f);
-            this.maxHealth = health;
-            this.health = health;
-            this.attackDamage = 60;
-            this.defense = 60;
-            this.speed = 100;
-            this.mana = 60;
+            setProperty(300 * 3, 60, 60, 100, 60);
         }
 
     }
@@ -249,9 +252,39 @@ public class WildBoar extends Enemy {
     public List<Item> getPossibleDropList() {
         possibleDrops.clear();
 
-        if (enemyLevel == EnemyLevel.ELITE) {
+        if (enemyLevel == EnemyLevel.BOSS) {
+            addPossibleDrop(EquipCreator.createEquip(30, null));
+            addPossibleDrop(EquipCreator.createEquip(40, null));
+
+            addPossibleDrop(ItemCreator.createBuildEquipBook(30, null));
+            addPossibleDrop(ItemCreator.createBuildEquipBook(40, null));
+            addPossibleDrop(ItemCreator.createBuildEquipIron(30));
+            addPossibleDrop(ItemCreator.createBuildEquipIron(40));
+
+            addPossibleDrop(ItemCreator.createGain_hp_2());
+            addPossibleDrop(ItemCreator.createGain_attack_2());
+            addPossibleDrop(ItemCreator.createGain_defense_2());
+            addPossibleDrop(ItemCreator.createGain_mana_2());
+            addPossibleDrop(ItemCreator.createGain_speed_2());
+
+            addPossibleDrop(ItemCreator.createHp2_1_Zishiying());
+            addPossibleDrop(ItemCreator.createHp2_2_Liuhuangcao());
+            addPossibleDrop(ItemCreator.createMp2_1_Diyulingzhi());
+            addPossibleDrop(ItemCreator.createMp2_2_Xianhuxian());
+        } else if (enemyLevel == EnemyLevel.ELITE) {
             addPossibleDrop(EquipCreator.createEquip(10, null));
             addPossibleDrop(EquipCreator.createEquip(20, null));
+
+            addPossibleDrop(ItemCreator.createBuildEquipBook(10, null));
+            addPossibleDrop(ItemCreator.createBuildEquipBook(20, null));
+            addPossibleDrop(ItemCreator.createBuildEquipIron(10));
+            addPossibleDrop(ItemCreator.createBuildEquipIron(20));
+
+            addPossibleDrop(ItemCreator.createGain_hp_1());
+            addPossibleDrop(ItemCreator.createGain_attack_1());
+            addPossibleDrop(ItemCreator.createGain_defense_1());
+            addPossibleDrop(ItemCreator.createGain_mana_1());
+            addPossibleDrop(ItemCreator.createGain_speed_1());
 
             addPossibleDrop(ItemCreator.createHp1_3_Lurong());
             addPossibleDrop(ItemCreator.createHp1_4_Xuesechahua());
@@ -260,6 +293,9 @@ public class WildBoar extends Enemy {
         } else if (enemyLevel == EnemyLevel.LEADER) {
             addPossibleDrop(EquipCreator.createEquip(0, null));
             addPossibleDrop(EquipCreator.createEquip(10, null));
+
+            addPossibleDrop(ItemCreator.createBuildEquipBook(10, null));
+            addPossibleDrop(ItemCreator.createBuildEquipIron(10));
 
             addPossibleDrop(ItemCreator.createHp1_2_QiyeLian());
             addPossibleDrop(ItemCreator.createHp1_3_Lurong());

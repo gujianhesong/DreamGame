@@ -19,52 +19,78 @@ import java.util.List;
 public class Wolf extends Enemy {
 
     public Wolf(float x, float y) {
-        super(x, y, 80, 250, 110, 30, 150);
+        super(x, y, 80);
         attackCooldown = 2300;
         setAttackShape(AttackShape.ARC); // 狼爪横扫 - 扇形
 
-        int health = Utils.getWaveValueInt(200, 0.2f);
-        this.maxHealth = health;
-        this.health = health;
-        this.attackDamage = 30;
-        this.defense = 30;
-        this.speed = 30;
-        this.mana = 30;
+        EnemyPropertyExtra enemyPropertyExtra = new EnemyPropertyExtra();
+        enemyPropertyExtra.detectionRange = 250;
+        enemyPropertyExtra.attackRange = 110;
+        enemyPropertyExtra.rewardExp = 100;
+        enemyPropertyExtra.rewardMoney = 100;
+        setPropertyExtra(enemyPropertyExtra);
 
-        if (Math.random() < 0.05) {
+        setProperty(250, 30, 30, 30, 30);
+
+        if (Math.random() < 0.02) {
+            //BOSS
+            enemyLevel = EnemyLevel.BOSS;
+            size = size * 3;
+
+            setProperty(250 * 50, 330, 300, 300, 300);
+        } else if (Math.random() < 0.07) {
             //精英
             enemyLevel = EnemyLevel.ELITE;
             size = size * 2;
 
-            health = Utils.getWaveValueInt(200 * 10, 0.2f);
-            this.maxHealth = health;
-            this.health = health;
-            this.attackDamage = 60;
-            this.defense = 60;
-            this.speed = 60;
-            this.mana = 60;
-        } else if (Math.random() < 0.25) {
+            setProperty(250 * 10, 120, 120, 120, 120);
+        } else if (Math.random() < 0.30) {
             //首领
             enemyLevel = EnemyLevel.LEADER;
             size = (int) (size * 1.3f);
 
-            health = Utils.getWaveValueInt(200 * 3, 0.2f);
-            this.maxHealth = health;
-            this.health = health;
-            this.attackDamage = 40;
-            this.defense = 40;
-            this.speed = 40;
-            this.mana = 40;
+            setProperty(250 * 3, 60, 60, 60, 60);
         }
+
     }
 
     @Override
     public List<Item> getPossibleDropList() {
         possibleDrops.clear();
 
-        if (enemyLevel == EnemyLevel.ELITE) {
+        if (enemyLevel == EnemyLevel.BOSS) {
+            addPossibleDrop(EquipCreator.createEquip(30, null));
+            addPossibleDrop(EquipCreator.createEquip(40, null));
+
+            addPossibleDrop(ItemCreator.createBuildEquipBook(30, null));
+            addPossibleDrop(ItemCreator.createBuildEquipBook(40, null));
+            addPossibleDrop(ItemCreator.createBuildEquipIron(30));
+            addPossibleDrop(ItemCreator.createBuildEquipIron(40));
+
+            addPossibleDrop(ItemCreator.createGain_hp_2());
+            addPossibleDrop(ItemCreator.createGain_attack_2());
+            addPossibleDrop(ItemCreator.createGain_defense_2());
+            addPossibleDrop(ItemCreator.createGain_mana_2());
+            addPossibleDrop(ItemCreator.createGain_speed_2());
+
+            addPossibleDrop(ItemCreator.createHp2_1_Zishiying());
+            addPossibleDrop(ItemCreator.createHp2_2_Liuhuangcao());
+            addPossibleDrop(ItemCreator.createMp2_1_Diyulingzhi());
+            addPossibleDrop(ItemCreator.createMp2_2_Xianhuxian());
+        } else if (enemyLevel == EnemyLevel.ELITE) {
             addPossibleDrop(EquipCreator.createEquip(10, null));
             addPossibleDrop(EquipCreator.createEquip(20, null));
+
+            addPossibleDrop(ItemCreator.createBuildEquipBook(10, null));
+            addPossibleDrop(ItemCreator.createBuildEquipBook(20, null));
+            addPossibleDrop(ItemCreator.createBuildEquipIron(10));
+            addPossibleDrop(ItemCreator.createBuildEquipIron(20));
+
+            addPossibleDrop(ItemCreator.createGain_hp_1());
+            addPossibleDrop(ItemCreator.createGain_attack_1());
+            addPossibleDrop(ItemCreator.createGain_defense_1());
+            addPossibleDrop(ItemCreator.createGain_mana_1());
+            addPossibleDrop(ItemCreator.createGain_speed_1());
 
             addPossibleDrop(ItemCreator.createHp1_3_Lurong());
             addPossibleDrop(ItemCreator.createHp1_4_Xuesechahua());
@@ -73,6 +99,9 @@ public class Wolf extends Enemy {
         } else if (enemyLevel == EnemyLevel.LEADER) {
             addPossibleDrop(EquipCreator.createEquip(0, null));
             addPossibleDrop(EquipCreator.createEquip(10, null));
+
+            addPossibleDrop(ItemCreator.createBuildEquipBook(10, null));
+            addPossibleDrop(ItemCreator.createBuildEquipIron(10));
 
             addPossibleDrop(ItemCreator.createHp1_2_QiyeLian());
             addPossibleDrop(ItemCreator.createHp1_3_Lurong());

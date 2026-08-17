@@ -19,44 +19,39 @@ public class Viper extends Enemy {
     private float waveOffset; // 用于 S 型游走的相位
 
     public Viper(float x, float y) {
-        super(x, y, 60, 180f, 35f, 30, 100); // size=40, detection=180, attack=35
+        super(x, y, 60);
         setAttackShape(AttackShape.RECT); // 蛇头前咬 - 矩形
-
-        int health = Utils.getWaveValueInt(200, 0.2f);
-        this.health = health;
-        this.maxHealth = health;
-        this.attackDamage = 25;
-        this.speed = 60;
-        this.defense = 40;
-        this.mana = 40;
-
         this.waveOffset = 0;
 
-        if (Math.random() < 0.05) {
+        EnemyPropertyExtra enemyPropertyExtra = new EnemyPropertyExtra();
+        enemyPropertyExtra.detectionRange = 180;
+        enemyPropertyExtra.attackRange = 50;
+        enemyPropertyExtra.rewardExp = 100;
+        enemyPropertyExtra.rewardMoney = 100;
+        setPropertyExtra(enemyPropertyExtra);
+
+        setProperty(200, 40, 30, 40, 40);
+
+        if (Math.random() < 0.02) {
+            //BOSS
+            enemyLevel = EnemyLevel.BOSS;
+            size = size * 3;
+
+            setProperty(280 * 50, 320, 240, 240, 320);
+        } else if (Math.random() < 0.07) {
             //精英
             enemyLevel = EnemyLevel.ELITE;
             size = size * 2;
 
-            health = Utils.getWaveValueInt(200 * 10, 0.2f);
-            this.maxHealth = health;
-            this.health = health;
-            this.attackDamage = 80;
-            this.defense = 80;
-            this.speed = 120;
-            this.mana = 80;
-        } else if (Math.random() < 0.25) {
+            setProperty(280 * 10, 160, 120, 160, 160);
+        } else if (Math.random() < 0.30) {
             //首领
             enemyLevel = EnemyLevel.LEADER;
             size = (int) (size * 1.3f);
 
-            health = Utils.getWaveValueInt(200 * 3, 0.2f);
-            this.maxHealth = health;
-            this.health = health;
-            this.attackDamage = 60;
-            this.defense = 60;
-            this.speed = 80;
-            this.mana = 60;
+            setProperty(280 * 3, 60, 40, 50, 60);
         }
+
     }
 
     @Override
@@ -162,9 +157,39 @@ public class Viper extends Enemy {
     public List<Item> getPossibleDropList() {
         possibleDrops.clear();
 
-        if (enemyLevel == EnemyLevel.ELITE) {
+        if (enemyLevel == EnemyLevel.BOSS) {
+            addPossibleDrop(EquipCreator.createEquip(30, null));
+            addPossibleDrop(EquipCreator.createEquip(40, null));
+
+            addPossibleDrop(ItemCreator.createBuildEquipBook(30, null));
+            addPossibleDrop(ItemCreator.createBuildEquipBook(40, null));
+            addPossibleDrop(ItemCreator.createBuildEquipIron(30));
+            addPossibleDrop(ItemCreator.createBuildEquipIron(40));
+
+            addPossibleDrop(ItemCreator.createGain_hp_2());
+            addPossibleDrop(ItemCreator.createGain_attack_2());
+            addPossibleDrop(ItemCreator.createGain_defense_2());
+            addPossibleDrop(ItemCreator.createGain_mana_2());
+            addPossibleDrop(ItemCreator.createGain_speed_2());
+
+            addPossibleDrop(ItemCreator.createHp2_1_Zishiying());
+            addPossibleDrop(ItemCreator.createHp2_2_Liuhuangcao());
+            addPossibleDrop(ItemCreator.createMp2_1_Diyulingzhi());
+            addPossibleDrop(ItemCreator.createMp2_2_Xianhuxian());
+        } else if (enemyLevel == EnemyLevel.ELITE) {
             addPossibleDrop(EquipCreator.createEquip(10, null));
             addPossibleDrop(EquipCreator.createEquip(20, null));
+
+            addPossibleDrop(ItemCreator.createBuildEquipBook(10, null));
+            addPossibleDrop(ItemCreator.createBuildEquipBook(20, null));
+            addPossibleDrop(ItemCreator.createBuildEquipIron(10));
+            addPossibleDrop(ItemCreator.createBuildEquipIron(20));
+
+            addPossibleDrop(ItemCreator.createGain_hp_1());
+            addPossibleDrop(ItemCreator.createGain_attack_1());
+            addPossibleDrop(ItemCreator.createGain_defense_1());
+            addPossibleDrop(ItemCreator.createGain_mana_1());
+            addPossibleDrop(ItemCreator.createGain_speed_1());
 
             addPossibleDrop(ItemCreator.createHp1_3_Lurong());
             addPossibleDrop(ItemCreator.createHp1_4_Xuesechahua());
@@ -173,6 +198,9 @@ public class Viper extends Enemy {
         } else if (enemyLevel == EnemyLevel.LEADER) {
             addPossibleDrop(EquipCreator.createEquip(0, null));
             addPossibleDrop(EquipCreator.createEquip(10, null));
+
+            addPossibleDrop(ItemCreator.createBuildEquipBook(10, null));
+            addPossibleDrop(ItemCreator.createBuildEquipIron(10));
 
             addPossibleDrop(ItemCreator.createHp1_2_QiyeLian());
             addPossibleDrop(ItemCreator.createHp1_3_Lurong());

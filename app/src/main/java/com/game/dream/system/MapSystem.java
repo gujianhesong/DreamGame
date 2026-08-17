@@ -1,5 +1,7 @@
 package com.game.dream.system;
 
+import static com.game.dream.common.Constants.TILE_SIZE;
+
 import android.graphics.Canvas;
 import android.graphics.Rect;
 import android.util.Pair;
@@ -30,7 +32,6 @@ public class MapSystem {
     // Map dimensions
     public static final int MAP_WIDTH = 10000;
     public static final int MAP_HEIGHT = 10000;
-    public static final int TILE_SIZE = 20;
 
     private static final int BORN_MAP_ID = 1001;
     private static final int MAZE_MAP_ID = 1002;

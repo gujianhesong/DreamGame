@@ -1,5 +1,7 @@
 package com.game.dream;
 
+import static com.game.dream.common.Constants.TILE_SIZE;
+
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -23,6 +25,7 @@ import com.game.dream.figure.Character;
 import com.game.dream.figure.Player;
 import com.game.dream.item.EquipmentItem;
 import com.game.dream.item.ItemStack;
+import com.game.dream.map.MapContentManager;
 import com.game.dream.map.MapGenerator;
 import com.game.dream.map.MazeGenerator;
 import com.game.dream.npc.Npc;
@@ -58,7 +61,6 @@ public class GameEngine {
     // Map dimensions
     public static final int MAP_WIDTH = 10000;
     public static final int MAP_HEIGHT = 10000;
-    public static final int TILE_SIZE = 20;
 
     // Camera position (top-left corner of visible area)
     private static float cameraX;
@@ -191,84 +193,7 @@ public class GameEngine {
      */
     private void initializeEnemies() {
         enemies = new java.util.ArrayList<>();
-
-        int currentMapId = MapSystem.getInstance().getCurrentMapId();
-        int enemyCount = (currentMapId == 1002) ? 40 : 100; // 迷宫中怪物少一些
-
-        Random random = new Random(67890);
-        int[][] map = MapSystem.getInstance().getCurMapInfo().getMapData();
-        for (int i = 0; i < enemyCount; i++) {
-            boolean foundValidSpawn = false;
-            float spawnX = 0, spawnY = 0;
-
-            // Try to find a valid spawn position
-            for (int attempts = 0; attempts < 50 && !foundValidSpawn; attempts++) {
-                int gridX = random.nextInt(map[0].length);
-                int gridY = random.nextInt(map.length);
-
-                int terrain = map[gridY][gridX];
-
-                // Spawn on passable terrain
-                boolean canSpawn = false;
-                if (currentMapId == 1002) {
-                    // 迷宫: 只能在地板上生成
-                    canSpawn = (terrain == MazeGenerator.MAZE_FLOOR || terrain == MazeGenerator.MAZE_ENTRANCE || terrain == MazeGenerator.MAZE_EXIT);
-                } else {
-                    // 普通地图: 不能在水/岩浆/村庄建筑上生成
-                    canSpawn = (terrain != MapGenerator.LAKE && terrain != MapGenerator.LAVA
-                            && terrain != MapGenerator.VILLAGE_CAN_PASS && terrain != MapGenerator.VILLAGE_NO_PASS);
-                }
-
-                if (canSpawn) {
-                    spawnX = gridX * TILE_SIZE + TILE_SIZE / 2;
-                    spawnY = gridY * TILE_SIZE + TILE_SIZE / 2;
-
-                    // Check distance from player
-                    float dx = spawnX - player.getX();
-                    float dy = spawnY - player.getY();
-                    float distance = (float) Math.sqrt(dx * dx + dy * dy);
-
-                    if (distance > 500) { // At least 500 pixels away from player
-                        foundValidSpawn = true;
-                    }
-                }
-            }
-
-            if (foundValidSpawn) {
-                double rand = Math.random();
-                if (currentMapId == 1002) {
-                    // 迷宫怪物: 以狼和猛虎为主
-                    if (rand < 0.5) {
-                        Enemy enemy = new Tiger(spawnX, spawnY);
-                        enemy.setName("迷宫猛虎");
-                        enemies.add(enemy);
-                    } else {
-                        Enemy enemy = new Wolf(spawnX, spawnY);
-                        enemy.setName("迷宫野狼");
-                        enemies.add(enemy);
-                    }
-                } else {
-                    // 普通地图怪物
-                    if (rand < 0.25) {
-                        Enemy enemy = new Tiger(spawnX, spawnY);
-                        enemy.setName("猛虎");
-                        enemies.add(enemy);
-                    } else if(rand < 0.5) {
-                        Enemy enemy = new WildBoar(spawnX, spawnY);
-                        enemy.setName("野猪");
-                        enemies.add(enemy);
-                    }else if(rand < 0.75) {
-                        Enemy enemy = new Viper(spawnX, spawnY);
-                        enemy.setName("毒蛇");
-                        enemies.add(enemy);
-                    }else {
-                        Enemy enemy = new Wolf(spawnX, spawnY);
-                        enemy.setName("野狼");
-                        enemies.add(enemy);
-                    }
-                }
-            }
-        }
+        enemies.addAll(MapContentManager.getInstance().initializeEnemies());
     }
 
     public void cleanup() {
@@ -361,6 +286,25 @@ public class GameEngine {
                 if (!text.isActive()) {
                     floatingTexts.remove(i);
                 }
+            }
+
+            // Calculate stacking offsets so texts don't overlap
+            // Each text checks how many older active texts are near its base position
+            float stackSpacing = 50f;
+            float proximityThreshold = 150f;
+            for (int i = 0; i < floatingTexts.size(); i++) {
+                FloatingText current = floatingTexts.get(i);
+                int stackIndex = 0;
+                for (int j = 0; j < i; j++) {
+                    FloatingText older = floatingTexts.get(j);
+                    if (older.isActive()
+                            && Math.abs(current.getX() - older.getX()) < proximityThreshold
+                            && Math.abs(current.getY() - older.getY()) < proximityThreshold) {
+                        stackIndex++;
+                    }
+                }
+                // Push upward: newer texts go higher (negative Y)
+                current.setStackOffsetY(-stackIndex * stackSpacing);
             }
         }
 

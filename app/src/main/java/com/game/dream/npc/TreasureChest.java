@@ -19,7 +19,7 @@ public class TreasureChest {
 
     private int id;
     private float x, y;
-    private int size = 50;
+    private int size = 70;
     private boolean isOpened = false;
     private Paint paint = new Paint();
 

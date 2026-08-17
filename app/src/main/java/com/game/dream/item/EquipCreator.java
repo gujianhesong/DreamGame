@@ -209,7 +209,7 @@ public class EquipCreator {
         //特效
         float totalRatioValue = 100f;
         LinkedHashMap<SpecialEffect, Integer> specialEffectRatioMap = new LinkedHashMap<>();
-        specialEffectRatioMap.put(SpecialEffect.SE_WuJiBieXianZhi, 1);
+        specialEffectRatioMap.put(SpecialEffect.SE_WuJiBieXianZhi, 10);
         specialEffectRatioMap.put(SpecialEffect.SE_ShenNong, 3);
         specialEffectRatioMap.put(SpecialEffect.SE_Xixue, 3);
         specialEffectRatioMap.put(SpecialEffect.SE_ShenYou, 3);

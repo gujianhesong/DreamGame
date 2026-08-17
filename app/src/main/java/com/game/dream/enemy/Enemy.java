@@ -1,5 +1,7 @@
 package com.game.dream.enemy;
 
+import static com.game.dream.common.Constants.TILE_SIZE;
+
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -7,6 +9,8 @@ import android.graphics.Path;
 import android.graphics.RectF;
 
 import com.game.dream.figure.Character;
+import com.game.dream.item.EquipCreator;
+import com.game.dream.item.ItemCreator;
 import com.game.dream.map.MapGenerator;
 import com.game.dream.map.MazeGenerator;
 import com.game.dream.system.MapSystem;
@@ -33,23 +37,9 @@ public abstract class Enemy extends Character {
     public enum EnemyLevel {
         NORMAL,
         LEADER,
-        ELITE
+        ELITE,
+        BOSS,
     }
-
-    protected State currentState;
-    protected EnemyLevel enemyLevel;
-
-    // Movement
-    protected float targetX, targetY;
-    protected long stateTimer;
-
-    // Detection and attack ranges
-    protected float detectionRange;
-    protected float attackRange;
-
-    // Experience reward when killed
-    protected int rewardExp;
-    protected int rewardMoney;
 
     protected int health;
     protected int maxHealth;
@@ -59,13 +49,31 @@ public abstract class Enemy extends Character {
     protected int mana;
     protected int speed;
 
+    public class EnemyPropertyExtra{
+        // Detection and attack ranges
+        protected float detectionRange;
+        protected float attackRange;
+
+        // Experience reward when killed
+        protected int rewardExp;
+        protected int rewardMoney;
+    }
+
+    protected State currentState;
+    protected EnemyLevel enemyLevel;
+
+    // Movement
+    protected float targetX, targetY;
+    protected long stateTimer;
+
+    protected EnemyPropertyExtra propertyExtra;
+
     // Aggro timer - how long enemy stays aggressive after being damaged
     protected long aggroEndTime;
     protected boolean isAggroed;
 
     // Possible drops
     protected List<Item> possibleDrops;
-    protected float dropChance;
 
     protected boolean isCastingSpell;
 
@@ -79,8 +87,8 @@ public abstract class Enemy extends Character {
     public enum AttackShape { CIRCLE, ARC, RECT }
     protected AttackShape attackShape = AttackShape.CIRCLE;
 
-    public Enemy(float x, float y, int size, float detectionRange, float attackRange, int rewardExp, int rewardMoney) {
-        super(x, y, size); // attack=10, defense=0, size=30
+    public Enemy(float x, float y, int size) {
+        super(x, y, size);
 
         this.currentState = State.IDLE;
         this.enemyLevel = EnemyLevel.NORMAL;
@@ -88,21 +96,35 @@ public abstract class Enemy extends Character {
         this.targetY = y;
         this.stateTimer = System.currentTimeMillis();
 
-        this.detectionRange = detectionRange;
-        this.attackRange = attackRange;
+        propertyExtra = new EnemyPropertyExtra();
+        propertyExtra.detectionRange = 400;
+        propertyExtra.attackRange = 200;
+        propertyExtra.rewardExp = 300;
+        propertyExtra.rewardMoney = 100;
+
         this.attackCooldown = 2000;
         this.lastAttackTime = 0;
-
-        this.rewardExp = rewardExp;
-        this.rewardMoney = rewardMoney;
 
         this.aggroEndTime = 0;
         this.isAggroed = false;
 
         this.possibleDrops = new ArrayList<>();
-        this.dropChance = 0.6f; // 30% chance to drop something
 
         this.isCastingSpell = false;
+    }
+
+    public void setProperty(int maxHealth, int attackDamage, int defense, int speed, int mana){
+        int health = Utils.getWaveValueInt(maxHealth, 0.2f);
+        this.maxHealth = health;
+        this.health = health;
+        this.attackDamage = Utils.getWaveValueInt(attackDamage, 0.2f);
+        this.defense = Utils.getWaveValueInt(defense, 0.2f);
+        this.speed = Utils.getWaveValueInt(speed, 0.2f);
+        this.mana = Utils.getWaveValueInt(mana, 0.2f);
+    }
+
+    public void setPropertyExtra(EnemyPropertyExtra enemyPropertyExtra){
+        this.propertyExtra = enemyPropertyExtra;
     }
 
     /**
@@ -152,7 +174,7 @@ public abstract class Enemy extends Character {
             case IDLE:
                 updateIdle(deltaTime, deltaSeconds, map, mapWidth, mapHeight);
 
-                if (!MapSystem.getInstance().isLocationSafe(playerX, playerY) && distanceToPlayer < detectionRange) {
+                if (!MapSystem.getInstance().isLocationSafe(playerX, playerY) && distanceToPlayer < propertyExtra.detectionRange) {
                     currentState = State.CHASING;
                     stateTimer = currentTime;
                 }
@@ -162,10 +184,10 @@ public abstract class Enemy extends Character {
                 updateChasing(deltaSeconds, playerX, playerY, map, mapWidth, mapHeight);
 
                 // Only return to idle if not aggroed AND player is far away
-                if (!isAggroed && distanceToPlayer > detectionRange * 1.5f || MapSystem.getInstance().isLocationSafe(playerX, playerY)) {
+                if (!isAggroed && distanceToPlayer > propertyExtra.detectionRange * 1.5f || MapSystem.getInstance().isLocationSafe(playerX, playerY)) {
                     currentState = State.IDLE;
                     stateTimer = currentTime;
-                } else if (distanceToPlayer < attackRange) {
+                } else if (distanceToPlayer < propertyExtra.attackRange) {
                     currentState = State.ATTACKING;
                     stateTimer = currentTime;
                     // 开始攻击前摇
@@ -183,7 +205,7 @@ public abstract class Enemy extends Character {
                     if (currentTime - windUpStartTime >= windUpDuration) {
                         // 前摇结束，检查玩家是否还在攻击范围内
                         isWindingUp = false;
-                        if (distanceToPlayer < attackRange) {
+                        if (distanceToPlayer < propertyExtra.attackRange) {
                             // 玩家仍在范围内，执行攻击
                             attackJustFired = true;
                         }
@@ -194,7 +216,7 @@ public abstract class Enemy extends Character {
                     updateAttacking(deltaSeconds, playerX, playerY);
                 }
 
-                if (distanceToPlayer > attackRange * 1.5f) {
+                if (distanceToPlayer > propertyExtra.attackRange * 1.5f) {
                     currentState = State.CHASING;
                     isWindingUp = false;
                     stateTimer = currentTime;
@@ -227,7 +249,7 @@ public abstract class Enemy extends Character {
     }
 
     public float getAttackRange() {
-        return attackRange;
+        return propertyExtra.attackRange;
     }
 
     /**
@@ -274,7 +296,7 @@ public abstract class Enemy extends Character {
         }
 
         // Elite and Leader tigers can cast spells while chasing
-        if (enemyLevel == EnemyLevel.ELITE || enemyLevel == EnemyLevel.LEADER) {
+        if (enemyLevel == EnemyLevel.BOSS || enemyLevel == EnemyLevel.ELITE || enemyLevel == EnemyLevel.LEADER) {
             // Check if should cast spell (15% chance per update, with cooldown)
             long currentTime = System.currentTimeMillis();
             if (canCastSpell() && (currentTime - lastAttackTime > 3000) && Math.random() < 0.3f) {
@@ -301,7 +323,7 @@ public abstract class Enemy extends Character {
         float distance = (float) Math.sqrt(dx * dx + dy * dy);
 
         if (distance > 0) {
-            float optimalDistance = attackRange * 0.7f;
+            float optimalDistance = propertyExtra.attackRange * 0.7f;
             if (distance > optimalDistance) {
                 float moveX = (dx / distance) * speed * 0.5f * deltaSeconds;
                 float moveY = (dy / distance) * speed * 0.5f * deltaSeconds;
@@ -347,7 +369,7 @@ public abstract class Enemy extends Character {
             float newY = y + moveY;
 
             // 地形检测
-            int tileSize = MapSystem.TILE_SIZE;
+            int tileSize = TILE_SIZE;
             int[][] map = MapSystem.getInstance().getCurMapInfo().getMapData();
             if (map != null) {
                 int gridX = (int) (newX / tileSize);
@@ -408,7 +430,7 @@ public abstract class Enemy extends Character {
      * Check if enemy can cast magic spell
      */
     public boolean canCastSpell() {
-        return (enemyLevel == EnemyLevel.ELITE || enemyLevel == EnemyLevel.LEADER);
+        return (enemyLevel == EnemyLevel.BOSS || enemyLevel == EnemyLevel.ELITE || enemyLevel == EnemyLevel.LEADER);
     }
 
     /**
@@ -463,12 +485,14 @@ public abstract class Enemy extends Character {
      */
     public int getExperienceReward() {
         float factor = 1f;
-        if (enemyLevel == EnemyLevel.ELITE) {
+        if (enemyLevel == EnemyLevel.BOSS) {
+            factor = 50f;
+        } else if (enemyLevel == EnemyLevel.ELITE) {
             factor = 10f;
         } else if (enemyLevel == EnemyLevel.LEADER) {
             factor = 3f;
         }
-        return (int) (Utils.getWaveValueInt(rewardExp, 0.1f) * factor);
+        return (int) (Utils.getWaveValueInt(propertyExtra.rewardExp, 0.1f) * factor);
     }
 
     /**
@@ -476,12 +500,14 @@ public abstract class Enemy extends Character {
      */
     public int getMoneyReward() {
         float factor = 1f;
-        if (enemyLevel == EnemyLevel.ELITE) {
+        if (enemyLevel == EnemyLevel.BOSS) {
+            factor = 50f;
+        } if (enemyLevel == EnemyLevel.ELITE) {
             factor = 10f;
         } else if (enemyLevel == EnemyLevel.LEADER) {
             factor = 3f;
         }
-        return (int) (Utils.getWaveValueInt(rewardMoney, 0.1f) * factor);
+        return (int) (Utils.getWaveValueInt(propertyExtra.rewardMoney, 0.1f) * factor);
     }
 
     @Override
@@ -551,7 +577,9 @@ public abstract class Enemy extends Character {
     @Override
     public void setName(String name) {
         this.name = name;
-        if (enemyLevel == EnemyLevel.ELITE) {
+        if (enemyLevel == EnemyLevel.BOSS) {
+            this.name = name + "BOSS";
+        } if (enemyLevel == EnemyLevel.ELITE) {
             this.name = name + "精英";
         } else if (enemyLevel == EnemyLevel.LEADER) {
             this.name = name + "首领";
@@ -573,9 +601,16 @@ public abstract class Enemy extends Character {
 
         getPossibleDropList();
 
-        if (Math.random() < dropChance && !possibleDrops.isEmpty()) {
-            // Drop 1-2 items
-            int numDrops = 1 + (int) (Math.random() * 2);
+        if (!possibleDrops.isEmpty()) {
+            // Drop items count
+            int numDrops = (int) (Math.random() * 3);
+            if (enemyLevel == EnemyLevel.BOSS) {
+                numDrops = 3 + (int) (Math.random() * 3);
+            } else if (enemyLevel == EnemyLevel.ELITE) {
+                numDrops = 2 + (int) (Math.random() * 3);
+            } else if (enemyLevel == EnemyLevel.LEADER) {
+                numDrops = 1 + (int) (Math.random() * 3);
+            }
 
             for (int i = 0; i < numDrops && i < possibleDrops.size(); i++) {
                 Item item = possibleDrops.get((int) (Math.random() * possibleDrops.size()));
@@ -667,8 +702,8 @@ public abstract class Enemy extends Character {
                     float angleToTarget = (float) Math.toDegrees(Math.atan2(dy, dx));
                     float arcSpan = 120f;
                     RectF arcRect = new RectF(
-                            screenX - attackRange, screenY - attackRange,
-                            screenX + attackRange, screenY + attackRange);
+                            screenX - propertyExtra.attackRange, screenY - propertyExtra.attackRange,
+                            screenX + propertyExtra.attackRange, screenY + propertyExtra.attackRange);
                     // 描边
                     rangePaint.setColor(Color.argb(strokeAlpha, 255, 60, 60));
                     rangePaint.setStyle(Paint.Style.STROKE);
@@ -689,8 +724,8 @@ public abstract class Enemy extends Character {
                     float dirY = dist > 0 ? dy / dist : 0;
                     float perpX = -dirY;
                     float perpY = dirX;
-                    float halfW = attackRange * 0.5f;
-                    float len = attackRange * 1.5f;
+                    float halfW = propertyExtra.attackRange * 0.5f;
+                    float len = propertyExtra.attackRange * 1.5f;
                     // 矩形四个顶点 (从敌人前方延伸)
                     Path rectPath = new Path();
                     float x1 = screenX + perpX * halfW;
@@ -722,10 +757,10 @@ public abstract class Enemy extends Character {
                     rangePaint.setColor(Color.argb(strokeAlpha, 255, 60, 60));
                     rangePaint.setStyle(Paint.Style.STROKE);
                     rangePaint.setStrokeWidth(3);
-                    canvas.drawCircle(screenX, screenY, attackRange, rangePaint);
+                    canvas.drawCircle(screenX, screenY, propertyExtra.attackRange, rangePaint);
                     rangePaint.setStyle(Paint.Style.FILL);
                     rangePaint.setColor(Color.argb(fillAlpha, 255, 0, 0));
-                    canvas.drawCircle(screenX, screenY, attackRange, rangePaint);
+                    canvas.drawCircle(screenX, screenY, propertyExtra.attackRange, rangePaint);
                     break;
                 }
             }

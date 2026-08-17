@@ -32,6 +32,7 @@ public class FloatingText {
     private float offsetY;
     private float alpha;
     private float maxRiseDistance = 120; // Maximum rise distance
+    private float stackOffsetY = 0; // Additional offset for stacking multiple texts
 
     public FloatingText(float x, float y, String text, Type type) {
         this.x = x;
@@ -108,6 +109,13 @@ public class FloatingText {
     /**
      * Draw damage number
      */
+    /**
+     * Set the stacking offset to avoid overlap with other floating texts
+     */
+    public void setStackOffsetY(float offset) {
+        this.stackOffsetY = offset;
+    }
+
     public void draw(Canvas canvas, int offsetX, int offsetY) {
         if (!isActive) return;
 
@@ -130,20 +138,21 @@ public class FloatingText {
         paint.setTextSize(50);
 
         String showText = text;
+        float totalOffsetY = this.offsetY + this.stackOffsetY;
 
         paint.setColor(Color.argb(alphaInt, 0, 0, 0)); // Black outline
-        canvas.drawText(showText, x + offsetX, y + offsetY + this.offsetY, paint);
+        canvas.drawText(showText, x + offsetX, y + offsetY + totalOffsetY, paint);
 
         // Draw fill
         paint.setStyle(Paint.Style.FILL);
         paint.setColor(Color.argb(alphaInt, r, g, b));
-        canvas.drawText(showText, x + offsetX, y + offsetY + this.offsetY, paint);
+        canvas.drawText(showText, x + offsetX, y + offsetY + totalOffsetY, paint);
 
         // Add white highlight for extra visibility
         if (alpha > 0.5f) {
             paint.setColor(Color.argb((int)(alphaInt * 0.3), 255, 255, 255));
             paint.setTextSize(50);
-            canvas.drawText(showText, x + offsetX, y + offsetY + this.offsetY - 1, paint);
+            canvas.drawText(showText, x + offsetX, y + offsetY + totalOffsetY - 1, paint);
         }
     }
 

@@ -26,7 +26,7 @@ public class MazeGenerator {
     private Random random;
 
     // 迷宫格子尺寸: 通道宽度 = cellSize * tileSize
-    private int cellSize = 6; // 6 tiles * 20px = 120px 通道宽度
+    private int cellSize = 8; // 8 tiles * 20px = 160px 通道宽度
 
     // 入口/出口坐标 (像素坐标)
     private int entranceX;

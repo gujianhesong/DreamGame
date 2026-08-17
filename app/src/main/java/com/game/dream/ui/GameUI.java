@@ -1,5 +1,7 @@
 package com.game.dream.ui;
 
+import static com.game.dream.common.Constants.TILE_SIZE;
+
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -105,7 +107,7 @@ public class GameUI {
 
         // Initialize minimap
         minimap = new Minimap(GameEngine.getInstance().getMap(), GameEngine.MAP_WIDTH,
-                GameEngine.MAP_HEIGHT, GameEngine.TILE_SIZE);
+                GameEngine.MAP_HEIGHT, TILE_SIZE);
         minimap.initialize();
 
         // Initialize notification

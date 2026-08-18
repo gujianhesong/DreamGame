@@ -48,6 +48,8 @@ public class SkillsPanel {
         void onEquipSkill(SkillInfo skill);
 
         void onUnequipSkill(SkillInfo skill);
+
+        void onUseSkill(SkillInfo skill);
     }
 
     private SkillActionListener listener;
@@ -114,6 +116,13 @@ public class SkillsPanel {
             @Override
             public void onUnequipSkill(SkillInfo skill) {
                 SkillSystem.getInstance().unequipSkill(skill);
+            }
+
+            @Override
+            public void onUseSkill(SkillInfo skill) {
+                if (skill.getSkillType() == com.game.dream.enums.SkillType.MAIN_DunXing) {
+                    com.game.dream.GameEngine.getInstance().teleportToVillage();
+                }
             }
         });
     }
@@ -418,7 +427,11 @@ public class SkillsPanel {
                 drawDowngradeButton(canvas, paint, pair.downgradeButton, skill.canDowngrade());
 
                 if (skill.isMainSkill()) {
-                    drawEquipButton(canvas, paint, pair.equipButton, skill);
+                    if (skill.isUseSkill()) {
+                        drawUseButton(canvas, paint, pair.equipButton, skill);
+                    } else {
+                        drawEquipButton(canvas, paint, pair.equipButton, skill);
+                    }
                 }
             }
         }
@@ -510,6 +523,26 @@ public class SkillsPanel {
     }
 
     /**
+     * Draw "使用" button for utility skills like 遁形
+     */
+    private void drawUseButton(Canvas canvas, Paint paint, Rect button, SkillInfo skillInfo) {
+        // 蓝色调按钮，区别于装配按钮
+        paint.setColor(Color.argb(200, 60, 140, 220));
+        canvas.drawRoundRect(button.left, button.top, button.right, button.bottom, 8, 8, paint);
+
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(2);
+        paint.setColor(Color.WHITE);
+        canvas.drawRoundRect(button.left, button.top, button.right, button.bottom, 8, 8, paint);
+        paint.setStyle(Paint.Style.FILL);
+
+        paint.setColor(Color.WHITE);
+        paint.setTextSize(18);
+        paint.setTextAlign(Paint.Align.CENTER);
+        canvas.drawText("使用", button.centerX(), button.centerY() + 6, paint);
+    }
+
+    /**
      * Draw close button
      */
     private void drawCloseButton(Canvas canvas, Paint paint) {
@@ -578,13 +611,19 @@ public class SkillsPanel {
             if (!isDragging) {
                 for (SkillButtonPair pair : skillButtons) {
                     // Handle Equip/Unequip for Main Skills
-                    if (pair.skill.isMainSkill() && TouchUtil.checkIsInTouchRectFloat(pair.equipButton, x, y)) {
+                    if (pair.skill.isMainSkill() && !pair.skill.isUseSkill() && TouchUtil.checkIsInTouchRectFloat(pair.equipButton, x, y)) {
                         boolean isEquipped = SkillSystem.getInstance().getEquippedActiveSkills().contains(pair.skill);
                         if (isEquipped) {
                             if (listener != null) listener.onUnequipSkill(pair.skill);
                         } else {
                             if (listener != null) listener.onEquipSkill(pair.skill);
                         }
+                        return true;
+                    }
+
+                    // Handle Use button (遁形 etc.)
+                    if (pair.skill.isUseSkill() && TouchUtil.checkIsInTouchRectFloat(pair.equipButton, x, y)) {
+                        if (listener != null) listener.onUseSkill(pair.skill);
                         return true;
                     }
 

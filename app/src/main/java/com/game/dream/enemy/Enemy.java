@@ -208,12 +208,26 @@ public abstract class Enemy extends Character {
                         if (distanceToPlayer < propertyExtra.attackRange) {
                             // 玩家仍在范围内，执行攻击
                             attackJustFired = true;
+                            lastAttackTime = currentTime;
                         }
                         // 玩家不在范围内 = 闪避成功，不攻击
                     }
                     // 前摇中不移动
                 } else {
                     updateAttacking(deltaSeconds, playerX, playerY);
+
+                    // 攻击冷却后重新开始下一次前摇
+                    if (currentTime - lastAttackTime >= attackCooldown) {
+                        if (distanceToPlayer < propertyExtra.attackRange) {
+                            // 玩家仍在攻击范围内，开始新一轮前摇
+                            isWindingUp = true;
+                            windUpStartTime = currentTime;
+                        } else {
+                            // 玩家不在攻击范围，切回追击
+                            currentState = State.CHASING;
+                            stateTimer = currentTime;
+                        }
+                    }
                 }
 
                 if (distanceToPlayer > propertyExtra.attackRange * 1.5f) {

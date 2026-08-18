@@ -5,6 +5,7 @@ import android.text.TextUtils;
 public enum SkillType {
 
     //主技能
+    MAIN_DunXing,
     MAIN_FIREBALL,
     MAIN_ICE_BOLT,
     MAIN_LIGHTNING,

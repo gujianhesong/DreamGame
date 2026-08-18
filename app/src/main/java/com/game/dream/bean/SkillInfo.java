@@ -106,4 +106,11 @@ public class SkillInfo {
         }
         return false;
     }
+
+    /**
+     * 是否为“使用”类技能（不可装配，点击直接使用）
+     */
+    public boolean isUseSkill(){
+        return getSkillType() == SkillType.MAIN_DunXing;
+    }
 }

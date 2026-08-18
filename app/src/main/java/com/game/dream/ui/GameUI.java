@@ -482,6 +482,12 @@ public class GameUI {
             return true;
         }
 
+        // Check menu button clicks BEFORE any panel consumes the event
+        // This allows switching panels via bottom menu even when a panel is open
+        if (handleMenuButtonTouch(action, x, y)) {
+            return true;
+        }
+
         // If role info panel is visible, check if touching it first
         if (roleInfoPanel != null && roleInfoPanel.isVisible()) {
             if (action == MotionEvent.ACTION_DOWN && roleInfoPanel.handleTouch(x, y)) {
@@ -560,93 +566,6 @@ public class GameUI {
                 }
             }
             return true; // Consume all events when quest panel is open
-        }
-
-        // Check Switch Page Button
-        if (TouchUtil.checkIsInTouchRectFloat(switchPageButton, x, y)) {
-            if (action == MotionEvent.ACTION_DOWN) {
-                SkillSystem.getInstance().nextPage();
-                int page = SkillSystem.getInstance().getCurrentPageIndex() + 1;
-                showNotification("提示", "技能第 " + page + " 页", CenterNotification.Type.INFO);
-                return true;
-            }
-        }
-
-        // Check role info button
-        if (roleInfoButton != null && TouchUtil.checkIsInTouchRectFloat(roleInfoButton, x, y)) {
-            if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_POINTER_DOWN) {
-                return true;
-            }
-            if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_POINTER_UP) {
-                if (roleInfoPanel != null) {
-                    roleInfoPanel.toggleVisibility();
-                }
-                return true;
-            }
-        }
-        // Check equipment button
-        if (equipmentButton != null && TouchUtil.checkIsInTouchRectFloat(equipmentButton, x, y)) {
-            if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_POINTER_DOWN) {
-                return true;
-            }
-            if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_POINTER_UP) {
-                if (itemsPanel != null) {
-                    itemsPanel.toggleVisibility();
-                }
-                return true;
-            }
-        }
-
-        // Check skills button
-        if (skillsButton != null && TouchUtil.checkIsInTouchRectFloat(skillsButton, x, y)) {
-            if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_POINTER_DOWN) {
-                return true;
-            }
-            if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_POINTER_UP) {
-                if (skillsPanel != null) {
-                    skillsPanel.toggleVisibility();
-                }
-                return true;
-            }
-        }
-
-        // Check Build Equip button
-        if (buildEquipButton != null && TouchUtil.checkIsInTouchRectFloat(buildEquipButton, x, y)) {
-            if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_POINTER_DOWN) {
-                return true;
-            }
-            if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_POINTER_UP) {
-                if (buildEquipPanel != null) {
-                    buildEquipPanel.toggleVisibility();
-                }
-                return true;
-            }
-        }
-
-        // Check Crafting button
-        if (craftButton != null && TouchUtil.checkIsInTouchRectFloat(craftButton, x, y)) {
-            if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_POINTER_DOWN) {
-                return true;
-            }
-            if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_POINTER_UP) {
-                if (craftingPanel != null) {
-                    craftingPanel.toggleVisibility();
-                }
-                return true;
-            }
-        }
-
-        // Check Quest button
-        if (questButton != null && TouchUtil.checkIsInTouchRectFloat(questButton, x, y)) {
-            if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_POINTER_DOWN) {
-                return true;
-            }
-            if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_POINTER_UP) {
-                if (questPanel != null) {
-                    questPanel.toggleVisibility();
-                }
-                return true;
-            }
         }
 
         // Handle D-pad with pointer tracking
@@ -1293,6 +1212,127 @@ public class GameUI {
         float dx = x - centerX;
         float dy = y - centerY;
         return (dx * dx + dy * dy) <= (radius * radius);
+    }
+
+    /**
+     * Handle menu button touches. Called before panel checks so that
+     * clicking bottom menu buttons works even when a panel is open.
+     */
+    private boolean handleMenuButtonTouch(int action, float x, float y) {
+        // Check Switch Page Button
+        if (TouchUtil.checkIsInTouchRectFloat(switchPageButton, x, y)) {
+            if (action == MotionEvent.ACTION_DOWN) {
+                SkillSystem.getInstance().nextPage();
+                int page = SkillSystem.getInstance().getCurrentPageIndex() + 1;
+                showNotification("提示", "技能第 " + page + " 页", CenterNotification.Type.INFO);
+                return true;
+            }
+        }
+
+        // Check role info button
+        if (roleInfoButton != null && TouchUtil.checkIsInTouchRectFloat(roleInfoButton, x, y)) {
+            if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_POINTER_DOWN) {
+                return true;
+            }
+            if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_POINTER_UP) {
+                if (roleInfoPanel != null) {
+                    boolean wasVisible = roleInfoPanel.isVisible();
+                    closeAllPanels();
+                    if (!wasVisible) roleInfoPanel.show();
+                }
+                return true;
+            }
+        }
+
+        // Check equipment button
+        if (equipmentButton != null && TouchUtil.checkIsInTouchRectFloat(equipmentButton, x, y)) {
+            if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_POINTER_DOWN) {
+                return true;
+            }
+            if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_POINTER_UP) {
+                if (itemsPanel != null) {
+                    boolean wasVisible = itemsPanel.isVisible();
+                    closeAllPanels();
+                    if (!wasVisible) itemsPanel.show();
+                }
+                return true;
+            }
+        }
+
+        // Check skills button
+        if (skillsButton != null && TouchUtil.checkIsInTouchRectFloat(skillsButton, x, y)) {
+            if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_POINTER_DOWN) {
+                return true;
+            }
+            if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_POINTER_UP) {
+                if (skillsPanel != null) {
+                    boolean wasVisible = skillsPanel.isVisible();
+                    closeAllPanels();
+                    if (!wasVisible) skillsPanel.show();
+                }
+                return true;
+            }
+        }
+
+        // Check Build Equip button
+        if (buildEquipButton != null && TouchUtil.checkIsInTouchRectFloat(buildEquipButton, x, y)) {
+            if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_POINTER_DOWN) {
+                return true;
+            }
+            if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_POINTER_UP) {
+                if (buildEquipPanel != null) {
+                    boolean wasVisible = buildEquipPanel.isVisible();
+                    closeAllPanels();
+                    if (!wasVisible) buildEquipPanel.show();
+                }
+                return true;
+            }
+        }
+
+        // Check Crafting button
+        if (craftButton != null && TouchUtil.checkIsInTouchRectFloat(craftButton, x, y)) {
+            if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_POINTER_DOWN) {
+                return true;
+            }
+            if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_POINTER_UP) {
+                if (craftingPanel != null) {
+                    boolean wasVisible = craftingPanel.isVisible();
+                    closeAllPanels();
+                    if (!wasVisible) craftingPanel.show();
+                }
+                return true;
+            }
+        }
+
+        // Check Quest button
+        if (questButton != null && TouchUtil.checkIsInTouchRectFloat(questButton, x, y)) {
+            if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_POINTER_DOWN) {
+                return true;
+            }
+            if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_POINTER_UP) {
+                if (questPanel != null) {
+                    boolean wasVisible = questPanel.isVisible();
+                    closeAllPanels();
+                    if (!wasVisible) questPanel.show();
+                }
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Close all open panels
+     */
+    private void closeAllPanels() {
+        if (roleInfoPanel != null) roleInfoPanel.hide();
+        if (itemsPanel != null) itemsPanel.hide();
+        if (skillsPanel != null) skillsPanel.hide();
+        if (buildEquipPanel != null) buildEquipPanel.hide();
+        if (craftingPanel != null) craftingPanel.hide();
+        if (questPanel != null) questPanel.hide();
+        if (shopPanel != null) shopPanel.hide();
     }
 
     private void updateFPS() {

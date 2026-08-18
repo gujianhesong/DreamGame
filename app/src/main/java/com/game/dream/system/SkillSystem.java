@@ -42,6 +42,7 @@ public class SkillSystem {
     private static final int MAX_EQUIPED_ACTIVE_SKILLS = 15;
 
     private void initMainSkills() {
+        playerMainSkills.add(new SkillInfo(SkillType.MAIN_DunXing, 1, 1, 30, "遁形", "施展遁形之术，瞬间返回清溪村"));
         playerMainSkills.add(new SkillInfo(SkillType.MAIN_FIREBALL, 1, 10, 3, "火云术", "发射火焰对敌人造成伤害"));
         playerMainSkills.add(new SkillInfo(SkillType.MAIN_ICE_BOLT, 1, 10, 4, "寒冰术", "发射寒冰对敌人造成伤害"));
         playerMainSkills.add(new SkillInfo(SkillType.MAIN_LIGHTNING, 1, 10, 5, "雷击术", "发射几道闪电对敌人造成伤害"));
@@ -154,8 +155,9 @@ public class SkillSystem {
     }
 
     public boolean equipSkill(SkillInfo skill) {
-        // Only main skills for now
+        // Only main skills for now, and not use-type skills
         if (!skill.isMainSkill()) return false;
+        if (skill.isUseSkill()) return false;
         if (equippedActiveSkills.contains(skill)) return false;
         if (equippedActiveSkills.size() >= MAX_EQUIPED_ACTIVE_SKILLS) return false;
 

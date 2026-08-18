@@ -26,8 +26,8 @@ public class Tiger extends Enemy {
         setAttackShape(AttackShape.ARC); // 虎掌拍击 - 扇形
 
         EnemyPropertyExtra enemyPropertyExtra = new EnemyPropertyExtra();
-        enemyPropertyExtra.detectionRange = 100;
-        enemyPropertyExtra.attackRange = 100;
+        enemyPropertyExtra.detectionRange = 400;
+        enemyPropertyExtra.attackRange = 250;
         enemyPropertyExtra.rewardExp = 100;
         enemyPropertyExtra.rewardMoney = 100;
         setPropertyExtra(enemyPropertyExtra);

@@ -636,6 +636,12 @@ public class GameEngine {
                         // Reset casting state
                         enemy.resetCastingState();
                     }
+
+                    // BOSS召唤小弟: 血量低于50%时触发，每只BOSS只能召唤一次
+                    if (enemy.isPendingSummon()) {
+                        spawnBossMinions(enemy);
+                        enemy.markSummoned();
+                    }
                 } else {
                     // Far away enemies don't need AI updates
                     // They stay in their current state
@@ -1183,6 +1189,9 @@ public class GameEngine {
     }
 
     public void doAttackAction() {
+        // 冷却中不触发攻击前冲
+        if (player.isAttackOnCooldown()) return;
+
         // Trigger attack animation and lunge
         player.triggerAttackAnimation();
 
@@ -1242,6 +1251,97 @@ public class GameEngine {
                     activeSkillEffects.add(info.getSkillEffect());
                 }
             }
+        }
+    }
+
+    /**
+     * BOSS召唤小弟: 根据BOSS类型生成同类型小弟(1精英 + 2-3首领 + 5-8普通)
+     */
+    private void spawnBossMinions(Enemy boss) {
+        float bossX = boss.getX();
+        float bossY = boss.getY();
+        java.util.List<Enemy> minions = new java.util.ArrayList<>();
+
+        // 1个精英
+        minions.add(createMinionOfType(boss, Enemy.EnemyLevel.ELITE));
+
+        // 2-3个首领
+        int leaderCount = 2 + (int) (Math.random() * 2); // 2 or 3
+        for (int i = 0; i < leaderCount; i++) {
+            minions.add(createMinionOfType(boss, Enemy.EnemyLevel.LEADER));
+        }
+
+        // 5-8个普通
+        int normalCount = 5 + (int) (Math.random() * 4); // 5 to 8
+        for (int i = 0; i < normalCount; i++) {
+            minions.add(createMinionOfType(boss, Enemy.EnemyLevel.NORMAL));
+        }
+
+        // 将小弟添加到敌人列表
+        enemies.addAll(minions);
+
+        // 显示召唤通知
+        showCenterToast(boss.getName() + " 召唤了一群小弟!");
+        LogUtil.d("BossSummon", boss.getName() + " summoned " + minions.size() + " minions");
+    }
+
+    /**
+     * 根据BOSS类型创建指定等级的小弟，生成在BOSS周围随机位置
+     */
+    private Enemy createMinionOfType(Enemy boss, Enemy.EnemyLevel level) {
+        float bossX = boss.getX();
+        float bossY = boss.getY();
+
+        // 在BOSS周围100-250像素范围内随机生成位置
+        float angle = (float) (Math.random() * Math.PI * 2);
+        float distance = 100 + (float) (Math.random() * 150);
+        float spawnX = bossX + (float) Math.cos(angle) * distance;
+        float spawnY = bossY + (float) Math.sin(angle) * distance;
+
+        Enemy minion;
+        String minionName;
+
+        if (boss instanceof Tiger) {
+            minion = new Tiger(spawnX, spawnY);
+            minionName = "猛虎";
+        } else if (boss instanceof WildBoar) {
+            minion = new WildBoar(spawnX, spawnY);
+            minionName = "野猪";
+        } else if (boss instanceof Viper) {
+            minion = new Viper(spawnX, spawnY);
+            minionName = "毒蛇";
+        } else {
+            // Default to Wolf
+            minion = new Wolf(spawnX, spawnY);
+            minionName = "野狼";
+        }
+
+        // 强制设置等级(覆盖构造函数中的随机等级)
+        setEnemyLevel(minion, level, minionName);
+
+        // 设置仇恨状态，让小弟主动攻击玩家(仇恨持续60秒)
+        minion.setAggro(60000);
+
+        return minion;
+    }
+
+    /**
+     * 强制设置怪物等级和属性
+     */
+    private void setEnemyLevel(Enemy enemy, Enemy.EnemyLevel level, String baseName) {
+        enemy.setEnemyLevel(level);
+
+        if (level == Enemy.EnemyLevel.BOSS) {
+            enemy.setSize(enemy.getSize() * 3);
+            enemy.setName(baseName + "BOSS");
+        } else if (level == Enemy.EnemyLevel.ELITE) {
+            enemy.setSize(enemy.getSize() * 2);
+            enemy.setName(baseName + "精英");
+        } else if (level == Enemy.EnemyLevel.LEADER) {
+            enemy.setSize((int) (enemy.getSize() * 1.3f));
+            enemy.setName(baseName + "首领");
+        } else {
+            enemy.setName(baseName);
         }
     }
 }

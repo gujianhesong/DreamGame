@@ -23,6 +23,7 @@ import com.game.dream.system.RoleSystem;
 import com.game.dream.system.SkillSystem;
 import com.game.dream.ui.FloatingText;
 import com.game.dream.utils.BattleUtil;
+import com.game.dream.utils.LogUtil;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -40,8 +41,8 @@ public class Player extends Character {
     private long dashStartTime;
     private int dashDirection; // 0=down, 1=up, 2=left, 3=right
     private float dashDistanceRemaining;
-    private static final float DASH_DISTANCE = 400f; // 冲刺总距离(像素)
-    private static final float DASH_SPEED = 800f;   // 冲刺速度(像素/秒)
+    private static final float DASH_DISTANCE = 500f; // 冲刺总距离(像素)
+    private static final float DASH_SPEED = 1000f;   // 冲刺速度(像素/秒)
     private static final long DASH_IFRAME_DURATION = 250; // 冲刺无敌帧时长(毫秒)
     // 集气系统
     private static final float DASH_CHARGE_MAX = 100f;   // 集气上限
@@ -96,7 +97,7 @@ public class Player extends Character {
         this.respawnX = x;
         this.respawnY = y;
 
-        attackCooldown = 500; // Melee attack cooldown
+        attackCooldown = 300; // Melee attack cooldown
 
         // Attack animation
         this.isAttacking = false;
@@ -448,7 +449,6 @@ public class Player extends Character {
         if (attackSpeedRatio > 0) {
             finalAttackCooldown = (int) (finalAttackCooldown * (1f - attackSpeedRatio));
         }
-
         if (currentTime - lastAttackTime < finalAttackCooldown) {
             return null; // Still on cooldown
         }
@@ -572,6 +572,19 @@ public class Player extends Character {
         isInvincible = true;
         invincibleEndTime = System.currentTimeMillis() + 3000; // 3 seconds invincibility after respawn
         android.util.Log.d("Player", "Respawned at (" + (int) x + ", " + (int) y + ")");
+    }
+
+    /**
+     * Check if melee attack is on cooldown
+     */
+    public boolean isAttackOnCooldown() {
+        long currentTime = System.currentTimeMillis();
+        long finalAttackCooldown = attackCooldown;
+        float attackSpeedRatio = ItemSystem.getInstance().getTotalXiLianPropWithAllEquiped(XiLianType.XL_attackSpeedRatio);
+        if (attackSpeedRatio > 0) {
+            finalAttackCooldown = (int) (finalAttackCooldown * (1f - attackSpeedRatio));
+        }
+        return currentTime - lastAttackTime < finalAttackCooldown;
     }
 
     /**

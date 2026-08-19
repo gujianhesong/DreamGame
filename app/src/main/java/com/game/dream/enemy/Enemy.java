@@ -149,6 +149,10 @@ public abstract class Enemy extends Character {
     protected float slamLeapSpeed = 1500f;    // 跳跃移动速度(传入moveToTargetWithSpeed的参数)
     protected float slamLandRange = 150;      // 落地砸击伤害范围(比attackRange大)
 
+    // BOSS召唤小弟相关
+    protected boolean hasSummonedMinions = false; // 是否已召唤过小弟
+    protected boolean pendingSummon = false;      // 待处理召唤(通知GameEngine生成小弟)
+
     // Attack range shape (攻击范围形状)
     public enum AttackShape { CIRCLE, ARC, RECT }
     protected AttackShape attackShape = AttackShape.CIRCLE;
@@ -956,6 +960,11 @@ public abstract class Enemy extends Character {
             aggroEndTime = currentTime + 10000; // 10 seconds
 
             LogUtil.d("Enemy", getName() + " was damaged! Aggroed for 10 seconds");
+
+            // BOSS血量低于50%时触发召唤(每只BOSS只能召唤一次)
+            if (enemyLevel == EnemyLevel.BOSS && !hasSummonedMinions && health <= maxHealth * 0.5) {
+                pendingSummon = true;
+            }
         }
 
         // Check if dead
@@ -965,6 +974,21 @@ public abstract class Enemy extends Character {
         }
 
         return false; // Still alive
+    }
+
+    /**
+     * Check if this BOSS has a pending summon request
+     */
+    public boolean isPendingSummon() {
+        return pendingSummon;
+    }
+
+    /**
+     * Mark summon as consumed (called by GameEngine after spawning minions)
+     */
+    public void markSummoned() {
+        pendingSummon = false;
+        hasSummonedMinions = true;
     }
 
     @Override
@@ -1164,5 +1188,21 @@ public abstract class Enemy extends Character {
                 }
             }
         }
+    }
+
+    /**
+     * Set enemy level (used for summoning minions)
+     */
+    public void setEnemyLevel(EnemyLevel level) {
+        this.enemyLevel = level;
+    }
+
+    /**
+     * Set aggro state (used for summoning minions to actively chase player)
+     * @param durationMs how long to stay aggroed in milliseconds
+     */
+    public void setAggro(long durationMs) {
+        this.isAggroed = true;
+        this.aggroEndTime = System.currentTimeMillis() + durationMs;
     }
 }

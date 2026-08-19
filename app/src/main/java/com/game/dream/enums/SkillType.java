@@ -5,34 +5,34 @@ import android.text.TextUtils;
 public enum SkillType {
 
     //主技能
-    MAIN_DunXing,
-    MAIN_FIREBALL,
-    MAIN_ICE_BOLT,
-    MAIN_LIGHTNING,
-    MAIN_ROOT,
-    MAIN_WanJianGuiZong,
-    MAIN_JinGangHuTi,
-    MAIN_MiaoShouHuiChun,
-    MAIN_LianQiHuaShen,
-    MAIN_DuWuZhen,
+    MAIN_DunXing, //遁形
+    MAIN_FIREBALL, //火云术
+    MAIN_ICE_BOLT, //寒冰术
+    MAIN_LIGHTNING, //雷击术
+    MAIN_ROOT, //定身术
+    MAIN_WanJianGuiZong, //万剑归宗
+    MAIN_JinGangHuTi, //金刚护体
+    MAIN_MiaoShouHuiChun, //妙手回春
+    MAIN_LianQiHuaShen, //炼气化神
+    MAIN_DuWuZhen, //毒雾阵
 
     //辅助技能
-    AST_QiangShen,
-    AST_MingXiang,
-    AST_ShenSu,
-    AST_JianShen,
-    AST_YangShengZhiDao,
-    AST_ZhuangbeiZhiZao,
+    AST_QiangShen, //强身
+    AST_MingXiang, //冥想
+    AST_ShenSu, //神速
+    AST_JianShen, //健身
+    AST_YangShengZhiDao, //养身之道
+    AST_ZhuangbeiZhiZao, //装备制造
 
     //修炼技能
-    PST_AttackPractise,
-    PST_MagicPractise,
-    PST_DefensePractise,
-    PST_MagicDefensePractise,
-    PST_BB_AttackPractise,
-    PST_BB_MagicPractise,
-    PST_BB_DefensePractise,
-    PST_BB_MagicDefensePractise,
+    PST_AttackPractise, //攻击修炼
+    PST_MagicPractise, //法术修炼
+    PST_DefensePractise, //防御修炼
+    PST_MagicDefensePractise, //法术防御修炼
+    PST_BB_AttackPractise, //宝宝攻击修炼
+    PST_BB_MagicPractise, //宝宝法术修炼
+    PST_BB_DefensePractise, //宝宝防御修炼
+    PST_BB_MagicDefensePractise, //宝宝法术防御修炼
 
     ;
 

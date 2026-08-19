@@ -30,28 +30,43 @@ public class Wolf extends Enemy {
         enemyPropertyExtra.rewardMoney = 100;
         setPropertyExtra(enemyPropertyExtra);
 
-        setProperty(250, 30, 30, 30, 30);
+        setProperty(350, 60, 50, 60, 30);
 
         if (Math.random() < 0.02) {
             //BOSS
             enemyLevel = EnemyLevel.BOSS;
             size = size * 3;
 
-            setProperty(250 * 50, 330, 300, 300, 300);
+            setProperty(350 * 50, 480, 380, 300, 300);
         } else if (Math.random() < 0.07) {
             //精英
             enemyLevel = EnemyLevel.ELITE;
             size = size * 2;
 
-            setProperty(250 * 10, 120, 120, 120, 120);
+            setProperty(350 * 10, 240, 200, 150, 120);
         } else if (Math.random() < 0.30) {
             //首领
             enemyLevel = EnemyLevel.LEADER;
             size = (int) (size * 1.3f);
 
-            setProperty(250 * 3, 60, 60, 60, 60);
+            setProperty(350 * 3, 120, 100, 100, 60);
         }
 
+        // 首领/精英/BOSS狼可以使用连续爪击
+        if (enemyLevel == EnemyLevel.LEADER || enemyLevel == EnemyLevel.ELITE || enemyLevel == EnemyLevel.BOSS) {
+            addAvailableAttackType(AttackType.COMBO);
+            comboHitCount = (enemyLevel == EnemyLevel.BOSS) ? 4 : (enemyLevel == EnemyLevel.ELITE) ? 3 : 2;
+        }
+
+        // 精英/BOSS狼可以使用闪现突击
+        if (enemyLevel == EnemyLevel.ELITE || enemyLevel == EnemyLevel.BOSS) {
+            addAvailableAttackType(AttackType.BLINK_STRIKE);
+        }
+
+        // BOSS狼可以使用跳跃砸击
+        if (enemyLevel == EnemyLevel.BOSS) {
+            addAvailableAttackType(AttackType.LEAP_SLAM);
+        }
     }
 
     @Override

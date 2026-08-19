@@ -83,6 +83,72 @@ public abstract class Enemy extends Character {
     protected long windUpDuration = 400; // 前摇时长(ms)
     protected boolean attackJustFired = false; // 前摇结束后攻击已触发标记
 
+    // 攻击类型系统
+    public enum AttackType {
+        /** 靠近普通攻击: 原地前摇后近战伤害 */
+        MELEE,
+        /** 猛扑: 固定高速扑向玩家，碰撞触发伤害，命中后随机方向撤退 */
+        POUNCE,
+        /** 冲击: 锁定方向直线冲锋，撞到玩家触发伤害，持续800ms */
+        CHARGE,
+        /** 连续爪击: 短时间内多次近战攻击，每击独立判定伤害 */
+        COMBO,
+        /** 吸血撕咬: 近战攻击命中后回复自身生命 */
+        DRAIN_BITE,
+        /** 环绕斩击: 原地旋转持续多段伤害，范围内所有方向均判定 */
+        SPIN_ATTACK,
+        /** 闪现突击: 短暂前摇后高速闪现到玩家身边攻击 */
+        BLINK_STRIKE,
+        /** 跳跃砸击: 蓄力后跳向玩家位置，落地造成大范围伤害 */
+        LEAP_SLAM
+    }
+    protected List<AttackType> availableAttackTypes = new ArrayList<>();
+    protected AttackType currentAttackType = AttackType.MELEE;
+
+    // 冲击(Charge)攻击相关
+    protected boolean isCharging = false;
+    protected long chargeStartTime = 0;
+    protected float chargeDirectionX = 0;
+    protected float chargeDirectionY = 0;
+    protected float chargeSpeedMultiplier = 3.5f;
+
+    // 猛扑(Pounce)攻击相关
+    protected float pounceFixedSpeed = 1000f; // 猛扑固定速度(传入moveToTargetWithSpeed的参数)，实际约600px/s
+    protected boolean isPounceRetreating = false;
+    protected long pounceRetreatStartTime = 0;
+    protected float pounceRetreatAngle = 0;
+    protected float pounceRetreatSpeedMultiplier = 2.5f;
+
+    // 连续爪击(Combo)攻击相关
+    protected int comboHitCount = 3;        // 总连击数
+    protected int comboCurrentHit = 0;      // 当前第几击(0-based)
+    protected long comboHitStartTime = 0;   // 当前击的前摇开始时间
+    protected long comboHitInterval = 200;  // 每击前摇时长(ms)
+
+    // 吸血撕咬(Drain Bite)攻击相关
+    protected float drainHealPercent = 0.5f; // 吸血比例: 造成伤害的50%转化为治疗
+    protected int pendingDrainHeal = 0;      // 待处理的吸血回复量
+
+    // 环绕斩击(Spin Attack)攻击相关
+    protected boolean isSpinning = false;
+    protected long spinStartTime = 0;
+    protected long spinDuration = 1500;     // 旋转总时长(ms)
+    protected long spinHitInterval = 300;   // 每段伤害间隔(ms)
+    protected long spinLastHitTime = 0;     // 上次造成伤害的时间
+
+    // 闪现突击(Blink Strike)攻击相关
+    protected boolean isBlinkDashing = false;
+    protected float blinkTargetX = 0;        // 闪现目标位置(锁定玩家当时的位置)
+    protected float blinkTargetY = 0;
+    protected float blinkDashSpeed = 2000f;  // 闪现移动速度(传入moveToTargetWithSpeed的参数)
+
+    // 跳跃砸击(Leap Slam)攻击相关
+    protected boolean isSlamLeaping = false;
+    protected float slamTargetX = 0;          // 砸击目标位置(锁定玩家当时的位置)
+    protected float slamTargetY = 0;
+    protected float slamLeapSpeed = 1500f;    // 跳跃移动速度(传入moveToTargetWithSpeed的参数)
+    protected float slamLandRange = 150;      // 落地砸击伤害范围(比attackRange大)
+
     // Attack range shape (攻击范围形状)
     public enum AttackShape { CIRCLE, ARC, RECT }
     protected AttackShape attackShape = AttackShape.CIRCLE;
@@ -187,9 +253,11 @@ public abstract class Enemy extends Character {
                 if (!isAggroed && distanceToPlayer > propertyExtra.detectionRange * 1.5f || MapSystem.getInstance().isLocationSafe(playerX, playerY)) {
                     currentState = State.IDLE;
                     stateTimer = currentTime;
-                } else if (distanceToPlayer < propertyExtra.attackRange) {
+                } else if (distanceToPlayer < propertyExtra.attackRange
+                        && (currentAttackType != AttackType.POUNCE || currentTime - lastAttackTime >= attackCooldown)) {
                     currentState = State.ATTACKING;
                     stateTimer = currentTime;
+                    selectCurrentAttackType();
                     // 开始攻击前摇
                     isWindingUp = true;
                     windUpStartTime = currentTime;
@@ -197,42 +265,294 @@ public abstract class Enemy extends Character {
                 break;
 
             case ATTACKING:
-                // 前摇期间不移动，让玩家有机会走出范围
-                if (isWindingUp) {
-                    // 更新目标方向用于显示攻击方向
-                    targetX = playerX;
-                    targetY = playerY;
-                    if (currentTime - windUpStartTime >= windUpDuration) {
-                        // 前摇结束，检查玩家是否还在攻击范围内
-                        isWindingUp = false;
-                        if (distanceToPlayer < propertyExtra.attackRange) {
-                            // 玩家仍在范围内，执行攻击
-                            attackJustFired = true;
-                            lastAttackTime = currentTime;
-                        }
-                        // 玩家不在范围内 = 闪避成功，不攻击
-                    }
-                    // 前摇中不移动
-                } else {
-                    updateAttacking(deltaSeconds, playerX, playerY);
+                switch (currentAttackType) {
+                    case POUNCE:
+                        if (isPounceRetreating) {
+                            // === 猛扑后撤退: 向随机方向跑开 ===
+                            targetX = x + (float) Math.cos(pounceRetreatAngle) * 500;
+                            targetY = y + (float) Math.sin(pounceRetreatAngle) * 500;
+                            moveToTargetWithSpeed(deltaSeconds, speed * pounceRetreatSpeedMultiplier);
 
-                    // 攻击冷却后重新开始下一次前摇
-                    if (currentTime - lastAttackTime >= attackCooldown) {
-                        if (distanceToPlayer < propertyExtra.attackRange) {
-                            // 玩家仍在攻击范围内，开始新一轮前摇
-                            isWindingUp = true;
-                            windUpStartTime = currentTime;
+                            long retreatDuration = (long) (attackCooldown * 1.5f);
+                            if (currentTime - pounceRetreatStartTime >= retreatDuration) {
+                                // 撤退结束，重置攻击计时，确保追击一段时间后才能再次猛扑
+                                isPounceRetreating = false;
+                                lastAttackTime = currentTime;
+                                currentState = State.CHASING;
+                                stateTimer = currentTime;
+                            }
+                        } else if (isWindingUp) {
+                            // 猛扑: 前摇期间以固定速度扑向玩家
+                            targetX = playerX;
+                            targetY = playerY;
+                            moveToTargetWithSpeed(deltaSeconds, pounceFixedSpeed);
+
+                            // 碰撞检测: 扑击过程中撞到玩家提前触发攻击
+                            if (distanceToPlayer <= size * 0.6f) {
+                                isWindingUp = false;
+                                attackJustFired = true;
+                                lastAttackTime = currentTime;
+                            }
+
+                            if (isWindingUp && currentTime - windUpStartTime >= windUpDuration) {
+                                // 前摇时间结束，猛扑冲完了，不管有没有碰到都进入撤退
+                                isWindingUp = false;
+                            }
                         } else {
-                            // 玩家不在攻击范围，切回追击
+                            // 猛扑结束，进入撤退阶段
+                            isPounceRetreating = true;
+                            pounceRetreatStartTime = currentTime;
+                            // 随机撤退角度: 360度随机方向
+                            pounceRetreatAngle = (float) (Math.random() * Math.PI * 2);
+                        }
+                        break;
+
+                    case CHARGE:
+                        if (isWindingUp) {
+                            // 冲击前摇: 锁定玩家方向
+                            targetX = playerX;
+                            targetY = playerY;
+
+                            if (currentTime - windUpStartTime >= windUpDuration) {
+                                // 前摇结束，开始直线冲击
+                                isWindingUp = false;
+                                isCharging = true;
+                                chargeStartTime = currentTime;
+                                float cdx = playerX - x;
+                                float cdy = playerY - y;
+                                float cdist = (float) Math.sqrt(cdx * cdx + cdy * cdy);
+                                if (cdist > 0) {
+                                    chargeDirectionX = cdx / cdist;
+                                    chargeDirectionY = cdy / cdist;
+                                }
+                            }
+                        } else if (isCharging) {
+                            // 直线冲击阶段
+                            float chargeSpd = speed * chargeSpeedMultiplier;
+                            x += chargeDirectionX * chargeSpd * deltaSeconds;
+                            y += chargeDirectionY * chargeSpd * deltaSeconds;
+                            x = Math.max(size, Math.min(x, mapWidth - size));
+                            y = Math.max(size, Math.min(y, mapHeight - size));
+
+                            // 冲击碰撞检测: 撞到玩家触发攻击，但不中断冲击
+                            if (distanceToPlayer <= size * 0.7f && !attackJustFired) {
+                                attackJustFired = true;
+                                lastAttackTime = currentTime;
+                            }
+
+                            // 冲击超时结束(800ms)
+                            if (currentTime - chargeStartTime >= 800) {
+                                isCharging = false;
+                                currentState = State.CHASING;
+                                stateTimer = currentTime;
+                            }
+                        }
+                        break;
+
+                    case COMBO:
+                        if (isWindingUp) {
+                            // 连击期间缓慢靠近玩家
+                            targetX = playerX;
+                            targetY = playerY;
+                            moveToTargetWithSpeed(deltaSeconds, speed * 0.5f);
+
+                            if (currentTime - comboHitStartTime >= comboHitInterval) {
+                                // 当前击触发
+                                if (distanceToPlayer < propertyExtra.attackRange * 1.2f) {
+                                    attackJustFired = true;
+                                    lastAttackTime = currentTime;
+                                }
+                                comboCurrentHit++;
+                                if (comboCurrentHit >= comboHitCount) {
+                                    // 连击结束
+                                    isWindingUp = false;
+                                    currentState = State.CHASING;
+                                    stateTimer = currentTime;
+                                } else {
+                                    // 开始下一击前摇
+                                    comboHitStartTime = currentTime;
+                                }
+                            }
+                        }
+                        break;
+
+                    case DRAIN_BITE:
+                        if (isWindingUp) {
+                            targetX = playerX;
+                            targetY = playerY;
+
+                            if (currentTime - windUpStartTime >= windUpDuration) {
+                                isWindingUp = false;
+                                if (distanceToPlayer < propertyExtra.attackRange * 1.2f) {
+                                    attackJustFired = true;
+                                    pendingDrainHeal = (int) (attackDamage * drainHealPercent);
+                                    lastAttackTime = currentTime;
+                                }
+                            }
+                        } else {
+                            updateAttacking(deltaSeconds, playerX, playerY);
+
+                            if (currentTime - lastAttackTime >= attackCooldown) {
+                                if (distanceToPlayer < propertyExtra.attackRange) {
+                                    isWindingUp = true;
+                                    windUpStartTime = currentTime;
+                                } else {
+                                    currentState = State.CHASING;
+                                    stateTimer = currentTime;
+                                }
+                            }
+                        }
+                        break;
+
+                    case SPIN_ATTACK:
+                        if (isWindingUp) {
+                            // 短暂前摇: 蓄力准备旋转
+                            targetX = playerX;
+                            targetY = playerY;
+
+                            if (currentTime - windUpStartTime >= windUpDuration) {
+                                isWindingUp = false;
+                                isSpinning = true;
+                                spinStartTime = currentTime;
+                                spinLastHitTime = currentTime;
+                            }
+                        } else if (isSpinning) {
+                            // 旋转中: 原地旋转，每段间隔触发伤害
+                            // 面向玩家方向旋转
+                            targetX = x + (playerX - x);
+                            targetY = y + (playerY - y);
+
+                            if (currentTime - spinLastHitTime >= spinHitInterval) {
+                                if (distanceToPlayer < propertyExtra.attackRange) {
+                                    attackJustFired = true;
+                                    lastAttackTime = currentTime;
+                                }
+                                spinLastHitTime = currentTime;
+                            }
+
+                            if (currentTime - spinStartTime >= spinDuration) {
+                                // 旋转结束
+                                isSpinning = false;
+                                currentState = State.CHASING;
+                                stateTimer = currentTime;
+                            }
+                        }
+                        break;
+
+                    case BLINK_STRIKE:
+                        if (isWindingUp) {
+                            // 前摇: 原地蓄力面向玩家
+                            targetX = playerX;
+                            targetY = playerY;
+
+                            if (currentTime - windUpStartTime >= windUpDuration) {
+                                isWindingUp = false;
+                                isBlinkDashing = true;
+                                // 锁定玩家当前位置作为闪现目标
+                                blinkTargetX = playerX;
+                                blinkTargetY = playerY;
+                            }
+                        } else if (isBlinkDashing) {
+                            // 闪现: 高速冲向锁定位置
+                            targetX = blinkTargetX;
+                            targetY = blinkTargetY;
+                            moveToTargetWithSpeed(deltaSeconds, blinkDashSpeed);
+
+                            float distToTarget = (float) Math.sqrt(
+                                    (x - blinkTargetX) * (x - blinkTargetX) +
+                                    (y - blinkTargetY) * (y - blinkTargetY));
+
+                            // 到达目标位置或碰到玩家，触发攻击
+                            if (distToTarget <= size * 0.5f || distanceToPlayer <= size * 0.7f) {
+                                isBlinkDashing = false;
+                                if (distanceToPlayer < propertyExtra.attackRange * 1.2f) {
+                                    attackJustFired = true;
+                                    lastAttackTime = currentTime;
+                                }
+                            }
+                        } else {
+                            // 闪现结束，切回追击
                             currentState = State.CHASING;
                             stateTimer = currentTime;
                         }
-                    }
+                        break;
+
+                    case LEAP_SLAM:
+                        if (isWindingUp) {
+                            // 前摇: 蓄力起跳，面向玩家
+                            targetX = playerX;
+                            targetY = playerY;
+
+                            if (currentTime - windUpStartTime >= windUpDuration) {
+                                isWindingUp = false;
+                                isSlamLeaping = true;
+                                // 锁定玩家当前位置作为砸击目标
+                                slamTargetX = playerX;
+                                slamTargetY = playerY;
+                            }
+                        } else if (isSlamLeaping) {
+                            // 跳跃: 高速冲向锁定位置
+                            targetX = slamTargetX;
+                            targetY = slamTargetY;
+                            moveToTargetWithSpeed(deltaSeconds, slamLeapSpeed);
+
+                            float distToTarget = (float) Math.sqrt(
+                                    (x - slamTargetX) * (x - slamTargetX) +
+                                    (y - slamTargetY) * (y - slamTargetY));
+
+                            // 到达目标位置，落地砸击
+                            if (distToTarget <= size * 0.5f) {
+                                isSlamLeaping = false;
+                                // 落地伤害: 砸击范围内判定
+                                if (distanceToPlayer < slamLandRange) {
+                                    attackJustFired = true;
+                                    lastAttackTime = currentTime;
+                                }
+                            }
+                        } else {
+                            // 砸击结束，切回追击
+                            currentState = State.CHASING;
+                            stateTimer = currentTime;
+                        }
+                        break;
+
+                    default: // MELEE
+                        if (isWindingUp) {
+                            targetX = playerX;
+                            targetY = playerY;
+
+                            if (currentTime - windUpStartTime >= windUpDuration) {
+                                isWindingUp = false;
+                                if (distanceToPlayer < propertyExtra.attackRange) {
+                                    attackJustFired = true;
+                                    lastAttackTime = currentTime;
+                                }
+                            }
+                        } else {
+                            updateAttacking(deltaSeconds, playerX, playerY);
+
+                            if (currentTime - lastAttackTime >= attackCooldown) {
+                                if (distanceToPlayer < propertyExtra.attackRange) {
+                                    isWindingUp = true;
+                                    windUpStartTime = currentTime;
+                                } else {
+                                    currentState = State.CHASING;
+                                    stateTimer = currentTime;
+                                }
+                            }
+                        }
+                        break;
                 }
 
-                if (distanceToPlayer > propertyExtra.attackRange * 1.5f) {
+                if (!isCharging && !isSpinning && !isBlinkDashing && !isSlamLeaping && distanceToPlayer > propertyExtra.attackRange * 1.5f) {
                     currentState = State.CHASING;
                     isWindingUp = false;
+                    isCharging = false;
+                    isPounceRetreating = false;
+                    comboCurrentHit = 0;
+                    isSpinning = false;
+                    isBlinkDashing = false;
+                    isSlamLeaping = false;
                     stateTimer = currentTime;
                 }
                 break;
@@ -433,6 +753,42 @@ public abstract class Enemy extends Character {
     }
 
     /**
+     * Add available attack type for this enemy
+     */
+    protected void addAvailableAttackType(AttackType type) {
+        availableAttackTypes.add(type);
+    }
+
+    /**
+     * Randomly select attack type from available types
+     */
+    protected void selectCurrentAttackType() {
+        if (availableAttackTypes.isEmpty()) {
+            currentAttackType = AttackType.MELEE;
+        } else {
+            currentAttackType = availableAttackTypes.get((int) (Math.random() * availableAttackTypes.size()));
+        }
+        // Reset previous attack state
+        isCharging = false;
+        comboCurrentHit = 0;
+        comboHitStartTime = System.currentTimeMillis();
+    }
+
+    /**
+     * Get current attack type
+     */
+    public AttackType getCurrentAttackType() {
+        return currentAttackType;
+    }
+
+    /**
+     * Set current attack type
+     */
+    public void setCurrentAttackType(AttackType type) {
+        this.currentAttackType = type;
+    }
+
+    /**
      * Check if enemy can attack (cooldown expired)
      */
     public boolean canAttack() {
@@ -478,6 +834,22 @@ public abstract class Enemy extends Character {
         boolean fired = attackJustFired;
         attackJustFired = false;
         return fired;
+    }
+
+    /**
+     * Consume pending drain heal amount (consumed once by GameEngine)
+     */
+    public int consumeDrainHeal() {
+        int heal = pendingDrainHeal;
+        pendingDrainHeal = 0;
+        return heal;
+    }
+
+    /**
+     * Heal the enemy, capped at maxHealth
+     */
+    public void heal(int amount) {
+        health = Math.min(maxHealth, health + amount);
     }
 
     /**
@@ -571,6 +943,13 @@ public abstract class Enemy extends Character {
         if (isAlive()) {
             currentState = State.CHASING;
             stateTimer = currentTime;
+            isWindingUp = false;
+            isCharging = false;
+            isPounceRetreating = false;
+            comboCurrentHit = 0;
+            isSpinning = false;
+            isBlinkDashing = false;
+            isSlamLeaping = false;
 
             // Set aggro timer - enemy will chase for 10 seconds after being hit
             isAggroed = true;
@@ -662,6 +1041,12 @@ public abstract class Enemy extends Character {
      */
     public void setWindingUpFalse() {
         isWindingUp = false;
+        isCharging = false;
+        isPounceRetreating = false;
+        comboCurrentHit = 0;
+        isSpinning = false;
+        isBlinkDashing = false;
+        isSlamLeaping = false;
     }
 
     /**

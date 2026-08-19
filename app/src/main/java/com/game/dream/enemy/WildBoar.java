@@ -16,10 +16,6 @@ import java.util.List;
  * 野猪敌人 - 具有冲撞技能和奔跑动画
  */
 public class WildBoar extends Enemy {
-    private boolean isCharging;
-    private long chargeStartTime;
-    private float chargeDirectionX;
-    private float chargeDirectionY;
 
     // 动画相关
     private float legAngle; // 腿部摆动角度
@@ -28,6 +24,7 @@ public class WildBoar extends Enemy {
     public WildBoar(float x, float y) {
         super(x, y, 100);
         setAttackShape(AttackShape.RECT); // 野猪冲锋 - 矩形
+        addAvailableAttackType(AttackType.CHARGE); // 冲击攻击
 
         int health = Utils.getWaveValueInt(300, 0.2f);
         this.maxHealth = health;
@@ -37,7 +34,6 @@ public class WildBoar extends Enemy {
         this.speed = 70;
         this.mana = 40;
 
-        this.isCharging = false;
         this.legAngle = 0;
         this.bodyBob = 0;
 
@@ -48,28 +44,37 @@ public class WildBoar extends Enemy {
         enemyPropertyExtra.rewardMoney = 100;
         setPropertyExtra(enemyPropertyExtra);
 
-        setProperty(300, 40, 50, 70, 40);
+        setProperty(400, 70, 50, 70, 40);
 
         if (Math.random() < 0.02) {
             //BOSS
             enemyLevel = EnemyLevel.BOSS;
             size = size * 3;
 
-            setProperty(300 * 50, 350, 320, 350, 320);
+            setProperty(400 * 50, 560, 400, 350, 320);
         } else if (Math.random() < 0.07) {
             //精英
             enemyLevel = EnemyLevel.ELITE;
             size = size * 2;
 
-            setProperty(300 * 10, 160, 160, 220, 160);
+            setProperty(400 * 10, 280, 200, 220, 160);
         } else if (Math.random() < 0.30) {
             //首领
             enemyLevel = EnemyLevel.LEADER;
             size = (int) (size * 1.3f);
 
-            setProperty(300 * 3, 60, 60, 100, 60);
+            setProperty(400 * 3, 140, 100, 100, 60);
         }
 
+        // 精英/BOSS野猪可以使用环绕斩击
+        if (enemyLevel == EnemyLevel.ELITE || enemyLevel == EnemyLevel.BOSS) {
+            addAvailableAttackType(AttackType.SPIN_ATTACK);
+        }
+
+        // BOSS野猪可以使用跳跃砸击
+        if (enemyLevel == EnemyLevel.BOSS) {
+            addAvailableAttackType(AttackType.LEAP_SLAM);
+        }
     }
 
     @Override

@@ -11,6 +11,7 @@ public class DamageNumber {
     private float x, y;
     private int damage;
     private boolean isCritical;
+    private int healAmount = 0; // >0 时显示绿色治疗数字
     private long createdTime;
     private long lifetime;
     private boolean isActive;
@@ -38,6 +39,15 @@ public class DamageNumber {
         this.isActive = true;
         this.offsetY = 0;
         this.alpha = 1.0f;
+    }
+
+    /**
+     * Create a heal number (green "+amount")
+     */
+    public static DamageNumber heal(float x, float y, int healAmount) {
+        DamageNumber dn = new DamageNumber(x, y, 0, false);
+        dn.healAmount = healAmount;
+        return dn;
     }
 
     /**
@@ -89,7 +99,10 @@ public class DamageNumber {
 
         // Set color based on damage type
         int textColor;
-        if (isCritical) {
+        if (healAmount > 0) {
+            // Heal - green
+            textColor = Color.rgb(50, 255, 100);
+        } else if (isCritical) {
             // Critical hit - bright red/orange
             textColor = Color.rgb(255, 50, 50);
         } else {
@@ -113,7 +126,9 @@ public class DamageNumber {
         }
 
         String showText;
-        if (damage == -2) {
+        if (healAmount > 0) {
+            showText = "+" + healAmount;
+        } else if (damage == -2) {
             showText = "撞退";
             // Use blue color for knockback indicator
             textColor = Color.rgb(100, 180, 255);

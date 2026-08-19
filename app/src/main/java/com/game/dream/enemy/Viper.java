@@ -21,6 +21,8 @@ public class Viper extends Enemy {
     public Viper(float x, float y) {
         super(x, y, 60);
         setAttackShape(AttackShape.RECT); // 蛇头前咬 - 矩形
+        addAvailableAttackType(AttackType.DRAIN_BITE); // 吸血撕咬
+        windUpDuration = 300; // 蛇咬前摇较短，快速出击
         this.waveOffset = 0;
 
         EnemyPropertyExtra enemyPropertyExtra = new EnemyPropertyExtra();
@@ -30,28 +32,37 @@ public class Viper extends Enemy {
         enemyPropertyExtra.rewardMoney = 100;
         setPropertyExtra(enemyPropertyExtra);
 
-        setProperty(200, 40, 30, 40, 40);
+        setProperty(280, 50, 40, 50, 40);
 
         if (Math.random() < 0.02) {
             //BOSS
             enemyLevel = EnemyLevel.BOSS;
             size = size * 3;
 
-            setProperty(280 * 50, 320, 240, 240, 320);
+            setProperty(280 * 50, 400, 320, 240, 320);
         } else if (Math.random() < 0.07) {
             //精英
             enemyLevel = EnemyLevel.ELITE;
             size = size * 2;
 
-            setProperty(280 * 10, 160, 120, 160, 160);
+            setProperty(280 * 10, 200, 160, 160, 160);
         } else if (Math.random() < 0.30) {
             //首领
             enemyLevel = EnemyLevel.LEADER;
             size = (int) (size * 1.3f);
 
-            setProperty(280 * 3, 60, 40, 50, 60);
+            setProperty(280 * 3, 100, 80, 50, 60);
         }
 
+        // 精英/BOSS蛇可以使用闪现突击
+        if (enemyLevel == EnemyLevel.ELITE || enemyLevel == EnemyLevel.BOSS) {
+            addAvailableAttackType(AttackType.BLINK_STRIKE);
+        }
+
+        // BOSS蛇可以使用跳跃砸击
+        if (enemyLevel == EnemyLevel.BOSS) {
+            addAvailableAttackType(AttackType.LEAP_SLAM);
+        }
     }
 
     @Override

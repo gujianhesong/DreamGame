@@ -431,8 +431,26 @@ public class GameEngine {
                                         attackResult.isCrit
                                 ));
 
+                                // 吸血撕咬: 命中后回复敌人生命
+                                int drainHeal = enemy.consumeDrainHeal();
+                                if (drainHeal > 0) {
+                                    enemy.heal(drainHeal);
+                                    damageNumbers.add(DamageNumber.heal(
+                                            enemy.getX(),
+                                            enemy.getY() - 30,
+                                            drainHeal
+                                    ));
+                                }
+
                                 // 敌人攻击玩家击退效果: 从敌人位置推开玩家
-                                player.applyKnockback(enemy.getX(), enemy.getY(), 150f, 150);
+                                float knockbackForce = 150f;
+                                long knockbackDuration = 150;
+                                // 老虎猛扑击退更强
+                                if (enemy instanceof com.game.dream.enemy.Tiger) {
+                                    knockbackForce = 280f;
+                                    knockbackDuration = 250;
+                                }
+                                player.applyKnockback(enemy.getX(), enemy.getY(), knockbackForce, knockbackDuration);
                             } else {
                                 //未命中
                                 damageNumbers.add(new DamageNumber(

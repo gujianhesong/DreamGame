@@ -23,6 +23,8 @@ public class Tiger extends Enemy {
     public Tiger(float x, float y) {
         super(x, y, 120);
         attackCooldown = 2000; // Faster attacks than wolf
+        windUpDuration = 500; // 老虎扑击前摇，需要足够时间冲到玩家面前
+        addAvailableAttackType(AttackType.POUNCE); // 老虎会猛扑
         setAttackShape(AttackShape.ARC); // 虎掌拍击 - 扇形
 
         EnemyPropertyExtra enemyPropertyExtra = new EnemyPropertyExtra();
@@ -32,28 +34,37 @@ public class Tiger extends Enemy {
         enemyPropertyExtra.rewardMoney = 100;
         setPropertyExtra(enemyPropertyExtra);
 
-        setProperty(350, 40, 40, 40, 40);
+        setProperty(500, 80, 60, 80, 40);
 
         if (Math.random() < 0.02) {
             //BOSS
             enemyLevel = EnemyLevel.BOSS;
             size = size * 3;
 
-            setProperty(350 * 50, 400, 350, 350, 350);
+            setProperty(500 * 50, 640, 480, 350, 350);
         } else if (Math.random() < 0.07) {
             //精英
             enemyLevel = EnemyLevel.ELITE;
             size = size * 2;
 
-            setProperty(350 * 10, 180, 180, 180, 180);
+            setProperty(500 * 10, 320, 240, 180, 180);
         } else if (Math.random() < 0.30) {
             //首领
             enemyLevel = EnemyLevel.LEADER;
             size = (int) (size * 1.3f);
 
-            setProperty(350 * 3, 80, 80, 100, 80);
+            setProperty(500 * 3, 160, 120, 100, 80);
         }
 
+        // 精英/BOSS老虎可以使用环绕斩击
+        if (enemyLevel == EnemyLevel.ELITE || enemyLevel == EnemyLevel.BOSS) {
+            addAvailableAttackType(AttackType.SPIN_ATTACK);
+        }
+
+        // BOSS老虎可以使用跳跃砸击
+        if (enemyLevel == EnemyLevel.BOSS) {
+            addAvailableAttackType(AttackType.LEAP_SLAM);
+        }
     }
 
     @Override

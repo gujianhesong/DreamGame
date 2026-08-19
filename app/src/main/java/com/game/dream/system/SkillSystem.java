@@ -283,7 +283,30 @@ public class SkillSystem {
             }
             break;
         }
+
+        // 领悟判定: 3/10000 概率提升技能等级
+        tryEnlightenSkill(skill);
+
         return skillStartInfo;
+    }
+
+    /**
+     * 尝试领悟技能: 每次使用技能有 3/10000 的概率领悟，提升该技能等级
+     */
+    private void tryEnlightenSkill(SkillInfo skill) {
+        if (skill == null || !skill.canUpgrade()) return;
+
+        // 3/10000 概率
+        if (Math.random() < 3.0 / 10000) {
+            int oldLevel = skill.getLevel();
+            int newLevel = oldLevel + 1;
+            skill.setLevel(newLevel);
+
+            // 显示领悟提示
+            String msg = "顿悟！" + skill.getName() + " " + oldLevel + "级 → " + newLevel + "级";
+            GameEngine.getInstance().showCenterToast(msg, 3000);
+            GameEngine.getInstance().showFloatText("★ 顿悟 ★", com.game.dream.ui.FloatingText.Type.LEVEL_UP);
+        }
     }
 
     /**

@@ -2,9 +2,12 @@ package com.game.dream.item;
 
 import com.game.dream.bean.EquipItemInfo;
 import com.game.dream.bean.ItemInfo;
+import com.game.dream.bean.SkillInfo;
 import com.game.dream.enums.FoodType;
 import com.game.dream.enums.GemtoneType;
+import com.game.dream.enums.SkillType;
 import com.game.dream.system.ItemSystem;
+import com.game.dream.system.SkillSystem;
 import com.game.dream.utils.PriceUtil;
 import com.game.dream.utils.Utils;
 
@@ -125,6 +128,15 @@ public class ItemCreator {
                 int ordinal = id - 310000;
                 FoodType foodType = FoodType.values()[ordinal];
                 item = createCookFood(foodType);
+            }
+            break;
+            case 400: {
+                //技能书
+                int ordinal = id - 400000;
+                SkillType skillType = getSkillTypeByOrdinal(ordinal);
+                if (skillType != null) {
+                    item = createSkillBook(skillType);
+                }
             }
             break;
         }
@@ -312,91 +324,91 @@ public class ItemCreator {
     //------------------ 补充气血药品 ----------------------
     public static Item createHp1_1_Siyehua() {
         return new ConsumableItem(
-                101011, "四叶花", "恢复100点气血值",
+                101011, "四叶花", "恢复200点气血值",
                 Item.Rarity.Rarity_1,
                 99, 100,
-                ConsumableItem.EffectType.HEAL_HP,
-                100, 0
-        );
-    }
-
-    public static Item createHp1_2_QiyeLian() {
-        return new ConsumableItem(
-                101012, "七叶莲", "恢复150点气血值",
-                Item.Rarity.Rarity_1,
-                99, 150,
-                ConsumableItem.EffectType.HEAL_HP,
-                150, 0
-        );
-    }
-
-    public static Item createHp1_3_Lurong() {
-        return new ConsumableItem(
-                101013, "鹿茸", "恢复200点气血值",
-                Item.Rarity.Rarity_1,
-                99, 200,
                 ConsumableItem.EffectType.HEAL_HP,
                 200, 0
         );
     }
 
-    public static Item createHp1_4_Xuesechahua() {
+    public static Item createHp1_2_QiyeLian() {
         return new ConsumableItem(
-                101014, "血色茶花", "恢复250点气血值",
+                101012, "七叶莲", "恢复300点气血值",
                 Item.Rarity.Rarity_1,
-                99, 250,
-                ConsumableItem.EffectType.HEAL_HP,
-                250, 0
-        );
-    }
-
-    public static Item createHp2_1_Zishiying() {
-        return new ConsumableItem(
-                101021, "紫石英", "恢复300点气血值",
-                Item.Rarity.Rarity_2,
-                99, 300,
+                99, 150,
                 ConsumableItem.EffectType.HEAL_HP,
                 300, 0
         );
     }
 
-    public static Item createHp2_2_Liuhuangcao() {
+    public static Item createHp1_3_Lurong() {
         return new ConsumableItem(
-                101022, "硫磺草", "恢复350点气血值",
-                Item.Rarity.Rarity_2,
-                99, 350,
-                ConsumableItem.EffectType.HEAL_HP,
-                350, 0
-        );
-    }
-
-    public static Item createHp2_3_Fengweicao() {
-        return new ConsumableItem(
-                101023, "凤尾草", "恢复400点气血值",
-                Item.Rarity.Rarity_2,
-                99, 400,
+                101013, "鹿茸", "恢复400点气血值",
+                Item.Rarity.Rarity_1,
+                99, 200,
                 ConsumableItem.EffectType.HEAL_HP,
                 400, 0
         );
     }
 
+    public static Item createHp1_4_Xuesechahua() {
+        return new ConsumableItem(
+                101014, "血色茶花", "恢复500点气血值",
+                Item.Rarity.Rarity_2,
+                99, 250,
+                ConsumableItem.EffectType.HEAL_HP,
+                500, 0
+        );
+    }
+
+    public static Item createHp2_1_Zishiying() {
+        return new ConsumableItem(
+                101021, "紫石英", "恢复600点气血值",
+                Item.Rarity.Rarity_2,
+                99, 300,
+                ConsumableItem.EffectType.HEAL_HP,
+                600, 0
+        );
+    }
+
+    public static Item createHp2_2_Liuhuangcao() {
+        return new ConsumableItem(
+                101022, "硫磺草", "恢复800点气血值",
+                Item.Rarity.Rarity_2,
+                99, 350,
+                ConsumableItem.EffectType.HEAL_HP,
+                800, 0
+        );
+    }
+
+    public static Item createHp2_3_Fengweicao() {
+        return new ConsumableItem(
+                101023, "凤尾草", "恢复1000点气血值",
+                Item.Rarity.Rarity_3,
+                99, 400,
+                ConsumableItem.EffectType.HEAL_HP,
+                1000, 0
+        );
+    }
+
     public static Item createHp2_4_Longzhixinxie() {
         return new ConsumableItem(
-                101024, "龙之心屑", "恢复450点气血值",
-                Item.Rarity.Rarity_2,
+                101024, "龙之心屑", "恢复1500点气血值",
+                Item.Rarity.Rarity_3,
                 99, 450,
                 ConsumableItem.EffectType.HEAL_HP,
-                450, 0
+                1500, 0
         );
     }
 
     public static Item createHp2_5_Fenghuozhijing() {
         return new ConsumableItem(
-                101025, "火凤之睛", "恢复500点气血值",
-                Item.Rarity.Rarity_2,
+                101025, "火凤之睛", "恢复2000点气血值",
+                Item.Rarity.Rarity_3,
                 99, 500,
                 ConsumableItem.EffectType.HEAL_HP,
-                500, 0
+                2000, 0
         );
     }
 
@@ -404,91 +416,91 @@ public class ItemCreator {
 
     public static Item createMp1_1_Foshou() {
         return new ConsumableItem(
-                102011, "佛手", "恢复100点魔法值",
+                102011, "佛手", "恢复200点魔法值",
                 Item.Rarity.Rarity_1,
                 99, 100,
-                ConsumableItem.EffectType.HEAL_MP,
-                100, 0
-        );
-    }
-
-    public static Item createMp1_2_Xiangye() {
-        return new ConsumableItem(
-                102012, "香叶", "恢复150点魔法值",
-                Item.Rarity.Rarity_1,
-                99, 150,
-                ConsumableItem.EffectType.HEAL_MP,
-                150, 0
-        );
-    }
-
-    public static Item createMp1_3_Shexiang() {
-        return new ConsumableItem(
-                102013, "麝香", "恢复200点魔法值",
-                Item.Rarity.Rarity_1,
-                99, 200,
                 ConsumableItem.EffectType.HEAL_MP,
                 200, 0
         );
     }
 
-    public static Item createMp1_4_Dingxiangshui() {
+    public static Item createMp1_2_Xiangye() {
         return new ConsumableItem(
-                102014, "丁香水", "恢复250点魔法值",
+                102012, "香叶", "恢复300点魔法值",
                 Item.Rarity.Rarity_1,
-                99, 250,
-                ConsumableItem.EffectType.HEAL_MP,
-                250, 0
-        );
-    }
-
-    public static Item createMp2_1_Diyulingzhi() {
-        return new ConsumableItem(
-                102021, "地狱灵芝", "恢复300点魔法值",
-                Item.Rarity.Rarity_2,
-                99, 300,
+                99, 150,
                 ConsumableItem.EffectType.HEAL_MP,
                 300, 0
         );
     }
 
-    public static Item createMp2_2_Xianhuxian() {
+    public static Item createMp1_3_Shexiang() {
         return new ConsumableItem(
-                102022, "仙狐涎", "恢复350点魔法值",
-                Item.Rarity.Rarity_2,
-                99, 350,
-                ConsumableItem.EffectType.HEAL_MP,
-                350, 0
-        );
-    }
-
-    public static Item createMp2_3_Xueshanhu() {
-        return new ConsumableItem(
-                102023, "血珊瑚", "恢复400点魔法值",
-                Item.Rarity.Rarity_2,
-                99, 400,
+                102013, "麝香", "恢复400点魔法值",
+                Item.Rarity.Rarity_1,
+                99, 200,
                 ConsumableItem.EffectType.HEAL_MP,
                 400, 0
         );
     }
 
+    public static Item createMp1_4_Dingxiangshui() {
+        return new ConsumableItem(
+                102014, "丁香水", "恢复500点魔法值",
+                Item.Rarity.Rarity_2,
+                99, 250,
+                ConsumableItem.EffectType.HEAL_MP,
+                500, 0
+        );
+    }
+
+    public static Item createMp2_1_Diyulingzhi() {
+        return new ConsumableItem(
+                102021, "地狱灵芝", "恢复600点魔法值",
+                Item.Rarity.Rarity_2,
+                99, 300,
+                ConsumableItem.EffectType.HEAL_MP,
+                600, 0
+        );
+    }
+
+    public static Item createMp2_2_Xianhuxian() {
+        return new ConsumableItem(
+                102022, "仙狐涎", "恢复800点魔法值",
+                Item.Rarity.Rarity_2,
+                99, 350,
+                ConsumableItem.EffectType.HEAL_MP,
+                800, 0
+        );
+    }
+
+    public static Item createMp2_3_Xueshanhu() {
+        return new ConsumableItem(
+                102023, "血珊瑚", "恢复1000点魔法值",
+                Item.Rarity.Rarity_3,
+                99, 400,
+                ConsumableItem.EffectType.HEAL_MP,
+                1000, 0
+        );
+    }
+
     public static Item createMp2_4_Canfengyinlu() {
         return new ConsumableItem(
-                102024, "餐风饮露", "恢复450点魔法值",
-                Item.Rarity.Rarity_2,
+                102024, "餐风饮露", "恢复1500点魔法值",
+                Item.Rarity.Rarity_3,
                 99, 450,
                 ConsumableItem.EffectType.HEAL_MP,
-                450, 0
+                1500, 0
         );
     }
 
     public static Item createMp2_5_Bailuweishuang() {
         return new ConsumableItem(
-                102025, "白露为霜", "恢复500点魔法值",
-                Item.Rarity.Rarity_2,
+                102025, "白露为霜", "恢复2000点魔法值",
+                Item.Rarity.Rarity_3,
                 99, 500,
                 ConsumableItem.EffectType.HEAL_MP,
-                500, 0
+                2000, 0
         );
     }
 
@@ -918,5 +930,48 @@ public class ItemCreator {
                 Item.Rarity.Rarity_5,
                 99, 50000
         );
+    }
+
+    //------------------ 技能书 ----------------------
+
+    /**
+     * 根据 SkillType 创建对应的技能书
+     */
+    public static SkillBookItem createSkillBook(SkillType skillType) {
+        int id = 400000 + skillType.ordinal();
+        String name = getSkillBookName(skillType);
+        String desc = "使用后学习或升级技能，学习需要1本，每升一级多消耗1本";
+
+        return new SkillBookItem(
+                id, name, desc,
+                Item.Rarity.Rarity_5,
+                99, 5000,
+                skillType
+        );
+    }
+
+    /**
+     * 获取技能书名称
+     */
+    private static String getSkillBookName(SkillType skillType) {
+        List<SkillInfo> skillInfos = SkillSystem.getInstance().getMainSkillInfos();
+        for(SkillInfo skillInfo : skillInfos){
+            if(skillInfo.getSkillType() == skillType){
+                return skillInfo.getName();
+            }
+        }
+        return "";
+    }
+
+    /**
+     * 根据 ordinal 获取 SkillType (仅返回主技能)
+     * 使用 SkillType.values() 保证和 createSkillBook 中 skillType.ordinal() 完全一致
+     */
+    private static SkillType getSkillTypeByOrdinal(int ordinal) {
+        SkillType[] allTypes = SkillType.values();
+        if (ordinal >= 0 && ordinal < allTypes.length) {
+            return allTypes[ordinal];
+        }
+        return null;
     }
 }

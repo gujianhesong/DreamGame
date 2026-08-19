@@ -2,6 +2,7 @@ package com.game.dream.system;
 
 import android.text.TextUtils;
 
+import com.game.dream.bean.SkillInfo;
 import com.game.dream.ui.FloatingText;
 import com.game.dream.GameEngine;
 import com.game.dream.utils.LogUtil;
@@ -16,6 +17,7 @@ import com.game.dream.item.EquipmentItem;
 import com.game.dream.item.Item;
 import com.game.dream.item.ItemCreator;
 import com.game.dream.item.ItemStack;
+import com.game.dream.item.SkillBookItem;
 import com.game.dream.utils.Utils;
 
 import java.util.ArrayList;
@@ -210,6 +212,11 @@ public class ItemSystem {
         ItemStack stack = items.get(index);
         Item item = stack.getItem();
 
+        // 处理技能书
+        if (item.getType() == Item.Type.SKILL_BOOK && item instanceof SkillBookItem) {
+            return useSkillBook(index, (SkillBookItem) item);
+        }
+
         if (item.getType() != Item.Type.CONSUMABLE) return false;
 
         // Use the item
@@ -252,6 +259,138 @@ public class ItemSystem {
         }
 
         return false;
+    }
+
+    /**
+     * 使用技能书 - 学习或升级技能
+     * 学习需要1本，升级需要 (当前等级+1) 本，即 1→2级需要2本，2→3级需要3本
+     */
+    private boolean useSkillBook(int index, SkillBookItem skillBook) {
+        com.game.dream.enums.SkillType skillType = skillBook.getSkillType();
+        List<com.game.dream.bean.SkillInfo> playerSkills = SkillSystem.getInstance().getPlayerSkills();
+
+        // 查找是否已学习该技能
+        com.game.dream.bean.SkillInfo existingSkill = null;
+        for (com.game.dream.bean.SkillInfo skill : playerSkills) {
+            if (skill.getSkillType() == skillType) {
+                existingSkill = skill;
+                break;
+            }
+        }
+
+        // 计算需要的技能书数量: 学习=1本, 升级=当前等级+1本
+        int requiredBooks;
+        boolean isLearning;
+        if (existingSkill == null) {
+            requiredBooks = 1;
+            isLearning = true;
+        } else if (existingSkill.canUpgrade()) {
+            requiredBooks = existingSkill.getLevel() + 1;
+            isLearning = false;
+        } else {
+            GameEngine.getInstance().showCenterToast(getSkillName(skillType) + " 已达满级！", 2000);
+            return false;
+        }
+
+        // 统计背包中该技能书数量
+        int ownedBooks = countSkillBooks(skillType);
+        if (ownedBooks < requiredBooks) {
+            String action = isLearning ? "学习" : "升级";
+            GameEngine.getInstance().showCenterToast(
+                    action + "需要 " + requiredBooks + " 本技能书，当前只有 " + ownedBooks + " 本", 2000
+            );
+            return false;
+        }
+
+        // 消耗技能书
+        consumeSkillBooks(skillType, requiredBooks);
+
+        // 执行学习/升级
+        if (isLearning) {
+            com.game.dream.bean.SkillInfo newSkill = new com.game.dream.bean.SkillInfo(
+                    skillType, 1, 10, getSkillCooldown(skillType),
+                    getSkillName(skillType), getSkillDesc(skillType)
+            );
+            playerSkills.add(newSkill);
+            GameEngine.getInstance().showCenterToast("学会了 " + getSkillName(skillType) + "！", 3000);
+            GameEngine.getInstance().showFloatText("★ 新技能 ★", FloatingText.Type.LEVEL_UP);
+        } else {
+            int oldLevel = existingSkill.getLevel();
+            existingSkill.setLevel(oldLevel + 1);
+            GameEngine.getInstance().showCenterToast(
+                    getSkillName(skillType) + " " + oldLevel + "级 → " + (oldLevel + 1) + "级", 3000
+            );
+            GameEngine.getInstance().showFloatText("★ 技能升级 ★", FloatingText.Type.LEVEL_UP);
+        }
+
+        return true;
+    }
+
+    /**
+     * 统计背包中指定技能类型的技能书总数
+     */
+    private int countSkillBooks(com.game.dream.enums.SkillType skillType) {
+        int count = 0;
+        for (ItemStack stack : items) {
+            if (stack.getItem() instanceof SkillBookItem) {
+                SkillBookItem book = (SkillBookItem) stack.getItem();
+                if (book.getSkillType() == skillType) {
+                    count += stack.getQuantity();
+                }
+            }
+        }
+        return count;
+    }
+
+    /**
+     * 从背包中消耗指定数量的技能书
+     */
+    private void consumeSkillBooks(com.game.dream.enums.SkillType skillType, int amount) {
+        int remaining = amount;
+        for (int i = items.size() - 1; i >= 0 && remaining > 0; i--) {
+            ItemStack stack = items.get(i);
+            if (stack.getItem() instanceof SkillBookItem) {
+                SkillBookItem book = (SkillBookItem) stack.getItem();
+                if (book.getSkillType() == skillType) {
+                    int take = Math.min(remaining, stack.getQuantity());
+                    stack.remove(take);
+                    remaining -= take;
+                    if (stack.isEmpty()) {
+                        items.remove(i);
+                    }
+                }
+            }
+        }
+    }
+
+    private int getSkillCooldown(com.game.dream.enums.SkillType skillType) {
+        List<SkillInfo> skillInfos = SkillSystem.getInstance().getMainSkillInfos();
+        for(SkillInfo skillInfo : skillInfos){
+            if(skillInfo.getSkillType() == skillType){
+                return skillInfo.getCooldownSeconds();
+            }
+        }
+        return 10;
+    }
+
+    private String getSkillName(com.game.dream.enums.SkillType skillType) {
+        List<SkillInfo> skillInfos = SkillSystem.getInstance().getMainSkillInfos();
+        for(SkillInfo skillInfo : skillInfos){
+            if(skillInfo.getSkillType() == skillType){
+                return skillInfo.getName();
+            }
+        }
+        return "";
+    }
+
+    private String getSkillDesc(com.game.dream.enums.SkillType skillType) {
+        List<SkillInfo> skillInfos = SkillSystem.getInstance().getMainSkillInfos();
+        for(SkillInfo skillInfo : skillInfos){
+            if(skillInfo.getSkillType() == skillType){
+                return skillInfo.getDesc();
+            }
+        }
+        return "";
     }
 
     /**

@@ -24,6 +24,7 @@ import com.game.dream.enums.SpecialEffect;
 import com.game.dream.figure.Character;
 import com.game.dream.figure.Player;
 import com.game.dream.item.EquipmentItem;
+import com.game.dream.item.GroundItem;
 import com.game.dream.item.ItemStack;
 import com.game.dream.map.MapContentManager;
 import com.game.dream.map.MapGenerator;
@@ -103,6 +104,9 @@ public class GameEngine {
 
     // Active skill effects on the map
     private List<SkillEffect> activeSkillEffects = new ArrayList<>();
+
+    // Ground items (dropped by enemies)
+    private List<GroundItem> groundItems = new ArrayList<>();
 
 
     private static volatile GameEngine instance;
@@ -257,6 +261,9 @@ public class GameEngine {
 
         // Update projectiles
         checkProjectileUpdate(deltaTime);
+
+        // Update ground items (auto-pickup)
+        updateGroundItems();
 
         // Check enemy attacks on player
         checkEnemyAttacksOnPlayer();
@@ -676,27 +683,10 @@ public class GameEngine {
                         ));
                     }
 
-                    // Get item drops from enemy
+                    // Get item drops from enemy - spawn as ground items
                     List<ItemStack> drops = enemy.getDrops();
-                    StringBuilder dropMessage = new StringBuilder();
                     for (ItemStack drop : drops) {
-                        if (ItemSystem.getInstance().addItem(drop.getItem(), drop.getQuantity())) {
-                            if (dropMessage.length() > 0) dropMessage.append(", ");
-                            if (drop.getItem() instanceof EquipmentItem) {
-                                dropMessage.append(drop.getItem().getName());
-                            } else {
-                                dropMessage.append(drop.getItem().getName())
-                                        .append(" x").append(drop.getQuantity());
-                            }
-
-                            // Show floating text for item drop
-                            floatingTexts.add(new FloatingText(
-                                    enemy.getX() + (float) (Math.random() * 40 - 20),
-                                    enemy.getY() - 70 - (float) (Math.random() * 20),
-                                    drop.getItem().getName(),
-                                    FloatingText.Type.EXPERIENCE
-                            ));
-                        }
+                        spawnGroundItem(enemy.getX(), enemy.getY(), drop.getItem(), drop.getQuantity());
                     }
 
                     // If player leveled up, show special notification
@@ -713,6 +703,48 @@ public class GameEngine {
                 }
             }
         }
+    }
+
+    /**
+     * 更新地面物品 - 检测玩家靠近自动拾取
+     */
+    private void updateGroundItems() {
+        if (groundItems == null || groundItems.isEmpty()) return;
+
+        float playerX = player.getX();
+        float playerY = player.getY();
+
+        for (int i = groundItems.size() - 1; i >= 0; i--) {
+            GroundItem groundItem = groundItems.get(i);
+            if (groundItem.isPickedUp()) {
+                groundItems.remove(i);
+                continue;
+            }
+
+            // 检测玩家是否在拾取范围内
+            if (groundItem.isPlayerInRange(playerX, playerY)) {
+                // 添加到背包
+                boolean added = ItemSystem.getInstance().addItem(groundItem.getItem(), groundItem.getQuantity());
+                if (added) {
+                    groundItem.setPickedUp(true);
+                    groundItems.remove(i);
+
+                    // 显示拾取提示
+                    String itemName = groundItem.getItem().getName();
+                    if (groundItem.getQuantity() > 1) {
+                        itemName += " x" + groundItem.getQuantity();
+                    }
+                    showFloatText("获得 " + itemName, FloatingText.Type.MONEY);
+                }
+            }
+        }
+    }
+
+    /**
+     * 在地面生成掉落物品
+     */
+    public void spawnGroundItem(float x, float y, com.game.dream.item.Item item, int quantity) {
+        groundItems.add(new GroundItem(x, y, item, quantity));
     }
 
     private void checkProjectileUpdate(long deltaTime) {
@@ -862,6 +894,13 @@ public class GameEngine {
         if (MapSystem.getInstance().getCurrentMapId() == 1002 && MazeSystem.getInstance().isInitialized()) {
             for (TreasureChest chest : MazeSystem.getInstance().getTreasureChests()) {
                 chest.draw(canvas, -cameraX, -cameraY);
+            }
+        }
+
+        // Draw ground items (below player, above map)
+        if (groundItems != null) {
+            for (GroundItem groundItem : groundItems) {
+                groundItem.draw(canvas, (int) -cameraX, (int) -cameraY);
             }
         }
 

@@ -1058,6 +1058,37 @@ public abstract class Enemy extends Character {
             }
         }
 
+        // 技能书掉落: 精英 2% 概率, BOSS 20% 概率
+        double skillBookChance = 0;
+        if (enemyLevel == EnemyLevel.BOSS) {
+            skillBookChance = 0.20;
+        } else if (enemyLevel == EnemyLevel.ELITE) {
+            skillBookChance = 0.02;
+        } else if (enemyLevel == EnemyLevel.LEADER) {
+            skillBookChance = 3 / 10000.0;
+        } else {
+            skillBookChance = 1 / 10000.0;
+        }
+
+        if (skillBookChance > 0 && Math.random() < skillBookChance) {
+            // 随机选择一个主技能书
+            com.game.dream.enums.SkillType[] mainSkills = {
+                    com.game.dream.enums.SkillType.MAIN_FIREBALL,
+                    com.game.dream.enums.SkillType.MAIN_ICE_BOLT,
+                    com.game.dream.enums.SkillType.MAIN_LIGHTNING,
+                    com.game.dream.enums.SkillType.MAIN_FeiShaZouShi,
+                    com.game.dream.enums.SkillType.MAIN_ROOT,
+                    com.game.dream.enums.SkillType.MAIN_WanJianGuiZong,
+                    com.game.dream.enums.SkillType.MAIN_JinGangHuTi,
+                    com.game.dream.enums.SkillType.MAIN_MiaoShouHuiChun,
+                    com.game.dream.enums.SkillType.MAIN_LianQiHuaShen,
+                    com.game.dream.enums.SkillType.MAIN_DuWuZhen,
+            };
+            com.game.dream.enums.SkillType randomSkill = mainSkills[(int) (Math.random() * mainSkills.length)];
+            Item skillBook = com.game.dream.item.ItemCreator.createSkillBook(randomSkill);
+            drops.add(new ItemStack(skillBook, 1));
+        }
+
         return drops;
     }
 

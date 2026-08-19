@@ -57,8 +57,9 @@ public class BattleUtil {
         damageValue = calculateAttackDamage(playerAttack, enemyDefense);
 
         //计算修炼加成(计算伤害结果后的加成)
-        if (roleInfo.getPracticeAttack() > 0) {
-            for (int i = 0; i < roleInfo.getPracticeAttack(); i++) {
+        int practiceAttack = roleInfo.getPracticeAttack();
+        if (practiceAttack > 0) {
+            for (int i = 0; i < practiceAttack; i++) {
                 damageValue = (int) (damageValue * 1.02 + 5);
             }
         }
@@ -172,8 +173,9 @@ public class BattleUtil {
             damageValue = calculateMagicDamage(castBaseValue, roleMana, enemyMana, findSkillInfo.getLevel());
 
             //计算修炼加成(计算伤害结果后的加成)
-            if (roleInfo.getPracticeMagic() > 0) {
-                for (int i = 0; i < roleInfo.getPracticeMagic(); i++) {
+            int practiceMagic = roleInfo.getPracticeMagic();
+            if (practiceMagic > 0) {
+                for (int i = 0; i < practiceMagic; i++) {
                     damageValue = (int) (damageValue * 1.02 + 5);
                 }
             }
@@ -331,8 +333,9 @@ public class BattleUtil {
             damageValue = calculateAttackDamage(enemyAttack, playerDefense);
 
             //计算修炼加成(计算伤害结果后加成)
-            if (roleInfo.getPracticeDefense() > 0) {
-                for (int i = 0; i < roleInfo.getPracticeDefense(); i++) {
+            int practiceDefense = roleInfo.getPracticeDefense();
+            if (practiceDefense > 0) {
+                for (int i = 0; i < practiceDefense; i++) {
                     damageValue = (int) (damageValue * 0.98 - 5);
                 }
             }
@@ -424,8 +427,9 @@ public class BattleUtil {
                 LogUtil.i("aaaaaaaaaaaaaaa 怪物法术输出伤害 " + damageValue);
 
                 //计算修炼加成(计算伤害结果后加成)
-                if (roleInfo.getPracticeMagicDefense() > 0) {
-                    for (int i = 0; i < roleInfo.getPracticeMagicDefense(); i++) {
+                int practiceMagicDefense = roleInfo.getPracticeMagicDefense();
+                if (practiceMagicDefense > 0) {
+                    for (int i = 0; i < practiceMagicDefense; i++) {
                         damageValue = (int) (damageValue * 0.98 - 5);
                     }
                 }

@@ -13,6 +13,7 @@ public class Item {
         QUEST_ITEM,     // Quest-related items
         SPECIAL,        // Special unique items
         FOOD,           // food
+        SKILL_BOOK,     // Skill books
     }
 
     public enum Rarity {

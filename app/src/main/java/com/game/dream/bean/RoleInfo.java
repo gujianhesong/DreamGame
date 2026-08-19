@@ -4,6 +4,7 @@ import com.game.dream.enums.SkillType;
 import com.game.dream.system.RoleSystem;
 import com.game.dream.system.SkillSystem;
 
+import java.util.List;
 import java.util.function.Predicate;
 
 public class RoleInfo {
@@ -182,7 +183,8 @@ public class RoleInfo {
 
     public int getPracticeAttack() {
         practiceAttack = 0;
-        for (SkillInfo skillInfo : SkillSystem.getInstance().getAssistSkillInfos()) {
+        List<SkillInfo> skillInfos = SkillSystem.getInstance().getPractiseSkillInfos();
+        for (SkillInfo skillInfo : skillInfos) {
             if (skillInfo.getSkillType() == SkillType.PST_AttackPractise) {
                 practiceAttack = skillInfo.getLevel();
                 break;
@@ -193,7 +195,8 @@ public class RoleInfo {
 
     public int getPracticeMagic() {
         practiceMagic = 0;
-        for (SkillInfo skillInfo : SkillSystem.getInstance().getAssistSkillInfos()) {
+        List<SkillInfo> skillInfos = SkillSystem.getInstance().getPractiseSkillInfos();
+        for (SkillInfo skillInfo : skillInfos) {
             if (skillInfo.getSkillType() == SkillType.PST_MagicPractise) {
                 practiceMagic = skillInfo.getLevel();
                 break;
@@ -204,7 +207,8 @@ public class RoleInfo {
 
     public int getPracticeDefense() {
         practiceDefense = 0;
-        for (SkillInfo skillInfo : SkillSystem.getInstance().getAssistSkillInfos()) {
+        List<SkillInfo> skillInfos = SkillSystem.getInstance().getPractiseSkillInfos();
+        for (SkillInfo skillInfo : skillInfos) {
             if (skillInfo.getSkillType() == SkillType.PST_DefensePractise) {
                 practiceDefense = skillInfo.getLevel();
                 break;
@@ -215,7 +219,8 @@ public class RoleInfo {
 
     public int getPracticeMagicDefense() {
         practiceMagicDefense = 0;
-        for (SkillInfo skillInfo : SkillSystem.getInstance().getAssistSkillInfos()) {
+        List<SkillInfo> skillInfos = SkillSystem.getInstance().getPractiseSkillInfos();
+        for (SkillInfo skillInfo : skillInfos) {
             if (skillInfo.getSkillType() == SkillType.PST_MagicDefensePractise) {
                 practiceMagicDefense = skillInfo.getLevel();
                 break;
@@ -226,7 +231,8 @@ public class RoleInfo {
 
     public int getPracticeBBAttack() {
         practiceBBAttack = 0;
-        for (SkillInfo skillInfo : SkillSystem.getInstance().getAssistSkillInfos()) {
+        List<SkillInfo> skillInfos = SkillSystem.getInstance().getPractiseSkillInfos();
+        for (SkillInfo skillInfo : skillInfos) {
             if (skillInfo.getSkillType() == SkillType.PST_BB_AttackPractise) {
                 practiceBBAttack = skillInfo.getLevel();
                 break;
@@ -237,7 +243,8 @@ public class RoleInfo {
 
     public int getPracticeBBMagic() {
         practiceBBMagic = 0;
-        for (SkillInfo skillInfo : SkillSystem.getInstance().getAssistSkillInfos()) {
+        List<SkillInfo> skillInfos = SkillSystem.getInstance().getPractiseSkillInfos();
+        for (SkillInfo skillInfo : skillInfos) {
             if (skillInfo.getSkillType() == SkillType.PST_BB_MagicPractise) {
                 practiceBBMagic = skillInfo.getLevel();
                 break;
@@ -248,7 +255,8 @@ public class RoleInfo {
 
     public int getPracticeBBDefense() {
         practiceBBDefense = 0;
-        for (SkillInfo skillInfo : SkillSystem.getInstance().getAssistSkillInfos()) {
+        List<SkillInfo> skillInfos = SkillSystem.getInstance().getPractiseSkillInfos();
+        for (SkillInfo skillInfo : skillInfos) {
             if (skillInfo.getSkillType() == SkillType.PST_BB_DefensePractise) {
                 practiceBBDefense = skillInfo.getLevel();
                 break;
@@ -259,7 +267,8 @@ public class RoleInfo {
 
     public int getPracticeBBMagicDefense() {
         practiceBBMagicDefense = 0;
-        for (SkillInfo skillInfo : SkillSystem.getInstance().getAssistSkillInfos()) {
+        List<SkillInfo> skillInfos = SkillSystem.getInstance().getPractiseSkillInfos();
+        for (SkillInfo skillInfo : skillInfos) {
             if (skillInfo.getSkillType() == SkillType.PST_BB_MagicDefensePractise) {
                 practiceBBMagicDefense = skillInfo.getLevel();
                 break;

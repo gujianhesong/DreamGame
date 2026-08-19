@@ -18,6 +18,7 @@ public class SkillEffect {
         SWORD_STORM, // 万剑归宗
         POISON_CLOUD,  // 毒雾阵
         HEALING_ZONE,  // 治疗法阵
+        SANDSTORM      // 飞沙走石
     }
 
     private Type type;
@@ -30,6 +31,11 @@ public class SkillEffect {
     private int totalHits;
     private int currentHits;
     private boolean isActive;
+
+    // 沙暴等级相关
+    private int skillLevel = 1;
+    private float slowRatio = 0.4f;   // 减速比例
+    private float stunChance = 0f;    // 眩晕概率
 
     public SkillEffect(Type type, float x, float y, float radius, long duration,
                        int damageInterval, int totalHits) {
@@ -76,6 +82,16 @@ public class SkillEffect {
                     GameEngine.getInstance().handlePlayerCasterDamageToEnemy(enemy, SkillType.MAIN_WanJianGuiZong);
                 } else if (type == Type.POISON_CLOUD) {
                     GameEngine.getInstance().handlePlayerCasterDamageToEnemy(enemy, SkillType.MAIN_DuWuZhen);
+                } else if (type == Type.SANDSTORM) {
+                    GameEngine.getInstance().handlePlayerCasterDamageToEnemy(enemy, SkillType.MAIN_FeiShaZouShi);
+                    // 沙暴减速效果
+                    if (slowRatio > 0) {
+                        enemy.applyCC(com.game.dream.figure.Character.CrowdControlType.SLOW, (long)(damageInterval * 1.5f));
+                    }
+                    // 沙暴眩晕效果(概率触发)
+                    if (stunChance > 0 && Math.random() < stunChance) {
+                        enemy.applyCC(com.game.dream.figure.Character.CrowdControlType.STUN, 800);
+                    }
                 }
 
                 currentHits++;
@@ -162,12 +178,62 @@ public class SkillEffect {
                 float by = screenY + (float) Math.sin(angle) * dist;
                 canvas.drawCircle(bx, by, 5, paint);
             }
+        } else if (type == Type.SANDSTORM) {
+            long time = System.currentTimeMillis();
+
+            // 1. 绘制沙暴底层(黄褐色旋转沙雾)
+            for (int i = 3; i > 0; i--) {
+                float pulse = 1.0f + 0.08f * (float) Math.sin(time / 200.0 + i);
+                float r = radius * (0.7f + 0.1f * i) * pulse;
+                int alpha = (int) (100 / i);
+
+                paint.setColor(Color.argb(alpha, 180, 150, 80)); // 沙土色
+                paint.setStyle(Paint.Style.FILL);
+                canvas.drawCircle(screenX, screenY, r, paint);
+            }
+
+            // 2. 绘制旋转的沙粒(快速旋转)
+            float rotAngle = (time / 8) % 360; // 快速旋转
+            paint.setColor(Color.argb(120, 210, 180, 100)); // 亮沙色
+            for (int i = 0; i < 16; i++) {
+                float angleDeg = rotAngle + (i * 22.5f);
+                float rad = angleDeg * (float) Math.PI / 180;
+                float dist = radius * (0.3f + 0.4f * ((i % 3) / 3.0f));
+                float px = screenX + (float) Math.cos(rad) * dist;
+                float py = screenY + (float) Math.sin(rad) * dist;
+                float pSize = 2 + (i % 3);
+                canvas.drawCircle(px, py, pSize, paint);
+            }
+
+            // 3. 绘制飞溅的碎石(中等大小,旋转方向不同)
+            float rockAngle = (360 - (time / 12) % 360); // 反向旋转
+            paint.setColor(Color.argb(150, 140, 120, 90)); // 石灰色
+            for (int i = 0; i < 8; i++) {
+                float angleDeg = rockAngle + (i * 45);
+                float rad = angleDeg * (float) Math.PI / 180;
+                float dist = radius * (0.4f + 0.2f * ((i % 2)));
+                float rx = screenX + (float) Math.cos(rad) * dist;
+                float ry = screenY + (float) Math.sin(rad) * dist;
+                // 绘制小石块(不规则圆形)
+                canvas.drawCircle(rx, ry, 3 + (i % 3), paint);
+            }
+
+            // 4. 沙暴边界模糊圈
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setStrokeWidth(2);
+            paint.setColor(Color.argb(40, 200, 170, 90));
+            canvas.drawCircle(screenX, screenY, radius, paint);
+            paint.setStyle(Paint.Style.FILL);
         }
 
     }
 
     public boolean isActive() {
         return isActive;
+    }
+
+    public void setActive(boolean active) {
+        isActive = active;
     }
 
     public float getX() {
@@ -177,4 +243,13 @@ public class SkillEffect {
     public float getY() {
         return y;
     }
+
+    public void setSkillLevel(int level) { this.skillLevel = level; }
+    public int getSkillLevel() { return skillLevel; }
+
+    public void setSlowRatio(float ratio) { this.slowRatio = ratio; }
+    public float getSlowRatio() { return slowRatio; }
+
+    public void setStunChance(float chance) { this.stunChance = chance; }
+    public float getStunChance() { return stunChance; }
 }

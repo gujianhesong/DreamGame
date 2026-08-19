@@ -32,6 +32,7 @@ import com.game.dream.npc.Npc;
 import com.game.dream.npc.TreasureChest;
 import com.game.dream.panel.ShopPanel;
 import com.game.dream.skill.SkillEffect;
+import com.game.dream.skill.LightningChainEffect;
 import com.game.dream.system.DayNightCycle;
 import com.game.dream.system.ItemSystem;
 import com.game.dream.system.MapSystem;
@@ -777,11 +778,11 @@ public class GameEngine {
                     } else {
                         for (Enemy enemy : enemies) {
                             if (proj.checkCollision(enemy)) {
-                                // Handle caster damage
-                                handlePlayerCasterDamageToEnemy(enemy, proj.getSkillType());
+                                // Handle caster damage (with projectile info for fireball level effects)
+                                handlePlayerCasterDamageToEnemy(enemy, proj);
 
                                 // Handle Special Effects
-                                handlePlayerCasterEffectToEnemy(enemy, proj.getEffectType());
+                                handlePlayerCasterEffectToEnemy(enemy, proj);
 
                                 proj.deactivate();
                                 break;
@@ -1133,10 +1134,39 @@ public class GameEngine {
     }
 
     public void handlePlayerCasterDamageToEnemy(Enemy enemy, SkillType skillType) {
+        doCasterDamage(enemy, skillType, null);
+    }
+
+    /**
+     * Handle player caster damage with projectile info (for fireball level effects)
+     */
+    public void handlePlayerCasterDamageToEnemy(Enemy enemy, Projectile proj) {
+        SkillType skillType = proj != null ? proj.getSkillType() : SkillType.MAIN_FIREBALL;
+        doCasterDamage(enemy, skillType, proj);
+    }
+
+    /**
+     * 共用法术伤害处理逻辑
+     */
+    private void doCasterDamage(Enemy enemy, SkillType skillType, Projectile proj) {
         AttackResult attackResult = BattleUtil.caculatePlayerCasterDamage(enemy, skillType);
         if (attackResult != null) {
             if (attackResult.isHit) {
                 int damage = attackResult.damageValue;
+
+                // 伤害倍率(火云术/寒冰术9级+: 伤害+20%)
+                float damageMultiplier = (proj != null) ? proj.getDamageMultiplier() : 1.0f;
+                damage = (int) (damage * damageMultiplier);
+
+                // 20%概率暴击(火云术/寒冰术10级)
+                boolean isCrit = attackResult.isCrit;
+                if (proj != null && proj.getSkillLevel() >= 10) {
+                    if (Math.random() < 0.2f) {
+                        isCrit = true;
+                        damage *= 2;
+                    }
+                }
+
                 if (damage > 0) {
                     enemy.takeDamage(damage);
 
@@ -1145,13 +1175,19 @@ public class GameEngine {
                             enemy.getX(),
                             enemy.getY() - 30,
                             damage,
-                            attackResult.isCrit
+                            isCrit
                     ));
 
                     // 法术击退效果: 从玩家位置推开敌人
                     enemy.applyKnockback(player.getX(), player.getY(), 200f, 200);
                     // 法术受击硬直
                     enemy.applyCC(Character.CrowdControlType.STUN, 200);
+
+                    // 火云术9级+: 灼烧效果 (3秒, 每秒伤害=基础伤害的30%)
+                    if (proj != null && proj.getBurnDuration() > 0) {
+                        int burnDps = Math.max(1, (int) (damage * 0.3f));
+                        enemy.applyBurn(burnDps, proj.getBurnDuration());
+                    }
                 }
             } else {
                 //未命中
@@ -1164,9 +1200,21 @@ public class GameEngine {
         }
     }
 
-    public void handlePlayerCasterEffectToEnemy(Enemy enemy, Projectile.EffectType effectType) {
+    public void handlePlayerCasterEffectToEnemy(Enemy enemy, Projectile proj) {
+        if (proj == null) return;
+        Projectile.EffectType effectType = proj.getEffectType();
+        
         if (effectType == Projectile.EffectType.ROOT) {
             enemy.applyCC(Character.CrowdControlType.ROOT, 2000);
+        } else if (effectType == Projectile.EffectType.SLOW) {
+            // 寒冷减速效果 3秒
+            enemy.applyCC(Character.CrowdControlType.SLOW, 3000);
+        }
+        
+        // 冰冻效果(概率触发)
+        if (proj.getFreezeProbability() > 0 && Math.random() < proj.getFreezeProbability()) {
+            // 冰冻效果 2秒
+            enemy.applyCC(Character.CrowdControlType.FREEZE, 2000);
         }
     }
 
@@ -1249,6 +1297,18 @@ public class GameEngine {
                 }
                 if (info.getSkillEffect() != null) {
                     activeSkillEffects.add(info.getSkillEffect());
+                }
+                // Handle LightningChainEffect specially since it's not a regular SkillEffect
+                if (skillInfo.getSkillType() == com.game.dream.enums.SkillType.MAIN_LIGHTNING
+                    && (info.getProjectiles() == null || info.getProjectiles().isEmpty())
+                    && info.getSkillEffect() == null) {
+                    // Lightning skill creates LightningChainEffect directly
+                    int lightningLevel = skillInfo.getLevel();
+                    LightningChainEffect lightningEffect = new LightningChainEffect(
+                        enemies, player, lightningLevel, player.getX(), player.getY()
+                    );
+                    lightningEffect.setDamageNumbers(damageNumbers);
+                    activeSkillEffects.add(lightningEffect);
                 }
             }
         }

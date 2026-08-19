@@ -46,6 +46,7 @@ public class SkillSystem {
         playerMainSkills.add(new SkillInfo(SkillType.MAIN_FIREBALL, 1, 10, 3, "火云术", "发射火焰对敌人造成伤害"));
         playerMainSkills.add(new SkillInfo(SkillType.MAIN_ICE_BOLT, 1, 10, 4, "寒冰术", "发射寒冰对敌人造成伤害"));
         playerMainSkills.add(new SkillInfo(SkillType.MAIN_LIGHTNING, 1, 10, 5, "雷击术", "发射几道闪电对敌人造成伤害"));
+        playerMainSkills.add(new SkillInfo(SkillType.MAIN_FeiShaZouShi, 1, 10, 5, "飞沙走石", "召唤沙暴席卷周围，对范围内敌人造成持续伤害并减速"));
         playerMainSkills.add(new SkillInfo(SkillType.MAIN_ROOT, 1, 10, 8, "定身术", "发射符咒定住敌人，使其无法移动"));
         playerMainSkills.add(new SkillInfo(SkillType.MAIN_WanJianGuiZong, 1, 10, 10, "万剑归宗", "发动剑阵对范围内的敌人造成多次伤害"));
         playerMainSkills.add(new SkillInfo(SkillType.MAIN_JinGangHuTi, 1, 10, 10, "金刚护体", "获得金刚护体效果后大幅降低受到的伤害，期间不会死亡，持续5秒"));
@@ -277,6 +278,10 @@ public class SkillSystem {
                 skillStartInfo = castPoisonCloud();
             }
             break;
+            case MAIN_FeiShaZouShi: {
+                skillStartInfo = castSandstorm(skill.getLevel());
+            }
+            break;
         }
         return skillStartInfo;
     }
@@ -315,21 +320,121 @@ public class SkillSystem {
             float[] angles = null;
             float range = 300;
             switch (skillType) {
-                case MAIN_FIREBALL:
-                    angles = new float[]{baseAngle - 60, baseAngle - 40, baseAngle - 20, baseAngle,
-                            baseAngle + 20, baseAngle + 40, baseAngle + 60};
+                case MAIN_FIREBALL: {
+                    // 获取火云术等级
+                    int fireLevel = 1;
+                    List<SkillInfo> playerSkills = getPlayerSkills();
+                    for (SkillInfo si : playerSkills) {
+                        if (si.getSkillType() == SkillType.MAIN_FIREBALL) {
+                            fireLevel = si.getLevel();
+                            break;
+                        }
+                    }
+
+                    // 火球数量: 3,3,4,4,5,5,6,6,6,6
+                    int fireCount = Math.min(6, 3 + (fireLevel-1) / 2);
+                    // 火球大小: 奇数级(1,3,5,7)逐级变大
+                    float fireSize = 15 + ((fireLevel - 1) / 2) * 3f;
+
+                    // 生成扇形角度分布
+                    float spreadAngle;
+                    if (fireCount == 1) {
+                        angles = new float[]{baseAngle};
+                    } else {
+                        // 根据火球数量动态调整扇形张角
+                        spreadAngle = Math.min(120f, fireCount * 20f);
+                        angles = new float[fireCount];
+                        for (int i = 0; i < fireCount; i++) {
+                            angles[i] = baseAngle - spreadAngle / 2 + spreadAngle * i / (fireCount - 1);
+                        }
+                    }
                     range = 400;
-                    break;
-                case MAIN_ICE_BOLT:
+
+                    // 创建火球并设置等级属性
+                    for (float angle : angles) {
+                        double rad = Math.toRadians(angle);
+                        float spellTargetX = player.getX() + (float) (Math.cos(rad) * range);
+                        float spellTargetY = player.getY() + (float) (Math.sin(rad) * range);
+
+                        Projectile proj = new Projectile(player.getX(), player.getY(), spellTargetX, spellTargetY, skillType);
+                        proj.setSkillLevel(fireLevel);
+                        // 设置火球大小
+                        proj.setSize(fireSize);
+                        // 每级增加火球移动速度(每级+6%)
+                        float speedMultiplier = 1.0f + (fireLevel - 1) * 0.06f;
+                        proj.scaleSpeed(speedMultiplier);
+
+                        // 8级: 灼烧效果 3秒
+                        if (fireLevel >= 8) {
+                            proj.setBurnDuration(3000);
+                        }
+                        // 9级: 伤害+20%
+                        if (fireLevel >= 9) {
+                            proj.setDamageMultiplier(1.2f);
+                        }
+
+                        spells.add(proj);
+                    }
+                    angles = new float[0]; // 火球已在上方创建，跳过公共循环
+                }
+                break;
+                case MAIN_ICE_BOLT: {
+                    // 获取寒冰术等级
+                    int iceLevel = 1;
+                    List<SkillInfo> playerSkills = getPlayerSkills();
+                    for (SkillInfo si : playerSkills) {
+                        if (si.getSkillType() == SkillType.MAIN_ICE_BOLT) {
+                            iceLevel = si.getLevel();
+                            break;
+                        }
+                    }
+
+                    // 寒冰粒子大小: 每2级增加一次
+                    float iceSize = 8 + ((iceLevel - 1) / 2) * 2f;
+
+                    // 生成12个寒冰粒子
                     angles = new float[12];
                     for (int i = 0; i < 12; i++) {
                         angles[i] = baseAngle + 30 * i;
                     }
                     range = 300;
-                    break;
+
+                    // 创建寒冰粒子并设置等级属性
+                    for (float angle : angles) {
+                        double rad = Math.toRadians(angle);
+                        float spellTargetX = player.getX() + (float) (Math.cos(rad) * range);
+                        float spellTargetY = player.getY() + (float) (Math.sin(rad) * range);
+
+                        Projectile proj = new Projectile(player.getX(), player.getY(), spellTargetX, spellTargetY, skillType);
+                        proj.setSkillLevel(iceLevel);
+                        // 设置寒冰粒子大小
+                        proj.setSize(iceSize);
+                        // 每级增加寒冰粒子移动速度(每级+10%)
+                        float speedMultiplier = 1.0f + (iceLevel - 1) * 0.1f;
+                        proj.scaleSpeed(speedMultiplier);
+
+                        // 5级+: 寒冷减速效果
+                        if (iceLevel >= 5) {
+                            proj.setEffectType(Projectile.EffectType.SLOW);
+                        }
+                        // 7级+: 30%概率冰冻效果
+                        if (iceLevel >= 7) {
+                            proj.setFreezeProbability(0.3f);
+                        }
+                        // 9级: 伤害+20%
+                        if (iceLevel >= 9) {
+                            proj.setDamageMultiplier(1.2f);
+                        }
+
+                        spells.add(proj);
+                    }
+                    angles = new float[0]; // 寒冰已在上方创建，跳过公共循环
+                }
+                break;
                 case MAIN_LIGHTNING:
-                    angles = new float[]{baseAngle - 90, baseAngle, baseAngle + 90, baseAngle + 180};
-                    range = 1000;
+                    // Lightning skill is handled directly by GameEngine as LightningChainEffect
+                    // Don't create projectiles here, return empty lists
+                    angles = new float[0]; // Skip the common projectile creation loop
                     break;
             }
 
@@ -433,6 +538,74 @@ public class SkillSystem {
         skillStartInfo.setSkillEffect(skillEffect);
 
         GameEngine.getInstance().showCenterToast("毒雾阵", 1000);
+
+        return skillStartInfo;
+    }
+
+    /**
+     * 飞沙走石: 持续沙暴领域，伤害+减速，高等级概率眩晕
+     * 等级成长:
+     *   奇数级(1,3,5,7,9): 扩大范围
+     *   偶数级(2,4,6,8): 提高伤害频率
+     *   5级+: 减速效果增强(40%→60%)
+     *   7级+: 15%概率眩晕
+     *   10级: 持续时间延长至7秒
+     */
+    private SkillStartInfo castSandstorm(int skillLevel) {
+        SkillStartInfo skillStartInfo = new SkillStartInfo();
+        Player player = GameEngine.getInstance().getPlayer();
+
+        // 基础参数
+        float baseRadius = 300f;
+        long baseDuration = 5000; // 5秒
+        int baseDamageInterval = 1200; // 每1200ms一次伤害
+
+        // 等级成长: 奇数级扩大范围
+        float radiusBonus = ((skillLevel - 1) / 2) * 40f;
+        float radius = baseRadius + radiusBonus;
+        // 上限 500
+        radius = Math.min(500f, radius);
+
+        // 等级成长: 偶数级提高伤害频率(减少间隔)
+        int intervalReduction = (skillLevel / 2) * 50; // 每偶数级减少50ms
+        int damageInterval = Math.max(400, baseDamageInterval - intervalReduction);
+
+        // 等级成长: 10级延长持续时间
+        if (skillLevel >= 10) {
+            baseDuration = 7000; // 7秒
+        }
+
+        // 计算总伤害次数
+        int totalHits = (int) (baseDuration / damageInterval);
+
+        SkillEffect skillEffect = new SkillEffect(
+                SkillEffect.Type.SANDSTORM,
+                player.getX(),
+                player.getY(),
+                radius,
+                baseDuration,
+                damageInterval,
+                totalHits
+        );
+
+        // 设置等级相关属性
+        skillEffect.setSkillLevel(skillLevel);
+
+        // 5级+: 减速效果增强
+        if (skillLevel >= 5) {
+            skillEffect.setSlowRatio(0.6f); // 60%减速
+        } else {
+            skillEffect.setSlowRatio(0.4f); // 40%减速
+        }
+
+        // 7级+: 15%概率眩晕
+        if (skillLevel >= 7) {
+            skillEffect.setStunChance(0.15f);
+        }
+
+        skillStartInfo.setSkillEffect(skillEffect);
+
+        GameEngine.getInstance().showCenterToast("飞沙走石", 1000);
 
         return skillStartInfo;
     }

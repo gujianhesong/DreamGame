@@ -9,6 +9,7 @@ public enum SkillType {
     MAIN_FIREBALL, //火云术
     MAIN_ICE_BOLT, //寒冰术
     MAIN_LIGHTNING, //雷击术
+    MAIN_FeiShaZouShi, //飞沙走石
     MAIN_ROOT, //定身术
     MAIN_WanJianGuiZong, //万剑归宗
     MAIN_JinGangHuTi, //金刚护体

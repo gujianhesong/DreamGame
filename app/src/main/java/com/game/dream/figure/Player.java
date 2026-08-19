@@ -151,8 +151,8 @@ public class Player extends Character {
             return;
         }
 
-        // If stunned or rooted, prevent movement input from taking effect
-        if (isStunned() || isRooted()) {
+        // If stunned, rooted, or frozen, prevent movement input from taking effect
+        if (isStunned() || isRooted() || isFrozen()) {
             return;
         }
 
@@ -289,8 +289,8 @@ public class Player extends Character {
             return;
         }
 
-        // Cannot dash while stunned or rooted
-        if (isStunned() || isRooted()) {
+        // Cannot dash while stunned, rooted, or frozen
+        if (isStunned() || isRooted() || isFrozen()) {
             return;
         }
 

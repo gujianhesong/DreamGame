@@ -153,6 +153,9 @@ public class BattleUtil {
             case MAIN_WanJianGuiZong:
                 castBaseValue = 25f;
                 break;
+            case MAIN_FeiShaZouShi:
+                castBaseValue = 15f;
+                break;
         }
 
         if (castBaseValue > 0) {

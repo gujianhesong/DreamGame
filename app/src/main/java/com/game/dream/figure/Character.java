@@ -12,7 +12,8 @@ public abstract class Character {
         NONE,
         ROOT,   // Cannot move, can attack
         STUN,   // Cannot move, cannot attack
-        SLOW    // Move speed reduced
+        SLOW,   // Move speed reduced
+        FREEZE  // Frozen: cannot move, cannot attack (冰冻)
     }
 
     protected float x, y;
@@ -91,6 +92,8 @@ public abstract class Character {
         drawName(canvas, screenX, screenY, scale);
 
         drawCCEffects(canvas, screenX, screenY, scale);
+
+        drawFreezeOverlay(canvas, screenX, screenY, scale);
 
         drawJinGangEffect(canvas, screenX, screenY, scale);
 
@@ -254,6 +257,7 @@ public abstract class Character {
     public boolean isRooted() { return currentCC == CrowdControlType.ROOT; }
     public boolean isStunned() { return currentCC == CrowdControlType.STUN; }
     public boolean isSlowed() { return currentCC == CrowdControlType.SLOW; }
+    public boolean isFrozen() { return currentCC == CrowdControlType.FREEZE; }
 
     /**
      * Apply knockback to this character
@@ -340,11 +344,49 @@ public abstract class Character {
         ccPaint.setColor(Color.YELLOW);
         ccPaint.setTextAlign(Paint.Align.CENTER);
         if (currentCC == CrowdControlType.ROOT) {
-            // Draw stars for Root effect
+            // Draw text for Root effect
             canvas.drawText("定身", centerX, centerY + 7, ccPaint);
         } else if (currentCC == CrowdControlType.STUN) {
-            // Draw stars for Stun effect
+            // Draw text for Stun effect
             canvas.drawText("眩晕", centerX, centerY + 7, ccPaint);
+        } else if (currentCC == CrowdControlType.FREEZE) {
+            // Draw text for Freeze effect
+            ccPaint.setColor(Color.rgb(100, 200, 255));
+            canvas.drawText("冰冻", centerX, centerY + 7, ccPaint);
+        }
+    }
+
+    /**
+     * Draw freeze overlay effect on the character body (ice crystals + blue tint)
+     */
+    protected void drawFreezeOverlay(Canvas canvas, float cx, float cy, float scale) {
+        if (currentCC != CrowdControlType.FREEZE) return;
+
+        float overlayRadius = size * 0.6f * scale;
+        long time = System.currentTimeMillis();
+        
+        // Blue semi-transparent overlay
+        Paint overlayPaint = new Paint();
+        overlayPaint.setAntiAlias(true);
+        overlayPaint.setColor(Color.argb(60, 100, 200, 255));
+        canvas.drawCircle(cx, cy - 5 * scale, overlayRadius, overlayPaint);
+        
+        // Ice crystal spikes around the character
+        Paint icePaint = new Paint();
+        icePaint.setAntiAlias(true);
+        icePaint.setColor(Color.argb(180, 180, 230, 255));
+        icePaint.setStrokeWidth(2 * scale);
+        
+        // Draw 6 ice spikes with rotation animation
+        float rotation = (time % 3000) / 3000f * 360f;
+        for (int i = 0; i < 6; i++) {
+            float angle = (float) Math.toRadians(rotation + i * 60);
+            float spikeLength = overlayRadius * 0.5f;
+            float startX = cx + (float) Math.cos(angle) * overlayRadius * 0.5f;
+            float startY = cy - 5 * scale + (float) Math.sin(angle) * overlayRadius * 0.5f;
+            float endX = cx + (float) Math.cos(angle) * (overlayRadius * 0.5f + spikeLength);
+            float endY = cy - 5 * scale + (float) Math.sin(angle) * (overlayRadius * 0.5f + spikeLength);
+            canvas.drawLine(startX, startY, endX, endY, icePaint);
         }
     }
 

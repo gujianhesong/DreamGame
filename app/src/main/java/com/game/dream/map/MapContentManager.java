@@ -42,7 +42,7 @@ public class MapContentManager {
     public List<Enemy> initializeEnemies(int mapId) {
         List<Enemy> enemies = new ArrayList<>();
 
-        int enemyCount = (mapId == 1002) ? 120 : 100; // 迷宫中怪物少一些
+        int enemyCount = (mapId == 1002) ? 120 : 180; // 迷宫中怪物少一些
 
         Random random = new Random(67890);
         int[][] map = MapSystem.getInstance().getCurMapInfo().getMapData();

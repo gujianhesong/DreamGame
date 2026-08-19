@@ -15,7 +15,10 @@ public class Projectile {
         NONE,
         ROOT,      // Root effect (定身)
         POISON,    // Poison over time
-        STUN       // Stun effect (眩晕)
+        STUN,      // Stun effect (眩晕)
+        BURN,      // Burn damage over time (灼烧)
+        FREEZE,    // Freeze effect (冰冻 - 眩晕)
+        SLOW       // Slow effect (减速)
     }
 
     private float x, y;
@@ -34,6 +37,12 @@ public class Projectile {
     private Enemy fromEnemy;
 
     private EffectType effectType = EffectType.NONE; // Default to no effect
+
+    // 火云术等级相关
+    private int skillLevel = 1;             // 技能等级
+    private float damageMultiplier = 1.0f;  // 伤害倍率
+    private long burnDuration = 0;          // 灼烧持续时长(ms)
+    private float freezeProbability = 0f;   // 冰冻概率(0-1)
 
     public Projectile(float x, float y, float targetX, float targetY, SkillType skillType) {
         this.x = x;
@@ -215,6 +224,10 @@ public class Projectile {
         return size;
     }
 
+    public void setSize(float size) {
+        this.size = size;
+    }
+
     public boolean isActive() {
         return isActive;
     }
@@ -251,4 +264,27 @@ public class Projectile {
     public EffectType getEffectType() {
         return effectType;
     }
+
+    public int getSkillLevel() { return skillLevel; }
+    public void setSkillLevel(int level) { this.skillLevel = level; }
+
+    public float getDamageMultiplier() { return damageMultiplier; }
+    public void setDamageMultiplier(float multiplier) { this.damageMultiplier = multiplier; }
+
+    public long getBurnDuration() { return burnDuration; }
+    public void setBurnDuration(long duration) {
+        this.burnDuration = duration;
+        if (duration > 0) this.effectType = EffectType.BURN;
+    }
+
+    /**
+     * Scale velocity by a multiplier (preserves direction)
+     */
+    public void scaleSpeed(float multiplier) {
+        this.vx *= multiplier;
+        this.vy *= multiplier;
+    }
+
+    public float getFreezeProbability() { return freezeProbability; }
+    public void setFreezeProbability(float probability) { this.freezeProbability = probability; }
 }

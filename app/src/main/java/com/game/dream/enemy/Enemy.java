@@ -153,6 +153,11 @@ public abstract class Enemy extends Character {
     protected boolean hasSummonedMinions = false; // 是否已召唤过小弟
     protected boolean pendingSummon = false;      // 待处理召唤(通知GameEngine生成小弟)
 
+    // 灼烧(DOT)相关
+    protected int burnDamagePerSecond = 0;   // 灼烧每秒伤害
+    protected long burnEndTime = 0;          // 灼烧结束时间
+    protected long burnLastTickTime = 0;     // 上次灼烧伤害时间
+
     // Attack range shape (攻击范围形状)
     public enum AttackShape { CIRCLE, ARC, RECT }
     protected AttackShape attackShape = AttackShape.CIRCLE;
@@ -206,6 +211,18 @@ public abstract class Enemy extends Character {
         // Update CC state first (clears expired effects)
         updateCCState();
 
+        // 灼烧DOT伤害
+        if (burnDamagePerSecond > 0 && System.currentTimeMillis() < burnEndTime) {
+            long currentTime2 = System.currentTimeMillis();
+            if (currentTime2 - burnLastTickTime >= 1000) { // 每秒跳一次
+                health -= burnDamagePerSecond;
+                burnLastTickTime = currentTime2;
+                if (health <= 0) health = 0;
+            }
+        } else {
+            burnDamagePerSecond = 0;
+        }
+
         // Handle knockback movement FIRST (overrides everything, including stun)
         if (isBeingKnockedBack()) {
             float[] kbMove = updateKnockback(deltaTime);
@@ -223,8 +240,8 @@ public abstract class Enemy extends Character {
             return;
         }
 
-        // If stunned, skip all AI logic
-        if (isStunned()) return;
+        // If stunned or frozen, skip all AI logic
+        if (isStunned() || isFrozen()) return;
 
         long currentTime = System.currentTimeMillis();
         float deltaSeconds = deltaTime / 1000f;
@@ -1204,5 +1221,23 @@ public abstract class Enemy extends Character {
     public void setAggro(long durationMs) {
         this.isAggroed = true;
         this.aggroEndTime = System.currentTimeMillis() + durationMs;
+    }
+
+    /**
+     * Apply burn DOT effect
+     * @param damagePerSecond burn damage per second
+     * @param durationMs burn duration in milliseconds
+     */
+    public void applyBurn(int damagePerSecond, long durationMs) {
+        this.burnDamagePerSecond = damagePerSecond;
+        this.burnEndTime = System.currentTimeMillis() + durationMs;
+        this.burnLastTickTime = System.currentTimeMillis();
+    }
+
+    /**
+     * Check if enemy is burning
+     */
+    public boolean isBurning() {
+        return burnDamagePerSecond > 0 && System.currentTimeMillis() < burnEndTime;
     }
 }

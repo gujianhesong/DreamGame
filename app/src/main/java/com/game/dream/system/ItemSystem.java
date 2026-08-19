@@ -314,6 +314,7 @@ public class ItemSystem {
             playerSkills.add(newSkill);
             GameEngine.getInstance().showCenterToast("学会了 " + getSkillName(skillType) + "！", 3000);
             GameEngine.getInstance().showFloatText("★ 新技能 ★", FloatingText.Type.LEVEL_UP);
+            GameEngine.getInstance().addMessage("学会了 " + getSkillName(skillType), com.game.dream.panel.MessagePanel.MessageType.SKILL_UP);
         } else {
             int oldLevel = existingSkill.getLevel();
             existingSkill.setLevel(oldLevel + 1);
@@ -321,6 +322,7 @@ public class ItemSystem {
                     getSkillName(skillType) + " " + oldLevel + "级 → " + (oldLevel + 1) + "级", 3000
             );
             GameEngine.getInstance().showFloatText("★ 技能升级 ★", FloatingText.Type.LEVEL_UP);
+            GameEngine.getInstance().addMessage(getSkillName(skillType) + " " + oldLevel + "级 → " + (oldLevel + 1) + "级", com.game.dream.panel.MessagePanel.MessageType.SKILL_UP);
         }
 
         return true;

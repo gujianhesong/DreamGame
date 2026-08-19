@@ -666,6 +666,12 @@ public class GameEngine {
                     int newLevel = RoleSystem.getInstance().getRoleInfo().getLevel();
                     RoleSystem.getInstance().addMoney(enemy.getMoneyReward());
 
+                    // Add messages to message log
+                    addMessage("+" + expReward + " 经验", com.game.dream.panel.MessagePanel.MessageType.EXPERIENCE);
+                    if (moneyReward > 0) {
+                        addMessage("+" + moneyReward + " 金钱", com.game.dream.panel.MessagePanel.MessageType.MONEY);
+                    }
+
                     // Create floating texts for rewards
                     floatingTexts.add(new FloatingText(
                             enemy.getX(),
@@ -697,6 +703,7 @@ public class GameEngine {
                                 "升级! Lv." + newLevel,
                                 FloatingText.Type.LEVEL_UP
                         ));
+                        addMessage("恭喜升级! 当前等级: " + newLevel, com.game.dream.panel.MessagePanel.MessageType.LEVEL_UP);
                     }
 
                     enemies.remove(i);
@@ -735,6 +742,7 @@ public class GameEngine {
                         itemName += " x" + groundItem.getQuantity();
                     }
                     showFloatText("获得 " + itemName, FloatingText.Type.MONEY);
+                    addMessage("获得 " + itemName, com.game.dream.panel.MessagePanel.MessageType.ITEM);
                 }
             }
         }
@@ -1087,7 +1095,7 @@ public class GameEngine {
     public void showFloatText(String text, FloatingText.Type type) {
         floatingTexts.add(new FloatingText(
                 player.getX(),
-                player.getY() - 220,
+                player.getY() - 160,
                 text,
                 type
         ));
@@ -1098,6 +1106,24 @@ public class GameEngine {
      */
     public void showFloatingText(float x, float y, String text, FloatingText.Type type) {
         floatingTexts.add(new FloatingText(x, y, text, type));
+    }
+
+    /**
+     * 添加消息到消息日志
+     */
+    public void addMessage(String text, com.game.dream.panel.MessagePanel.MessageType type) {
+        if (gameUI != null) {
+            gameUI.addMessage(text, type);
+        }
+    }
+
+    /**
+     * 添加消息到消息日志 (自定义颜色)
+     */
+    public void addMessage(String text, int color) {
+        if (gameUI != null) {
+            gameUI.addMessage(text, color);
+        }
     }
 
     /**

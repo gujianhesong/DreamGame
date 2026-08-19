@@ -306,6 +306,7 @@ public class SkillSystem {
             String msg = "顿悟！" + skill.getName() + " " + oldLevel + "级 → " + newLevel + "级";
             GameEngine.getInstance().showCenterToast(msg, 3000);
             GameEngine.getInstance().showFloatText("★ 顿悟 ★", com.game.dream.ui.FloatingText.Type.LEVEL_UP);
+            GameEngine.getInstance().addMessage(msg, com.game.dream.panel.MessagePanel.MessageType.SKILL_UP);
         }
     }
 

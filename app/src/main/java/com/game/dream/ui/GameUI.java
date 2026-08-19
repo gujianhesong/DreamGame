@@ -28,6 +28,8 @@ import com.game.dream.utils.TouchUtil;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.game.dream.panel.MessagePanel;
+
 public class GameUI {
     private int screenWidth;
     private int screenHeight;
@@ -56,6 +58,9 @@ public class GameUI {
     private ShopPanel shopPanel;
 
     private DialogBox currentDialog;
+
+    // Message panel
+    private MessagePanel messagePanel;
 
     // Attack buttons
     private Rect meleeAttackButton;
@@ -137,6 +142,9 @@ public class GameUI {
 
         // Initialize DialogBox
         currentDialog = new DialogBox();
+
+        // Initialize message panel
+        messagePanel = new MessagePanel();
     }
 
     public void cleanup() {
@@ -163,6 +171,11 @@ public class GameUI {
             if (centerToast.isExpired()) {
                 centerToast = null;
             }
+        }
+
+        // Update message panel
+        if (messagePanel != null) {
+            messagePanel.update();
         }
     }
 
@@ -242,6 +255,11 @@ public class GameUI {
             int panelX = (width - panelWidth) / 2;
             int panelY = (height - panelHeight) / 2;
             currentDialog.setBounds(panelX, panelY, panelWidth, panelHeight);
+        }
+
+        // Initialize message panel bounds
+        if (messagePanel != null) {
+            messagePanel.setBounds(width, height);
         }
 
     }
@@ -451,6 +469,11 @@ public class GameUI {
         if (centerToast != null) {
             centerToast.draw(canvas, GameEngine.getScreenWidth(), GameEngine.getScreenHeight());
         }
+
+        // Draw message panel (always on top)
+        if (messagePanel != null) {
+            messagePanel.draw(canvas);
+        }
     }
 
     public boolean handleTouch(MotionEvent event) {
@@ -462,6 +485,11 @@ public class GameUI {
         // Get the coordinates of the pointer that triggered this event
         float x = event.getX(pointerIndex);
         float y = event.getY(pointerIndex);
+
+        // Handle message panel touch (check first, before other panels)
+        if (messagePanel != null && messagePanel.handleTouch(action, x, y)) {
+            return true;
+        }
 
         if (currentDialog != null && currentDialog.isVisible()) {
             if (action == MotionEvent.ACTION_DOWN && currentDialog.handleTouch(x, y)) {
@@ -932,13 +960,13 @@ public class GameUI {
 
             // Skill Name or Empty Slot Label
             paint.setStyle(Paint.Style.FILL);
-            paint.setTextSize(18);
+            paint.setTextSize(22);
             paint.setColor(Color.WHITE);
             if (hasSkill) {
                 SkillInfo skillInfo = equipped.get(i);
                 String name = skillInfo.getName();
                 if (name.length() > 4) name = name.substring(0, 4) + "..";
-                canvas.drawText(name, btn.centerX(), btn.centerY() + 5, paint);
+                canvas.drawText(name, btn.centerX(), btn.centerY() + 10, paint);
 
                 // Draw cooldown overlay
                 float cooldownProgress = GameEngine.getInstance().getPlayer().getMagicCooldownProgress(skillInfo.getSkillType());
@@ -946,7 +974,7 @@ public class GameUI {
                     drawCircularCooldown(canvas, btn, cooldownProgress);
                 }
             } else {
-                canvas.drawText("空", btn.centerX(), btn.centerY() + 5, paint);
+                canvas.drawText("空", btn.centerX(), btn.centerY() + 10, paint);
             }
         }
 
@@ -1093,7 +1121,7 @@ public class GameUI {
 
         // Position: top-left of D-pad
         float dpadRadius = dpadBounds.width() / 2f;
-        float indicatorRadius = dpadRadius * 0.28f;
+        float indicatorRadius = dpadRadius * 0.2f;
         float indicatorCX = dpadBounds.centerX() - dpadRadius * 1.15f;
         float indicatorCY = dpadBounds.centerY() - dpadRadius * 0.65f;
 
@@ -1115,10 +1143,10 @@ public class GameUI {
         int arcColor;
         if (canDash) {
             // Cyan/green when enough charge
-            arcColor = Color.argb(200, 0, 220, 255);
+            arcColor = Color.argb(140, 0, 220, 255);
         } else {
             // Red/orange when low charge
-            arcColor = Color.argb(200, 255, 100, 50);
+            arcColor = Color.argb(140, 255, 100, 50);
         }
         paint.setColor(arcColor);
         paint.setStyle(Paint.Style.FILL);
@@ -1133,7 +1161,7 @@ public class GameUI {
         // Charge number in center
         paint.setStyle(Paint.Style.FILL);
         paint.setColor(Color.argb(230, 255, 255, 255));
-        paint.setTextSize(indicatorRadius * 0.7f);
+        paint.setTextSize(indicatorRadius * 0.65f);
         paint.setTextAlign(Paint.Align.CENTER);
         paint.setFakeBoldText(true);
         canvas.drawText(String.valueOf((int) charge), indicatorCX, indicatorCY + indicatorRadius * 0.25f, paint);
@@ -1333,6 +1361,24 @@ public class GameUI {
         if (craftingPanel != null) craftingPanel.hide();
         if (questPanel != null) questPanel.hide();
         if (shopPanel != null) shopPanel.hide();
+    }
+
+    /**
+     * 添加消息到消息面板
+     */
+    public void addMessage(String text, MessagePanel.MessageType type) {
+        if (messagePanel != null) {
+            messagePanel.addMessage(text, type);
+        }
+    }
+
+    /**
+     * 添加消息到消息面板 (自定义颜色)
+     */
+    public void addMessage(String text, int color) {
+        if (messagePanel != null) {
+            messagePanel.addMessage(text, color);
+        }
     }
 
     private void updateFPS() {

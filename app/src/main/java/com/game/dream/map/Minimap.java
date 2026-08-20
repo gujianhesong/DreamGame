@@ -65,6 +65,12 @@ public class Minimap {
             return;
         }
 
+        // 超大地图跳过小地图渲染（避免主线程卡顿）
+        if (mapWidth > 20000 || mapHeight > 20000) {
+            isInitialized = true;
+            return;
+        }
+
         // Create minimap bitmap
         minimapBitmap = Bitmap.createBitmap(minimapSize, minimapSize, Bitmap.Config.RGB_565);
         Canvas minimapCanvas = new Canvas(minimapBitmap);
@@ -79,8 +85,12 @@ public class Minimap {
         int mapTilesX = mapWidth / tileSize;
         int mapTilesY = mapHeight / tileSize;
 
-        for (int y = 0; y < mapTilesY; y++) {
-            for (int x = 0; x < mapTilesX; x++) {
+        // 优化: 对于超大地图，每隔 step 采样一次
+        int step = Math.max(1, Math.max(mapTilesX, mapTilesY) / 200);
+        float minimapTileSize = tileSize * scale * step;
+
+        for (int y = 0; y < mapTilesY; y += step) {
+            for (int x = 0; x < mapTilesX; x += step) {
                 int terrain = map.getMapData()[y][x];
 
                 // Set color based on terrain
@@ -106,6 +116,27 @@ public class Minimap {
                     case 6: // LAVA
                         paint.setColor(Color.rgb(255, 69, 0));
                         break;
+                    case 7: // RIVER
+                        paint.setColor(Color.rgb(50, 120, 220));
+                        break;
+                    case 8: // MOUNTAIN
+                        paint.setColor(Color.rgb(110, 100, 90));
+                        break;
+                    case 9: // BRIDGE
+                        paint.setColor(Color.rgb(160, 140, 100));
+                        break;
+                    case 10: // FARMLAND
+                        paint.setColor(Color.rgb(180, 200, 100));
+                        break;
+                    case 11: // CITY_ROAD
+                        paint.setColor(Color.rgb(190, 180, 160));
+                        break;
+                    case 12: // CITY_WALL
+                        paint.setColor(Color.rgb(100, 95, 90));
+                        break;
+                    case 100: // VILLAGE_CAN_PASS
+                        paint.setColor(Color.rgb(215, 162, 109));
+                        break;
                     case 200: // MAZE_WALL
                         paint.setColor(Color.rgb(85, 80, 95));
                         break;
@@ -126,7 +157,6 @@ public class Minimap {
                 // Calculate position and size on minimap
                 float minimapX = x * tileSize * scale;
                 float minimapY = y * tileSize * scale;
-                float minimapTileSize = tileSize * scale;
 
                 // Ensure we cover the entire minimap (avoid gaps)
                 float drawWidth = minimapTileSize + 1;
@@ -147,6 +177,11 @@ public class Minimap {
     public void draw(Canvas canvas, float playerX, float playerY, int screenWidth, int screenHeight) {
         if (!isInitialized || minimapBitmap == null || minimapBitmap.isRecycled()) {
             initialize();
+        }
+
+        // 超大地图跳过了小地图渲染，直接返回
+        if (minimapBitmap == null || minimapBitmap.isRecycled()) {
+            return;
         }
 
         // Position minimap in top-right corner with padding

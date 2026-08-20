@@ -1,23 +1,12 @@
 package com.game.dream.system;
 
-import android.graphics.Color;
-
-import com.game.dream.GameEngine;
-import com.game.dream.bean.QuestInfo;
-import com.game.dream.enums.FoodType;
 import com.game.dream.enums.NpcType;
-import com.game.dream.item.Item;
-import com.game.dream.item.ItemCreator;
 import com.game.dream.npc.AnimalNpc;
 import com.game.dream.npc.FunctionNpcManager;
 import com.game.dream.npc.Npc;
 import com.game.dream.quest.SideQuestManager;
-import com.game.dream.system.QuestSystem;
-import com.game.dream.ui.DialogBox;
-import com.game.dream.ui.CenterNotification;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
@@ -46,7 +35,7 @@ public class NpcSystem {
     private List<Npc> loadMapNpcList(int mapId) {
         List<Npc> npcList = new ArrayList<>();
         switch (mapId) {
-            case 1001: {
+            case MapSystem.MAP_ID_QING_XI: {
                 //清溪
                 npcList.add(new Npc(100151, "药店老板", NpcType.PHARMACIST, 4000, 4000));
                 npcList.add(new Npc(100152, "酒馆老板", NpcType.TAVERN_KEEPER, 4200, 4000));

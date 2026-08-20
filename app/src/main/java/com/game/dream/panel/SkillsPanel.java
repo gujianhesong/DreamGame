@@ -5,8 +5,10 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
 
+import com.game.dream.GameEngine;
 import com.game.dream.bean.SkillInfo;
-import com.game.dream.system.RoleSystem;
+import com.game.dream.enums.SkillType;
+import com.game.dream.system.MapSystem;
 import com.game.dream.system.SkillSystem;
 import com.game.dream.utils.TouchUtil;
 
@@ -120,8 +122,8 @@ public class SkillsPanel {
 
             @Override
             public void onUseSkill(SkillInfo skill) {
-                if (skill.getSkillType() == com.game.dream.enums.SkillType.MAIN_DunXing) {
-                    com.game.dream.GameEngine.getInstance().teleportToVillage();
+                if (skill.getSkillType() == SkillType.MAIN_DunXing) {
+                    GameEngine.getInstance().teleportToMap(MapSystem.MAP_ID_QING_XI);
                 }
             }
         });

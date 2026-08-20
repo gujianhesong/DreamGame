@@ -5,6 +5,7 @@ import static com.game.dream.common.Constants.TILE_SIZE;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Paint;
 import android.util.Pair;
 import android.view.MotionEvent;
 
@@ -23,11 +24,9 @@ import com.game.dream.enums.SkillType;
 import com.game.dream.enums.SpecialEffect;
 import com.game.dream.figure.Character;
 import com.game.dream.figure.Player;
-import com.game.dream.item.EquipmentItem;
 import com.game.dream.item.GroundItem;
 import com.game.dream.item.ItemStack;
 import com.game.dream.map.MapContentManager;
-import com.game.dream.map.MapGenerator;
 import com.game.dream.map.MazeGenerator;
 import com.game.dream.npc.Npc;
 import com.game.dream.npc.TreasureChest;
@@ -53,16 +52,25 @@ import com.game.dream.utils.LogUtil;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 public class GameEngine {
     private Context context;
     private static int screenWidth;
     private static int screenHeight;
 
-    // Map dimensions
+    // Map dimensions (默认值，实际使用 MapSystem 中当前地图的尺寸)
     public static final int MAP_WIDTH = 10000;
     public static final int MAP_HEIGHT = 10000;
+
+    /** 获取当前地图实际宽度（像素） */
+    private int getCurrentMapWidth() {
+        return MapSystem.getInstance().getCurMapInfo().getMapWidth();
+    }
+
+    /** 获取当前地图实际高度（像素） */
+    private int getCurrentMapHeight() {
+        return MapSystem.getInstance().getCurMapInfo().getMapHeight();
+    }
 
     // Camera position (top-left corner of visible area)
     private static float cameraX;
@@ -83,6 +91,9 @@ public class GameEngine {
 
     // Pending melee attack (wait for lunge to complete before dealing damage)
     private boolean pendingMeleeAttack = false;
+
+    // 异步加载标志
+    private volatile boolean isLoading = false;
 
     // Projectiles (magic attacks)
     private java.util.List<Projectile> projectiles;
@@ -142,55 +153,56 @@ public class GameEngine {
     private void initGame() {
         RoleInfo roleInfo = RoleSystem.getInstance().getRoleInfo();
 
-        // Initialize map generator and generate map
         int mapId = roleInfo.getMapId();
         if (mapId <= 0) {
             mapId = MapSystem.getInstance().getBornMap().getMapId();
         }
-        MapSystem.getInstance().loadMap(mapId);
+
+        // 初始化不依赖地图的组件
+        dayNightCycle = new DayNightCycle();
+        lastUpdateTime = System.currentTimeMillis();
+        projectiles = new ArrayList<>();
+        damageNumbers = new ArrayList<>();
+        floatingTexts = new ArrayList<>();
+
+        // 大地图异步加载，避免阻塞 UI
+        isLoading = true;
+        MapSystem.getInstance().loadMapAsync(mapId, new MapSystem.OnLoadMapCallback() {
+            @Override
+            public void onLoadMapFinish(int mapId, int[][] mapData) {
+                finishInitGame(mapId, mapData);
+                isLoading = false;
+            }
+        });
+    }
+
+    /**
+     * 完成游戏初始化（地图数据已就绪后调用）
+     * @param mapData 预生成的地图数据（仅金陵地图使用，其他为 null）
+     */
+    private void finishInitGame(int mapId, int[][] mapData) {
+        RoleInfo roleInfo = RoleSystem.getInstance().getRoleInfo();
 
         if (roleInfo.getMapX() < 0 || roleInfo.getMapY() < 0) {
-            // Create player at center of map
-            // Find a valid starting position (not on lake or lava)
             Pair<Integer, Integer> startPos = MapSystem.getInstance().getStartPosition();
-            int startX = startPos.first;
-            int startY = startPos.second;
-
-            Pair<Integer, Integer> mapXY = MapSystem.getInstance().getMapXY(startX, startY);
+            Pair<Integer, Integer> mapXY = MapSystem.getInstance().getMapXY(startPos.first, startPos.second);
             roleInfo.setMapX(mapXY.first);
             roleInfo.setMapY(mapXY.second);
         }
 
         player = new Player(roleInfo.getMapX(), roleInfo.getMapY());
         player.setName("剑侠客");
-        // Set initial respawn point
         player.setRespawnPoint(player.getX(), player.getY());
 
-        // Initialize camera to center on player
         updateCamera();
-
-        // Initialize day-night cycle
-        dayNightCycle = new DayNightCycle();
-        lastUpdateTime = System.currentTimeMillis();
-
-        // Initialize weather system
-        //weatherSystem = new WeatherSystem();
-
-        // Initialize enemys
         initializeEnemies();
 
-        // Initialize projectiles
-        projectiles = new ArrayList<>();
-
-        // Initialize damage numbers
-        damageNumbers = new ArrayList<>();
-
-        // Initialize floating texts list
-        floatingTexts = new ArrayList<>();
-
-        // Initialize GameUI
         gameUI = new GameUI();
         gameUI.initUI();
+        // 补调 setScreenSize 初始化控制按钮（异步加载时 onSizeChanged 先于 gameUI 创建）
+        if (screenWidth > 0 && screenHeight > 0) {
+            gameUI.setScreenSize(screenWidth, screenHeight);
+        }
     }
 
     /**
@@ -213,6 +225,9 @@ public class GameEngine {
     }
 
     public void update(boolean isFirst) {
+        // 异步加载中跳过更新
+        if (isLoading) return;
+
         // Calculate delta time first
         long currentTime = System.currentTimeMillis();
         long deltaTime;
@@ -224,15 +239,16 @@ public class GameEngine {
         lastUpdateTime = currentTime;
 
         // Update player movement (pass deltaTime)
-        player.update(MapSystem.getInstance().getCurMapInfo().getMapData(), MAP_WIDTH / TILE_SIZE, MAP_HEIGHT / TILE_SIZE, TILE_SIZE, deltaTime);
+        player.update(MapSystem.getInstance().getCurMapInfo().getMapData(),
+                getCurrentMapWidth() / TILE_SIZE, getCurrentMapHeight() / TILE_SIZE, TILE_SIZE, deltaTime);
 
         // Update camera to follow player
         updateCamera();
 
         // 检查迷宫出口传送
-        if (MapSystem.getInstance().getCurrentMapId() == 1002 && MazeSystem.getInstance().isInitialized()) {
+        if (MapSystem.getInstance().isCurrentMazaMap() && MazeSystem.getInstance().isInitialized()) {
             if (MazeSystem.getInstance().checkExitPortal(player.getX(), player.getY())) {
-                teleportToVillage();
+                teleportToMap(MapSystem.MAP_ID_QING_XI);
                 return; // 传送后本帧不再继续更新
             }
         }
@@ -621,7 +637,7 @@ public class GameEngine {
                 float updateThreshold = 2000 * 2000; // 2000^2 to avoid sqrt
                 if (distanceSquared < updateThreshold) {
                     int[][] map = MapSystem.getInstance().getCurMapInfo().getMapData();
-                    enemy.update(deltaTime, player.getX(), player.getY(), map, MAP_WIDTH, MAP_HEIGHT);
+                    enemy.update(deltaTime, player.getX(), player.getY(), map, getCurrentMapWidth(), getCurrentMapHeight());
 
                     // Check if elite/leader enemy is casting spell while chasing
                     if (enemy.isCastingSpell()) {
@@ -846,8 +862,10 @@ public class GameEngine {
         cameraY = player.getY() - screenHeight / 2;
 
         // Clamp camera to map bounds
-        cameraX = Math.max(0, Math.min(cameraX, MAP_WIDTH - screenWidth));
-        cameraY = Math.max(0, Math.min(cameraY, MAP_HEIGHT - screenHeight));
+        int mapW = getCurrentMapWidth();
+        int mapH = getCurrentMapHeight();
+        cameraX = Math.max(0, Math.min(cameraX, mapW - screenWidth));
+        cameraY = Math.max(0, Math.min(cameraY, mapH - screenHeight));
     }
 
     // Static getters for MapRenderer
@@ -868,6 +886,19 @@ public class GameEngine {
     }
 
     public void draw(Canvas canvas) {
+        // 异步加载中只绘制黑屏 + 提示文字
+        if (isLoading) {
+            canvas.drawColor(Color.BLACK);
+            if (screenWidth > 0 && screenHeight > 0) {
+                Paint loadingPaint = new Paint();
+                loadingPaint.setColor(Color.WHITE);
+                loadingPaint.setTextSize(40);
+                loadingPaint.setTextAlign(Paint.Align.CENTER);
+                canvas.drawText("正在加载地图...", screenWidth / 2f, screenHeight / 2f, loadingPaint);
+            }
+            return;
+        }
+
         // Draw background
         canvas.drawColor(Color.BLACK);
 
@@ -899,7 +930,7 @@ public class GameEngine {
         }
 
         // Draw treasure chests (in maze)
-        if (MapSystem.getInstance().getCurrentMapId() == 1002 && MazeSystem.getInstance().isInitialized()) {
+        if (MapSystem.getInstance().isCurrentMazaMap() && MazeSystem.getInstance().isInitialized()) {
             for (TreasureChest chest : MazeSystem.getInstance().getTreasureChests()) {
                 chest.draw(canvas, -cameraX, -cameraY);
             }
@@ -982,7 +1013,7 @@ public class GameEngine {
             }
 
             // 检查是否点击了宝箱 (迷宫中)
-            if (MapSystem.getInstance().getCurrentMapId() == 1002 && MazeSystem.getInstance().isInitialized()) {
+            if (MapSystem.getInstance().isCurrentMazaMap() && MazeSystem.getInstance().isInitialized()) {
                 TreasureChest chest = MazeSystem.getInstance().checkTreasureChestClick(worldX, worldY);
                 if (chest != null) {
                     chest.open();
@@ -1127,55 +1158,52 @@ public class GameEngine {
     }
 
     /**
-     * 传送到迷宫地图
+     * 传送到指定地图
+     * @param mapId
      */
-    public void teleportToMaze() {
-        int mazeMapId = 1002;
-        MapSystem.getInstance().loadMap(mazeMapId);
+    public void teleportToMap(int mapId) {
+        isLoading = true;
+        String mapName = MapSystem.getInstance().getMapName(mapId);
+        showCenterToast("正在前往" + mapName + "...");
 
-        // 设置玩家位置到迷宫入口
-        MazeGenerator mazeGen = MapSystem.getInstance().getMazeGenerator();
-        if (mazeGen != null) {
-            player.setX(mazeGen.getEntranceX());
-            player.setY(mazeGen.getEntranceY() + 100); // 入口下方一点
-        }
+        MapSystem.getInstance().loadMapAsync(mapId, new MapSystem.OnLoadMapCallback() {
+            @Override
+            public void onLoadMapFinish(int mapId, int[][] mapData) {
+                // 设置玩家位置
+                if(MapSystem.getInstance().isCurrentMazaMap()){
+                    //迷宫地图
+                    //设置人物位置
+                    MazeGenerator mazeGen = MapSystem.getInstance().getMazeGenerator();
+                    if (mazeGen != null) {
+                        player.setX(mazeGen.getEntranceX());
+                        player.setY(mazeGen.getEntranceY() + 100); // 入口下方一点
+                    }
+                } else {
+                    // 重置迷宫系统
+                    MazeSystem.getInstance().reset();
 
-        // 重新初始化敌人
-        initializeEnemies();
+                    //设置人物位置
+                    //Pair<Integer, Integer> startPos = MapSystem.getInstance().getStartPosition();
+                    //Pair<Integer, Integer> mapXY = MapSystem.getInstance().getMapXY(startPos.first, startPos.second);
+                    Pair<Integer, Integer> transPos = MapSystem.getInstance().getCurMapInfo().getTransPos();
+                    if (transPos != null) {
+                        player.setX(transPos.first);
+                        player.setY(transPos.second);
+                    }
+                }
 
-        // 更新小地图
-        if (gameUI != null) {
-            gameUI.initUI();
-        }
+                // 重新初始化敌人
+                initializeEnemies();
 
-        showCenterToast("进入了迷雾迷宫...");
-    }
+                // 刷新小地图
+                if (gameUI != null) {
+                    gameUI.refreshMinimap();
+                }
 
-    /**
-     * 传送回村庄
-     */
-    public void teleportToVillage() {
-        int villageMapId = 1001;
-        MapSystem.getInstance().loadMap(villageMapId);
-
-        // 设置玩家位置到村庄中心
-        Pair<Integer, Integer> startPos = MapSystem.getInstance().getStartPosition();
-        Pair<Integer, Integer> mapXY = MapSystem.getInstance().getMapXY(startPos.first, startPos.second);
-        player.setX(mapXY.first);
-        player.setY(mapXY.second);
-
-        // 重新初始化敌人
-        initializeEnemies();
-
-        // 重置迷宫系统
-        MazeSystem.getInstance().reset();
-
-        // 更新小地图
-        if (gameUI != null) {
-            gameUI.initUI();
-        }
-
-        showCenterToast("回到了青溪村");
+                isLoading = false;
+                showCenterToast("到达了" + mapName);
+            }
+        });
     }
 
     public List<Enemy> getEnemies() {

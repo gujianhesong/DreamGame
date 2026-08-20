@@ -1,6 +1,7 @@
 package com.game.dream.npc;
 
 import com.game.dream.GameEngine;
+import com.game.dream.system.MapSystem;
 import com.game.dream.system.RoleSystem;
 import com.game.dream.ui.DialogBox;
 
@@ -21,14 +22,16 @@ public class FunctionNpcManager {
     public boolean handleNpcClick(Npc npc) {
         switch (npc.getId()) {
             case 100101: {
-                // 清溪村村长 - 迷宫入口
-                List<String> options = Arrays.asList("探索迷宫", "不了");
-                String message = "村外有一处迷雾迷宫，里面有很多宝藏，但也有危险的怪物。少侠要去探索一番吗？";
+                // 清溪村村长 - 迷宫入口 / 金陵入口
+                List<String> options = Arrays.asList("探索迷宫", "前往金陵", "不了");
+                String message = "少侠想去哪里？村外有一处迷雾迷宫，另外南方有一座繁华的大城金陵，也可以去闯荡一番。";
                 GameEngine.getInstance().showDialog(npc.getName(), message, options, new DialogBox.DialogListener() {
                     @Override
                     public void onOptionSelected(int optionIndex) {
                         if (optionIndex == 0) {
-                            GameEngine.getInstance().teleportToMaze();
+                            GameEngine.getInstance().teleportToMap(MapSystem.MAP_ID_QING_XI_MAZE);
+                        } else if (optionIndex == 1) {
+                            GameEngine.getInstance().teleportToMap(MapSystem.MAP_ID_JIN_LING);
                         }
                     }
                 });

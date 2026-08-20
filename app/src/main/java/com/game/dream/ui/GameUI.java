@@ -21,6 +21,7 @@ import com.game.dream.panel.QuestPanel;
 import com.game.dream.panel.RoleInfoPanel;
 import com.game.dream.panel.ShopPanel;
 import com.game.dream.panel.SkillsPanel;
+import com.game.dream.system.MapSystem;
 import com.game.dream.system.RoleSystem;
 import com.game.dream.system.SkillSystem;
 import com.game.dream.utils.TouchUtil;
@@ -110,9 +111,11 @@ public class GameUI {
         this.currentFPS = 0;
         this.fpsUpdateTime = System.currentTimeMillis();
 
-        // Initialize minimap
-        minimap = new Minimap(GameEngine.getInstance().getMap(), GameEngine.MAP_WIDTH,
-                GameEngine.MAP_HEIGHT, TILE_SIZE);
+        // Initialize minimap (使用当前地图实际尺寸)
+        int curMapW = MapSystem.getInstance().getCurMapInfo().getMapWidth();
+        int curMapH = MapSystem.getInstance().getCurMapInfo().getMapHeight();
+        minimap = new Minimap(GameEngine.getInstance().getMap(), curMapW,
+                curMapH, TILE_SIZE);
         minimap.initialize();
 
         // Initialize notification
@@ -145,6 +148,25 @@ public class GameUI {
 
         // Initialize message panel
         messagePanel = new MessagePanel();
+
+        // 重建面板后立即初始化所有 bounds（避免异步加载后面板 Rect 为 null）
+        if (screenWidth > 0 && screenHeight > 0) {
+            setScreenSize(screenWidth, screenHeight);
+        }
+    }
+
+    /**
+     * 仅刷新小地图（传送地图后调用，无需重建所有面板）
+     */
+    public void refreshMinimap() {
+        if (minimap != null) {
+            minimap.cleanup();
+        }
+        int curMapW = MapSystem.getInstance().getCurMapInfo().getMapWidth();
+        int curMapH = MapSystem.getInstance().getCurMapInfo().getMapHeight();
+        minimap = new Minimap(GameEngine.getInstance().getMap(), curMapW,
+                curMapH, TILE_SIZE);
+        minimap.initialize();
     }
 
     public void cleanup() {
@@ -909,6 +931,8 @@ public class GameUI {
     }
 
     private void drawControls(Canvas canvas) {
+        if (dpadBounds == null) return; // 控制按钮未初始化
+
         Paint paint = new Paint();
         paint.setAntiAlias(true);
 

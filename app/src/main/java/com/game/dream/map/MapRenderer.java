@@ -27,7 +27,7 @@ public class MapRenderer {
     private Map<String, Bitmap> chunkCache = new HashMap<>();
     private Set<String> activeChunks = new HashSet<>();
     private Paint chunkPaint;
-    private int maxCachedChunks = 20;
+    private int maxCachedChunks = 60;
 
     // Async loading
     private ExecutorService chunkLoaderExecutor;
@@ -41,6 +41,12 @@ public class MapRenderer {
     private static final int SNOW = 4;
     private static final int SWAMP = 5;
     private static final int LAVA = 6;
+    private static final int RIVER = 7;
+    private static final int MOUNTAIN = 8;
+    private static final int BRIDGE = 9;
+    private static final int FARMLAND = 10;
+    private static final int CITY_ROAD = 11;
+    private static final int CITY_WALL = 12;
 
     public MapRenderer(int[][] map, int mapWidth, int mapHeight, int tileSize) {
         this.map = map;
@@ -148,6 +154,12 @@ public class MapRenderer {
             case SNOW:      baseR = 245; baseG = 245; baseB = 250; break;
             case SWAMP:     baseR = 85;  baseG = 107; baseB = 47;  break;
             case LAVA:      baseR = 255; baseG = 69;  baseB = 0;   break;
+            case RIVER:     baseR = 50;  baseG = 120; baseB = 220; break;
+            case MOUNTAIN:  baseR = 110; baseG = 100; baseB = 90;  break;
+            case BRIDGE:    baseR = 160; baseG = 140; baseB = 100; break;
+            case FARMLAND:  baseR = 180; baseG = 200; baseB = 100; break;
+            case CITY_ROAD: baseR = 190; baseG = 180; baseB = 160; break;
+            case CITY_WALL: baseR = 100; baseG = 95;  baseB = 90;  break;
             default:        baseR = 128; baseG = 128; baseB = 128; break;
         }
 
@@ -258,6 +270,18 @@ public class MapRenderer {
                 break;
             case LAVA:
                 drawLavaDeco(canvas, paint, rng, screenX, screenY, cx, cy);
+                break;
+            case RIVER:
+                drawRiverDeco(canvas, paint, rng, screenX, screenY, cx, cy);
+                break;
+            case MOUNTAIN:
+                drawMountainDeco(canvas, paint, rng, screenX, screenY, cx, cy);
+                break;
+            case FARMLAND:
+                drawFarmlandDeco(canvas, paint, rng, screenX, screenY, cx, cy);
+                break;
+            case CITY_ROAD:
+                drawCityRoadDeco(canvas, paint, rng, screenX, screenY, cx, cy);
                 break;
         }
     }
@@ -490,6 +514,98 @@ public class MapRenderer {
     }
 
     /**
+     * River: wave lines, flow direction marks
+     */
+    private void drawRiverDeco(Canvas canvas, Paint paint, java.util.Random rng,
+                               int sx, int sy, float cx, float cy) {
+        // Flow lines
+        int lines = 1 + rng.nextInt(2);
+        for (int i = 0; i < lines; i++) {
+            float wy = sy + 4 + rng.nextInt(tileSize - 8);
+            float wx = sx + 2 + rng.nextInt(tileSize - 4);
+            float waveLen = 5 + rng.nextFloat() * 8;
+            paint.setColor(Color.argb(70, 100, 180, 255));
+            paint.setStrokeWidth(1);
+            canvas.drawLine(wx, wy, wx + waveLen, wy + (rng.nextFloat() - 0.5f) * 2, paint);
+        }
+        // Shimmer
+        if (rng.nextInt(3) == 0) {
+            paint.setColor(Color.argb(50, 200, 230, 255));
+            canvas.drawCircle(cx + rng.nextFloat() * 4 - 2, cy + rng.nextFloat() * 4 - 2, 1.5f, paint);
+        }
+    }
+
+    /**
+     * Mountain: rock cracks, snow patches
+     */
+    private void drawMountainDeco(Canvas canvas, Paint paint, java.util.Random rng,
+                                  int sx, int sy, float cx, float cy) {
+        // Rock cracks
+        int cracks = 1 + rng.nextInt(3);
+        for (int i = 0; i < cracks; i++) {
+            float x1 = sx + 2 + rng.nextInt(tileSize - 4);
+            float y1 = sy + 2 + rng.nextInt(tileSize - 4);
+            float x2 = x1 + (rng.nextFloat() - 0.5f) * 10;
+            float y2 = y1 + (rng.nextFloat() - 0.5f) * 10;
+            paint.setColor(Color.argb(80, 70, 65, 60));
+            paint.setStrokeWidth(1);
+            canvas.drawLine(x1, y1, x2, y2, paint);
+        }
+        // Snow patches on peaks
+        if (rng.nextInt(3) == 0) {
+            paint.setColor(Color.argb(40, 230, 230, 240));
+            canvas.drawCircle(sx + 4 + rng.nextInt(tileSize - 8), sy + 3 + rng.nextInt(tileSize / 2), 2, paint);
+        }
+        // Rock highlights
+        if (rng.nextInt(2) == 0) {
+            paint.setColor(Color.argb(30, 160, 150, 140));
+            canvas.drawCircle(cx, cy, 3, paint);
+        }
+    }
+
+    /**
+     * Farmland: crop rows, scarecrow marks
+     */
+    private void drawFarmlandDeco(Canvas canvas, Paint paint, java.util.Random rng,
+                                  int sx, int sy, float cx, float cy) {
+        // Crop rows (horizontal lines)
+        int rows = 2 + rng.nextInt(2);
+        for (int i = 0; i < rows; i++) {
+            float ry = sy + 3 + (tileSize - 6) * (i + 1) / (rows + 1);
+            paint.setColor(Color.argb(60, 120, 160, 50));
+            paint.setStrokeWidth(1);
+            canvas.drawLine(sx + 2, ry, sx + tileSize - 2, ry, paint);
+        }
+        // Small crop dots
+        int dots = 2 + rng.nextInt(3);
+        for (int i = 0; i < dots; i++) {
+            float dx = sx + 3 + rng.nextInt(tileSize - 6);
+            float dy = sy + 3 + rng.nextInt(tileSize - 6);
+            paint.setColor(Color.argb(80, 180, 200, 60));
+            canvas.drawCircle(dx, dy, 1, paint);
+        }
+    }
+
+    /**
+     * CityRoad: stone tile pattern
+     */
+    private void drawCityRoadDeco(Canvas canvas, Paint paint, java.util.Random rng,
+                                  int sx, int sy, float cx, float cy) {
+        // Stone tile grid lines
+        paint.setColor(Color.argb(30, 140, 130, 120));
+        paint.setStrokeWidth(1);
+        // Horizontal line
+        canvas.drawLine(sx, sy + tileSize / 2, sx + tileSize, sy + tileSize / 2, paint);
+        // Vertical line
+        canvas.drawLine(sx + tileSize / 2, sy, sx + tileSize / 2, sy + tileSize, paint);
+        // Occasional wear mark
+        if (rng.nextInt(4) == 0) {
+            paint.setColor(Color.argb(20, 160, 150, 140));
+            canvas.drawCircle(cx + rng.nextFloat() * 4 - 2, cy + rng.nextFloat() * 4 - 2, 2, paint);
+        }
+    }
+
+    /**
      * Deterministic hash for tile position
      */
     private int hashTile(int x, int y) {
@@ -529,6 +645,12 @@ public class MapRenderer {
             case SNOW:      return new int[]{245, 245, 250};
             case SWAMP:     return new int[]{85, 107, 47};
             case LAVA:      return new int[]{255, 69, 0};
+            case RIVER:     return new int[]{50, 120, 220};
+            case MOUNTAIN:  return new int[]{110, 100, 90};
+            case BRIDGE:    return new int[]{160, 140, 100};
+            case FARMLAND:  return new int[]{180, 200, 100};
+            case CITY_ROAD: return new int[]{190, 180, 160};
+            case CITY_WALL: return new int[]{100, 95, 90};
             default:        return new int[]{128, 128, 128};
         }
     }

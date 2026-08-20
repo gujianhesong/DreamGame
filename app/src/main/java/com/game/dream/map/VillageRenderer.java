@@ -45,20 +45,25 @@ public class VillageRenderer {
         int vY = mapCenterY - vH / 2;
         villageBounds = new Rect(vX, vY, vX + vW, vY + vH);
 
+        initVillageObjects(vX, vY, vW, vH);
+    }
+
+    /**
+     * 使用自定义边界初始化村庄（金陵大地图使用）
+     */
+    public void initVillageWithBounds(int vx, int vy, int vw, int vh) {
+        villageBounds = new Rect(vx, vy, vx + vw, vy + vh);
+        initVillageObjects(vx, vy, vw, vh);
+    }
+
+    private void initVillageObjects(int vX, int vY, int vW, int vH) {
+
         Random rand = new Random(42); // 固定种子保证每次生成的村庄一样
 
-        // 2. 生成一些简单的道路 (Roads)
-//        for (int i = 0; i < 5; i++) {
-//            int rw = rand.nextInt(100) + 200;
-//            int rh = rand.nextInt(20) + 50;
-//            objects.add(new VillageObject(ObjectType.ROAD,
-//                    vX + rand.nextInt(vW), vY + rand.nextInt(vH), rw, rh, Color.rgb(180, 160, 140)));
-//        }
-
-        // 3. 生成房屋 (Houses)
+        // 生成房屋 (Houses)
         for (int i = 0; i < 8; i++) {
-            int hw = 400;
-            int hh = 320;
+            int hw = Math.min(400, vW / 5);
+            int hh = Math.min(320, vH / 6);
             // 确保房子不重叠太厉害（简单随机）
             objects.add(new VillageObject(ObjectType.HOUSE,
                     vX + 20 + rand.nextInt(vW - 100),
@@ -66,14 +71,18 @@ public class VillageRenderer {
                     hw, hh, Color.rgb(139, 69, 19))); // 棕色木屋
         }
 
-        // 4. 生成树木和水井 (Decorations)
+        // 生成树木和水井 (Decorations)
         for (int i = 0; i < 15; i++) {
             objects.add(new VillageObject(ObjectType.TREE,
-                    vX + rand.nextInt(vW), vY + rand.nextInt(vH), 100, 140, Color.GREEN));
+                    vX + rand.nextInt(vW), vY + rand.nextInt(vH),
+                    Math.min(100, vW / 15), Math.min(140, vH / 10), Color.GREEN));
         }
 
         // 中心水井
-        objects.add(new VillageObject(ObjectType.WELL, mapCenterX - 200, mapCenterY - 200, 100, 100, Color.GRAY));
+        int wellSize = Math.min(100, vW / 15);
+        objects.add(new VillageObject(ObjectType.WELL,
+                vX + vW / 2 - wellSize / 2, vY + vH / 2 - wellSize / 2,
+                wellSize, wellSize, Color.GRAY));
     }
 
     /**

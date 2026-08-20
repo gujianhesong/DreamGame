@@ -140,7 +140,9 @@ public class Player extends Character {
                 if (gridX >= 0 && gridX < mapWidth && gridY >= 0 && gridY < mapHeight) {
                     int terrain = map[gridY][gridX];
                     if (terrain != MapGenerator.LAKE && terrain != MapGenerator.LAVA && terrain != MapGenerator.VILLAGE_NO_PASS
-                            && terrain != MazeGenerator.MAZE_WALL) {
+                            && terrain != MazeGenerator.MAZE_WALL
+                            && terrain != MapGenerator.RIVER && terrain != MapGenerator.MOUNTAIN
+                            && terrain != MapGenerator.CITY_WALL) {
                         x = newX;
                         y = newY;
                     }
@@ -183,7 +185,9 @@ public class Player extends Character {
             if (gridX >= 0 && gridX < mapWidth && gridY >= 0 && gridY < mapHeight) {
                 int terrain = map[gridY][gridX];
                 if (terrain == MapGenerator.LAKE || terrain == MapGenerator.LAVA || terrain == MapGenerator.VILLAGE_NO_PASS
-                        || terrain == MazeGenerator.MAZE_WALL) {
+                        || terrain == MazeGenerator.MAZE_WALL
+                        || terrain == MapGenerator.RIVER || terrain == MapGenerator.MOUNTAIN
+                        || terrain == MapGenerator.CITY_WALL) {
                     terrainBlocked = true;
                 }
             }
@@ -264,7 +268,9 @@ public class Player extends Character {
         if (gridX >= 0 && gridX < mapWidth && gridY >= 0 && gridY < mapHeight) {
             int terrain = map[gridY][gridX];
             if (terrain != MapGenerator.LAKE && terrain != MapGenerator.LAVA && terrain != MapGenerator.VILLAGE_NO_PASS
-                    && terrain != MazeGenerator.MAZE_WALL) {
+                    && terrain != MazeGenerator.MAZE_WALL
+                    && terrain != MapGenerator.RIVER && terrain != MapGenerator.MOUNTAIN
+                    && terrain != MapGenerator.CITY_WALL) {
                 x = newX;
                 y = newY;
             }
@@ -348,7 +354,9 @@ public class Player extends Character {
         if (gridX >= 0 && gridX < mapWidth && gridY >= 0 && gridY < mapHeight) {
             int terrain = map[gridY][gridX];
             if (terrain == MapGenerator.LAKE || terrain == MapGenerator.LAVA || terrain == MapGenerator.VILLAGE_NO_PASS
-                    || terrain == MazeGenerator.MAZE_WALL) {
+                    || terrain == MazeGenerator.MAZE_WALL
+                    || terrain == MapGenerator.RIVER || terrain == MapGenerator.MOUNTAIN
+                    || terrain == MapGenerator.CITY_WALL) {
                 // Hit impassable, stop dash
                 dashDistanceRemaining = 0;
             } else {

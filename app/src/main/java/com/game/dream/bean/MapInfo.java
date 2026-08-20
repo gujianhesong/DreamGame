@@ -1,17 +1,21 @@
 package com.game.dream.bean;
 
+import android.util.Pair;
+
 public class MapInfo {
     private int mapId;
     private String mapName;
     private int mapWidth;
     private int mapHeight;
     private int[][] mapData;
+    private Pair<Integer, Integer> transPos;
 
-    public MapInfo(int mapId, String mapName, int mapWidth, int mapHeight) {
+    public MapInfo(int mapId, String mapName, int mapWidth, int mapHeight, Pair<Integer, Integer> transPos) {
         this.mapId = mapId;
         this.mapName = mapName;
         this.mapWidth = mapWidth;
         this.mapHeight = mapHeight;
+        this.transPos = transPos;
     }
 
     public int getMapId() {
@@ -52,5 +56,13 @@ public class MapInfo {
 
     public void setMapData(int[][] mapData) {
         this.mapData = mapData;
+    }
+
+    public Pair<Integer, Integer> getTransPos() {
+        return transPos;
+    }
+
+    public void setTransPos(Pair<Integer, Integer> transPos) {
+        this.transPos = transPos;
     }
 }

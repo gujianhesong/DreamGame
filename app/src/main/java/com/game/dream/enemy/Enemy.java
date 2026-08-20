@@ -733,7 +733,9 @@ public abstract class Enemy extends Character {
                     int terrain = map[gridY][gridX];
                     // 检查是否可通行
                     boolean blocked = (terrain == MapGenerator.LAKE || terrain == MapGenerator.LAVA
-                            || terrain == MapGenerator.VILLAGE_NO_PASS || terrain == MazeGenerator.MAZE_WALL);
+                            || terrain == MapGenerator.VILLAGE_NO_PASS || terrain == MazeGenerator.MAZE_WALL
+                            || terrain == MapGenerator.RIVER || terrain == MapGenerator.MOUNTAIN
+                            || terrain == MapGenerator.CITY_WALL);
                     if (!blocked) {
                         x = newX;
                         y = newY;

@@ -42,7 +42,14 @@ public class MapContentManager {
     public List<Enemy> initializeEnemies(int mapId) {
         List<Enemy> enemies = new ArrayList<>();
 
-        int enemyCount = (mapId == 1002) ? 120 : 180; // 迷宫中怪物少一些
+        int enemyCount;
+        if (mapId >= 2000 && mapId < 3000) {
+            enemyCount = 120; // 迷宫中怪物少一些
+        } else if (mapId == MapSystem.MAP_ID_JIN_LING) {
+            enemyCount = 300; // 金陵大地图怪物多一些
+        } else {
+            enemyCount = 180;
+        }
 
         Random random = new Random(67890);
         int[][] map = MapSystem.getInstance().getCurMapInfo().getMapData();
@@ -59,13 +66,15 @@ public class MapContentManager {
 
                 // Spawn on passable terrain
                 boolean canSpawn = false;
-                if (mapId == 1002) {
+                if (mapId > 1000 && mapId < 2000) {
+                    // 普通大地图: 不能在水/岩浆/村庄建筑/河流/山脉/城墙上生成
+                    canSpawn = (terrain != MapGenerator.LAKE && terrain != MapGenerator.LAVA
+                            && terrain != MapGenerator.VILLAGE_CAN_PASS && terrain != MapGenerator.VILLAGE_NO_PASS
+                            && terrain != MapGenerator.RIVER && terrain != MapGenerator.MOUNTAIN
+                            && terrain != MapGenerator.CITY_WALL && terrain != MapGenerator.CITY_ROAD);
+                } else if (mapId > 2000 && mapId < 3000) {
                     // 迷宫: 只能在地板上生成
                     canSpawn = (terrain == MazeGenerator.MAZE_FLOOR || terrain == MazeGenerator.MAZE_ENTRANCE || terrain == MazeGenerator.MAZE_EXIT);
-                } else {
-                    // 普通地图: 不能在水/岩浆/村庄建筑上生成
-                    canSpawn = (terrain != MapGenerator.LAKE && terrain != MapGenerator.LAVA
-                            && terrain != MapGenerator.VILLAGE_CAN_PASS && terrain != MapGenerator.VILLAGE_NO_PASS);
                 }
 
                 if (canSpawn) {
@@ -97,7 +106,7 @@ public class MapContentManager {
         Enemy enemy = null;
         double rand = Math.random();
         switch (mapId) {
-            case 1001: {
+            case MapSystem.MAP_ID_QING_XI: {
                 //清溪村
                 if (rand < 0.25) {
                     enemy = new Tiger(spawnX, spawnY);
@@ -112,8 +121,9 @@ public class MapContentManager {
                     enemy = new Wolf(spawnX, spawnY);
                     enemy.setName("野狼");
                 }
+                break;
             }
-            case 1002: {
+            case MapSystem.MAP_ID_QING_XI_MAZE: {
                 //清溪村-迷宫
                 if (rand < 0.25) {
                     enemy = new Tiger(spawnX, spawnY);
@@ -128,6 +138,25 @@ public class MapContentManager {
                     enemy = new Wolf(spawnX, spawnY);
                     enemy.setName("野狼");
                 }
+                break;
+            }
+            case MapSystem.MAP_ID_JIN_LING: {
+                // 金陵野外
+                double areaRand = Math.random();
+                if (areaRand < 0.2) {
+                    enemy = new Tiger(spawnX, spawnY);
+                    enemy.setName("华南虎");
+                } else if (areaRand < 0.4) {
+                    enemy = new WildBoar(spawnX, spawnY);
+                    enemy.setName("野猪");
+                } else if (areaRand < 0.6) {
+                    enemy = new Viper(spawnX, spawnY);
+                    enemy.setName("眼镜蛇");
+                } else {
+                    enemy = new Wolf(spawnX, spawnY);
+                    enemy.setName("灰狼");
+                }
+                break;
             }
         }
         return enemy;

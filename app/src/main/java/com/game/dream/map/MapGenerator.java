@@ -20,6 +20,14 @@ public class MapGenerator {
     public static final int SWAMP = 5;
     public static final int LAVA = 6;
 
+    // 新增地形类型（金陵地图使用）
+    public static final int RIVER = 7;
+    public static final int MOUNTAIN = 8;
+    public static final int BRIDGE = 9;
+    public static final int FARMLAND = 10;
+    public static final int CITY_ROAD = 11;
+    public static final int CITY_WALL = 12;
+
     public static final int VILLAGE_CAN_PASS = 100;
     public static final int VILLAGE_NO_PASS = 101;
 
@@ -242,7 +250,9 @@ public class MapGenerator {
 
     public static boolean checkCanPass(int[][] mapData, int x, int y) {
         int terrain = mapData[y][x];
-        if (terrain == MapGenerator.LAKE || terrain == MapGenerator.LAVA || terrain == MapGenerator.VILLAGE_NO_PASS) {
+        if (terrain == MapGenerator.LAKE || terrain == MapGenerator.LAVA
+                || terrain == MapGenerator.RIVER || terrain == MapGenerator.MOUNTAIN
+                || terrain == MapGenerator.VILLAGE_NO_PASS || terrain == MapGenerator.CITY_WALL) {
             return false;
         }
         return true;

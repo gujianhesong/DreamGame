@@ -55,7 +55,7 @@ public class NpcSystem {
                 npcList.add(new Npc(100114, "张大伯", NpcType.FARMER, 4600, 5100));
                 npcList.add(new Npc(100115, "李猎户", NpcType.HUNTER, 4400, 5100));
                 npcList.add(new Npc(100116, "黑风强盗", NpcType.BANDIT, 4200, 5100));
-                npcList.add(new Npc(100117, "驿站车夫", NpcType.COACHMAN, 4000, 5100));
+                npcList.add(new Npc(100117, "驿站车夫", NpcType.COACHMAN, 3440, 5220));
 
                 npcList.add(new Npc(100121, "老丐", NpcType.BEGGAR, 5200, 5500));
                 npcList.add(new Npc(100122, "赵六", NpcType.GAMBLER, 5000, 5500));
@@ -69,8 +69,52 @@ public class NpcSystem {
                 npcList.add(new AnimalNpc(100193, "旺财", NpcType.DOG, 4800, 5700));
                 npcList.add(new AnimalNpc(100194, "绵羊", NpcType.SHEEP, 4600, 5700));
                 npcList.add(new AnimalNpc(100195, "老黄牛", NpcType.COW, 4400, 5700));
-                npcList.add(new AnimalNpc(100196, "骏马", NpcType.HORSE, 4200, 5700));
+                npcList.add(new AnimalNpc(100196, "骏马", NpcType.HORSE, 3540, 5160));
 
+            }
+            break;
+            case MapSystem.MAP_ID_JIN_LING: {
+                //金陵
+                npcList.add(new Npc(100201, "驿站车夫", NpcType.COACHMAN, 30200, 35400));
+                npcList.add(new AnimalNpc(100202, "骏马", NpcType.HORSE, 30300, 35340));
+
+                // 四角村庄车夫
+                npcList.add(new Npc(100203, "碧波渡(城东北)车夫", NpcType.COACHMAN, 58860, 2200));
+                npcList.add(new Npc(100204, "云岩寨(城东南)车夫", NpcType.COACHMAN, 57150, 57800));
+                npcList.add(new Npc(100205, "稻香屯(城西南)车夫", NpcType.COACHMAN, 2850, 58200));
+                npcList.add(new Npc(100206, "翠微庄(城西北)车夫", NpcType.COACHMAN, 2840, 2270));
+
+                // 碧波渡(东北)小动物 - 放在房屋网格间距和边缘margin中，避免重叠
+                npcList.add(new AnimalNpc(100211, "大公鸡", NpcType.CHICKEN, 57600, 1500));
+                npcList.add(new AnimalNpc(100212, "旺财", NpcType.DOG, 58400, 1500));
+                npcList.add(new AnimalNpc(100213, "小鸭子", NpcType.DUCK, 57600, 2500));
+                npcList.add(new AnimalNpc(100223, "绵羊", NpcType.SHEEP, 57200, 1200));
+                npcList.add(new AnimalNpc(100224, "老黄牛", NpcType.COW, 58700, 2000));
+                npcList.add(new AnimalNpc(100225, "骏马", NpcType.HORSE, 57200, 2800));
+
+                // 云岩寨(东南)小动物
+                npcList.add(new AnimalNpc(100214, "绵羊", NpcType.SHEEP, 57600, 57500));
+                npcList.add(new AnimalNpc(100215, "大公鸡", NpcType.CHICKEN, 58400, 57500));
+                npcList.add(new AnimalNpc(100216, "小鸭子", NpcType.DUCK, 57600, 58500));
+                npcList.add(new AnimalNpc(100226, "旺财", NpcType.DOG, 57200, 57200));
+                npcList.add(new AnimalNpc(100227, "老黄牛", NpcType.COW, 58700, 58000));
+                npcList.add(new AnimalNpc(100228, "骏马", NpcType.HORSE, 57200, 58800));
+
+                // 稻香屯(西南)小动物
+                npcList.add(new AnimalNpc(100217, "老黄牛", NpcType.COW, 1600, 57500));
+                npcList.add(new AnimalNpc(100218, "旺财", NpcType.DOG, 2400, 57500));
+                npcList.add(new AnimalNpc(100219, "大公鸡", NpcType.CHICKEN, 1600, 58500));
+                npcList.add(new AnimalNpc(100229, "绵羊", NpcType.SHEEP, 1200, 57200));
+                npcList.add(new AnimalNpc(100230, "骏马", NpcType.HORSE, 2700, 58000));
+                npcList.add(new AnimalNpc(100231, "小鸭子", NpcType.DUCK, 1200, 58800));
+
+                // 翠微庄(西北)小动物
+                npcList.add(new AnimalNpc(100220, "骏马", NpcType.HORSE, 1600, 1500));
+                npcList.add(new AnimalNpc(100221, "绵羊", NpcType.SHEEP, 2400, 1500));
+                npcList.add(new AnimalNpc(100222, "旺财", NpcType.DOG, 1600, 2500));
+                npcList.add(new AnimalNpc(100232, "大公鸡", NpcType.CHICKEN, 1200, 1200));
+                npcList.add(new AnimalNpc(100233, "老黄牛", NpcType.COW, 2700, 2000));
+                npcList.add(new AnimalNpc(100234, "小鸭子", NpcType.DUCK, 1200, 2800));
             }
             break;
         }

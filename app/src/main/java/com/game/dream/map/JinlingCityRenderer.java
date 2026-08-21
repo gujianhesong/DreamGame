@@ -526,7 +526,7 @@ public class JinlingCityRenderer {
 
         // 建筑名称标签（如果建筑够大且名字不为空）
         if (b.name != null && w > 300) {
-            paint.setTextSize(14);
+            paint.setTextSize(25);
             paint.setColor(Color.WHITE);
             paint.setTextAlign(Paint.Align.CENTER);
             paint.setShadowLayer(2, 1, 1, Color.BLACK);
@@ -554,7 +554,7 @@ public class JinlingCityRenderer {
         canvas.drawPath(roof, paint);
         // 门
         paint.setColor(Color.rgb(120, 40, 40));
-        canvas.drawRect(x + w / 2 - 40, y + h - 60, x + w / 2 + 40, y + h, paint);
+        canvas.drawRect(x + w / 2 - 80, y + h - 120, x + w / 2 + 80, y + h, paint);
         // 柱子
         paint.setColor(Color.rgb(160, 40, 40));
         for (int i = 0; i < 4; i++) {
@@ -574,7 +574,7 @@ public class JinlingCityRenderer {
         roof.close();
         canvas.drawPath(roof, paint);
         paint.setColor(Color.rgb(100, 60, 30));
-        canvas.drawRect(x + w / 2 - 20, y + h - 40, x + w / 2 + 20, y + h, paint);
+        canvas.drawRect(x + w / 2 - 50, y + h - 100, x + w / 2 + 50, y + h, paint);
     }
 
     private void drawInn(Canvas canvas, Paint paint, float x, float y, float w, float h) {
@@ -591,7 +591,7 @@ public class JinlingCityRenderer {
         paint.setColor(Color.rgb(200, 50, 50));
         canvas.drawRect(x + w - 30, y + 5, x + w - 20, y + h * 0.4f, paint);
         paint.setColor(Color.rgb(100, 60, 30));
-        canvas.drawRect(x + w / 2 - 15, y + h - 35, x + w / 2 + 15, y + h, paint);
+        canvas.drawRect(x + w / 2 - 50, y + h - 100, x + w / 2 + 50, y + h, paint);
     }
 
     private void drawTeaHouse(Canvas canvas, Paint paint, float x, float y, float w, float h) {
@@ -605,7 +605,7 @@ public class JinlingCityRenderer {
         roof.close();
         canvas.drawPath(roof, paint);
         paint.setColor(Color.rgb(80, 50, 30));
-        canvas.drawRect(x + w / 2 - 15, y + h - 35, x + w / 2 + 15, y + h, paint);
+        canvas.drawRect(x + w / 2 - 50, y + h - 100, x + w / 2 + 50, y + h, paint);
     }
 
     private void drawPharmacy(Canvas canvas, Paint paint, float x, float y, float w, float h) {
@@ -624,7 +624,7 @@ public class JinlingCityRenderer {
         canvas.drawRect(cx - 15, cy - 5, cx + 15, cy + 5, paint);
         canvas.drawRect(cx - 5, cy - 15, cx + 5, cy + 15, paint);
         paint.setColor(Color.rgb(80, 50, 30));
-        canvas.drawRect(x + w / 2 - 15, y + h - 35, x + w / 2 + 15, y + h, paint);
+        canvas.drawRect(x + w / 2 - 50, y + h - 100, x + w / 2 + 50, y + h, paint);
     }
 
     private void drawWeaponShop(Canvas canvas, Paint paint, float x, float y, float w, float h) {
@@ -644,7 +644,7 @@ public class JinlingCityRenderer {
         canvas.drawLine(x + 10, y + h * 0.5f, x + 30, y + h * 0.5f, paint);
         paint.setStrokeWidth(1);
         paint.setColor(Color.rgb(80, 50, 30));
-        canvas.drawRect(x + w / 2 - 15, y + h - 35, x + w / 2 + 15, y + h, paint);
+        canvas.drawRect(x + w / 2 - 50, y + h - 100, x + w / 2 + 50, y + h, paint);
     }
 
     private void drawArmorShop(Canvas canvas, Paint paint, float x, float y, float w, float h) {
@@ -661,7 +661,7 @@ public class JinlingCityRenderer {
         paint.setColor(Color.rgb(120, 120, 140));
         canvas.drawCircle(x + w / 2, y + h * 0.55f, 20, paint);
         paint.setColor(Color.rgb(80, 50, 30));
-        canvas.drawRect(x + w / 2 - 15, y + h - 35, x + w / 2 + 15, y + h, paint);
+        canvas.drawRect(x + w / 2 - 50, y + h - 100, x + w / 2 + 50, y + h, paint);
     }
 
     private void drawBlacksmith(Canvas canvas, Paint paint, float x, float y, float w, float h) {
@@ -681,7 +681,7 @@ public class JinlingCityRenderer {
         paint.setColor(Color.argb(60, 255, 100, 0));
         canvas.drawCircle(x + w / 2, y + h * 0.7f, 30, paint);
         paint.setColor(Color.rgb(80, 50, 30));
-        canvas.drawRect(x + w / 2 - 15, y + h - 35, x + w / 2 + 15, y + h, paint);
+        canvas.drawRect(x + w / 2 - 50, y + h - 100, x + w / 2 + 50, y + h, paint);
     }
 
     private void drawGeneralStore(Canvas canvas, Paint paint, float x, float y, float w, float h) {
@@ -695,7 +695,7 @@ public class JinlingCityRenderer {
         roof.close();
         canvas.drawPath(roof, paint);
         paint.setColor(Color.rgb(80, 50, 30));
-        canvas.drawRect(x + w / 2 - 15, y + h - 35, x + w / 2 + 15, y + h, paint);
+        canvas.drawRect(x + w / 2 - 50, y + h - 100, x + w / 2 + 50, y + h, paint);
     }
 
     private void drawMarketStall(Canvas canvas, Paint paint, float x, float y, float w, float h) {
@@ -723,7 +723,7 @@ public class JinlingCityRenderer {
         roof.close();
         canvas.drawPath(roof, paint);
         paint.setColor(Color.rgb(80, 45, 20));
-        canvas.drawRect(x + w / 2 - 12, y + h - 30, x + w / 2 + 12, y + h, paint);
+        canvas.drawRect(x + w / 2 - 50, y + h - 100, x + w / 2 + 50, y + h, paint);
     }
 
     private void drawTallHouse(Canvas canvas, Paint paint, float x, float y, float w, float h) {
@@ -747,7 +747,7 @@ public class JinlingCityRenderer {
         canvas.drawRect(x + w - 35, y + h * 0.25f, x + w - 15, y + h * 0.42f, paint);
         // 门
         paint.setColor(Color.rgb(80, 45, 20));
-        canvas.drawRect(x + w / 2 - 12, y + h - 30, x + w / 2 + 12, y + h, paint);
+        canvas.drawRect(x + w / 2 - 55, y + h - 110, x + w / 2 + 55, y + h, paint);
     }
 
     private void drawClockTower(Canvas canvas, Paint paint, float x, float y, float w, float h) {
@@ -794,7 +794,7 @@ public class JinlingCityRenderer {
         paint.setColor(Color.rgb(120, 90, 60));
         canvas.drawRect(x - 5, y + h * 0.25f, x + w + 5, y + h * 0.35f, paint);
         paint.setColor(Color.rgb(80, 50, 30));
-        canvas.drawRect(x + w / 2 - 20, y + h - 40, x + w / 2 + 20, y + h, paint);
+        canvas.drawRect(x + w / 2 - 55, y + h - 100, x + w / 2 + 55, y + h, paint);
     }
 
     private void drawWarehouse(Canvas canvas, Paint paint, float x, float y, float w, float h) {
@@ -803,21 +803,80 @@ public class JinlingCityRenderer {
         paint.setColor(Color.rgb(100, 90, 80));
         canvas.drawRect(x - 3, y + h * 0.2f, x + w + 3, y + h * 0.3f, paint);
         paint.setColor(Color.rgb(80, 70, 60));
-        canvas.drawRect(x + w / 2 - 25, y + h - 45, x + w / 2 + 25, y + h, paint);
+        canvas.drawRect(x + w / 2 - 60, y + h - 110, x + w / 2 + 60, y + h, paint);
     }
 
     // ==================== 装饰物渲染 ====================
 
     private void drawDecoration(Canvas canvas, Paint paint, Decoration d, float dx, float dy) {
         switch (d.type) {
-            case TREE:
-                paint.setColor(Color.rgb(101, 67, 33));
-                canvas.drawRect(dx - 3, dy, dx + 3, dy + d.size * 0.6f, paint);
-                paint.setColor(Color.rgb(34, 120, 34));
-                canvas.drawCircle(dx, dy - d.size * 0.1f, d.size * 0.4f, paint);
-                paint.setColor(Color.argb(40, 80, 180, 80));
-                canvas.drawCircle(dx - 3, dy - d.size * 0.15f, d.size * 0.2f, paint);
-                break;
+            case TREE: {
+                // 用世界坐标做种子，保证同一棵树样式固定（不受摄像机移动影响）
+                Random treeRand = new Random(d.x * 73 + d.y * 137);
+                int tStyle = treeRand.nextInt(4);
+                float tSize = d.size;
+
+                switch (tStyle) {
+                    case 0: // 阔叶树
+                        paint.setColor(Color.rgb(90, 60, 30));
+                        canvas.drawRect(dx - 4, dy, dx + 4, dy + tSize * 0.6f, paint);
+                        float cR = tSize * 0.38f;
+                        paint.setColor(Color.rgb(30, 120, 30));
+                        canvas.drawCircle(dx - cR * 0.35f, dy - cR * 0.15f, cR * 0.7f, paint);
+                        canvas.drawCircle(dx + cR * 0.35f, dy - cR * 0.1f, cR * 0.65f, paint);
+                        paint.setColor(Color.rgb(40, 140, 40));
+                        canvas.drawCircle(dx, dy - cR * 0.45f, cR * 0.75f, paint);
+                        paint.setColor(Color.argb(35, 120, 220, 80));
+                        canvas.drawCircle(dx - cR * 0.2f, dy - cR * 0.65f, cR * 0.3f, paint);
+                        break;
+
+                    case 1: // 松树
+                        paint.setColor(Color.rgb(80, 55, 28));
+                        canvas.drawRect(dx - 3, dy, dx + 3, dy + tSize * 0.6f, paint);
+                        float pW = tSize * 0.35f;
+                        float pH = tSize * 0.25f;
+                        for (int i = 0; i < 3; i++) {
+                            float py = dy - tSize * 0.05f + i * pH * 0.65f;
+                            float pw = pW * (1f - i * 0.2f);
+                            paint.setColor(i == 0 ? Color.rgb(25, 100, 25) : Color.rgb(35, 125, 35));
+                            android.graphics.Path pTri = new android.graphics.Path();
+                            pTri.moveTo(dx - pw, py + pH);
+                            pTri.lineTo(dx, py);
+                            pTri.lineTo(dx + pw, py + pH);
+                            pTri.close();
+                            canvas.drawPath(pTri, paint);
+                        }
+                        break;
+
+                    case 2: // 柳树
+                        paint.setColor(Color.rgb(85, 65, 35));
+                        canvas.drawRect(dx - 3, dy, dx + 3, dy + tSize * 0.55f, paint);
+                        float wR = tSize * 0.4f;
+                        paint.setColor(Color.rgb(50, 130, 45));
+                        canvas.drawOval(dx - wR, dy - wR * 0.5f, dx + wR, dy + wR * 0.25f, paint);
+                        paint.setColor(Color.rgb(60, 140, 50));
+                        paint.setStrokeWidth(2);
+                        for (int i = 0; i < 4; i++) {
+                            float bx = dx + (treeRand.nextFloat() - 0.5f) * wR * 1.5f;
+                            float by2 = dy - wR * 0.2f;
+                            canvas.drawLine(bx, by2, bx + (treeRand.nextFloat() - 0.5f) * 6, by2 + wR * 0.7f, paint);
+                        }
+                        paint.setStrokeWidth(1);
+                        break;
+
+                    case 3: // 灌木
+                        paint.setColor(Color.rgb(95, 70, 38));
+                        canvas.drawRect(dx - 4, dy + tSize * 0.2f, dx + 4, dy + tSize * 0.6f, paint);
+                        float bR = tSize * 0.32f;
+                        paint.setColor(Color.rgb(45, 130, 40));
+                        canvas.drawCircle(dx - bR * 0.45f, dy + tSize * 0.1f, bR * 0.65f, paint);
+                        canvas.drawCircle(dx + bR * 0.45f, dy + tSize * 0.1f, bR * 0.6f, paint);
+                        paint.setColor(Color.rgb(55, 150, 50));
+                        canvas.drawCircle(dx, dy, bR * 0.7f, paint);
+                        break;
+                }
+            }
+            break;
             case LANTERN:
                 // 灯笼柱
                 paint.setColor(Color.rgb(100, 80, 60));
@@ -852,13 +911,44 @@ public class JinlingCityRenderer {
                 canvas.drawCircle(dx, dy - 5, 15, paint);
                 canvas.drawRect(dx - 8, dy + 5, dx + 8, dy + 15, paint);
                 break;
-            case WELL:
-                paint.setColor(Color.rgb(130, 125, 120));
-                canvas.drawOval(dx - d.size * 0.5f, dy - d.size * 0.3f,
-                        dx + d.size * 0.5f, dy + d.size * 0.3f, paint);
-                paint.setColor(Color.rgb(60, 120, 200));
-                canvas.drawCircle(dx, dy, d.size * 0.25f, paint);
-                break;
+            case WELL: {
+                float wr = d.size * 0.5f;
+                // 石砌井台
+                paint.setColor(Color.rgb(140, 135, 125));
+                canvas.drawOval(dx - wr, dy - wr * 0.6f, dx + wr, dy + wr * 0.6f, paint);
+                // 井台顶面
+                paint.setColor(Color.rgb(165, 160, 150));
+                canvas.drawOval(dx - wr * 0.8f, dy - wr * 0.45f, dx + wr * 0.8f, dy + wr * 0.45f, paint);
+                // 井口
+                paint.setColor(Color.rgb(25, 30, 40));
+                canvas.drawOval(dx - wr * 0.5f, dy - wr * 0.3f, dx + wr * 0.5f, dy + wr * 0.3f, paint);
+                // 水面反光
+                paint.setColor(Color.argb(60, 80, 140, 200));
+                canvas.drawOval(dx - wr * 0.2f, dy - wr * 0.1f, dx + wr * 0.1f, dy + wr * 0.1f, paint);
+                // 支柱 + 横梁
+                float wTop = dy - wr * 0.6f - d.size * 0.35f;
+                paint.setColor(Color.rgb(90, 60, 35));
+                canvas.drawRect(dx - wr * 0.55f - 2, wTop, dx - wr * 0.55f + 2, dy - wr * 0.2f, paint);
+                canvas.drawRect(dx + wr * 0.55f - 2, wTop, dx + wr * 0.55f + 2, dy - wr * 0.2f, paint);
+                paint.setColor(Color.rgb(70, 45, 25));
+                canvas.drawRect(dx - wr * 0.65f, wTop - 3, dx + wr * 0.65f, wTop + 3, paint);
+                // 小顶棚
+                paint.setColor(Color.rgb(110, 55, 35));
+                android.graphics.Path wRoof = new android.graphics.Path();
+                wRoof.moveTo(dx - wr * 0.75f, wTop);
+                wRoof.lineTo(dx, wTop - d.size * 0.18f);
+                wRoof.lineTo(dx + wr * 0.75f, wTop);
+                wRoof.close();
+                canvas.drawPath(wRoof, paint);
+                // 绳子 + 水桶
+                paint.setColor(Color.rgb(160, 140, 100));
+                paint.setStrokeWidth(2);
+                canvas.drawLine(dx, wTop + 3, dx, dy - wr * 0.1f, paint);
+                paint.setStrokeWidth(1);
+                paint.setColor(Color.rgb(110, 80, 50));
+                canvas.drawRect(dx - 4, dy - wr * 0.1f, dx + 4, dy - wr * 0.1f + 7, paint);
+            }
+            break;
         }
     }
 

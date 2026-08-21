@@ -232,8 +232,8 @@ public class MapSystem {
     }
 
     private void initMapList() {
-        mapInfoList.add(new MapInfo(MAP_ID_QING_XI, "清溪", 10000, 10000, new Pair<>(5500, 5400)));
-        mapInfoList.add(new MapInfo(MAP_ID_JIN_LING, "金陵", JINLING_MAP_WIDTH, JINLING_MAP_HEIGHT, new Pair<>(30000, 35300)));
+        mapInfoList.add(new MapInfo(MAP_ID_QING_XI, "清溪", 10000, 10000, new Pair<>(3520, 5430)));
+        mapInfoList.add(new MapInfo(MAP_ID_JIN_LING, "金陵", JINLING_MAP_WIDTH, JINLING_MAP_HEIGHT, new Pair<>(30000, 35430)));
 
         mapInfoList.add(new MapInfo(MAP_ID_QING_XI_MAZE, "清溪地下迷宫", 10000, 10000, null));
     }
@@ -497,5 +497,19 @@ public class MapSystem {
         mazeRenderer = null;
         mazeGenerator = null;
         villageRenderer = null;
+    }
+
+    /**
+     * 获取当前地图所有村庄的障碍物列表（房屋、水井等）
+     */
+    public List<Rect> getAllVillageObstacles() {
+        List<Rect> allObs = new ArrayList<>();
+        if (villageRenderer != null) {
+            allObs.addAll(villageRenderer.getObstacles());
+        }
+        for (VillageRenderer vr : additionalVillageRenderers) {
+            allObs.addAll(vr.getObstacles());
+        }
+        return allObs;
     }
 }

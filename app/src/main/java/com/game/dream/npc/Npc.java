@@ -20,6 +20,15 @@ public class Npc {
     protected boolean hasQuest;
     protected boolean isInteracting;
 
+    // 待机动画
+    protected float animTime = 0;
+    protected float breathSpeed;    // 呼吸频率
+    protected float breathAmount;   // 呼吸幅度
+    protected float headLookAmount; // 头部张望幅度
+    protected float headLookSpeed;  // 头部张望频率
+    protected float bodySwayAmount; // 身体摇摆幅度
+    protected float animPhaseOffset; // 动画相位偏移（避免同步）
+
     public Npc(int id, String name, NpcType type, float x, float y) {
         this.id = id;
         this.name = name;
@@ -38,6 +47,15 @@ public class Npc {
         } else {
             this.size = 85;
         }
+
+        // 根据 ID 生成动画参数，让每个 NPC 动画略有不同
+        float phase = (id % 100) * 0.7f;
+        animPhaseOffset = phase;
+        breathSpeed = 2.5f + (id % 7) * 0.3f;
+        breathAmount = 1.5f + (id % 5) * 0.3f;
+        headLookAmount = 1.5f + (id % 4) * 0.5f;
+        headLookSpeed = 0.8f + (id % 6) * 0.2f;
+        bodySwayAmount = 1.0f + (id % 3) * 0.5f;
     }
 
     // Getters and Setters
@@ -70,6 +88,15 @@ public class Npc {
     }
 
     /**
+     * 更新 NPC 待机动画
+     */
+    public void update(long deltaTime) {
+        if (deltaTime > 0) {
+            animTime += deltaTime / 1000f;
+        }
+    }
+
+    /**
      * 绘制 NPC 到画布上
      *
      * @param canvas  画布
@@ -81,27 +108,32 @@ public class Npc {
         float cx = x + cameraX + size / 2f;
         float cy = y + cameraY + size / 2f;
 
-        // 1. 阴影
+        // 待机动画参数
+        float t = animTime + animPhaseOffset;
+        float breathOffset = (float) Math.sin(t * breathSpeed) * breathAmount;
+        float headLookX = (float) Math.sin(t * headLookSpeed) * headLookAmount;
+        float bodySwayX = (float) Math.sin(t * 1.8f + 1.3f) * bodySwayAmount;
+
+        // 1. 阴影（不动）
         paint.setColor(Color.argb(40, 0, 0, 0));
         canvas.drawOval(cx - size * 0.5f, cy + size * 0.2f, cx + size * 0.5f, cy + size * 0.8f, paint);
-        //canvas.drawRect(cx - size * 0.5f, cy - size * 0.5f, cx + size * 0.5f, cy + size * 0.5f, paint);
 
-        // 2. 根据类型绘制身体
-        drawBody(canvas, paint, cx, cy);
+        // 2. 身体（呼吸起伏 + 轻微摇摆）
+        drawBody(canvas, paint, cx + bodySwayX, cy + breathOffset);
 
-        // 3. 头部 (统一肤色，但小孩头大一点)
+        // 3. 头部 (呼吸起伏 + 张望偏移)
         paint.setColor(Color.rgb(255, 220, 180));
         float headRadius = (type == NpcType.CHILD_BOY || type == NpcType.CHILD_GIRL) ? size / 3.5f : size / 4f;
-        float headY = cy - size / 2f;
-        canvas.drawCircle(cx, headY, headRadius, paint);
+        float headY = cy - size / 2f + breathOffset;
+        canvas.drawCircle(cx + headLookX, headY, headRadius, paint);
 
-        // 4. 绘制头发 (在脸部之前画，或者根据发型决定层级)
-        drawHair(canvas, paint, cx, headY, headRadius);
+        // 4. 绘制头发
+        drawHair(canvas, paint, cx + headLookX, headY, headRadius);
 
         // 5. 绘制脸部和五官
-        drawFace(canvas, paint, cx, headY, headRadius);
+        drawFace(canvas, paint, cx + headLookX, headY, headRadius);
 
-        // 6. 名字 (绘制在脚下)
+        // 6. 名字 (不动)
         paint.setColor(Color.WHITE);
         paint.setTextSize(28);
         paint.setTextAlign(Paint.Align.CENTER);

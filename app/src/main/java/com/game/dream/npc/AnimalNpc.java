@@ -3,14 +3,43 @@ package com.game.dream.npc;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Rect;
 import android.graphics.RectF;
 
 import com.game.dream.enums.NpcType;
+import com.game.dream.system.MapSystem;
+
+import java.util.List;
+import java.util.Random;
 
 public class AnimalNpc extends Npc{
 
+    // 漫步行为
+    private float originX, originY;
+    private float wanderTargetX, wanderTargetY;
+    private boolean isPaused = true;
+    private float pauseTimer = 0;
+    private float wanderRadius = 300;
+    private float walkSpeed = 30; // 像素/秒
+    private Random wanderRand;
+
+    // 动画状态
+    private float animTime = 0;
+    private boolean isMoving = false;
+    private boolean facingLeft = false;
+
+    // 障碍物缓存（避免每帧创建新列表）
+    private List<Rect> cachedObstacles = null;
+    private long lastObstacleCacheTime = 0;
+    private boolean initialPosChecked = false;
+
     public AnimalNpc(int id, String name, NpcType type, float x, float y) {
         super(id, name, type, x, y);
+        this.originX = x;
+        this.originY = y;
+        this.wanderTargetX = x;
+        this.wanderTargetY = y;
+        this.wanderRand = new Random(id * 31L + 7);
 
         // 根据类型设置不同的大小
         if (type == NpcType.COW || type == NpcType.HORSE) {
@@ -24,6 +53,139 @@ public class AnimalNpc extends Npc{
         } else {
             this.size = 70; // 标准人类
         }
+
+        // 小型动物走快一点，大型动物慢一点
+        if (this.size <= 35) {
+            walkSpeed = 40;
+        } else if (this.size >= 90) {
+            walkSpeed = 20;
+        }
+        // 初始随机延迟，避免所有动物同时开始走
+        pauseTimer = wanderRand.nextFloat() * 3000;
+    }
+
+    /**
+     * 更新动物漫步行为
+     */
+    public void update(long deltaTime) {
+        if (deltaTime <= 0) return;
+
+        // 首次更新时检查初始位置是否与房屋重叠
+        if (!initialPosChecked) {
+            initialPosChecked = true;
+            ensureSafeInitialPosition();
+        }
+
+        animTime += deltaTime;
+
+        if (isPaused) {
+            isMoving = false;
+            pauseTimer -= deltaTime;
+            if (pauseTimer <= 0) {
+                // 选择新的漫步目标（在出生点附近，避开障碍物）
+                pickSafeWanderTarget();
+                isPaused = false;
+            }
+        } else {
+            // 向目标移动
+            float dx = wanderTargetX - x;
+            float dy = wanderTargetY - y;
+            float dist = (float) Math.sqrt(dx * dx + dy * dy);
+
+            if (dist < 5) {
+                // 到达目标，停下来休息
+                isPaused = true;
+                isMoving = false;
+                pauseTimer = 1500 + wanderRand.nextFloat() * 3000; // 1.5~4.5秒
+            } else {
+                // 检查下一步位置是否撞障碍物
+                float moveX = (dx / dist) * walkSpeed * deltaTime / 1000f;
+                float moveY = (dy / dist) * walkSpeed * deltaTime / 1000f;
+                float nextX = x + moveX;
+                float nextY = y + moveY;
+
+                if (overlapsObstacle(nextX + size / 2f, nextY + size / 2f)) {
+                    // 撞墙了，停下来重新选目标
+                    isPaused = true;
+                    isMoving = false;
+                    pauseTimer = 500 + wanderRand.nextFloat() * 1000;
+                } else {
+                    isMoving = true;
+                    // 更新朝向
+                    if (dx > 2) facingLeft = true;
+                    else if (dx < -2) facingLeft = false;
+
+                    x = nextX;
+                    y = nextY;
+                }
+            }
+        }
+    }
+
+    /**
+     * 确保初始位置不与房屋重叠，如果重叠则移到附近安全位置
+     */
+    private void ensureSafeInitialPosition() {
+        if (!overlapsObstacle(x + size / 2f, y + size / 2f)) {
+            return; // 初始位置安全
+        }
+        // 在附近搜索安全位置
+        for (float dist = 50; dist <= 400; dist += 50) {
+            for (int angle = 0; angle < 360; angle += 30) {
+                float rad = (float) Math.toRadians(angle);
+                float tx = originX + (float) Math.cos(rad) * dist;
+                float ty = originY + (float) Math.sin(rad) * dist;
+                if (!overlapsObstacle(tx + size / 2f, ty + size / 2f)) {
+                    x = tx;
+                    y = ty;
+                    originX = tx;
+                    originY = ty;
+                    return;
+                }
+            }
+        }
+    }
+
+    /**
+     * 选择一个不与障碍物重叠的漫步目标
+     */
+    private void pickSafeWanderTarget() {
+        for (int attempt = 0; attempt < 8; attempt++) {
+            float angle = wanderRand.nextFloat() * (float) Math.PI * 2;
+            float dist = wanderRand.nextFloat() * wanderRadius;
+            float tx = originX + (float) Math.cos(angle) * dist;
+            float ty = originY + (float) Math.sin(angle) * dist;
+
+            if (!overlapsObstacle(tx + size / 2f, ty + size / 2f)) {
+                wanderTargetX = tx;
+                wanderTargetY = ty;
+                return;
+            }
+        }
+        // 多次尝试失败，留在原地
+        wanderTargetX = x;
+        wanderTargetY = y;
+    }
+
+    /**
+     * 检查给定中心点是否与任何村庄障碍物重叠
+     */
+    private boolean overlapsObstacle(float centerX, float centerY) {
+        // 每 2 秒刷新一次障碍物缓存
+        long now = System.currentTimeMillis();
+        if (cachedObstacles == null || now - lastObstacleCacheTime > 2000) {
+            cachedObstacles = MapSystem.getInstance().getAllVillageObstacles();
+            lastObstacleCacheTime = now;
+        }
+
+        float halfSize = size * 0.4f; // 动物碰撞半径略小于显示半径
+        for (Rect obs : cachedObstacles) {
+            if (centerX + halfSize > obs.left && centerX - halfSize < obs.right &&
+                    centerY + halfSize > obs.top && centerY - halfSize < obs.bottom) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -34,14 +196,35 @@ public class AnimalNpc extends Npc{
         float cx = x + cameraX + size / 2f;
         float cy = y + cameraY + size / 2f;
 
+        // 行走动画：身体上下起伏
+        float bobOffset = isMoving ? (float) Math.sin(animTime * 0.012) * 2.5f : 0;
+
         // 1. 阴影
         paint.setColor(Color.argb(40, 0, 0, 0));
         canvas.drawOval(cx - size * 0.5f, cy + size * 0.2f, cx + size * 0.5f, cy + size * 0.8f, paint);
 
-        // 2. 根据动物类型绘制完整的身体形态
-        drawAnimalBody(canvas, paint, cx, cy);
+        // 2. 根据朝向翻转绘制身体
+        float walkPhase = (float) Math.sin(animTime * 0.01);
+        canvas.save();
+        if (facingLeft) {
+            canvas.scale(-1, 1, cx, cy);
+        }
+        drawAnimalBody(canvas, paint, cx, cy + bobOffset, walkPhase);
+        canvas.restore();
 
-        // 3. 名字 (绘制在脚下)
+        // 3. 行走尘土效果
+        if (isMoving) {
+            float dustPhase = (animTime * 0.008f) % (float) Math.PI;
+            float dustAlpha = 40 + 30 * (float) Math.sin(dustPhase);
+            paint.setColor(Color.argb((int) dustAlpha, 160, 140, 100));
+            float dustOff1 = (animTime * 0.03f) % 12;
+            float dustOff2 = (animTime * 0.03f + 6) % 12;
+            canvas.drawCircle(cx - 8 + dustOff1, cy + size * 0.55f, 2, paint);
+            canvas.drawCircle(cx + 5 + dustOff2, cy + size * 0.6f, 1.5f, paint);
+            canvas.drawCircle(cx - 3 + dustOff2, cy + size * 0.65f, 1.5f, paint);
+        }
+
+        // 4. 名字 (绘制在脚下)
         paint.setColor(Color.WHITE);
         paint.setTextSize(28);
         paint.setTextAlign(Paint.Align.CENTER);
@@ -49,7 +232,7 @@ public class AnimalNpc extends Npc{
         canvas.drawText(name, cx, cy + size * 1.2f, paint);
         paint.clearShadowLayer();
 
-        // 4. 任务提示
+        // 5. 任务提示
         if (hasQuest && !isInteracting) {
             paint.setColor(Color.YELLOW);
             paint.setTextSize(35);
@@ -60,25 +243,25 @@ public class AnimalNpc extends Npc{
     /**
      * 绘制动物的完整身体形态（包含头、身体、四肢等）
      */
-    private void drawAnimalBody(Canvas canvas, Paint paint, float cx, float cy) {
+    private void drawAnimalBody(Canvas canvas, Paint paint, float cx, float cy, float walkPhase) {
         switch (type) {
             case CHICKEN:
-                drawChicken(canvas, paint, cx, cy);
+                drawChicken(canvas, paint, cx, cy, walkPhase);
                 break;
             case DUCK:
-                drawDuck(canvas, paint, cx, cy);
+                drawDuck(canvas, paint, cx, cy, walkPhase);
                 break;
             case DOG:
-                drawDog(canvas, paint, cx, cy);
+                drawDog(canvas, paint, cx, cy, walkPhase);
                 break;
             case SHEEP:
-                drawSheep(canvas, paint, cx, cy);
+                drawSheep(canvas, paint, cx, cy, walkPhase);
                 break;
             case COW:
-                drawCow(canvas, paint, cx, cy);
+                drawCow(canvas, paint, cx, cy, walkPhase);
                 break;
             case HORSE:
-                drawHorse(canvas, paint, cx, cy);
+                drawHorse(canvas, paint, cx, cy, walkPhase);
                 break;
         }
     }
@@ -86,9 +269,10 @@ public class AnimalNpc extends Npc{
     /**
      * 绘制公鸡 - 椭圆形身体 + 鸡冠 + 尖嘴 + 爪子
      */
-    private void drawChicken(Canvas canvas, Paint paint, float cx, float cy) {
+    private void drawChicken(Canvas canvas, Paint paint, float cx, float cy, float wp) {
         float bodyW = size * 0.7f;
         float bodyH = size * 0.8f;
+        float legSwing = wp * 5;
 
         // 身体（白色椭圆）
         paint.setColor(Color.WHITE);
@@ -121,10 +305,10 @@ public class AnimalNpc extends Npc{
         beak.lineTo(cx, cy - bodyH/2 + 8);
         canvas.drawPath(beak, paint);
 
-        // 爪子（两条线）
+        // 爪子（交替迈步）
         paint.setStrokeWidth(2);
-        canvas.drawLine(cx - 5, cy + bodyH/2, cx - 10, cy + bodyH/2 + 8, paint);
-        canvas.drawLine(cx + 5, cy + bodyH/2, cx + 10, cy + bodyH/2 + 8, paint);
+        canvas.drawLine(cx - 5 + legSwing, cy + bodyH/2, cx - 10 + legSwing, cy + bodyH/2 + 8, paint);
+        canvas.drawLine(cx + 5 - legSwing, cy + bodyH/2, cx + 10 - legSwing, cy + bodyH/2 + 8, paint);
 
         // 尾巴（几根羽毛）
         paint.setColor(Color.WHITE);
@@ -136,9 +320,10 @@ public class AnimalNpc extends Npc{
     /**
      * 绘制鸭子 - 黄色椭圆身体 + 扁嘴
      */
-    private void drawDuck(Canvas canvas, Paint paint, float cx, float cy) {
+    private void drawDuck(Canvas canvas, Paint paint, float cx, float cy, float wp) {
         float bodyW = size * 0.8f;
         float bodyH = size * 0.7f;
+        float legSwing = wp * 4;
 
         // 身体（黄色椭圆）
         paint.setColor(Color.YELLOW);
@@ -157,18 +342,19 @@ public class AnimalNpc extends Npc{
         canvas.drawCircle(cx - headR/3, cy - bodyH/2 - headR/3, 2, paint);
         canvas.drawCircle(cx + headR/3, cy - bodyH/2 - headR/3, 2, paint);
 
-        // 脚蹼（橙色）
+        // 脚蹼（橙色，交替迈步）
         paint.setStrokeWidth(3);
-        canvas.drawLine(cx - 6, cy + bodyH/2, cx - 12, cy + bodyH/2 + 6, paint);
-        canvas.drawLine(cx + 6, cy + bodyH/2, cx + 12, cy + bodyH/2 + 6, paint);
+        canvas.drawLine(cx - 6 + legSwing, cy + bodyH/2, cx - 12 + legSwing, cy + bodyH/2 + 6, paint);
+        canvas.drawLine(cx + 6 - legSwing, cy + bodyH/2, cx + 12 - legSwing, cy + bodyH/2 + 6, paint);
     }
 
     /**
      * 绘制狗 - 四足站立姿态
      */
-    private void drawDog(Canvas canvas, Paint paint, float cx, float cy) {
+    private void drawDog(Canvas canvas, Paint paint, float cx, float cy, float wp) {
         float bodyW = size * 0.8f;
         float bodyH = size * 0.6f;
+        float legSwing = wp * 5;
 
         // 身体（黄褐色圆角矩形，横向）
         paint.setColor(Color.rgb(210, 180, 140));
@@ -192,12 +378,12 @@ public class AnimalNpc extends Npc{
         canvas.drawOval(cx - bodyW/2 - headR - 3, cy - bodyH/2 + 2,
                 cx - bodyW/2 - headR + 3, cy - bodyH/2 + 6, paint);
 
-        // 四条腿
+        // 四条腿（交替迈步）
         paint.setColor(Color.rgb(210, 180, 140));
-        canvas.drawRect(cx - bodyW/2 - 5, cy + bodyH/3, cx - bodyW/2 + 5, cy + bodyH/2 + 8, paint);
-        canvas.drawRect(cx - bodyW/4, cy + bodyH/3, cx - bodyW/4 + 8, cy + bodyH/2 + 8, paint);
-        canvas.drawRect(cx + bodyW/4 - 5, cy + bodyH/3, cx + bodyW/4 + 5, cy + bodyH/2 + 8, paint);
-        canvas.drawRect(cx + bodyW/2 - 10, cy + bodyH/3, cx + bodyW/2, cy + bodyH/2 + 8, paint);
+        canvas.drawRect(cx - bodyW/2 - 5 + legSwing, cy + bodyH/3, cx - bodyW/2 + 5 + legSwing, cy + bodyH/2 + 8, paint);
+        canvas.drawRect(cx - bodyW/4 - legSwing, cy + bodyH/3, cx - bodyW/4 + 8 - legSwing, cy + bodyH/2 + 8, paint);
+        canvas.drawRect(cx + bodyW/4 - 5 + legSwing, cy + bodyH/3, cx + bodyW/4 + 5 + legSwing, cy + bodyH/2 + 8, paint);
+        canvas.drawRect(cx + bodyW/2 - 10 - legSwing, cy + bodyH/3, cx + bodyW/2 - legSwing, cy + bodyH/2 + 8, paint);
 
         // 尾巴（翘起）
         paint.setStrokeWidth(4);
@@ -207,10 +393,11 @@ public class AnimalNpc extends Npc{
     /**
      * 绘制羊 - 蓬松的白色卷毛，体型调整为比狗更大
      */
-    private void drawSheep(Canvas canvas, Paint paint, float cx, float cy) {
+    private void drawSheep(Canvas canvas, Paint paint, float cx, float cy, float wp) {
         // 身体主体（白色椭圆）- 增加宽度和高度以匹配新的 size
         float bodyW = size * 0.7f;
         float bodyH = size * 0.5f;
+        float legSwing = wp * 4;
 
         paint.setColor(Color.WHITE);
         canvas.drawOval(cx - bodyW/2, cy - bodyH/2, cx + bodyW/2, cy + bodyH/2, paint);
@@ -242,22 +429,23 @@ public class AnimalNpc extends Npc{
         paint.setColor(Color.WHITE);
         canvas.drawCircle(headX - 4, headY - 2, 2, paint);
 
-        // 四条腿（黑色，稍微拉长并加粗）
+        // 四条腿（黑色，交替迈步）
         paint.setColor(Color.BLACK);
         float legH = size * 0.28f;
         float legW = size * 0.08f;
-        canvas.drawRect(cx - bodyW/3, cy + bodyH/2 - 5, cx - bodyW/3 + legW, cy + bodyH/2 + legH, paint);
-        canvas.drawRect(cx - bodyW/6, cy + bodyH/2 - 5, cx - bodyW/6 + legW, cy + bodyH/2 + legH, paint);
-        canvas.drawRect(cx + bodyW/6, cy + bodyH/2 - 5, cx + bodyW/6 + legW, cy + bodyH/2 + legH, paint);
-        canvas.drawRect(cx + bodyW/3 - legW, cy + bodyH/2 - 5, cx + bodyW/3, cy + bodyH/2 + legH, paint);
+        canvas.drawRect(cx - bodyW/3 + legSwing, cy + bodyH/2 - 5, cx - bodyW/3 + legW + legSwing, cy + bodyH/2 + legH, paint);
+        canvas.drawRect(cx - bodyW/6 - legSwing, cy + bodyH/2 - 5, cx - bodyW/6 + legW - legSwing, cy + bodyH/2 + legH, paint);
+        canvas.drawRect(cx + bodyW/6 + legSwing, cy + bodyH/2 - 5, cx + bodyW/6 + legW + legSwing, cy + bodyH/2 + legH, paint);
+        canvas.drawRect(cx + bodyW/3 - legW - legSwing, cy + bodyH/2 - 5, cx + bodyW/3 - legSwing, cy + bodyH/2 + legH, paint);
     }
 
     /**
      * 绘制牛 - 黑白花色 + 牛角
      */
-    private void drawCow(Canvas canvas, Paint paint, float cx, float cy) {
+    private void drawCow(Canvas canvas, Paint paint, float cx, float cy, float wp) {
         float bodyW = size * 0.75f;
         float bodyH = size * 0.55f;
+        float legSwing = wp * 3.5f;
 
         // 身体（白色圆角矩形）
         paint.setColor(Color.WHITE);
@@ -289,12 +477,12 @@ public class AnimalNpc extends Npc{
         paint.setColor(Color.BLACK);
         canvas.drawCircle(cx - bodyW/2 - headR/2 - 3, cy - bodyH/4 - 3, 3, paint);
 
-        // 四条腿
+        // 四条腿（交替迈步）
         paint.setColor(Color.WHITE);
-        canvas.drawRect(cx - bodyW/2 - 5, cy + bodyH/2, cx - bodyW/2 + 8, cy + bodyH/2 + 15, paint);
-        canvas.drawRect(cx - bodyW/4, cy + bodyH/2, cx - bodyW/4 + 10, cy + bodyH/2 + 15, paint);
-        canvas.drawRect(cx + bodyW/4 - 8, cy + bodyH/2, cx + bodyW/4 + 5, cy + bodyH/2 + 15, paint);
-        canvas.drawRect(cx + bodyW/2 - 10, cy + bodyH/2, cx + bodyW/2, cy + bodyH/2 + 15, paint);
+        canvas.drawRect(cx - bodyW/2 - 5 + legSwing, cy + bodyH/2, cx - bodyW/2 + 8 + legSwing, cy + bodyH/2 + 15, paint);
+        canvas.drawRect(cx - bodyW/4 - legSwing, cy + bodyH/2, cx - bodyW/4 + 10 - legSwing, cy + bodyH/2 + 15, paint);
+        canvas.drawRect(cx + bodyW/4 - 8 + legSwing, cy + bodyH/2, cx + bodyW/4 + 5 + legSwing, cy + bodyH/2 + 15, paint);
+        canvas.drawRect(cx + bodyW/2 - 10 - legSwing, cy + bodyH/2, cx + bodyW/2 - legSwing, cy + bodyH/2 + 15, paint);
 
         // 尾巴
         paint.setStrokeWidth(3);
@@ -304,9 +492,10 @@ public class AnimalNpc extends Npc{
     /**
      * 绘制马 - 棕色身体 + 鬃毛 + 长脸
      */
-    private void drawHorse(Canvas canvas, Paint paint, float cx, float cy) {
+    private void drawHorse(Canvas canvas, Paint paint, float cx, float cy, float wp) {
         float bodyW = size * 0.8f;
         float bodyH = size * 0.5f;
+        float legSwing = wp * 4.5f;
 
         // 身体（棕色圆角矩形）
         paint.setColor(Color.rgb(139, 69, 19));
@@ -378,14 +567,14 @@ public class AnimalNpc extends Npc{
         canvas.drawLine(headCenterX + headScale * 0.7f, headCenterY + headScale * 0.35f,
                 headCenterX + headScale * 0.95f, headCenterY + headScale * 0.38f, paint);
 
-        // 四条腿（修长）
+        // 四条腿（修长，交替迈步）
         paint.setColor(Color.rgb(139, 69, 19));
         paint.setStyle(Paint.Style.FILL);
         paint.setStrokeWidth(1);
-        canvas.drawRect(cx - bodyW/2 - 5, cy + bodyH/2, cx - bodyW/2 + 6, cy + bodyH/2 + 18, paint);
-        canvas.drawRect(cx - bodyW/4, cy + bodyH/2, cx - bodyW/4 + 8, cy + bodyH/2 + 18, paint);
-        canvas.drawRect(cx + bodyW/4 - 6, cy + bodyH/2, cx + bodyW/4 + 5, cy + bodyH/2 + 18, paint);
-        canvas.drawRect(cx + bodyW/2 - 8, cy + bodyH/2, cx + bodyW/2, cy + bodyH/2 + 18, paint);
+        canvas.drawRect(cx - bodyW/2 - 5 + legSwing, cy + bodyH/2, cx - bodyW/2 + 6 + legSwing, cy + bodyH/2 + 18, paint);
+        canvas.drawRect(cx - bodyW/4 - legSwing, cy + bodyH/2, cx - bodyW/4 + 8 - legSwing, cy + bodyH/2 + 18, paint);
+        canvas.drawRect(cx + bodyW/4 - 6 + legSwing, cy + bodyH/2, cx + bodyW/4 + 5 + legSwing, cy + bodyH/2 + 18, paint);
+        canvas.drawRect(cx + bodyW/2 - 8 - legSwing, cy + bodyH/2, cx + bodyW/2 - legSwing, cy + bodyH/2 + 18, paint);
 
         // 尾巴 - 更飘逸的长发
         paint.setStrokeWidth(4);

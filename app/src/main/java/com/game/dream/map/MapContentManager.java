@@ -46,7 +46,7 @@ public class MapContentManager {
         if (mapId >= 2000 && mapId < 3000) {
             enemyCount = 120; // 迷宫中怪物少一些
         } else if (mapId == MapSystem.MAP_ID_JIN_LING) {
-            enemyCount = 300; // 金陵大地图怪物多一些
+            enemyCount = 1000; // 金陵大地图怪物多一些
         } else {
             enemyCount = 180;
         }

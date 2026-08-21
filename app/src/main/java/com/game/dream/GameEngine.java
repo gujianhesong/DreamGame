@@ -30,6 +30,7 @@ import com.game.dream.item.GroundItem;
 import com.game.dream.item.ItemStack;
 import com.game.dream.map.MapContentManager;
 import com.game.dream.map.MazeGenerator;
+import com.game.dream.npc.AnimalNpc;
 import com.game.dream.npc.Npc;
 import com.game.dream.npc.TreasureChest;
 import com.game.dream.panel.ShopPanel;
@@ -292,6 +293,17 @@ public class GameEngine {
 
         // Update ground items (auto-pickup)
         updateGroundItems();
+
+        // Update all NPCs (idle animation + animal wandering)
+        if (!MapSystem.getInstance().isCurrentMazaMap()) {
+            MapInfo curMap = MapSystem.getInstance().getCurMapInfo();
+            if (curMap != null) {
+                List<Npc> npcList = NpcSystem.getInstance().getMapNpcList(curMap.getMapId());
+                for (Npc npc : npcList) {
+                    npc.update(deltaTime);
+                }
+            }
+        }
 
         // Check enemy attacks on player
         checkEnemyAttacksOnPlayer();
@@ -998,6 +1010,8 @@ public class GameEngine {
     }
 
     public boolean handleTouch(MotionEvent event) {
+        if (isLoading) return false;
+
         int action = event.getActionMasked();
         int pointerIndex = event.getActionIndex();
         int pointerId = event.getPointerId(pointerIndex);

@@ -6,6 +6,8 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Pair;
 import android.view.MotionEvent;
 
@@ -152,6 +154,16 @@ public class GameEngine {
 
     private void initGame() {
         RoleInfo roleInfo = RoleSystem.getInstance().getRoleInfo();
+
+        if (roleInfo == null) {
+            new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    initGame();
+                }
+            }, 100);
+            return;
+        }
 
         int mapId = roleInfo.getMapId();
         if (mapId <= 0) {

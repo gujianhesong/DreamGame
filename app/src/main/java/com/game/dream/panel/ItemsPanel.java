@@ -50,6 +50,13 @@ public class ItemsPanel {
     private static final int SLOT_GAP = 8;
     private static final int SLOT_GAP_EQUIP = 20;
 
+    // Category tabs
+    private static final String[] TAB_NAMES = {"药品", "装备", "物品", "材料", "任务"};
+    private static final int TAB_HEIGHT = 40;
+    private static final int TAB_GAP = 4;
+    private Rect[][] tabBounds;
+    private volatile int selectedTab = 0;
+
     // Scrolling support for inventory
     private float inventoryScrollOffset = 0;
     private float maxInventoryScrollOffset = 0;
@@ -71,6 +78,7 @@ public class ItemsPanel {
         this.panelBounds = new Rect();
         this.closeButton = new Rect();
         this.inventorySlots = new Rect[INVENTORY_ROWS][INVENTORY_COLS];
+        this.tabBounds = new Rect[1][TAB_NAMES.length];
         this.itemInfoPanel = new ItemInfoPanel();
         this.equipInfoPanel = new EquipInfoPanel();
     }
@@ -80,10 +88,14 @@ public class ItemsPanel {
      */
     public void toggleVisibility() {
         isVisible = !isVisible;
+        if (isVisible) {
+            inventoryScrollOffset = 0;
+        }
     }
 
     public void show() {
         isVisible = true;
+        inventoryScrollOffset = 0;
     }
 
     public void hide() {
@@ -148,9 +160,19 @@ public class ItemsPanel {
         moneyArea = new Rect(rightPanelStartX, y + 80,
                 x + width - 240, y + 80 + moneyHeight);
 
-        // Inventory grid (right side, below money with more gap)
+        // Category tabs (below money area)
+        int tabStartY = moneyArea.bottom + 15;
+        int totalTabGap = TAB_GAP * (TAB_NAMES.length - 1);
+        int availableTabWidth = (x + width - 240) - rightPanelStartX;
+        int tabWidth = (availableTabWidth - totalTabGap) / TAB_NAMES.length;
+        for (int i = 0; i < TAB_NAMES.length; i++) {
+            int tabX = rightPanelStartX + i * (tabWidth + TAB_GAP);
+            tabBounds[0][i] = new Rect(tabX, tabStartY, tabX + tabWidth, tabStartY + TAB_HEIGHT);
+        }
+
+        // Inventory grid (right side, below tabs)
         int inventoryStartX = rightPanelStartX;
-        int inventoryStartY = y + 80 + moneyHeight + 60; // Added 30px gap
+        int inventoryStartY = tabStartY + TAB_HEIGHT + 20;
 
         for (int row = 0; row < INVENTORY_ROWS; row++) {
             for (int col = 0; col < INVENTORY_COLS; col++) {
@@ -202,6 +224,9 @@ public class ItemsPanel {
 
         // Draw money
         drawMoneySection(canvas, paint);
+
+        // Draw category tabs
+        drawCategoryTabs(canvas, paint);
 
         // Draw inventory grid
         drawInventoryGrid(canvas, paint);
@@ -273,7 +298,7 @@ public class ItemsPanel {
 
         if (equipped != null) {
             // Draw equipped item name (no background box)
-            paint.setColor(equipped.getColor());
+            paint.setColor(Color.WHITE);
             paint.setTextSize(18);
             paint.setTextAlign(Paint.Align.CENTER);
 
@@ -282,8 +307,7 @@ public class ItemsPanel {
             canvas.drawText(itemName, slot.centerX(), slot.centerY() + 5, paint);
 
             // Rarity indicator
-            paint.setTextSize(14);
-            paint.setColor(Color.WHITE);
+            paint.setTextSize(16);
             canvas.drawText(ItemsUtil.getRarityText(equipped.getRarity()),
                     slot.centerX(), slot.bottom - 8, paint);
         } else {
@@ -318,25 +342,92 @@ public class ItemsPanel {
         paint.setTextAlign(Paint.Align.LEFT);
 
         long money = RoleSystem.getInstance().getRoleInfo().getMoney();
+        float moneyWidth = paint.measureText("💰 金钱: " + money);
         canvas.drawText("💰 金钱: " + money, moneyArea.left + 15,
                 moneyArea.centerY() + 10, paint);
+
+        // Item count after money
+        List<ItemStack> displayItems = getCategoryItems(selectedTab);
+        paint.setColor(Color.rgb(255, 255, 255));
+        paint.setTextSize(28);
+        canvas.drawText("  物品: " + displayItems.size() + "/" + ItemSystem.getInstance().getMaxSize(),
+                moneyArea.left + 15 + moneyWidth + 50, moneyArea.centerY() + 10, paint);
+    }
+
+    /**
+     * Draw category tabs for inventory filtering
+     */
+    private void drawCategoryTabs(Canvas canvas, Paint paint) {
+        for (int i = 0; i < TAB_NAMES.length; i++) {
+            Rect tab = tabBounds[0][i];
+            boolean isSelected = (i == selectedTab);
+
+            // Tab background
+            paint.setColor(isSelected ? Color.argb(200, 40, 80, 140) : Color.argb(100, 40, 40, 50));
+            canvas.drawRoundRect(tab.left, tab.top, tab.right, tab.bottom, 6, 6, paint);
+
+            // Tab border
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setStrokeWidth(isSelected ? 3 : 1);
+            paint.setColor(isSelected ? Color.rgb(100, 180, 255) : Color.rgb(200, 200, 200));
+            canvas.drawRoundRect(tab.left, tab.top, tab.right, tab.bottom, 6, 6, paint);
+            paint.setStyle(Paint.Style.FILL);
+
+            // Tab text
+            paint.setColor(Color.WHITE);
+            paint.setTextSize(20);
+            paint.setTextAlign(Paint.Align.CENTER);
+            canvas.drawText(TAB_NAMES[i], tab.centerX(), tab.centerY() + 7, paint);
+        }
+    }
+
+    /**
+     * Get items matching the given category tab (creates fresh list each call)
+     */
+    private List<ItemStack> getCategoryItems(int tabIndex) {
+        List<ItemStack> allItems = ItemSystem.getInstance().getItems();
+        List<ItemStack> result = new ArrayList<>();
+        for (int i = 0; i < allItems.size(); i++) {
+            try {
+                ItemStack stack = allItems.get(i);
+                if (isTypeInCategory(stack.getItem().getType(), tabIndex)) {
+                    result.add(stack);
+                }
+            } catch (Exception e) {
+                break;
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Check if item type belongs to the given category
+     */
+    private boolean isTypeInCategory(Item.Type type, int tabIndex) {
+        switch (tabIndex) {
+            case 0: // 药品
+                return type == Item.Type.CONSUMABLE || type == Item.Type.FOOD;
+            case 1: // 装备
+                return type == Item.Type.EQUIPMENT;
+            case 2: // 物品
+                return type == Item.Type.SKILL_BOOK || type == Item.Type.SPECIAL;
+            case 3: // 材料
+                return type == Item.Type.MATERIAL;
+            case 4: // 任务
+                return type == Item.Type.QUEST_ITEM;
+            default:
+                return false;
+        }
     }
 
     /**
      * Draw inventory grid
      */
     private void drawInventoryGrid(Canvas canvas, Paint paint) {
-        // Section title
-        paint.setColor(Color.rgb(200, 200, 220));
-        paint.setTextSize(24);
-        paint.setTextAlign(Paint.Align.LEFT);
-        canvas.drawText("背包 (" + ItemSystem.getInstance().getSize() + "/" + ItemSystem.getInstance().getMaxSize() + ")",
-                inventorySlots[0][0].left, inventorySlots[0][0].top - 15, paint);
-
-        List<ItemStack> items = ItemSystem.getInstance().getItems();
+        List<ItemStack> displayItems = getCategoryItems(selectedTab);
 
         // 1. Calculate total rows needed based on actual item count
-        int totalRowsNeeded = (int) Math.ceil((double) items.size() / INVENTORY_COLS);
+        int totalRowsNeeded = (int) Math.ceil((double) displayItems.size() / INVENTORY_COLS);
         if (totalRowsNeeded < INVENTORY_ROWS)
             totalRowsNeeded = INVENTORY_ROWS; // Keep at least the visible area
 
@@ -364,7 +455,7 @@ public class ItemsPanel {
                 int index = row * INVENTORY_COLS + col;
 
                 // Optimization: Stop if we've drawn all items
-                if (index >= items.size() && row >= INVENTORY_ROWS) break;
+                if (index >= displayItems.size() && row >= INVENTORY_ROWS) break;
 
                 // Calculate the Y position with scroll offset
                 // We use the base slot Y as a reference point
@@ -386,8 +477,8 @@ public class ItemsPanel {
                 canvas.drawRoundRect(drawSlot.left, drawSlot.top, drawSlot.right, drawSlot.bottom, 5, 5, paint);
 
                 // Draw item if exists
-                if (index < items.size()) {
-                    ItemStack stack = items.get(index);
+                if (index < displayItems.size()) {
+                    ItemStack stack = displayItems.get(index);
                     Item item = stack.getItem();
 
                     // Item border
@@ -413,7 +504,7 @@ public class ItemsPanel {
 
                     // Quantity
                     if (stack.getQuantity() > 1) {
-                        paint.setTextSize(14);
+                        paint.setTextSize(18);
                         paint.setColor(Color.YELLOW);
                         paint.setTextAlign(Paint.Align.RIGHT);
                         canvas.drawText("x" + stack.getQuantity(),
@@ -483,6 +574,17 @@ public class ItemsPanel {
      */
     public boolean handleTouchDown(float x, float y) {
         if (!isVisible) return false;
+
+        // Check category tabs
+        for (int i = 0; i < TAB_NAMES.length; i++) {
+            if (tabBounds[0][i] != null && tabBounds[0][i].contains((int) x, (int) y)) {
+                if (selectedTab != i) {
+                    selectedTab = i;
+                    inventoryScrollOffset = 0;
+                }
+                return true;
+            }
+        }
 
         // If item info panel is visible, let it handle the touch first
         if (itemInfoPanel != null && itemInfoPanel.isVisible()) {
@@ -588,10 +690,10 @@ public class ItemsPanel {
         // If it wasn't a drag, treat it as a click
         if (!isDragging) {
             // Perform the item click logic here
-            List<ItemStack> items = ItemSystem.getInstance().getItems();
+            List<ItemStack> displayItems = getCategoryItems(selectedTab);
 
             // 1. Calculate total rows needed dynamically
-            int totalRowsNeeded = (int) Math.ceil((double) items.size() / INVENTORY_COLS);
+            int totalRowsNeeded = (int) Math.ceil((double) displayItems.size() / INVENTORY_COLS);
 
             // 2. Loop through ALL rows that contain items
             for (int row = 0; row < totalRowsNeeded; row++) {
@@ -599,7 +701,7 @@ public class ItemsPanel {
                     int index = row * INVENTORY_COLS + col;
 
                     // Safety check: don't go beyond the list size
-                    if (index >= items.size()) break;
+                    if (index >= displayItems.size()) break;
 
                     // 3. Calculate the EXACT same position as used in drawInventoryGrid
                     int baseSlotY = inventorySlots[0][0].top + row * (SLOT_SIZE + SLOT_GAP);
@@ -614,7 +716,7 @@ public class ItemsPanel {
 
                     // 4. Check if the touch point is inside this calculated slot
                     if (hitSlot.contains((int) x, (int) y)) {
-                        ItemStack stack = items.get(index);
+                        ItemStack stack = displayItems.get(index);
 
                         // Show the appropriate info panel
                         if (stack.getItem().getType() == Item.Type.EQUIPMENT) {
@@ -694,9 +796,15 @@ public class ItemsPanel {
      */
     private void showItemInfo(ItemStack stack, int index, int centerX, int centerY) {
         if (itemInfoPanel != null) {
+            // Check if this item is set as default HP/MP potion
+            boolean isDefaultHp = ItemSystem.getInstance().getDefaultHpPotionIds().contains(stack.getItem().getId());
+            boolean isDefaultMp = ItemSystem.getInstance().getDefaultMpPotionIds().contains(stack.getItem().getId());
+
             itemInfoPanel.show(stack,
                     centerX,
                     centerY,
+                    isDefaultHp,
+                    isDefaultMp,
                     new ItemInfoPanel.ItemActionListener() {
                         @Override
                         public void onUseItem(ItemStack item) {
@@ -706,6 +814,30 @@ public class ItemsPanel {
                         @Override
                         public void onDropItem(ItemStack item) {
                             ItemSystem.getInstance().removeItem(item.getItem().getId(), 1);
+                        }
+
+                        @Override
+                        public void onSetDefaultHp(ItemStack item) {
+                            int itemId = item.getItem().getId();
+                            if (ItemSystem.getInstance().getDefaultHpPotionIds().contains(itemId)) {
+                                ItemSystem.getInstance().removeDefaultHpPotion(itemId);
+                                GameEngine.getInstance().showCenterToast("已取消默认气血药");
+                            } else {
+                                ItemSystem.getInstance().addDefaultHpPotion(itemId);
+                                GameEngine.getInstance().showCenterToast("已设为默认气血药");
+                            }
+                        }
+
+                        @Override
+                        public void onSetDefaultMp(ItemStack item) {
+                            int itemId = item.getItem().getId();
+                            if (ItemSystem.getInstance().getDefaultMpPotionIds().contains(itemId)) {
+                                ItemSystem.getInstance().removeDefaultMpPotion(itemId);
+                                GameEngine.getInstance().showCenterToast("已取消默认魔法药");
+                            } else {
+                                ItemSystem.getInstance().addDefaultMpPotion(itemId);
+                                GameEngine.getInstance().showCenterToast("已设为默认魔法药");
+                            }
                         }
                     }
             );

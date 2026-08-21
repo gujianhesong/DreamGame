@@ -11,6 +11,8 @@ public class SaveInfo {
     private List<SkillInfo> practiseSkillInfos;
     private List<SkillInfo> equipedSkillInfos;
     private List<QuestInfo> questInfos;
+    private List<Integer> defaultHpPotionIds;
+    private List<Integer> defaultMpPotionIds;
 
     public RoleInfo getRoleInfo() {
         return roleInfo;
@@ -74,5 +76,21 @@ public class SaveInfo {
 
     public void setQuestInfos(List<QuestInfo> questInfos) {
         this.questInfos = questInfos;
+    }
+
+    public List<Integer> getDefaultHpPotionIds() {
+        return defaultHpPotionIds;
+    }
+
+    public void setDefaultHpPotionIds(List<Integer> defaultHpPotionIds) {
+        this.defaultHpPotionIds = defaultHpPotionIds;
+    }
+
+    public List<Integer> getDefaultMpPotionIds() {
+        return defaultMpPotionIds;
+    }
+
+    public void setDefaultMpPotionIds(List<Integer> defaultMpPotionIds) {
+        this.defaultMpPotionIds = defaultMpPotionIds;
     }
 }

@@ -21,6 +21,7 @@ import com.game.dream.panel.QuestPanel;
 import com.game.dream.panel.RoleInfoPanel;
 import com.game.dream.panel.ShopPanel;
 import com.game.dream.panel.SkillsPanel;
+import com.game.dream.system.ItemSystem;
 import com.game.dream.system.MapSystem;
 import com.game.dream.system.RoleSystem;
 import com.game.dream.system.SkillSystem;
@@ -66,6 +67,10 @@ public class GameUI {
     // Attack buttons
     private Rect meleeAttackButton;
 
+    // HP/MP quick-use buttons
+    private Rect hpQuickButton;
+    private Rect mpQuickButton;
+
     // Skill buttons (Dynamic based on loadout)
     private List<Rect> skillButtons = new ArrayList<>();
     private Rect switchPageButton;
@@ -85,6 +90,13 @@ public class GameUI {
 
     private boolean meleeAttackPressed;
     private boolean magicAttackPressed;
+    private boolean hpButtonPressed;
+    private boolean mpButtonPressed;
+
+    // Cooldown for HP/MP quick-use buttons (2 seconds)
+    private static final long POTION_COOLDOWN_MS = 2000;
+    private long hpPotionCooldownEnd = 0;
+    private long mpPotionCooldownEnd = 0;
 
     // Track which pointer IDs are controlling the D-pad
     private Integer dpadPointerId = null;
@@ -370,6 +382,24 @@ public class GameUI {
             int y = physicalCenterY + attackBtnSize / 2 + 30;
 
             switchPageButton = new Rect(x, y, x + switchBtnSize, y + switchBtnSize);
+        }
+
+        // HP/MP quick-use buttons (above the attack button)
+        {
+            int quickBtnSize = (int) (buttonSize * 0.5);
+            int quickBtnGap = 15;
+            int quickBtnRight = screenWidth - 20;
+            int quickBtnLeft = quickBtnRight - quickBtnSize;
+
+            // HP button: above the attack button
+            int hpBtnBottom = meleeAttackButton.top - quickBtnGap;
+            int hpBtnTop = hpBtnBottom - quickBtnSize;
+            hpQuickButton = new Rect(quickBtnLeft, hpBtnTop, quickBtnRight, hpBtnBottom);
+
+            // MP button: above the HP button
+            int mpBtnBottom = hpBtnTop - quickBtnGap;
+            int mpBtnTop = mpBtnBottom - quickBtnSize;
+            mpQuickButton = new Rect(quickBtnLeft, mpBtnTop, quickBtnRight, mpBtnBottom);
         }
 
         // role info button (top-right corner)
@@ -712,8 +742,34 @@ public class GameUI {
         switch (action) {
             case MotionEvent.ACTION_DOWN:
             case MotionEvent.ACTION_POINTER_DOWN:
+                // Check HP/MP quick-use buttons first (smaller, higher priority)
+                if (hpQuickButton != null &&
+                        isPointInCircle(x, y, hpQuickButton.centerX(), hpQuickButton.centerY(), hpQuickButton.width() / 2)) {
+                    handled = true;
+                    long now = System.currentTimeMillis();
+                    if (now < hpPotionCooldownEnd) {
+                        // Still on cooldown
+                    } else if (!ItemSystem.getInstance().useDefaultHpPotion()) {
+                        GameEngine.getInstance().showCenterToast("未设置默认气血药或药品不足");
+                    } else {
+                        hpPotionCooldownEnd = now + POTION_COOLDOWN_MS;
+                    }
+                }
+                if (mpQuickButton != null &&
+                        isPointInCircle(x, y, mpQuickButton.centerX(), mpQuickButton.centerY(), mpQuickButton.width() / 2)) {
+                    handled = true;
+                    long now = System.currentTimeMillis();
+                    if (now < mpPotionCooldownEnd) {
+                        // Still on cooldown
+                    } else if (!ItemSystem.getInstance().useDefaultMpPotion()) {
+                        GameEngine.getInstance().showCenterToast("未设置默认魔法药或药品不足");
+                    } else {
+                        mpPotionCooldownEnd = now + POTION_COOLDOWN_MS;
+                    }
+                }
+
                 // Check if this pointer is on any attack button
-                if (meleeAttackButton != null &&
+                if (!handled && meleeAttackButton != null &&
                         isPointInCircle(x, y, meleeAttackButton.centerX(), meleeAttackButton.centerY(), meleeAttackButton.width() / 2)) {
                     meleeAttackPressed = true;
                     handled = true;
@@ -746,6 +802,16 @@ public class GameUI {
                 if (meleeAttackButton != null &&
                         isPointInCircle(x, y, meleeAttackButton.centerX(), meleeAttackButton.centerY(), meleeAttackButton.width() / 2)) {
                     meleeAttackPressed = false;
+                    handled = true;
+                }
+                if (hpQuickButton != null &&
+                        isPointInCircle(x, y, hpQuickButton.centerX(), hpQuickButton.centerY(), hpQuickButton.width() / 2)) {
+                    hpButtonPressed = false;
+                    handled = true;
+                }
+                if (mpQuickButton != null &&
+                        isPointInCircle(x, y, mpQuickButton.centerX(), mpQuickButton.centerY(), mpQuickButton.width() / 2)) {
+                    mpButtonPressed = false;
                     handled = true;
                 }
 
@@ -963,6 +1029,10 @@ public class GameUI {
             drawCircularPhysicalAttackButton(canvas, meleeAttackButton, meleeAttackPressed);
         }
 
+        // Draw HP/MP quick-use buttons
+        drawQuickPotionButton(canvas, hpQuickButton, hpButtonPressed, true);
+        drawQuickPotionButton(canvas, mpQuickButton, mpButtonPressed, false);
+
         List<SkillInfo> equipped = SkillSystem.getInstance().getCurrentPageSkills();
         paint.setAntiAlias(true);
         paint.setTextAlign(Paint.Align.CENTER);
@@ -1099,6 +1169,63 @@ public class GameUI {
         if (cooldownProgress < 1.0f) {
             drawCircularCooldown(canvas, button, cooldownProgress);
         }
+    }
+
+    /**
+     * Draw HP/MP quick-use potion button
+     */
+    private void drawQuickPotionButton(Canvas canvas, Rect button, boolean pressed, boolean isHp) {
+        if (button == null) return;
+        Paint paint = new Paint();
+        paint.setAntiAlias(true);
+
+        float centerX = button.centerX();
+        float centerY = button.centerY();
+        float radius = button.width() / 2;
+
+        long now = System.currentTimeMillis();
+        long cooldownEnd = isHp ? hpPotionCooldownEnd : mpPotionCooldownEnd;
+        boolean onCooldown = now < cooldownEnd;
+        float cooldownProgress = onCooldown ? 1f - (cooldownEnd - now) / (float) POTION_COOLDOWN_MS : 0f;
+
+        boolean hasPotion = isHp ? ItemSystem.getInstance().hasDefaultHpPotion()
+                : ItemSystem.getInstance().hasDefaultMpPotion();
+
+        // Button background
+        if (pressed) {
+            paint.setColor(isHp ? Color.argb(220, 255, 80, 80) : Color.argb(220, 80, 80, 255));
+        } else if (hasPotion) {
+            paint.setColor(isHp ? Color.argb(180, 220, 60, 60) : Color.argb(180, 60, 60, 220));
+        } else {
+            paint.setColor(Color.argb(60, 120, 120, 120)); // Dim when no potion set
+        }
+        canvas.drawCircle(centerX, centerY, radius, paint);
+
+        // Outer glow when has potion
+        if (hasPotion) {
+            paint.setColor(isHp ? Color.argb(60, 255, 100, 100) : Color.argb(60, 100, 100, 255));
+            canvas.drawCircle(centerX, centerY, radius + 3, paint);
+        }
+
+        // Border
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(3);
+        paint.setColor(hasPotion ? Color.WHITE : Color.argb(80, 150, 150, 150));
+        canvas.drawCircle(centerX, centerY, radius, paint);
+
+        // Cooldown overlay (same as skill buttons)
+        if (onCooldown) {
+            drawCircularCooldown(canvas, button, cooldownProgress);
+        }
+
+        // Label
+        paint.setStyle(Paint.Style.FILL);
+        paint.setTextSize(32);
+        paint.setFakeBoldText(true);
+        paint.setColor(hasPotion ? Color.WHITE : Color.argb(100, 200, 200, 200));
+        paint.setTextAlign(Paint.Align.CENTER);
+        canvas.drawText(isHp ? "血" : "蓝", centerX, centerY + 11, paint);
+        paint.setFakeBoldText(false);
     }
 
     /**

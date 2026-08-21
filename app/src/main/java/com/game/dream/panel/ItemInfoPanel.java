@@ -5,10 +5,14 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
 
+import com.game.dream.item.ConsumableItem;
 import com.game.dream.item.Item;
 import com.game.dream.item.ItemStack;
+import com.game.dream.system.ItemSystem;
 import com.game.dream.utils.ItemsUtil;
 import com.game.dream.utils.TouchUtil;
+
+import java.util.List;
 
 /**
  * Item information popup panel
@@ -21,6 +25,11 @@ public class ItemInfoPanel {
     // Buttons
     private Rect useButton;
     private Rect dropButton;
+    private Rect defaultPotionButton; // 设为/取消默认药品按钮
+
+    // Whether this item is a default potion
+    private boolean isDefaultHp = false;
+    private boolean isDefaultMp = false;
 
     // Callback interface
     public interface ItemActionListener {
@@ -28,6 +37,9 @@ public class ItemInfoPanel {
 
         void onDropItem(ItemStack item);
 
+        void onSetDefaultHp(ItemStack item);
+
+        void onSetDefaultMp(ItemStack item);
     }
 
     private ItemActionListener listener;
@@ -37,27 +49,43 @@ public class ItemInfoPanel {
         this.panelBounds = new Rect();
         this.useButton = new Rect();
         this.dropButton = new Rect();
+        this.defaultPotionButton = new Rect();
     }
 
     /**
      * Show item info panel
      */
     public void show(ItemStack item, int centerX, int centerY, ItemActionListener listener) {
+        show(item, centerX, centerY, false, false, listener);
+    }
+
+    /**
+     * Show item info panel with default potion state
+     */
+    public void show(ItemStack item, int centerX, int centerY, boolean isDefaultHp, boolean isDefaultMp, ItemActionListener listener) {
         this.selectedItem = item;
         this.listener = listener;
         this.isVisible = true;
+        this.isDefaultHp = isDefaultHp;
+        this.isDefaultMp = isDefaultMp;
+
+        // Determine if item is a consumable potion (HP or MP)
+        boolean isHealPotion = false;
+        if (item.getItem() instanceof ConsumableItem) {
+            ConsumableItem ci = (ConsumableItem) item.getItem();
+            isHealPotion = ci.getEffectType() == ConsumableItem.EffectType.HEAL_HP
+                    || ci.getEffectType() == ConsumableItem.EffectType.HEAL_MP;
+        }
 
         // Calculate panel size
         int panelWidth = 420;
-        int panelHeight = 420;
+        int panelHeight = isHealPotion ? 480 : 420; // Extra space for default potion button
 
         // Position panel to the right of the click position
-        // Add some offset so it doesn't overlap with the cursor/item
         int offsetX = 70;
         int panelX = centerX + offsetX;
-        int panelY = centerY - panelHeight / 2; // Center vertically relative to click
+        int panelY = centerY - panelHeight / 2;
 
-        // Ensure panel stays within reasonable bounds (optional: add boundary checks later)
         panelBounds.set(
                 panelX,
                 panelY,
@@ -70,7 +98,7 @@ public class ItemInfoPanel {
         int buttonHeight = 45;
         int bottomMargin = 20;
 
-        // Use/Equip button (left)
+        // Use button (left)
         useButton.set(
                 panelBounds.left + 30,
                 panelBounds.bottom - bottomMargin - buttonHeight,
@@ -85,6 +113,19 @@ public class ItemInfoPanel {
                 panelBounds.right - 30,
                 panelBounds.bottom - bottomMargin
         );
+
+        // Default potion button (above use/drop buttons, only for heal potions)
+        if (isHealPotion) {
+            int defaultBtnY = panelBounds.bottom - bottomMargin - buttonHeight - 60;
+            defaultPotionButton.set(
+                    panelBounds.left + 30,
+                    defaultBtnY,
+                    panelBounds.right - 30,
+                    defaultBtnY + buttonHeight
+            );
+        } else {
+            defaultPotionButton.setEmpty();
+        }
     }
 
     /**
@@ -105,10 +146,15 @@ public class ItemInfoPanel {
     public void draw(Canvas canvas) {
         if (!isVisible || selectedItem == null) return;
 
+        // Use local reference to avoid NPE from concurrent hide() call
+        ItemStack localItem = selectedItem;
+        if (localItem == null) return;
+
         Paint paint = new Paint();
         paint.setAntiAlias(true);
 
-        Item item = selectedItem.getItem();
+        Item item = localItem.getItem();
+        if (item == null) return;
 
         // Panel background (more transparent - argb 180 instead of 240)
         paint.setColor(Color.argb(180, 25, 30, 40));
@@ -164,14 +210,31 @@ public class ItemInfoPanel {
         canvas.drawText("价值: " + item.getValue() + " 金币",
                 panelBounds.left + 25, infoStartY + 30, paint);
 
-        if (selectedItem.getQuantity() > 1) {
-            canvas.drawText("数量: " + selectedItem.getQuantity(),
+        if (localItem.getQuantity() > 1) {
+            canvas.drawText("数量: " + localItem.getQuantity(),
                     panelBounds.left + 25, infoStartY + 60, paint);
         }
 
         // Stackable info
         canvas.drawText("可堆叠: " + (item.getMaxStack() > 1 ? "是 (最大" + item.getMaxStack() + ")" : "否"),
                 panelBounds.left + 25, infoStartY + 90, paint);
+
+        // Default potion order info
+        int defaultInfoY = infoStartY + 120;
+        List<Integer> hpIds = ItemSystem.getInstance().getDefaultHpPotionIds();
+        List<Integer> mpIds = ItemSystem.getInstance().getDefaultMpPotionIds();
+        int hpIndex = hpIds.indexOf(item.getId());
+        int mpIndex = mpIds.indexOf(item.getId());
+        if (hpIndex >= 0) {
+            paint.setColor(Color.WHITE);
+            canvas.drawText("★ 默认气血药 序号: " + (hpIndex + 1),
+                    panelBounds.left + 25, defaultInfoY, paint);
+        }
+        if (mpIndex >= 0) {
+            paint.setColor(Color.WHITE);
+            canvas.drawText("★ 默认魔法药 序号: " + (mpIndex + 1),
+                    panelBounds.left + 25, defaultInfoY + (hpIndex >= 0 ? 28 : 0), paint);
+        }
 
         // Draw buttons
         drawButtons(canvas, paint, item);
@@ -183,6 +246,23 @@ public class ItemInfoPanel {
     private void drawButtons(Canvas canvas, Paint paint, Item item) {
         drawButton(canvas, paint, useButton, "✨ 使用", Color.rgb(50, 150, 255));
         drawButton(canvas, paint, dropButton, "🗑️ 丢弃", Color.rgb(200, 80, 80));
+
+        // Draw default potion button if visible (for consumable HP/MP items)
+        if (item instanceof ConsumableItem && defaultPotionButton.width() > 0) {
+            ConsumableItem ci = (ConsumableItem) item;
+            boolean isHp = ci.getEffectType() == ConsumableItem.EffectType.HEAL_HP;
+            boolean isDefault = isHp ? isDefaultHp : isDefaultMp;
+            String btnText;
+            int btnColor;
+            if (isDefault) {
+                btnText = "取消默认" + (isHp ? "气血药" : "魔法药");
+                btnColor = Color.rgb(200, 100, 50);
+            } else {
+                btnText = "设为默认" + (isHp ? "气血药" : "魔法药");
+                btnColor = Color.rgb(50, 180, 100);
+            }
+            drawButton(canvas, paint, defaultPotionButton, btnText, btnColor);
+        }
     }
 
     /**
@@ -281,6 +361,20 @@ public class ItemInfoPanel {
         if (TouchUtil.checkIsInTouchRectFloat(dropButton, x, y)) {
             if (listener != null && selectedItem != null) {
                 listener.onDropItem(selectedItem);
+            }
+            hide();
+            return true;
+        }
+
+        // Check default potion button
+        if (defaultPotionButton.width() > 0 && TouchUtil.checkIsInTouchRectFloat(defaultPotionButton, x, y)) {
+            if (listener != null && selectedItem != null && selectedItem.getItem() instanceof ConsumableItem) {
+                ConsumableItem ci = (ConsumableItem) selectedItem.getItem();
+                if (ci.getEffectType() == ConsumableItem.EffectType.HEAL_HP) {
+                    listener.onSetDefaultHp(selectedItem);
+                } else if (ci.getEffectType() == ConsumableItem.EffectType.HEAL_MP) {
+                    listener.onSetDefaultMp(selectedItem);
+                }
             }
             hide();
             return true;

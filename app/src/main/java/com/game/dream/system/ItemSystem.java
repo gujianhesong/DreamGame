@@ -23,6 +23,7 @@ import com.game.dream.utils.Utils;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class ItemSystem {
 
@@ -32,7 +33,7 @@ public class ItemSystem {
         return instance;
     }
 
-    private List<ItemStack> items;
+    private volatile List<ItemStack> items;
     private int maxSize;
 
     // Equipment slots
@@ -43,9 +44,13 @@ public class ItemSystem {
     private EquipmentItem belt;
     private EquipmentItem shoes;
 
+    // Default potions for quick use
+    private List<Integer> defaultHpPotionIds = new ArrayList<>();
+    private List<Integer> defaultMpPotionIds = new ArrayList<>();
+
     private ItemSystem() {
         this.maxSize = 500;
-        this.items = new ArrayList<>();
+        this.items = new CopyOnWriteArrayList<>();
     }
 
     public List<ItemInfo> getItemInfos() {
@@ -890,7 +895,7 @@ public class ItemSystem {
     }
 
     /**
-     * Get all items
+     * Get all items (CopyOnWriteArrayList guarantees consistent snapshot)
      */
     public List<ItemStack> getItems() {
         return new ArrayList<>(items);
@@ -902,6 +907,106 @@ public class ItemSystem {
 
     public int getMaxSize() {
         return maxSize;
+    }
+
+    // ========== Default Potion Management ==========
+
+    public List<Integer> getDefaultHpPotionIds() {
+        return defaultHpPotionIds;
+    }
+
+    public List<Integer> getDefaultMpPotionIds() {
+        return defaultMpPotionIds;
+    }
+
+    public void setDefaultHpPotionIds(List<Integer> ids) {
+        this.defaultHpPotionIds = ids != null ? new ArrayList<>(ids) : new ArrayList<>();
+    }
+
+    public void setDefaultMpPotionIds(List<Integer> ids) {
+        this.defaultMpPotionIds = ids != null ? new ArrayList<>(ids) : new ArrayList<>();
+    }
+
+    public void addDefaultHpPotion(int itemId) {
+        if (!defaultHpPotionIds.contains(itemId)) {
+            defaultHpPotionIds.add(itemId);
+        }
+    }
+
+    public void addDefaultMpPotion(int itemId) {
+        if (!defaultMpPotionIds.contains(itemId)) {
+            defaultMpPotionIds.add(itemId);
+        }
+    }
+
+    public void removeDefaultHpPotion(int itemId) {
+        defaultHpPotionIds.remove(Integer.valueOf(itemId));
+    }
+
+    public void removeDefaultMpPotion(int itemId) {
+        defaultMpPotionIds.remove(Integer.valueOf(itemId));
+    }
+
+    /**
+     * Use the first available default HP potion from inventory
+     * @return true if a potion was used
+     */
+    public boolean useDefaultHpPotion() {
+        for (int itemId : defaultHpPotionIds) {
+            for (int i = 0; i < items.size(); i++) {
+                ItemStack stack = items.get(i);
+                if (stack.getItem().getId() == itemId && stack.getItem() instanceof ConsumableItem) {
+                    useItem(i);
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Use the first available default MP potion from inventory
+     * @return true if a potion was used
+     */
+    public boolean useDefaultMpPotion() {
+        for (int itemId : defaultMpPotionIds) {
+            for (int i = 0; i < items.size(); i++) {
+                ItemStack stack = items.get(i);
+                if (stack.getItem().getId() == itemId && stack.getItem() instanceof ConsumableItem) {
+                    useItem(i);
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Check if any default HP potion is available in inventory
+     */
+    public boolean hasDefaultHpPotion() {
+        for (int itemId : defaultHpPotionIds) {
+            for (ItemStack stack : items) {
+                if (stack.getItem().getId() == itemId) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Check if any default MP potion is available in inventory
+     */
+    public boolean hasDefaultMpPotion() {
+        for (int itemId : defaultMpPotionIds) {
+            for (ItemStack stack : items) {
+                if (stack.getItem().getId() == itemId) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /**

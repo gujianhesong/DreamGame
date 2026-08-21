@@ -52,6 +52,8 @@ public class SaveSystem {
             saveInfo.setPractiseSkillInfos(SkillSystem.getInstance().getPractiseSkillInfos());
             saveInfo.setEquipedSkillInfos(SkillSystem.getInstance().getEquippedActiveSkills());
             saveInfo.setQuestInfos(QuestSystem.getInstance().getAcceptedQuests());
+            saveInfo.setDefaultHpPotionIds(ItemSystem.getInstance().getDefaultHpPotionIds());
+            saveInfo.setDefaultMpPotionIds(ItemSystem.getInstance().getDefaultMpPotionIds());
 
             // Convert to JSON and save
             String jsonData = gson.toJson(saveInfo);
@@ -99,6 +101,8 @@ public class SaveSystem {
         SkillSystem.getInstance().setPractiseSkillInfos(saveInfo.getPractiseSkillInfos());
         SkillSystem.getInstance().setEquippedActiveSkills(saveInfo.getEquipedSkillInfos());
         QuestSystem.getInstance().setAcceptedQuests(saveInfo.getQuestInfos());
+        ItemSystem.getInstance().setDefaultHpPotionIds(saveInfo.getDefaultHpPotionIds());
+        ItemSystem.getInstance().setDefaultMpPotionIds(saveInfo.getDefaultMpPotionIds());
     }
 
     private SaveInfo getInitData() {

@@ -115,6 +115,18 @@ public class NpcSystem {
                 npcList.add(new AnimalNpc(100232, "大公鸡", NpcType.CHICKEN, 1200, 1200));
                 npcList.add(new AnimalNpc(100233, "老黄牛", NpcType.COW, 2700, 2000));
                 npcList.add(new AnimalNpc(100234, "小鸭子", NpcType.DUCK, 1200, 2800));
+
+                // 城内居民区小动物（放在建筑间隙中，避免重叠）
+                // 西区民居间隙：建筑 400x320，间距 200x160，间隙中心 x=25900/26500/..., y=32600/33080/...
+                npcList.add(new AnimalNpc(100235, "小公鸡", NpcType.CHICKEN, 27100, 32600));
+                npcList.add(new AnimalNpc(100236, "小鸭子", NpcType.DUCK, 28900, 32600));
+                npcList.add(new AnimalNpc(100237, "小花狗", NpcType.DOG, 27700, 33080));
+                npcList.add(new AnimalNpc(100238, "小绵羊", NpcType.SHEEP, 28300, 33560));
+                // 东区民居间隙
+                npcList.add(new AnimalNpc(100239, "小公鸡", NpcType.CHICKEN, 32100, 32600));
+                npcList.add(new AnimalNpc(100240, "小鸭子", NpcType.DUCK, 33900, 33080));
+                npcList.add(new AnimalNpc(100241, "小花狗", NpcType.DOG, 33300, 33560));
+                npcList.add(new AnimalNpc(100242, "小绵羊", NpcType.SHEEP, 32700, 34040));
             }
             break;
         }

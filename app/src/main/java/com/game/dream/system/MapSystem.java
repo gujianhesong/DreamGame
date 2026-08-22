@@ -500,7 +500,7 @@ public class MapSystem {
     }
 
     /**
-     * 获取当前地图所有村庄的障碍物列表（房屋、水井等）
+     * 获取当前地图所有障碍物（村庄房屋、城市建筑、城墙等）
      */
     public List<Rect> getAllVillageObstacles() {
         List<Rect> allObs = new ArrayList<>();
@@ -509,6 +509,10 @@ public class MapSystem {
         }
         for (VillageRenderer vr : additionalVillageRenderers) {
             allObs.addAll(vr.getObstacles());
+        }
+        // 城市建筑也纳入避障范围（城里动物需要避开房屋和城墙）
+        if (jinlingCityRenderer != null && currentMapId == MAP_ID_JIN_LING) {
+            allObs.addAll(jinlingCityRenderer.getObstacles());
         }
         return allObs;
     }

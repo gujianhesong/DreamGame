@@ -326,7 +326,7 @@ public class ItemCreator {
         return new ConsumableItem(
                 101011, "四叶花", "恢复200点气血值",
                 Item.Rarity.Rarity_1,
-                99, 100,
+                999, 100,
                 ConsumableItem.EffectType.HEAL_HP,
                 200, 0
         );
@@ -336,7 +336,7 @@ public class ItemCreator {
         return new ConsumableItem(
                 101012, "七叶莲", "恢复300点气血值",
                 Item.Rarity.Rarity_1,
-                99, 150,
+                999, 150,
                 ConsumableItem.EffectType.HEAL_HP,
                 300, 0
         );
@@ -346,7 +346,7 @@ public class ItemCreator {
         return new ConsumableItem(
                 101013, "鹿茸", "恢复400点气血值",
                 Item.Rarity.Rarity_1,
-                99, 200,
+                999, 200,
                 ConsumableItem.EffectType.HEAL_HP,
                 400, 0
         );
@@ -356,7 +356,7 @@ public class ItemCreator {
         return new ConsumableItem(
                 101014, "血色茶花", "恢复500点气血值",
                 Item.Rarity.Rarity_2,
-                99, 250,
+                999, 250,
                 ConsumableItem.EffectType.HEAL_HP,
                 500, 0
         );
@@ -366,7 +366,7 @@ public class ItemCreator {
         return new ConsumableItem(
                 101021, "紫石英", "恢复600点气血值",
                 Item.Rarity.Rarity_2,
-                99, 300,
+                999, 300,
                 ConsumableItem.EffectType.HEAL_HP,
                 600, 0
         );
@@ -376,7 +376,7 @@ public class ItemCreator {
         return new ConsumableItem(
                 101022, "硫磺草", "恢复800点气血值",
                 Item.Rarity.Rarity_2,
-                99, 350,
+                999, 350,
                 ConsumableItem.EffectType.HEAL_HP,
                 800, 0
         );
@@ -386,7 +386,7 @@ public class ItemCreator {
         return new ConsumableItem(
                 101023, "凤尾草", "恢复1000点气血值",
                 Item.Rarity.Rarity_3,
-                99, 400,
+                999, 400,
                 ConsumableItem.EffectType.HEAL_HP,
                 1000, 0
         );
@@ -396,7 +396,7 @@ public class ItemCreator {
         return new ConsumableItem(
                 101024, "龙之心屑", "恢复1500点气血值",
                 Item.Rarity.Rarity_3,
-                99, 450,
+                999, 450,
                 ConsumableItem.EffectType.HEAL_HP,
                 1500, 0
         );
@@ -406,7 +406,7 @@ public class ItemCreator {
         return new ConsumableItem(
                 101025, "火凤之睛", "恢复2000点气血值",
                 Item.Rarity.Rarity_3,
-                99, 500,
+                999, 500,
                 ConsumableItem.EffectType.HEAL_HP,
                 2000, 0
         );
@@ -418,7 +418,7 @@ public class ItemCreator {
         return new ConsumableItem(
                 102011, "佛手", "恢复200点魔法值",
                 Item.Rarity.Rarity_1,
-                99, 100,
+                999, 100,
                 ConsumableItem.EffectType.HEAL_MP,
                 200, 0
         );
@@ -428,7 +428,7 @@ public class ItemCreator {
         return new ConsumableItem(
                 102012, "香叶", "恢复300点魔法值",
                 Item.Rarity.Rarity_1,
-                99, 150,
+                999, 150,
                 ConsumableItem.EffectType.HEAL_MP,
                 300, 0
         );
@@ -438,7 +438,7 @@ public class ItemCreator {
         return new ConsumableItem(
                 102013, "麝香", "恢复400点魔法值",
                 Item.Rarity.Rarity_1,
-                99, 200,
+                999, 200,
                 ConsumableItem.EffectType.HEAL_MP,
                 400, 0
         );
@@ -448,7 +448,7 @@ public class ItemCreator {
         return new ConsumableItem(
                 102014, "丁香水", "恢复500点魔法值",
                 Item.Rarity.Rarity_2,
-                99, 250,
+                999, 250,
                 ConsumableItem.EffectType.HEAL_MP,
                 500, 0
         );
@@ -458,7 +458,7 @@ public class ItemCreator {
         return new ConsumableItem(
                 102021, "地狱灵芝", "恢复600点魔法值",
                 Item.Rarity.Rarity_2,
-                99, 300,
+                999, 300,
                 ConsumableItem.EffectType.HEAL_MP,
                 600, 0
         );
@@ -468,7 +468,7 @@ public class ItemCreator {
         return new ConsumableItem(
                 102022, "仙狐涎", "恢复800点魔法值",
                 Item.Rarity.Rarity_2,
-                99, 350,
+                999, 350,
                 ConsumableItem.EffectType.HEAL_MP,
                 800, 0
         );
@@ -478,7 +478,7 @@ public class ItemCreator {
         return new ConsumableItem(
                 102023, "血珊瑚", "恢复1000点魔法值",
                 Item.Rarity.Rarity_3,
-                99, 400,
+                999, 400,
                 ConsumableItem.EffectType.HEAL_MP,
                 1000, 0
         );
@@ -488,7 +488,7 @@ public class ItemCreator {
         return new ConsumableItem(
                 102024, "餐风饮露", "恢复1500点魔法值",
                 Item.Rarity.Rarity_3,
-                99, 450,
+                999, 450,
                 ConsumableItem.EffectType.HEAL_MP,
                 1500, 0
         );
@@ -498,7 +498,7 @@ public class ItemCreator {
         return new ConsumableItem(
                 102025, "白露为霜", "恢复2000点魔法值",
                 Item.Rarity.Rarity_3,
-                99, 500,
+                999, 500,
                 ConsumableItem.EffectType.HEAL_MP,
                 2000, 0
         );
@@ -510,7 +510,7 @@ public class ItemCreator {
         return new ConsumableItem(
                 103011, "初级气血丹", "临时增加500点气血，持续30分钟",
                 Item.Rarity.Rarity_1,
-                99, 1000,
+                999, 1000,
                 ConsumableItem.EffectType.BUFF_HP,
                 500, 30 * 60 * 1000
         );
@@ -520,7 +520,7 @@ public class ItemCreator {
         return new ConsumableItem(
                 103012, "中级气血丹", "临时增加1000点气血，持续30分钟",
                 Item.Rarity.Rarity_2,
-                99, 2000,
+                999, 2000,
                 ConsumableItem.EffectType.BUFF_HP,
                 1000, 30 * 60 * 1000
         );
@@ -530,7 +530,7 @@ public class ItemCreator {
         return new ConsumableItem(
                 103013, "高级气血丹", "临时增加1500点气血，持续30分钟",
                 Item.Rarity.Rarity_3,
-                99, 3000,
+                999, 3000,
                 ConsumableItem.EffectType.BUFF_HP,
                 1500, 30 * 60 * 1000
         );
@@ -540,7 +540,7 @@ public class ItemCreator {
         return new ConsumableItem(
                 103014, "特级气血丹", "临时增加2000点气血，持续30分钟",
                 Item.Rarity.Rarity_4,
-                99, 4000,
+                999, 4000,
                 ConsumableItem.EffectType.BUFF_HP,
                 2000, 30 * 60 * 1000
         );
@@ -550,7 +550,7 @@ public class ItemCreator {
         return new ConsumableItem(
                 103015, "极品气血丹", "临时增加3000点气血，持续30分钟",
                 Item.Rarity.Rarity_5,
-                99, 6000,
+                999, 6000,
                 ConsumableItem.EffectType.BUFF_HP,
                 3000, 30 * 60 * 1000
         );
@@ -562,7 +562,7 @@ public class ItemCreator {
         return new ConsumableItem(
                 103021, "初级攻击丹", "临时增加100点伤害，持续30分钟",
                 Item.Rarity.Rarity_1,
-                99, 1000,
+                999, 1000,
                 ConsumableItem.EffectType.BUFF_HP,
                 100, 30 * 60 * 1000
         );
@@ -572,7 +572,7 @@ public class ItemCreator {
         return new ConsumableItem(
                 103022, "中级攻击丹", "临时增加200点伤害，持续30分钟",
                 Item.Rarity.Rarity_2,
-                99, 2000,
+                999, 2000,
                 ConsumableItem.EffectType.BUFF_HP,
                 200, 30 * 60 * 1000
         );
@@ -582,7 +582,7 @@ public class ItemCreator {
         return new ConsumableItem(
                 103023, "高级攻击丹", "临时增加300点伤害，持续30分钟",
                 Item.Rarity.Rarity_3,
-                99, 3000,
+                999, 3000,
                 ConsumableItem.EffectType.BUFF_HP,
                 300, 30 * 60 * 1000
         );
@@ -592,7 +592,7 @@ public class ItemCreator {
         return new ConsumableItem(
                 103024, "特级攻击丹", "临时增加500点伤害，持续30分钟",
                 Item.Rarity.Rarity_4,
-                99, 4000,
+                999, 4000,
                 ConsumableItem.EffectType.BUFF_HP,
                 500, 30 * 60 * 1000
         );
@@ -602,7 +602,7 @@ public class ItemCreator {
         return new ConsumableItem(
                 103025, "极品攻击丹", "临时增加800点伤害，持续30分钟",
                 Item.Rarity.Rarity_5,
-                99, 6000,
+                999, 6000,
                 ConsumableItem.EffectType.BUFF_HP,
                 800, 30 * 60 * 1000
         );
@@ -614,7 +614,7 @@ public class ItemCreator {
         return new ConsumableItem(
                 103031, "初级防御丹", "临时增加100点防御，持续30分钟",
                 Item.Rarity.Rarity_1,
-                99, 1000,
+                999, 1000,
                 ConsumableItem.EffectType.BUFF_DEFENSE,
                 100, 30 * 60 * 1000
         );
@@ -624,7 +624,7 @@ public class ItemCreator {
         return new ConsumableItem(
                 103032, "中级防御丹", "临时增加200点防御，持续30分钟",
                 Item.Rarity.Rarity_2,
-                99, 2000,
+                999, 2000,
                 ConsumableItem.EffectType.BUFF_DEFENSE,
                 200, 30 * 60 * 1000
         );
@@ -634,7 +634,7 @@ public class ItemCreator {
         return new ConsumableItem(
                 103033, "高级防御丹", "临时增加300点防御，持续30分钟",
                 Item.Rarity.Rarity_3,
-                99, 3000,
+                999, 3000,
                 ConsumableItem.EffectType.BUFF_DEFENSE,
                 300, 30 * 60 * 1000
         );
@@ -644,7 +644,7 @@ public class ItemCreator {
         return new ConsumableItem(
                 103034, "特级防御丹", "临时增加500点防御，持续30分钟",
                 Item.Rarity.Rarity_4,
-                99, 4000,
+                999, 4000,
                 ConsumableItem.EffectType.BUFF_DEFENSE,
                 500, 30 * 60 * 1000
         );
@@ -654,7 +654,7 @@ public class ItemCreator {
         return new ConsumableItem(
                 103035, "极品防御丹", "临时增加800点防御，持续30分钟",
                 Item.Rarity.Rarity_5,
-                99, 6000,
+                999, 6000,
                 ConsumableItem.EffectType.BUFF_DEFENSE,
                 800, 30 * 60 * 1000
         );
@@ -666,7 +666,7 @@ public class ItemCreator {
         return new ConsumableItem(
                 103041, "初级灵力丹", "临时增加100点灵力，持续30分钟",
                 Item.Rarity.Rarity_1,
-                99, 1000,
+                999, 1000,
                 ConsumableItem.EffectType.BUFF_MANA,
                 100, 30 * 60 * 1000
         );
@@ -676,7 +676,7 @@ public class ItemCreator {
         return new ConsumableItem(
                 103042, "中级灵力丹", "临时增加200点灵力，持续30分钟",
                 Item.Rarity.Rarity_2,
-                99, 2000,
+                999, 2000,
                 ConsumableItem.EffectType.BUFF_MANA,
                 200, 30 * 60 * 1000
         );
@@ -686,7 +686,7 @@ public class ItemCreator {
         return new ConsumableItem(
                 103043, "高级灵力丹", "临时增加300点灵力，持续30分钟",
                 Item.Rarity.Rarity_3,
-                99, 3000,
+                999, 3000,
                 ConsumableItem.EffectType.BUFF_MANA,
                 300, 30 * 60 * 1000
         );
@@ -696,7 +696,7 @@ public class ItemCreator {
         return new ConsumableItem(
                 103044, "特级灵力丹", "临时增加500点灵力，持续30分钟",
                 Item.Rarity.Rarity_4,
-                99, 4000,
+                999, 4000,
                 ConsumableItem.EffectType.BUFF_MANA,
                 500, 30 * 60 * 1000
         );
@@ -706,7 +706,7 @@ public class ItemCreator {
         return new ConsumableItem(
                 103045, "极品灵力丹", "临时增加800点灵力，持续30分钟",
                 Item.Rarity.Rarity_5,
-                99, 6000,
+                999, 6000,
                 ConsumableItem.EffectType.BUFF_MANA,
                 800, 30 * 60 * 1000
         );
@@ -718,7 +718,7 @@ public class ItemCreator {
         return new ConsumableItem(
                 103051, "初级速度丹", "临时增加50点速度，持续30分钟",
                 Item.Rarity.Rarity_1,
-                99, 1000,
+                999, 1000,
                 ConsumableItem.EffectType.BUFF_SPEED,
                 50, 30 * 60 * 1000
         );
@@ -728,7 +728,7 @@ public class ItemCreator {
         return new ConsumableItem(
                 103052, "中级速度丹", "临时增加100点速度，持续30分钟",
                 Item.Rarity.Rarity_2,
-                99, 2000,
+                999, 2000,
                 ConsumableItem.EffectType.BUFF_SPEED,
                 100, 30 * 60 * 1000
         );
@@ -738,7 +738,7 @@ public class ItemCreator {
         return new ConsumableItem(
                 103053, "高级速度丹", "临时增加200点速度，持续30分钟",
                 Item.Rarity.Rarity_3,
-                99, 3000,
+                999, 3000,
                 ConsumableItem.EffectType.BUFF_SPEED,
                 200, 30 * 60 * 1000
         );
@@ -748,7 +748,7 @@ public class ItemCreator {
         return new ConsumableItem(
                 103054, "特级速度丹", "临时增加300点速度，持续30分钟",
                 Item.Rarity.Rarity_4,
-                99, 4000,
+                999, 4000,
                 ConsumableItem.EffectType.BUFF_SPEED,
                 300, 30 * 60 * 1000
         );
@@ -758,7 +758,7 @@ public class ItemCreator {
         return new ConsumableItem(
                 103055, "极品速度丹", "临时增加400点速度，持续30分钟",
                 Item.Rarity.Rarity_5,
-                99, 6000,
+                999, 6000,
                 ConsumableItem.EffectType.BUFF_SPEED,
                 400, 30 * 60 * 1000
         );
@@ -783,7 +783,7 @@ public class ItemCreator {
         return new Item(
                 id, level + "级精铁", "制造装备的必备材料", Item.Type.MATERIAL,
                 rarity,
-                99, PriceUtil.getItemPriceWith10Level(2000, level)
+                999, PriceUtil.getItemPriceWith10Level(2000, level)
         );
     }
 
@@ -832,7 +832,7 @@ public class ItemCreator {
         return new Item(
                 id, name, "制造装备的必备材料", Item.Type.MATERIAL,
                 rarity,
-                99, PriceUtil.getItemPriceWith10Level(2000, level)
+                999, PriceUtil.getItemPriceWith10Level(2000, level)
         );
     }
 
@@ -883,7 +883,7 @@ public class ItemCreator {
         return new Item(
                 id, level + "级" + gemtoneType.getDesc(), desc, Item.Type.MATERIAL,
                 rarity,
-                99, PriceUtil.getItemPriceWith10Level(2000, level)
+                999, PriceUtil.getItemPriceWith10Level(2000, level)
         );
     }
 
@@ -906,7 +906,7 @@ public class ItemCreator {
         return new Item(
                 id, level + "级洗炼石", "洗炼装备附加属性的必备材料", Item.Type.MATERIAL,
                 rarity,
-                99, PriceUtil.getItemPriceWith10Level(2000, level)
+                999, PriceUtil.getItemPriceWith10Level(2000, level)
         );
     }
 
@@ -917,7 +917,7 @@ public class ItemCreator {
         return new Item(
                 id, foodType.getName(), foodType.getDesc(), Item.Type.FOOD,
                 rarity,
-                99, 1000
+                999, 1000
         );
     }
 
@@ -928,7 +928,7 @@ public class ItemCreator {
         return new Item(
                 250001, "金刚石", "坚硬无比的宝石，散发着耀眼的光芒，是极其珍贵的材料", Item.Type.MATERIAL,
                 Item.Rarity.Rarity_5,
-                99, 50000
+                999, 50000
         );
     }
 
@@ -945,7 +945,7 @@ public class ItemCreator {
         return new SkillBookItem(
                 id, name, desc,
                 Item.Rarity.Rarity_5,
-                99, 5000,
+                999, 5000,
                 skillType
         );
     }

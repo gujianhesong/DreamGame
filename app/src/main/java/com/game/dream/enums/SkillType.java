@@ -17,6 +17,9 @@ public enum SkillType {
     MAIN_LianQiHuaShen, //炼气化神
     MAIN_DuWuZhen, //毒雾阵
 
+    //怪物专属技能
+    ENEMY_FoxCharm, //狐媚
+
     //辅助技能
     AST_QiangShen, //强身
     AST_MingXiang, //冥想

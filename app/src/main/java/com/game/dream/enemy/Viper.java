@@ -39,19 +39,19 @@ public class Viper extends Enemy {
             enemyLevel = EnemyLevel.BOSS;
             size = size * 3;
 
-            setProperty(280 * 50, 400, 320, 240, 320);
+            setProperty(maxHealth * 50, attackDamage * 8, defense * 8, speed * 8, mana * 8);
         } else if (Math.random() < 0.07) {
             //精英
             enemyLevel = EnemyLevel.ELITE;
             size = size * 2;
 
-            setProperty(280 * 10, 200, 160, 160, 160);
+            setProperty(maxHealth * 10, attackDamage * 4, defense * 4, speed * 4, mana * 4);
         } else if (Math.random() < 0.30) {
             //首领
             enemyLevel = EnemyLevel.LEADER;
             size = (int) (size * 1.3f);
 
-            setProperty(280 * 3, 100, 80, 50, 60);
+            setProperty(maxHealth * 3, attackDamage * 2, defense * 2, speed * 2, mana * 2);
         }
 
         // 精英/BOSS蛇可以使用闪现突击
@@ -89,6 +89,31 @@ public class Viper extends Enemy {
         boolean facingRight = (targetX > x);
         float scaleX = facingRight ? 1.0f : -1.0f;
 
+        // === 攻击动画：蛇头弹射 ===
+        float lunge = 0;
+        if (currentState == State.ATTACKING) {
+            long now = System.currentTimeMillis();
+            if (isWindingUp) {
+                lunge = -getWindUpProgress() * (size / 4f);
+            } else {
+                float p = Math.min(1.0f, (now - getLastAttackTime()) / 180f);
+                lunge = (1 - p) * (size / 2.5f);
+            }
+        }
+
+        // 受击震动
+        float vibX = 0, vibY = 0;
+        if (lastHitFlashTime > 0) {
+            long elapsed = System.currentTimeMillis() - lastHitFlashTime;
+            if (elapsed < 300) {
+                float intensity = (1f - elapsed / 300f) * 3f;
+                vibX = (float) (Math.sin(elapsed * 1.5) * intensity);
+                vibY = (float) (Math.cos(elapsed * 2.1) * intensity * 0.5f);
+            }
+        }
+        cx += vibX;
+        cy += vibY;
+
         canvas.save();
         canvas.scale(scaleX, 1.0f, cx, cy);
 
@@ -115,11 +140,11 @@ public class Viper extends Enemy {
         body.quadTo(cx - size/8f, cy - size/8f, cx, cy - size/3f);
         canvas.drawPath(body, paint);
 
-        // --- 第一段：颈部与头部 (昂起) ---
+        // --- 第一段：颈部与头部 (攻击时前探) ---
         paint.setStrokeWidth(size / 4f); // 颈部最粗
         Path neck = new Path();
         neck.moveTo(cx, cy - size/3f); // 接身体
-        neck.quadTo(cx + size/4f, cy - size/1.2f, cx + size/2.5f, cy - size/1.5f);
+        neck.quadTo(cx + size/4f + lunge * 0.5f, cy - size/1.2f, cx + size/2.5f + lunge, cy - size/1.5f);
         canvas.drawPath(neck, paint);
 
         // 2. 背部花纹（点缀在身体上）
@@ -127,12 +152,12 @@ public class Viper extends Enemy {
         paint.setStyle(Paint.Style.FILL);
         canvas.drawCircle(cx - size/2f, cy + size/4f, size/18f, paint); // 尾部斑纹
         canvas.drawCircle(cx - size/10f, cy, size/14f, paint); // 身体中段斑纹
-        canvas.drawCircle(cx + size/10f, cy - size/2.5f, size/12f, paint); // 颈部斑纹
+        canvas.drawCircle(cx + size/10f + lunge * 0.5f, cy - size/2.5f, size/12f, paint); // 颈部斑纹
 
-        // 3. 头部（位于顶端）
+        // 3. 头部（位于顶端，攻击时前探）
         paint.setColor(Color.rgb(40, 150, 40));
         paint.setStyle(Paint.Style.FILL);
-        float headX = cx + size/2.5f;
+        float headX = cx + size/2.5f + lunge;
         float headY = cy - size/1.5f;
 
         Path head = new Path();
@@ -149,9 +174,10 @@ public class Viper extends Enemy {
         paint.setColor(Color.BLACK);
         canvas.drawRect(headX - size/20f, headY - size/22f, headX - size/22f, headY - size/45f, paint);
 
-        // 5. 动态信子
+        // 5. 动态信子（攻击时更频繁吐出）
         long time = System.currentTimeMillis();
-        if ((time / 150) % 4 == 0) {
+        long tongueInterval = (currentState == State.ATTACKING) ? 80 : 150;
+        if ((time / tongueInterval) % 4 == 0) {
             paint.setStrokeWidth(1.5f);
             paint.setColor(Color.RED);
             float tipX = headX + size/12f;

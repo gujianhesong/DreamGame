@@ -51,19 +51,19 @@ public class WildBoar extends Enemy {
             enemyLevel = EnemyLevel.BOSS;
             size = size * 3;
 
-            setProperty(400 * 50, 560, 400, 350, 320);
+            setProperty(maxHealth * 50, attackDamage * 8, defense * 8, speed * 8, mana * 8);
         } else if (Math.random() < 0.07) {
             //精英
             enemyLevel = EnemyLevel.ELITE;
             size = size * 2;
 
-            setProperty(400 * 10, 280, 200, 220, 160);
+            setProperty(maxHealth * 10, attackDamage * 4, defense * 4, speed * 4, mana * 4);
         } else if (Math.random() < 0.30) {
             //首领
             enemyLevel = EnemyLevel.LEADER;
             size = (int) (size * 1.3f);
 
-            setProperty(400 * 3, 140, 100, 100, 60);
+            setProperty(maxHealth * 3, attackDamage * 2, defense * 2, speed * 2, mana * 2);
         }
 
         // 精英/BOSS野猪可以使用环绕斩击
@@ -163,11 +163,41 @@ public class WildBoar extends Enemy {
         // 【修正】引入一个缩放系数，让野猪视觉上比 size 定义的要小一些
         float visualScale = 0.85f;
 
+        // === 攻击动画：低头冲撞 ===
+        float lunge = 0;
+        float headDip = 0;
+        if (currentState == State.ATTACKING) {
+            long now = System.currentTimeMillis();
+            if (isWindingUp) {
+                lunge = -getWindUpProgress() * 5 * visualScale;
+                headDip = getWindUpProgress() * 4 * visualScale;
+            } else {
+                float p = Math.min(1.0f, (now - getLastAttackTime()) / 200f);
+                lunge = (1 - p) * 12 * visualScale;
+            }
+        }
+
+        // 受击震动
+        float vibX = 0, vibY = 0;
+        if (lastHitFlashTime > 0) {
+            long elapsed = System.currentTimeMillis() - lastHitFlashTime;
+            if (elapsed < 300) {
+                float intensity = (1f - elapsed / 300f) * 4 * visualScale;
+                vibX = (float) (Math.sin(elapsed * 1.5) * intensity);
+                vibY = (float) (Math.cos(elapsed * 2.1) * intensity * 0.5f);
+            }
+        }
+
         float cx = x + cameraX;
         float cy = y + cameraY + bodyBob * visualScale; // 应用身体起伏
 
         boolean facingRight = (targetX > x) || (isCharging && chargeDirectionX > 0);
         float scaleX = facingRight ? -1.0f : 1.0f;
+
+        // 应用攻击偏移（朝向前方）
+        float lungeX = facingRight ? -lunge : lunge;
+        cx += lungeX + vibX;
+        cy += headDip + vibY;
 
         canvas.save();
         canvas.scale(scaleX, 1.0f, cx, cy);

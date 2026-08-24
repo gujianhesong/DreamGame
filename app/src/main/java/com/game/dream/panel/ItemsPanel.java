@@ -769,7 +769,7 @@ public class ItemsPanel {
 
                         @Override
                         public void onEquip(EquipmentItem equipment, int index) {
-                            ItemSystem.getInstance().equipItem(index);
+                            ItemSystem.getInstance().equipItem(equipment);
                         }
 
                         @Override
@@ -808,7 +808,7 @@ public class ItemsPanel {
                     new ItemInfoPanel.ItemActionListener() {
                         @Override
                         public void onUseItem(ItemStack item) {
-                            ItemSystem.getInstance().useItem(index);
+                            ItemSystem.getInstance().useItem(item);
                         }
 
                         @Override

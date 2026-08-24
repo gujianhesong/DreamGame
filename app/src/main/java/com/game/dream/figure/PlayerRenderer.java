@@ -41,8 +41,8 @@ public class PlayerRenderer {
         Paint paint = new Paint();
         paint.setAntiAlias(true);
 
-        float screenX = player.getX() + offsetX;
-        float screenY = player.getY() + offsetY;
+        float screenX = player.getX() + offsetX + player.getHitVibrationX();
+        float screenY = player.getY() + offsetY + player.getHitVibrationY();
         float scale = player.getSize() / 40f;
 
         // Calculate animation parameters based on state

@@ -53,8 +53,8 @@ public class JinlingMapGenerator {
         // 2. 平滑处理（1 次迭代）
         smoothMap(map);
 
-        // 3. 刻划河流、主城、道路、村庄
-        carveRivers(map, w, h);
+        // 3. 刻划主城、道路、村庄（河流已移除，避免阻挡城门道路）
+        // carveRivers(map, w, h);
         stampCityArea(map, w, h);
         stampRoads(map, w, h);
         stampVillages(map, w, h);

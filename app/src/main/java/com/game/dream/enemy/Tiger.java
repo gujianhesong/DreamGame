@@ -41,19 +41,19 @@ public class Tiger extends Enemy {
             enemyLevel = EnemyLevel.BOSS;
             size = size * 3;
 
-            setProperty(500 * 50, 640, 480, 350, 350);
+            setProperty(maxHealth * 50, attackDamage * 8, defense * 8, speed * 8, mana * 8);
         } else if (Math.random() < 0.07) {
             //精英
             enemyLevel = EnemyLevel.ELITE;
             size = size * 2;
 
-            setProperty(500 * 10, 320, 240, 180, 180);
+            setProperty(maxHealth * 10, attackDamage * 4, defense * 4, speed * 4, mana * 4);
         } else if (Math.random() < 0.30) {
             //首领
             enemyLevel = EnemyLevel.LEADER;
             size = (int) (size * 1.3f);
 
-            setProperty(500 * 3, 160, 120, 100, 80);
+            setProperty(maxHealth * 3, attackDamage * 2, defense * 2, speed * 2, mana * 2);
         }
 
         // 精英/BOSS老虎可以使用环绕斩击
@@ -144,9 +144,20 @@ public class Tiger extends Enemy {
 
         paint.setAntiAlias(true);
 
-        float screenX = x + offsetX;
-        float screenY = y + offsetY;
         float scale = size / 40.0f;
+
+        // 受击震动
+        float vibX = 0, vibY = 0;
+        if (lastHitFlashTime > 0) {
+            long elapsed = System.currentTimeMillis() - lastHitFlashTime;
+            if (elapsed < 300) {
+                float intensity = (1f - elapsed / 300f) * 5 * scale;
+                vibX = (float) (Math.sin(elapsed * 1.5) * intensity);
+                vibY = (float) (Math.cos(elapsed * 2.1) * intensity * 0.5f);
+            }
+        }
+        float screenX = x + offsetX + vibX;
+        float screenY = y + offsetY + vibY;
 
         // Determine facing direction
         boolean facingRight = targetX > x;
@@ -162,6 +173,18 @@ public class Tiger extends Enemy {
      * Draw tiger facing right
      */
     private void drawFacingRight(Canvas canvas, Paint paint, float cx, float cy, float scale) {
+        // === 攻击动画：猛扑虎爪 ===
+        float lunge = 0;
+        if (currentState == State.ATTACKING) {
+            long now = System.currentTimeMillis();
+            if (isWindingUp) {
+                lunge = -getWindUpProgress() * 6 * scale;
+            } else {
+                float p = Math.min(1.0f, (now - getLastAttackTime()) / 250f);
+                lunge = (1 - p) * 14 * scale;
+            }
+        }
+
         // Body (orange)
         paint.setColor(Color.rgb(255, 165, 0));
         Path body = new Path();
@@ -172,26 +195,26 @@ public class Tiger extends Enemy {
         body.close();
         canvas.drawPath(body, paint);
 
-        // Black stripes on body
+        // Black stripes on body (攻击时整体前移)
         paint.setColor(Color.BLACK);
         paint.setStrokeWidth(2 * scale);
-        canvas.drawLine(cx - 5 * scale, cy - 5 * scale + bobOffset,
-                cx - 5 * scale, cy + 5 * scale + bobOffset, paint);
-        canvas.drawLine(cx, cy - 6 * scale + bobOffset,
-                cx, cy + 6 * scale + bobOffset, paint);
-        canvas.drawLine(cx + 5 * scale, cy - 5 * scale + bobOffset,
-                cx + 5 * scale, cy + 5 * scale + bobOffset, paint);
+        canvas.drawLine(cx - 5 * scale + lunge, cy - 5 * scale + bobOffset,
+                cx - 5 * scale + lunge, cy + 5 * scale + bobOffset, paint);
+        canvas.drawLine(cx + lunge, cy - 6 * scale + bobOffset,
+                cx + lunge, cy + 6 * scale + bobOffset, paint);
+        canvas.drawLine(cx + 5 * scale + lunge, cy - 5 * scale + bobOffset,
+                cx + 5 * scale + lunge, cy + 5 * scale + bobOffset, paint);
 
-        // Head
+        // Head (攻击时前伸)
         paint.setColor(Color.rgb(255, 165, 0));
-        canvas.drawCircle(cx + 16 * scale, cy - 10 * scale + bobOffset, 9 * scale, paint);
+        canvas.drawCircle(cx + 16 * scale + lunge, cy - 10 * scale + bobOffset, 9 * scale, paint);
 
         // Face markings (white)
         paint.setColor(Color.rgb(255, 240, 200));
         Path faceWhite = new Path();
-        faceWhite.moveTo(cx + 12 * scale, cy - 8 * scale + bobOffset);
-        faceWhite.lineTo(cx + 20 * scale, cy - 8 * scale + bobOffset);
-        faceWhite.lineTo(cx + 16 * scale, cy - 4 * scale + bobOffset);
+        faceWhite.moveTo(cx + 12 * scale + lunge, cy - 8 * scale + bobOffset);
+        faceWhite.lineTo(cx + 20 * scale + lunge, cy - 8 * scale + bobOffset);
+        faceWhite.lineTo(cx + 16 * scale + lunge, cy - 4 * scale + bobOffset);
         faceWhite.close();
         canvas.drawPath(faceWhite, paint);
 
@@ -201,44 +224,44 @@ public class Tiger extends Enemy {
         } else {
             paint.setColor(Color.rgb(255, 200, 0));
         }
-        canvas.drawCircle(cx + 14 * scale, cy - 11 * scale + bobOffset, 2 * scale, paint);
-        canvas.drawCircle(cx + 19 * scale, cy - 11 * scale + bobOffset, 2 * scale, paint);
+        canvas.drawCircle(cx + 14 * scale + lunge, cy - 11 * scale + bobOffset, 2 * scale, paint);
+        canvas.drawCircle(cx + 19 * scale + lunge, cy - 11 * scale + bobOffset, 2 * scale, paint);
 
         // Nose
         paint.setColor(Color.BLACK);
-        canvas.drawCircle(cx + 16 * scale, cy - 7 * scale + bobOffset, 2 * scale, paint);
+        canvas.drawCircle(cx + 16 * scale + lunge, cy - 7 * scale + bobOffset, 2 * scale, paint);
 
-        // Ears
+        // Ears (攻击时前伸)
         paint.setColor(Color.rgb(255, 165, 0));
         Path ear1 = new Path();
-        ear1.moveTo(cx + 10 * scale, cy - 16 * scale + bobOffset);
-        ear1.lineTo(cx + 12 * scale, cy - 22 * scale + bobOffset);
-        ear1.lineTo(cx + 15 * scale, cy - 16 * scale + bobOffset);
+        ear1.moveTo(cx + 10 * scale + lunge, cy - 16 * scale + bobOffset);
+        ear1.lineTo(cx + 12 * scale + lunge, cy - 22 * scale + bobOffset);
+        ear1.lineTo(cx + 15 * scale + lunge, cy - 16 * scale + bobOffset);
         ear1.close();
         canvas.drawPath(ear1, paint);
 
         Path ear2 = new Path();
-        ear2.moveTo(cx + 17 * scale, cy - 16 * scale + bobOffset);
-        ear2.lineTo(cx + 20 * scale, cy - 22 * scale + bobOffset);
-        ear2.lineTo(cx + 22 * scale, cy - 15 * scale + bobOffset);
+        ear2.moveTo(cx + 17 * scale + lunge, cy - 16 * scale + bobOffset);
+        ear2.lineTo(cx + 20 * scale + lunge, cy - 22 * scale + bobOffset);
+        ear2.lineTo(cx + 22 * scale + lunge, cy - 15 * scale + bobOffset);
         ear2.close();
         canvas.drawPath(ear2, paint);
 
         // Inner ears (pink)
         paint.setColor(Color.rgb(255, 180, 180));
-        canvas.drawCircle(cx + 12 * scale, cy - 18 * scale + bobOffset, 2 * scale, paint);
-        canvas.drawCircle(cx + 20 * scale, cy - 18 * scale + bobOffset, 2 * scale, paint);
+        canvas.drawCircle(cx + 12 * scale + lunge, cy - 18 * scale + bobOffset, 2 * scale, paint);
+        canvas.drawCircle(cx + 20 * scale + lunge, cy - 18 * scale + bobOffset, 2 * scale, paint);
 
         // Legs (thicker than wolf)
         paint.setColor(Color.rgb(255, 165, 0));
         float legOffset1 = (float) Math.sin(animFrame * Math.PI / 2) * 4 * scale;
         float legOffset2 = (float) Math.sin((animFrame + 2) * Math.PI / 2) * 4 * scale;
 
-        // Front legs
-        canvas.drawRect(cx + 8 * scale, cy + 6 * scale + bobOffset + legOffset1,
-                cx + 12 * scale, cy + 15 * scale + bobOffset, paint);
-        canvas.drawRect(cx + 13 * scale, cy + 6 * scale + bobOffset + legOffset2,
-                cx + 17 * scale, cy + 15 * scale + bobOffset, paint);
+        // Front legs (攻击时前伸)
+        canvas.drawRect(cx + 8 * scale + lunge, cy + 6 * scale + bobOffset + legOffset1,
+                cx + 12 * scale + lunge, cy + 15 * scale + bobOffset, paint);
+        canvas.drawRect(cx + 13 * scale + lunge, cy + 6 * scale + bobOffset + legOffset2,
+                cx + 17 * scale + lunge, cy + 15 * scale + bobOffset, paint);
 
         // Back legs
         canvas.drawRect(cx - 10 * scale, cy + 6 * scale + bobOffset + legOffset2,
@@ -246,13 +269,13 @@ public class Tiger extends Enemy {
         canvas.drawRect(cx - 5 * scale, cy + 6 * scale + bobOffset + legOffset1,
                 cx - 1 * scale, cy + 15 * scale + bobOffset, paint);
 
-        // Stripes on legs
+        // Stripes on legs (攻击时随腿前移)
         paint.setColor(Color.BLACK);
         paint.setStrokeWidth(1.5f * scale);
-        canvas.drawLine(cx + 9 * scale, cy + 8 * scale + bobOffset + legOffset1,
-                cx + 11 * scale, cy + 8 * scale + bobOffset + legOffset1, paint);
-        canvas.drawLine(cx + 14 * scale, cy + 8 * scale + bobOffset + legOffset2,
-                cx + 16 * scale, cy + 8 * scale + bobOffset + legOffset2, paint);
+        canvas.drawLine(cx + 9 * scale + lunge, cy + 8 * scale + bobOffset + legOffset1,
+                cx + 11 * scale + lunge, cy + 8 * scale + bobOffset + legOffset1, paint);
+        canvas.drawLine(cx + 14 * scale + lunge, cy + 8 * scale + bobOffset + legOffset2,
+                cx + 16 * scale + lunge, cy + 8 * scale + bobOffset + legOffset2, paint);
 
         // Tail (long with stripes)
         paint.setColor(Color.rgb(255, 165, 0));

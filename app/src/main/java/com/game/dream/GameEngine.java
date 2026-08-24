@@ -17,7 +17,9 @@ import com.game.dream.bean.MapInfo;
 import com.game.dream.bean.RoleInfo;
 import com.game.dream.bean.SkillInfo;
 import com.game.dream.bean.SkillStartInfo;
+import com.game.dream.enemy.Bandit;
 import com.game.dream.enemy.Enemy;
+import com.game.dream.enemy.FoxSpirit;
 import com.game.dream.enemy.Tiger;
 import com.game.dream.enemy.Viper;
 import com.game.dream.enemy.WildBoar;
@@ -690,6 +692,12 @@ public class GameEngine {
                         spawnBossMinions(enemy);
                         enemy.markSummoned();
                     }
+
+                    // 狐狸精狐媚法术: 向四周发射8道花瓣
+                    if (enemy instanceof FoxSpirit && ((FoxSpirit) enemy).isPendingFoxCharm()) {
+                        spawnFoxCharmPetals((FoxSpirit) enemy);
+                        ((FoxSpirit) enemy).consumeFoxCharm();
+                    }
                 } else {
                     // Far away enemies don't need AI updates
                     // They stay in their current state
@@ -850,6 +858,12 @@ public class GameEngine {
                             if (proj.getEffectType() == Projectile.EffectType.ROOT) {
                                 player.applyCC(com.game.dream.figure.Character.CrowdControlType.ROOT, 2000);
                                 showCenterToast("你被定身了!", 1000);
+                            }
+
+                            // 狐媚花瓣眩晕效果(30%概率眩晕1秒)
+                            if (proj.getStunChance() > 0 && Math.random() < proj.getStunChance()) {
+                                player.applyCC(com.game.dream.figure.Character.CrowdControlType.STUN, proj.getStunDuration());
+                                showCenterToast("你被狐媚眩晕了!", 1000);
                             }
 
                             proj.deactivate();
@@ -1434,6 +1448,29 @@ public class GameEngine {
     }
 
     /**
+     * 狐狸精狐媚法术: 向四周发射8道花瓣，被击中后受到法术伤害，30%概率眩晕1秒
+     */
+    private void spawnFoxCharmPetals(FoxSpirit fox) {
+        float foxX = fox.getX();
+        float foxY = fox.getY();
+        float petalDistance = 300f; // 花瓣飞行目标距离
+
+        for (int i = 0; i < 8; i++) {
+            double angle = i * Math.PI / 4; // 每45度一道花瓣
+            float targetX = foxX + (float) Math.cos(angle) * petalDistance;
+            float targetY = foxY + (float) Math.sin(angle) * petalDistance;
+
+            Projectile petal = new Projectile(foxX, foxY, targetX, targetY, SkillType.ENEMY_FoxCharm);
+            petal.setFromEnemy(fox);
+            petal.setStunChance(0.3f);      // 30%概率眩晕
+            petal.setStunDuration(1000);     // 眩晕1秒
+            projectiles.add(petal);
+        }
+
+        LogUtil.d("FoxCharm", fox.getName() + " 施放了狐媚法术!");
+    }
+
+    /**
      * BOSS召唤小弟: 根据BOSS类型生成同类型小弟(1精英 + 2-3首领 + 5-8普通)
      */
     private void spawnBossMinions(Enemy boss) {
@@ -1489,6 +1526,12 @@ public class GameEngine {
         } else if (boss instanceof Viper) {
             minion = new Viper(spawnX, spawnY);
             minionName = "毒蛇";
+        } else if (boss instanceof Bandit) {
+            minion = new Bandit(spawnX, spawnY);
+            minionName = "强盗";
+        } else if (boss instanceof FoxSpirit) {
+            minion = new FoxSpirit(spawnX, spawnY);
+            minionName = "狐狸精";
         } else {
             // Default to Wolf
             minion = new Wolf(spawnX, spawnY);

@@ -33,6 +33,7 @@ public class Projectile {
     // Visual effects
     private int color;
     private float rotation;
+    private float rotationSpeed = 10f; // 旋转速度(弧度/秒)
 
     private Enemy fromEnemy;
 
@@ -43,6 +44,10 @@ public class Projectile {
     private float damageMultiplier = 1.0f;  // 伤害倍率
     private long burnDuration = 0;          // 灼烧持续时长(ms)
     private float freezeProbability = 0f;   // 冰冻概率(0-1)
+
+    // 狐媚花瓣眩晕相关
+    private float stunChance = 0f;           // 眩晕概率(0-1)
+    private long stunDuration = 0;           // 眩晕持续时长(ms)
 
     public Projectile(float x, float y, float targetX, float targetY, SkillType skillType) {
         this.x = x;
@@ -78,6 +83,13 @@ public class Projectile {
                     this.color = Color.rgb(255, 255, 100);
                     this.lifetime = 2000;
                     break;
+                case ENEMY_FoxCharm:
+                    speed = 250;
+                    this.size = 28;
+                    this.color = Color.rgb(255, 180, 200);
+                    this.lifetime = 1800;
+                    this.rotationSpeed = 25f; // 花瓣快速旋转
+                    break;
                 default:
                     speed = 300;
                     this.size = 10;
@@ -104,7 +116,7 @@ public class Projectile {
         y += vy * deltaSeconds;
 
         // Rotate for visual effect
-        rotation += 10 * deltaSeconds;
+        rotation += rotationSpeed * deltaSeconds;
 
         // Check lifetime
         long currentTime = System.currentTimeMillis();
@@ -147,6 +159,9 @@ public class Projectile {
                 break;
             case MAIN_LIGHTNING:
                 drawLightning(canvas, paint, screenX, screenY);
+                break;
+            case ENEMY_FoxCharm:
+                drawPetal(canvas, paint, screenX, screenY);
                 break;
         }
     }
@@ -287,4 +302,29 @@ public class Projectile {
 
     public float getFreezeProbability() { return freezeProbability; }
     public void setFreezeProbability(float probability) { this.freezeProbability = probability; }
+
+    public float getStunChance() { return stunChance; }
+    public void setStunChance(float chance) { this.stunChance = chance; }
+
+    public long getStunDuration() { return stunDuration; }
+    public void setStunDuration(long duration) { this.stunDuration = duration; }
+
+    /**
+     * 绘制狐媚花瓣（粉色旋转花瓣）
+     */
+    private void drawPetal(Canvas canvas, Paint paint, float cx, float cy) {
+        // 外圈粉色光晕
+        paint.setColor(Color.argb(50, 255, 150, 200));
+        canvas.drawCircle(cx, cy, size * 1.8f, paint);
+
+        // 花瓣主体（旋转的椭圆）
+        canvas.save();
+        canvas.rotate(rotation * 57.3f, cx, cy);
+        paint.setColor(Color.argb(200, 255, 170, 200));
+        canvas.drawOval(cx - size * 1.2f, cy - size * 0.6f, cx + size * 1.2f, cy + size * 0.6f, paint);
+        // 花瓣高光
+        paint.setColor(Color.argb(160, 255, 225, 240));
+        canvas.drawOval(cx - size * 0.5f, cy - size * 0.3f, cx + size * 0.5f, cy + size * 0.3f, paint);
+        canvas.restore();
+    }
 }

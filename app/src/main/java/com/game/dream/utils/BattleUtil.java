@@ -410,6 +410,9 @@ public class BattleUtil {
                 case MAIN_LIGHTNING:
                     castBaseValue = 14f;
                     break;
+                case ENEMY_FoxCharm:
+                    castBaseValue = 12f;
+                    break;
             }
 
             if (castBaseValue > 0) {

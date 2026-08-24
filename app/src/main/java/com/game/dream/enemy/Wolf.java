@@ -37,19 +37,19 @@ public class Wolf extends Enemy {
             enemyLevel = EnemyLevel.BOSS;
             size = size * 3;
 
-            setProperty(350 * 50, 480, 380, 300, 300);
+            setProperty(maxHealth * 50, attackDamage * 8, defense * 8, speed * 8, mana * 8);
         } else if (Math.random() < 0.07) {
             //精英
             enemyLevel = EnemyLevel.ELITE;
             size = size * 2;
 
-            setProperty(350 * 10, 240, 200, 150, 120);
+            setProperty(maxHealth * 10, attackDamage * 4, defense * 4, speed * 4, mana * 4);
         } else if (Math.random() < 0.30) {
             //首领
             enemyLevel = EnemyLevel.LEADER;
             size = (int) (size * 1.3f);
 
-            setProperty(350 * 3, 120, 100, 100, 60);
+            setProperty(maxHealth * 3, attackDamage * 2, defense * 2, speed * 2, mana * 2);
         }
 
         // 首领/精英/BOSS狼可以使用连续爪击
@@ -146,9 +146,20 @@ public class Wolf extends Enemy {
 
         paint.setAntiAlias(true);
 
-        float screenX = x + offsetX;
-        float screenY = y + offsetY;
         float scale = size / 30.0f;
+
+        // 受击震动
+        float vibX = 0, vibY = 0;
+        if (lastHitFlashTime > 0) {
+            long elapsed = System.currentTimeMillis() - lastHitFlashTime;
+            if (elapsed < 300) {
+                float intensity = (1f - elapsed / 300f) * 4 * scale;
+                vibX = (float) (Math.sin(elapsed * 1.5) * intensity);
+                vibY = (float) (Math.cos(elapsed * 2.1) * intensity * 0.5f);
+            }
+        }
+        float screenX = x + offsetX + vibX;
+        float screenY = y + offsetY + vibY;
 
         // Determine facing direction
         boolean facingRight = targetX > x;
@@ -164,6 +175,18 @@ public class Wolf extends Enemy {
      * Draw wolf facing right
      */
     private void drawFacingRight(Canvas canvas, Paint paint, float cx, float cy, float scale) {
+        // === 攻击动画：前扑撕咬 ===
+        float lunge = 0;
+        if (currentState == State.ATTACKING) {
+            long now = System.currentTimeMillis();
+            if (isWindingUp) {
+                lunge = -getWindUpProgress() * 5 * scale;
+            } else {
+                float p = Math.min(1.0f, (now - getLastAttackTime()) / 200f);
+                lunge = (1 - p) * 10 * scale;
+            }
+        }
+
         // Body (gray-brown)
         paint.setColor(Color.rgb(139, 119, 101));
         Path body = new Path();
@@ -174,22 +197,22 @@ public class Wolf extends Enemy {
         body.close();
         canvas.drawPath(body, paint);
 
-        // Head
+        // Head (攻击时前伸)
         paint.setColor(Color.rgb(160, 140, 120));
-        canvas.drawCircle(cx + 12 * scale, cy - 8 * scale + bobOffset, 7 * scale, paint);
+        canvas.drawCircle(cx + 12 * scale + lunge, cy - 8 * scale + bobOffset, 7 * scale, paint);
 
         // Snout
         paint.setColor(Color.rgb(180, 160, 140));
         Path snout = new Path();
-        snout.moveTo(cx + 16 * scale, cy - 6 * scale + bobOffset);
-        snout.lineTo(cx + 22 * scale, cy - 5 * scale + bobOffset);
-        snout.lineTo(cx + 16 * scale, cy - 4 * scale + bobOffset);
+        snout.moveTo(cx + 16 * scale + lunge, cy - 6 * scale + bobOffset);
+        snout.lineTo(cx + 22 * scale + lunge, cy - 5 * scale + bobOffset);
+        snout.lineTo(cx + 16 * scale + lunge, cy - 4 * scale + bobOffset);
         snout.close();
         canvas.drawPath(snout, paint);
 
         // Nose
         paint.setColor(Color.BLACK);
-        canvas.drawCircle(cx + 21 * scale, cy - 5 * scale + bobOffset, 1.5f * scale, paint);
+        canvas.drawCircle(cx + 21 * scale + lunge, cy - 5 * scale + bobOffset, 1.5f * scale, paint);
 
         // Eyes (red when aggressive)
         if (currentState == State.CHASING || currentState == State.ATTACKING) {
@@ -197,21 +220,21 @@ public class Wolf extends Enemy {
         } else {
             paint.setColor(Color.YELLOW);
         }
-        canvas.drawCircle(cx + 13 * scale, cy - 9 * scale + bobOffset, 1.5f * scale, paint);
+        canvas.drawCircle(cx + 13 * scale + lunge, cy - 9 * scale + bobOffset, 1.5f * scale, paint);
 
-        // Ears
+        // Ears (攻击时前伸)
         paint.setColor(Color.rgb(139, 119, 101));
         Path ear1 = new Path();
-        ear1.moveTo(cx + 8 * scale, cy - 12 * scale + bobOffset);
-        ear1.lineTo(cx + 10 * scale, cy - 18 * scale + bobOffset);
-        ear1.lineTo(cx + 13 * scale, cy - 12 * scale + bobOffset);
+        ear1.moveTo(cx + 8 * scale + lunge, cy - 12 * scale + bobOffset);
+        ear1.lineTo(cx + 10 * scale + lunge, cy - 18 * scale + bobOffset);
+        ear1.lineTo(cx + 13 * scale + lunge, cy - 12 * scale + bobOffset);
         ear1.close();
         canvas.drawPath(ear1, paint);
 
         Path ear2 = new Path();
-        ear2.moveTo(cx + 14 * scale, cy - 12 * scale + bobOffset);
-        ear2.lineTo(cx + 16 * scale, cy - 18 * scale + bobOffset);
-        ear2.lineTo(cx + 18 * scale, cy - 11 * scale + bobOffset);
+        ear2.moveTo(cx + 14 * scale + lunge, cy - 12 * scale + bobOffset);
+        ear2.lineTo(cx + 16 * scale + lunge, cy - 18 * scale + bobOffset);
+        ear2.lineTo(cx + 18 * scale + lunge, cy - 11 * scale + bobOffset);
         ear2.close();
         canvas.drawPath(ear2, paint);
 
@@ -220,11 +243,11 @@ public class Wolf extends Enemy {
         float legOffset1 = (float) Math.sin(animFrame * Math.PI / 2) * 3 * scale;
         float legOffset2 = (float) Math.sin((animFrame + 2) * Math.PI / 2) * 3 * scale;
 
-        // Front legs
-        canvas.drawRect(cx + 6 * scale, cy + 5 * scale + bobOffset + legOffset1,
-                cx + 9 * scale, cy + 12 * scale + bobOffset, paint);
-        canvas.drawRect(cx + 10 * scale, cy + 5 * scale + bobOffset + legOffset2,
-                cx + 13 * scale, cy + 12 * scale + bobOffset, paint);
+        // Front legs (攻击时前伸)
+        canvas.drawRect(cx + 6 * scale + lunge, cy + 5 * scale + bobOffset + legOffset1,
+                cx + 9 * scale + lunge, cy + 12 * scale + bobOffset, paint);
+        canvas.drawRect(cx + 10 * scale + lunge, cy + 5 * scale + bobOffset + legOffset2,
+                cx + 13 * scale + lunge, cy + 12 * scale + bobOffset, paint);
 
         // Back legs
         canvas.drawRect(cx - 8 * scale, cy + 5 * scale + bobOffset + legOffset2,

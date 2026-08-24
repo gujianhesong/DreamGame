@@ -821,7 +821,7 @@ public class Player extends Character {
         }
 
         // Consume the item
-        return ItemSystem.getInstance().useItem(index);
+        return ItemSystem.getInstance().useItem(stack);
     }
 
     public long getLastMagicTime(SkillType skillType) {
@@ -838,6 +838,30 @@ public class Player extends Character {
 
     public void setFacingDirection(int facingDirection) {
         this.facingDirection = facingDirection;
+    }
+
+    /**
+     * 受击震动偏移量（X轴）
+     */
+    public float getHitVibrationX() {
+        if (lastHitFlashTime <= 0) return 0;
+        long elapsed = System.currentTimeMillis() - lastHitFlashTime;
+        if (elapsed >= 300) return 0;
+        float scale = getSize() / 40f;
+        float intensity = (1f - elapsed / 300f) * 5 * scale;
+        return (float) (Math.sin(elapsed * 1.5) * intensity);
+    }
+
+    /**
+     * 受击震动偏移量（Y轴）
+     */
+    public float getHitVibrationY() {
+        if (lastHitFlashTime <= 0) return 0;
+        long elapsed = System.currentTimeMillis() - lastHitFlashTime;
+        if (elapsed >= 300) return 0;
+        float scale = getSize() / 40f;
+        float intensity = (1f - elapsed / 300f) * 5 * scale;
+        return (float) (Math.cos(elapsed * 2.1) * intensity * 0.5f);
     }
 
     /**

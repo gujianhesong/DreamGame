@@ -4,6 +4,8 @@ import static com.game.dream.common.Constants.TILE_SIZE;
 
 import com.game.dream.GameEngine;
 import com.game.dream.enemy.Enemy;
+import com.game.dream.enemy.Bandit;
+import com.game.dream.enemy.FoxSpirit;
 import com.game.dream.enemy.Tiger;
 import com.game.dream.enemy.Viper;
 import com.game.dream.enemy.WildBoar;
@@ -46,7 +48,7 @@ public class MapContentManager {
         if (mapId >= 2000 && mapId < 3000) {
             enemyCount = 120; // 迷宫中怪物少一些
         } else if (mapId == MapSystem.MAP_ID_JIN_LING) {
-            enemyCount = 1000; // 金陵大地图怪物多一些
+            enemyCount = 3000; // 金陵大地图怪物多一些
         } else {
             enemyCount = 180;
         }
@@ -142,19 +144,12 @@ public class MapContentManager {
             }
             case MapSystem.MAP_ID_JIN_LING: {
                 // 金陵野外
-                double areaRand = Math.random();
-                if (areaRand < 0.2) {
-                    enemy = new Tiger(spawnX, spawnY);
-                    enemy.setName("华南虎");
-                } else if (areaRand < 0.4) {
-                    enemy = new WildBoar(spawnX, spawnY);
-                    enemy.setName("野猪");
-                } else if (areaRand < 0.6) {
-                    enemy = new Viper(spawnX, spawnY);
-                    enemy.setName("眼镜蛇");
+                if (rand < 0.5) {
+                    enemy = new Bandit(spawnX, spawnY);
+                    enemy.setName("强盗");
                 } else {
-                    enemy = new Wolf(spawnX, spawnY);
-                    enemy.setName("灰狼");
+                    enemy = new FoxSpirit(spawnX, spawnY);
+                    enemy.setName("狐狸精");
                 }
                 break;
             }

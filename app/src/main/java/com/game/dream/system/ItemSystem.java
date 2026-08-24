@@ -211,10 +211,20 @@ public class ItemSystem {
     /**
      * Use consumable item at index
      */
-    public boolean useItem(int index) {
-        if (index < 0 || index >= items.size()) return false;
+    public boolean useItem(ItemStack targetStack) {
+        // 在完整物品列表中查找匹配的 ItemStack（通过引用匹配）
+        ItemStack stack = null;
+        int index = -1;
+        for (int i = 0; i < items.size(); i++) {
+            ItemStack s = items.get(i);
+            if (s == targetStack) {
+                stack = s;
+                index = i;
+                break;
+            }
+        }
+        if (stack == null) return false;
 
-        ItemStack stack = items.get(index);
         Item item = stack.getItem();
 
         // 处理技能书
@@ -403,10 +413,20 @@ public class ItemSystem {
     /**
      * Equip an item
      */
-    public boolean equipItem(int index) {
-        if (index < 0 || index >= items.size()) return false;
+    public boolean equipItem(EquipmentItem targetEquipment) {
+        // 在完整物品列表中查找匹配的装备（通过对象引用匹配）
+        ItemStack stack = null;
+        int index = -1;
+        for (int i = 0; i < items.size(); i++) {
+            ItemStack s = items.get(i);
+            if (s.getItem() == targetEquipment) {
+                stack = s;
+                index = i;
+                break;
+            }
+        }
+        if (stack == null) return false;
 
-        ItemStack stack = items.get(index);
         Item item = stack.getItem();
 
         if (item.getType() != Item.Type.EQUIPMENT) return false;
@@ -956,7 +976,7 @@ public class ItemSystem {
             for (int i = 0; i < items.size(); i++) {
                 ItemStack stack = items.get(i);
                 if (stack.getItem().getId() == itemId && stack.getItem() instanceof ConsumableItem) {
-                    useItem(i);
+                    useItem(stack);
                     return true;
                 }
             }
@@ -973,7 +993,7 @@ public class ItemSystem {
             for (int i = 0; i < items.size(); i++) {
                 ItemStack stack = items.get(i);
                 if (stack.getItem().getId() == itemId && stack.getItem() instanceof ConsumableItem) {
-                    useItem(i);
+                    useItem(stack);
                     return true;
                 }
             }

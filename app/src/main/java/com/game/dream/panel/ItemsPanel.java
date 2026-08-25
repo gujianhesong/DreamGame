@@ -21,7 +21,9 @@ import com.game.dream.utils.ItemsUtil;
 import com.game.dream.utils.TouchUtil;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Equipment and Inventory Panel
@@ -73,6 +75,14 @@ public class ItemsPanel {
     // Equipment info popup
     private EquipInfoPanel equipInfoPanel;
 
+    // Multi-select mode
+    private boolean isMultiSelectMode = false;
+    private Set<ItemStack> selectedItems = new HashSet<>();
+    private Rect multiSelectButton; // “多选”按钮
+    private Rect selectAllButton;   // “全选”按钮
+    private Rect discardButton;     // “丢弃”按钮
+    private boolean allSelected = false; // 当前是否全选状态
+
     public ItemsPanel() {
         this.isVisible = false;
         this.panelBounds = new Rect();
@@ -81,6 +91,9 @@ public class ItemsPanel {
         this.tabBounds = new Rect[1][TAB_NAMES.length];
         this.itemInfoPanel = new ItemInfoPanel();
         this.equipInfoPanel = new EquipInfoPanel();
+        this.multiSelectButton = new Rect();
+        this.selectAllButton = new Rect();
+        this.discardButton = new Rect();
     }
 
     /**
@@ -90,6 +103,8 @@ public class ItemsPanel {
         isVisible = !isVisible;
         if (isVisible) {
             inventoryScrollOffset = 0;
+        } else {
+            exitMultiSelectMode();
         }
     }
 
@@ -100,6 +115,13 @@ public class ItemsPanel {
 
     public void hide() {
         isVisible = false;
+        exitMultiSelectMode();
+    }
+
+    private void exitMultiSelectMode() {
+        isMultiSelectMode = false;
+        selectedItems.clear();
+        allSelected = false;
     }
 
     public boolean isVisible() {
@@ -160,6 +182,16 @@ public class ItemsPanel {
         moneyArea = new Rect(rightPanelStartX, y + 80,
                 x + width - 240, y + 80 + moneyHeight);
 
+        // Multi-select button (right of money area)
+        int msBtnGap = 10;
+        int msBtnWidth = 80;
+        multiSelectButton.set(
+                moneyArea.right + msBtnGap,
+                moneyArea.top,
+                moneyArea.right + msBtnGap + msBtnWidth,
+                moneyArea.bottom
+        );
+
         // Category tabs (below money area)
         int tabStartY = moneyArea.bottom + 15;
         int totalTabGap = TAB_GAP * (TAB_NAMES.length - 1);
@@ -182,6 +214,26 @@ public class ItemsPanel {
                         slotX + SLOT_SIZE, slotY + SLOT_SIZE);
             }
         }
+
+        // Bottom action buttons (below inventory grid, only visible in multi-select mode)
+        int bottomY = inventoryStartY + INVENTORY_ROWS * (SLOT_SIZE + SLOT_GAP) + 10;
+        int actionBtnWidth = 140;
+        int actionBtnHeight = 44;
+        int bottomCenterX = (inventoryStartX + inventorySlots[INVENTORY_ROWS - 1][INVENTORY_COLS - 1].right) / 2 + inventoryStartX / 2;
+        // Actually center between inventory start and end
+        int invCenterX = (inventoryStartX + inventorySlots[0][INVENTORY_COLS - 1].right) / 2;
+        selectAllButton.set(
+                invCenterX - actionBtnWidth - 10,
+                bottomY,
+                invCenterX - 10,
+                bottomY + actionBtnHeight
+        );
+        discardButton.set(
+                invCenterX + 10,
+                bottomY,
+                invCenterX + 10 + actionBtnWidth,
+                bottomY + actionBtnHeight
+        );
     }
 
     /**
@@ -213,6 +265,9 @@ public class ItemsPanel {
         paint.setTextAlign(Paint.Align.CENTER);
         canvas.drawText("装备与背包", panelBounds.centerX(), panelBounds.top + 50, paint);
 
+        // Multi-select button
+        drawMultiSelectButton(canvas, paint);
+
         // Divider line
         paint.setStrokeWidth(2);
         paint.setColor(Color.rgb(80, 80, 100));
@@ -230,6 +285,11 @@ public class ItemsPanel {
 
         // Draw inventory grid
         drawInventoryGrid(canvas, paint);
+
+        // Draw multi-select mode bottom buttons
+        if (isMultiSelectMode) {
+            drawMultiSelectActions(canvas, paint);
+        }
 
         // Draw item info panel (on top of everything)
         if (itemInfoPanel != null && itemInfoPanel.isVisible()) {
@@ -481,10 +541,24 @@ public class ItemsPanel {
                     ItemStack stack = displayItems.get(index);
                     Item item = stack.getItem();
 
+                    // Multi-select highlight (draw before item content so it acts as overlay background)
+                    boolean isSelected = isMultiSelectMode && selectedItems.contains(stack);
+                    if (isMultiSelectMode) {
+                        if (isSelected) {
+                            // Selected: blue highlight overlay
+                            paint.setColor(Color.argb(80, 50, 130, 255));
+                            canvas.drawRoundRect(drawSlot.left, drawSlot.top, drawSlot.right, drawSlot.bottom, 5, 5, paint);
+                        } else {
+                            // Unselected: dim overlay
+                            paint.setColor(Color.argb(40, 0, 0, 0));
+                            canvas.drawRoundRect(drawSlot.left, drawSlot.top, drawSlot.right, drawSlot.bottom, 5, 5, paint);
+                        }
+                    }
+
                     // Item border
                     paint.setStyle(Paint.Style.STROKE);
-                    paint.setStrokeWidth(3);
-                    paint.setColor(item.getColor());
+                    paint.setStrokeWidth(isSelected ? 4 : 3);
+                    paint.setColor(isSelected ? Color.rgb(80, 170, 255) : item.getColor());
                     canvas.drawRoundRect(drawSlot.left + 2, drawSlot.top + 2,
                             drawSlot.right - 2, drawSlot.bottom - 2, 4, 4, paint);
 
@@ -509,6 +583,14 @@ public class ItemsPanel {
                         paint.setTextAlign(Paint.Align.RIGHT);
                         canvas.drawText("x" + stack.getQuantity(),
                                 drawSlot.right - 5, drawSlot.bottom - 5, paint);
+                    }
+
+                    // Selected checkmark (top-right corner)
+                    if (isSelected) {
+                        paint.setColor(Color.rgb(80, 200, 80));
+                        paint.setTextSize(28);
+                        paint.setTextAlign(Paint.Align.RIGHT);
+                        canvas.drawText("✓", drawSlot.right - 4, drawSlot.top + 24, paint);
                     }
                 } else {
                     // Empty slot border
@@ -542,6 +624,73 @@ public class ItemsPanel {
 
         paint.setColor(Color.argb(150, 150, 150, 150));
         canvas.drawRoundRect(scrollbarX, scrollbarY, scrollbarX + scrollbarWidth, scrollbarY + scrollbarHeight, 3, 3, paint);
+    }
+
+    /**
+     * Draw multi-select mode button (top-left)
+     */
+    private void drawMultiSelectButton(Canvas canvas, Paint paint) {
+        boolean active = isMultiSelectMode;
+        int bgColor = active ? Color.argb(200, 50, 120, 200) : Color.argb(150, 80, 80, 100);
+        paint.setColor(bgColor);
+        canvas.drawRoundRect(multiSelectButton.left, multiSelectButton.top,
+                multiSelectButton.right, multiSelectButton.bottom, 6, 6, paint);
+
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(active ? 2 : 1);
+        paint.setColor(active ? Color.rgb(100, 180, 255) : Color.rgb(180, 180, 200));
+        canvas.drawRoundRect(multiSelectButton.left, multiSelectButton.top,
+                multiSelectButton.right, multiSelectButton.bottom, 6, 6, paint);
+        paint.setStyle(Paint.Style.FILL);
+
+        paint.setColor(Color.WHITE);
+        paint.setTextSize(20);
+        paint.setTextAlign(Paint.Align.CENTER);
+        String label = active ? "✓ 多选" : "☐ 多选";
+        canvas.drawText(label, multiSelectButton.centerX(), multiSelectButton.centerY() + 6, paint);
+    }
+
+    /**
+     * Draw multi-select action buttons (select all + discard)
+     */
+    private void drawMultiSelectActions(Canvas canvas, Paint paint) {
+        int selectedCount = selectedItems.size();
+
+        // Select all / Deselect all button
+        boolean hasSelection = selectedCount > 0;
+        paint.setColor(Color.argb(180, 60, 60, 80));
+        canvas.drawRoundRect(selectAllButton.left, selectAllButton.top,
+                selectAllButton.right, selectAllButton.bottom, 8, 8, paint);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(2);
+        paint.setColor(Color.rgb(180, 180, 220));
+        canvas.drawRoundRect(selectAllButton.left, selectAllButton.top,
+                selectAllButton.right, selectAllButton.bottom, 8, 8, paint);
+        paint.setStyle(Paint.Style.FILL);
+
+        paint.setColor(Color.WHITE);
+        paint.setTextSize(20);
+        paint.setTextAlign(Paint.Align.CENTER);
+        String selectLabel = allSelected ? "取消全选" : "全选";
+        canvas.drawText(selectLabel, selectAllButton.centerX(), selectAllButton.centerY() + 7, paint);
+
+        // Discard button
+        int discardColor = hasSelection ? Color.argb(200, 180, 50, 50) : Color.argb(100, 80, 40, 40);
+        paint.setColor(discardColor);
+        canvas.drawRoundRect(discardButton.left, discardButton.top,
+                discardButton.right, discardButton.bottom, 8, 8, paint);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(2);
+        paint.setColor(hasSelection ? Color.rgb(255, 120, 120) : Color.rgb(150, 100, 100));
+        canvas.drawRoundRect(discardButton.left, discardButton.top,
+                discardButton.right, discardButton.bottom, 8, 8, paint);
+        paint.setStyle(Paint.Style.FILL);
+
+        paint.setColor(hasSelection ? Color.WHITE : Color.argb(150, 200, 200, 200));
+        paint.setTextSize(20);
+        paint.setTextAlign(Paint.Align.CENTER);
+        String discardLabel = "丢弃" + (hasSelection ? "(" + selectedCount + ")" : "");
+        canvas.drawText(discardLabel, discardButton.centerX(), discardButton.centerY() + 7, paint);
     }
 
     /**
@@ -581,6 +730,11 @@ public class ItemsPanel {
                 if (selectedTab != i) {
                     selectedTab = i;
                     inventoryScrollOffset = 0;
+                    // Clear selection when switching tabs
+                    if (isMultiSelectMode) {
+                        selectedItems.clear();
+                        allSelected = false;
+                    }
                 }
                 return true;
             }
@@ -604,6 +758,39 @@ public class ItemsPanel {
         if (TouchUtil.checkIsInTouchRectFloat(closeButton, x, y)) {
             hide();
             return true;
+        }
+
+        // Check multi-select button
+        if (TouchUtil.checkIsInTouchRectFloat(multiSelectButton, x, y)) {
+            isMultiSelectMode = !isMultiSelectMode;
+            selectedItems.clear();
+            allSelected = false;
+            return true;
+        }
+
+        // In multi-select mode, check action buttons
+        if (isMultiSelectMode) {
+            // Select all / Deselect all
+            if (TouchUtil.checkIsInTouchRectFloat(selectAllButton, x, y)) {
+                List<ItemStack> displayItems = getCategoryItems(selectedTab);
+                if (allSelected) {
+                    selectedItems.clear();
+                    allSelected = false;
+                } else {
+                    selectedItems.clear();
+                    selectedItems.addAll(displayItems);
+                    allSelected = true;
+                }
+                return true;
+            }
+            // Discard
+            if (TouchUtil.checkIsInTouchRectFloat(discardButton, x, y) && !selectedItems.isEmpty()) {
+                int count = ItemSystem.getInstance().removeItems(new ArrayList<>(selectedItems));
+                selectedItems.clear();
+                allSelected = false;
+                GameEngine.getInstance().showCenterToast("已丢弃 " + count + " 个物品");
+                return true;
+            }
         }
 
         // Check equipment slots - show info or unequip
@@ -718,11 +905,22 @@ public class ItemsPanel {
                     if (hitSlot.contains((int) x, (int) y)) {
                         ItemStack stack = displayItems.get(index);
 
-                        // Show the appropriate info panel
-                        if (stack.getItem().getType() == Item.Type.EQUIPMENT) {
-                            showEquipmentInfo((EquipmentItem) stack.getItem(), false, index, hitSlot.centerX(), hitSlot.centerY());
+                        if (isMultiSelectMode) {
+                            // Toggle selection
+                            if (selectedItems.contains(stack)) {
+                                selectedItems.remove(stack);
+                            } else {
+                                selectedItems.add(stack);
+                            }
+                            // Update allSelected state
+                            allSelected = selectedItems.size() >= displayItems.size();
                         } else {
-                            showItemInfo(stack, index, hitSlot.centerX(), hitSlot.centerY());
+                            // Show the appropriate info panel
+                            if (stack.getItem().getType() == Item.Type.EQUIPMENT) {
+                                showEquipmentInfo((EquipmentItem) stack.getItem(), false, index, hitSlot.centerX(), hitSlot.centerY());
+                            } else {
+                                showItemInfo(stack, index, hitSlot.centerX(), hitSlot.centerY());
+                            }
                         }
 
                         isTouchingInventory = false;

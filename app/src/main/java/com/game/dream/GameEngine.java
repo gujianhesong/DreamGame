@@ -49,6 +49,7 @@ import com.game.dream.system.WeatherSystem;
 import com.game.dream.ui.CenterNotification;
 import com.game.dream.ui.DamageNumber;
 import com.game.dream.ui.DialogBox;
+import com.game.dream.ui.EquipSellDialog;
 import com.game.dream.ui.FloatingText;
 import com.game.dream.ui.GameUI;
 import com.game.dream.ui.Projectile;
@@ -1150,6 +1151,13 @@ public class GameEngine {
     public DialogBox showDialog(String title, String msg, List<String> options, DialogBox.DialogListener listener) {
         if (gameUI != null) {
             return gameUI.showDialog(title, msg, options, listener);
+        }
+        return null;
+    }
+
+    public EquipSellDialog getEquipSellDialog() {
+        if (gameUI != null) {
+            return gameUI.getEquipSellDialog();
         }
         return null;
     }

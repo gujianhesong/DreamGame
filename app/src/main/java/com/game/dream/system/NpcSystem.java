@@ -40,6 +40,7 @@ public class NpcSystem {
                 npcList.add(new Npc(100151, "药店老板", NpcType.PHARMACIST, 4000, 4000));
                 npcList.add(new Npc(100152, "酒馆老板", NpcType.TAVERN_KEEPER, 4200, 4000));
                 npcList.add(new Npc(100153, "妙手郎中", NpcType.DOCTOR, 4400, 4000));
+                npcList.add(new Npc(100154, "装备收购商", NpcType.MERCHANT, 4600, 4000));
 
                 npcList.add(new Npc(100101, "青溪村村长", NpcType.OLD_MAN, 5200, 5300));
                 npcList.add(new Npc(100102, "云游商人", NpcType.MERCHANT, 5000, 5300));

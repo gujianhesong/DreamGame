@@ -61,6 +61,9 @@ public class GameUI {
 
     private DialogBox currentDialog;
 
+    // Equipment sell dialog
+    private EquipSellDialog equipSellDialog;
+
     // Message panel
     private MessagePanel messagePanel;
 
@@ -157,6 +160,9 @@ public class GameUI {
 
         // Initialize DialogBox
         currentDialog = new DialogBox();
+
+        // Initialize EquipSellDialog
+        equipSellDialog = new EquipSellDialog();
 
         // Initialize message panel
         messagePanel = new MessagePanel();
@@ -285,10 +291,11 @@ public class GameUI {
 
         if (currentDialog != null) {
             int panelWidth = Math.min(1200, width - 40);
-            int panelHeight = Math.min(700, height - 100);
+            int panelHeight = Math.min(850, height - 80);
             int panelX = (width - panelWidth) / 2;
             int panelY = (height - panelHeight) / 2;
             currentDialog.setBounds(panelX, panelY, panelWidth, panelHeight);
+            equipSellDialog.setBounds(panelX, panelY, panelWidth, panelHeight);
         }
 
         // Initialize message panel bounds
@@ -507,9 +514,14 @@ public class GameUI {
             shopPanel.draw(canvas);
         }
 
-        // Draw DialoBox
+        // Draw DialogBox
         if (currentDialog != null && currentDialog.isVisible()) {
             currentDialog.draw(canvas);
+        }
+
+        // Draw EquipSellDialog (on top of DialogBox)
+        if (equipSellDialog != null && equipSellDialog.isVisible()) {
+            equipSellDialog.draw(canvas);
         }
 
         // Draw center notification (on top of everything except UI panels)
@@ -541,6 +553,13 @@ public class GameUI {
         // Handle message panel touch (check first, before other panels)
         if (messagePanel != null && messagePanel.handleTouch(action, x, y)) {
             return true;
+        }
+
+        // EquipSellDialog touch (highest priority for dialogs)
+        if (equipSellDialog != null && equipSellDialog.isVisible()) {
+            if (action == MotionEvent.ACTION_DOWN && equipSellDialog.handleTouch(x, y)) {
+                return true;
+            }
         }
 
         if (currentDialog != null && currentDialog.isVisible()) {
@@ -1376,6 +1395,10 @@ public class GameUI {
             return currentDialog;
         }
         return null;
+    }
+
+    public EquipSellDialog getEquipSellDialog() {
+        return equipSellDialog;
     }
 
     /**

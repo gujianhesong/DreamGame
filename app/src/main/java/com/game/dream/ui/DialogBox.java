@@ -80,7 +80,7 @@ public class DialogBox {
         optionButtons.clear();
         if (options.isEmpty()) return;
 
-        int btnHeight = 45;
+        int btnHeight = 42;
         int gap = 20;
 
         // Calculate button widths based on text
@@ -98,8 +98,18 @@ public class DialogBox {
         // Center buttons horizontally
         int startX = bounds.left + 30;
 
-        // Calculate starting Y based on message
-        int startY = bounds.top + 300;
+        // Calculate starting Y dynamically based on title + message height
+        int contentY = bounds.top + 20;
+        if (title != null) {
+            contentY += 50; // title height (40px font + 10px spacing)
+        }
+        if (message != null) {
+            tempPaint.setTextSize(30);
+            String[] lines = message.split("\n");
+            contentY += lines.length * 42; // message lines (30px font + 12px line height)
+        }
+        contentY += 30; // gap before buttons
+        int startY = contentY;
 
         for (int i = 0; i < options.size(); i++) {
             int yPos = startY + i * (btnHeight + gap);

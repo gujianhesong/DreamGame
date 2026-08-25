@@ -209,6 +209,28 @@ public class ItemSystem {
     }
 
     /**
+     * 批量移除指定的 ItemStack 列表（通过引用匹配）
+     * @param stacks 要移除的 ItemStack 集合
+     * @return 实际移除的数量
+     */
+    public int removeItems(List<ItemStack> stacks) {
+        int totalRemoved = 0;
+        for (ItemStack target : stacks) {
+            for (int i = items.size() - 1; i >= 0; i--) {
+                if (items.get(i) == target) {
+                    ItemStack stack = items.get(i);
+                    int qty = stack.getQuantity();
+                    stack.remove(qty);
+                    items.remove(i);
+                    totalRemoved += qty;
+                    break;
+                }
+            }
+        }
+        return totalRemoved;
+    }
+
+    /**
      * Use consumable item at index
      */
     public boolean useItem(ItemStack targetStack) {

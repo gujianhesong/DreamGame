@@ -46,11 +46,11 @@ public class EquipmentItem extends Item {
     }
 
     public EquipmentItem(int id, String name) {
-        super(id, name, "", Type.EQUIPMENT, Rarity.Rarity_1, 1, 100000);
+        super(id, name, "", Type.EQUIPMENT, Rarity.Rarity_1, 1, 1000);
     }
 
     public EquipmentItem(EquipItemInfo equipItemInfo) {
-        super(equipItemInfo.getId(), equipItemInfo.getName(), "", Type.EQUIPMENT, Rarity.Rarity_1, 1, 100000);
+        super(equipItemInfo.getId(), equipItemInfo.getName(), "", Type.EQUIPMENT, Rarity.Rarity_1, 1, 1000);
         this.equipItemInfo = equipItemInfo;
 
         Item.Rarity rarity = EquipUtil.caculateEquipRarity(equipItemInfo);

@@ -3,10 +3,16 @@ package com.game.dream.npc;
 import android.util.Pair;
 
 import com.game.dream.GameEngine;
+import com.game.dream.item.EquipmentItem;
+import com.game.dream.item.Item;
+import com.game.dream.item.ItemStack;
+import com.game.dream.system.ItemSystem;
 import com.game.dream.system.MapSystem;
 import com.game.dream.system.RoleSystem;
 import com.game.dream.ui.DialogBox;
+import com.game.dream.ui.EquipSellDialog;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -59,6 +65,12 @@ public class FunctionNpcManager {
                         GameEngine.getInstance().showDialog(npc.getName(), "好了，少侠已经完全恢复了");
                     }
                 });
+                return true;
+            }
+            case 100154: {
+                //清溪-装备收购商
+                handleEquipSell(npc);
+                return true;
             }
             case 100117: {
                 //清溪-驿站车夫
@@ -157,5 +169,65 @@ public class FunctionNpcManager {
         }
 
         return false;
+    }
+
+    /**
+     * 装备收购商 - 出售装备功能
+     */
+    private void handleEquipSell(final Npc npc) {
+        // 收集背包所有装备
+        List<ItemStack> equipList = new ArrayList<>();
+        List<Integer> sellPrices = new ArrayList<>();
+
+        for (ItemStack stack : ItemSystem.getInstance().getItems()) {
+            if (stack.getItem().getType() == Item.Type.EQUIPMENT) {
+                EquipmentItem equip = (EquipmentItem) stack.getItem();
+                equipList.add(stack);
+                sellPrices.add(calcSellPrice(equip));
+            }
+        }
+
+        // 排序：低等级在前，同等级按低品质在前
+        java.util.Collections.sort(equipList, (a, b) -> {
+            EquipmentItem ea = (EquipmentItem) a.getItem();
+            EquipmentItem eb = (EquipmentItem) b.getItem();
+            float levelA = ea.getEquipItemInfo() != null ? ea.getEquipItemInfo().getLevel() : 0;
+            float levelB = eb.getEquipItemInfo() != null ? eb.getEquipItemInfo().getLevel() : 0;
+            if (levelA != levelB) return Float.compare(levelA, levelB);
+            return ea.getRarity().ordinal() - eb.getRarity().ordinal();
+        });
+        // 重新计算排序后的价格
+        sellPrices.clear();
+        for (ItemStack stack : equipList) {
+            sellPrices.add(calcSellPrice((EquipmentItem) stack.getItem()));
+        }
+
+        // 使用专用装备出售对话框
+        EquipSellDialog dialog = GameEngine.getInstance().getEquipSellDialog();
+        if (dialog != null) {
+            dialog.show(npc.getName(), equipList, sellPrices, null);
+        }
+    }
+
+    /**
+     * 计算装备出售价格（基础价值 * 等级 * 品质系数）
+     */
+    private int calcSellPrice(EquipmentItem equip) {
+        int baseValue = equip.getValue();
+        float levelFloat = equip.getEquipItemInfo().getLevel();
+        if (levelFloat == 0) {
+            levelFloat = 0.5f;
+        }
+        float rarityMultiplier;
+        switch (equip.getRarity()) {
+            case Rarity_1: rarityMultiplier = 1.0f; break;
+            case Rarity_2: rarityMultiplier = 1.5f; break;
+            case Rarity_3: rarityMultiplier = 2.0f; break;
+            case Rarity_4: rarityMultiplier = 3.0f; break;
+            case Rarity_5: rarityMultiplier = 5.0f; break;
+            case Rarity_6: rarityMultiplier = 8.0f; break;
+            default: rarityMultiplier = 0.5f; break;
+        }
+        return (int) (baseValue * levelFloat * rarityMultiplier);
     }
 }

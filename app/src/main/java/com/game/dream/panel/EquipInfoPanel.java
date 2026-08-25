@@ -29,6 +29,7 @@ public class EquipInfoPanel {
     // Track if this is an equipped item
     private boolean isEquipped;
     private int inventoryIndex; // For backpack items
+    private boolean readOnly; // Read-only mode (no action buttons)
 
     // Callback interface
     public interface EquipActionListener {
@@ -57,6 +58,30 @@ public class EquipInfoPanel {
     }
 
     /**
+     * Show equipment info panel in read-only mode (no action buttons)
+     */
+    public void showReadOnly(EquipmentItem equipment, int centerX, int centerY) {
+        this.selectedEquipment = new ItemStack(equipment, 1);
+        this.listener = null;
+        this.isVisible = true;
+        this.isEquipped = false;
+        this.inventoryIndex = -1;
+        this.readOnly = true;
+
+        int panelWidth = 420;
+        int panelHeight = 600;
+        int panelX = centerX - panelWidth / 2;
+        int panelY = centerY - panelHeight / 2;
+        panelBounds.set(panelX, panelY, panelX + panelWidth, panelY + panelHeight);
+
+        // Hide all action buttons
+        actionButton.set(0, 0, 0, 0);
+        dropButton.set(0, 0, 0, 0);
+        xiangqianButton.set(0, 0, 0, 0);
+        xilianButton.set(0, 0, 0, 0);
+    }
+
+    /**
      * Show equipment info panel
      */
     public void show(EquipmentItem equipment, boolean isEquipped, int inventoryIndex, int centerX, int centerY, EquipActionListener listener) {
@@ -65,6 +90,7 @@ public class EquipInfoPanel {
         this.isVisible = true;
         this.isEquipped = isEquipped;
         this.inventoryIndex = inventoryIndex;
+        this.readOnly = false;
 
         // Calculate panel size (larger than item info for more stats)
         int panelWidth = 420;
@@ -271,6 +297,7 @@ public class EquipInfoPanel {
      * Draw action buttons
      */
     private void drawButtons(Canvas canvas, Paint paint, EquipmentItem equipment) {
+        if (readOnly) return; // Read-only mode: no buttons
         if (isEquipped) {
             // For equipped items: show "卸下装备" button
             drawButton(canvas, paint, actionButton, "🔓 卸下装备", Color.rgb(220, 160, 50));

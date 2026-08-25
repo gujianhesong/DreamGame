@@ -30,8 +30,8 @@ public class Tiger extends Enemy {
         EnemyPropertyExtra enemyPropertyExtra = new EnemyPropertyExtra();
         enemyPropertyExtra.detectionRange = 400;
         enemyPropertyExtra.attackRange = 250;
-        enemyPropertyExtra.rewardExp = 100;
-        enemyPropertyExtra.rewardMoney = 100;
+        enemyPropertyExtra.rewardExp = 300;
+        enemyPropertyExtra.rewardMoney = 150;
         setPropertyExtra(enemyPropertyExtra);
 
         setProperty(500, 80, 60, 80, 40);

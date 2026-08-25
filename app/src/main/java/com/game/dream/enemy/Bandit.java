@@ -26,8 +26,8 @@ public class Bandit extends Enemy {
         EnemyPropertyExtra enemyPropertyExtra = new EnemyPropertyExtra();
         enemyPropertyExtra.detectionRange = 300;
         enemyPropertyExtra.attackRange = 130;
-        enemyPropertyExtra.rewardExp = 120;
-        enemyPropertyExtra.rewardMoney = 150;
+        enemyPropertyExtra.rewardExp = 360;
+        enemyPropertyExtra.rewardMoney = 180;
         setPropertyExtra(enemyPropertyExtra);
 
         setProperty(600, 300, 200, 100, 100);

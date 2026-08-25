@@ -14,6 +14,7 @@ import com.game.dream.enums.SkillType;
 import com.game.dream.enums.SpecialEffect;
 import com.game.dream.enums.XiLianType;
 import com.game.dream.item.ConsumableItem;
+import com.game.dream.item.EquipmentItem;
 import com.game.dream.item.Item;
 import com.game.dream.item.ItemStack;
 import com.game.dream.map.MapGenerator;
@@ -463,8 +464,19 @@ public class Player extends Character {
 
         lastAttackTime = currentTime;
 
-        // Attack area in front of player
-        float attackRange = size * 2f;
+        // Attack area in front of player - varies by weapon level
+        float baseAttackRange = 150;
+        
+        // Get equipped weapon and adjust attack range based on level
+        EquipmentItem weapon = ItemSystem.getInstance().getEquippedItem(EquipmentItem.Slot.WEAPON);
+        if (weapon != null && weapon.getEquipItemInfo() != null) {
+            int weaponLevel = Math.max(1, weapon.getEquipItemInfo().getLevel());
+            // Every 10 levels adds 5px to attack range
+            float rangeBonus = Math.min((weaponLevel / 10) * 8f, 100f);
+            baseAttackRange += rangeBonus;
+        }
+        
+        float attackRange = baseAttackRange;
         float attackX = x;
         float attackY = y;
 

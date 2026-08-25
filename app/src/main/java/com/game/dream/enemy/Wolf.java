@@ -26,7 +26,7 @@ public class Wolf extends Enemy {
         EnemyPropertyExtra enemyPropertyExtra = new EnemyPropertyExtra();
         enemyPropertyExtra.detectionRange = 250;
         enemyPropertyExtra.attackRange = 110;
-        enemyPropertyExtra.rewardExp = 100;
+        enemyPropertyExtra.rewardExp = 200;
         enemyPropertyExtra.rewardMoney = 100;
         setPropertyExtra(enemyPropertyExtra);
 

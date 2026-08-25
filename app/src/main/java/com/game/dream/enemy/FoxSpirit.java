@@ -32,8 +32,8 @@ public class FoxSpirit extends Enemy {
         EnemyPropertyExtra enemyPropertyExtra = new EnemyPropertyExtra();
         enemyPropertyExtra.detectionRange = 320;
         enemyPropertyExtra.attackRange = 120;
-        enemyPropertyExtra.rewardExp = 150;
-        enemyPropertyExtra.rewardMoney = 180;
+        enemyPropertyExtra.rewardExp = 400;
+        enemyPropertyExtra.rewardMoney = 200;
         setPropertyExtra(enemyPropertyExtra);
 
         // 狐狸精：生命较低，魔法伤害高，速度快
@@ -80,7 +80,7 @@ public class FoxSpirit extends Enemy {
     }
 
     /**
-     * 狐媚法术: 向四周发射8道花瓣，被击中后受到法术伤害，30%概率眩晕1秒
+     * 狐媚法术: 向四周发射6道花瓣，被击中后受到法术伤害，30%概率眩晕1秒
      * 冷却时间: 普通5-8秒，精英4-6秒，BOSS3-5秒
      */
     @Override

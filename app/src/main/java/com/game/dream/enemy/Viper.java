@@ -28,7 +28,7 @@ public class Viper extends Enemy {
         EnemyPropertyExtra enemyPropertyExtra = new EnemyPropertyExtra();
         enemyPropertyExtra.detectionRange = 180;
         enemyPropertyExtra.attackRange = 100;
-        enemyPropertyExtra.rewardExp = 100;
+        enemyPropertyExtra.rewardExp = 200;
         enemyPropertyExtra.rewardMoney = 100;
         setPropertyExtra(enemyPropertyExtra);
 

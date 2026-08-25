@@ -5,6 +5,10 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 
+import com.game.dream.bean.EquipItemInfo;
+import com.game.dream.item.EquipmentItem;
+import com.game.dream.system.ItemSystem;
+
 /**
  * Renderer for player character - handles all drawing logic
  */
@@ -258,30 +262,6 @@ public class PlayerRenderer {
         paint.reset();
         paint.setAntiAlias(true);
 
-        // Sword handling - show in hand during attack, on back otherwise
-        if (!isAttacking || attackProgress < 0.2f || attackProgress > 0.6f) {
-            // Sword on back (normal state)
-            Path scabbard = new Path();
-            scabbard.moveTo(cx + 7 * scale, cy - 18 * scale + bobOffset * 0.3f);
-            scabbard.lineTo(cx + 10 * scale, cy - 16 * scale + bobOffset * 0.3f);
-            scabbard.lineTo(cx + 5 * scale, cy + 8 * scale + bobOffset * 0.3f);
-            scabbard.lineTo(cx + 2 * scale, cy + 6 * scale + bobOffset * 0.3f);
-            scabbard.close();
-
-            paint.setColor(Color.rgb(139, 69, 19));
-            canvas.drawPath(scabbard, paint);
-
-            // Scabbard decoration
-            paint.setColor(Color.rgb(255, 215, 0));
-            canvas.drawRect(cx + 5.5f * scale, cy - 10 * scale + bobOffset * 0.3f,
-                    cx + 7.5f * scale, cy - 8 * scale + bobOffset * 0.3f, paint);
-
-            // Sword hilt
-            paint.setColor(Color.rgb(255, 215, 0));
-            canvas.drawRect(cx + 6.5f * scale, cy - 19 * scale + bobOffset * 0.3f,
-                    cx + 11 * scale, cy - 17.5f * scale + bobOffset * 0.3f, paint);
-        }
-
         // === LEGS ===
         if (isMoving && !isAttacking) {
             // Walking - legs move
@@ -388,10 +368,8 @@ public class PlayerRenderer {
             paint.setColor(Color.rgb(255, 255, 255));
             canvas.drawPath(rightArm, paint);
 
-            // Draw sword in hand during attack
-            if (attackProgress >= 0.2f && attackProgress <= 0.6f) {
-                drawSwordInHand(canvas, paint, cx + 14 * scale + rightArmExtend, cy + 8 * scale + bobOffset, scale, attackProgress);
-            }
+            // Draw sword in hand (always visible)
+            drawSwordInHand(canvas, paint, cx + 14 * scale + rightArmExtend, cy + 8 * scale + bobOffset, scale, isAttacking ? attackProgress : 0.5f);
         } else if (isMoving) {
             // Walking - arms swing
             Path leftArm = new Path();
@@ -417,6 +395,11 @@ public class PlayerRenderer {
 
             paint.setColor(Color.rgb(255, 255, 255));
             canvas.drawPath(rightArm, paint);
+
+            // Draw sword in hand (always visible)
+            float handX = cx + 15 * scale - armSwing * 0.5f;
+            float handY = cy + 10 * scale + bobOffset;
+            drawSwordInHand(canvas, paint, handX, handY, scale, 0.5f); // Idle pose
         } else {
             // Idle - arms at sides with gentle sway
             Path leftArm = new Path();
@@ -442,6 +425,11 @@ public class PlayerRenderer {
 
             paint.setColor(Color.rgb(255, 255, 255));
             canvas.drawPath(rightArm, paint);
+
+            // Draw sword in hand (always visible)
+            float handX = cx + 14 * scale - armSwing * 0.3f;
+            float handY = cy + 10 * scale + bobOffset;
+            drawSwordInHand(canvas, paint, handX, handY, scale, 0.5f); // Idle pose
         }
 
         // === HEAD ===
@@ -633,10 +621,8 @@ public class PlayerRenderer {
             paint.setColor(Color.rgb(255, 255, 255));
             canvas.drawPath(rightArm, paint);
 
-            // Draw sword in hand during attack
-            if (attackProgress >= 0.2f && attackProgress <= 0.6f) {
-                drawSwordInHand(canvas, paint, cx + 14 * scale + rightArmExtend, cy + 8 * scale + bobOffset, scale, attackProgress);
-            }
+            // Draw sword in hand (always visible)
+            drawSwordInHand(canvas, paint, cx + 14 * scale + rightArmExtend, cy + 8 * scale + bobOffset, scale, isAttacking ? attackProgress : 0.5f);
         } else if (isMoving) {
             Path leftArm = new Path();
             leftArm.moveTo(cx - 12 * scale, cy - 5 * scale + bobOffset);
@@ -661,6 +647,11 @@ public class PlayerRenderer {
 
             paint.setColor(Color.rgb(255, 255, 255));
             canvas.drawPath(rightArm, paint);
+
+            // Draw sword in hand (always visible)
+            float handX = cx + 15 * scale - armSwing * 0.5f;
+            float handY = cy + 10 * scale + bobOffset;
+            drawSwordInHand(canvas, paint, handX, handY, scale, 0.5f); // Walking pose
         } else {
             Path leftArm = new Path();
             leftArm.moveTo(cx - 12 * scale, cy - 5 * scale + bobOffset);
@@ -685,6 +676,11 @@ public class PlayerRenderer {
 
             paint.setColor(Color.rgb(255, 255, 255));
             canvas.drawPath(rightArm, paint);
+
+            // Draw sword in hand (always visible)
+            float handX = cx + 14 * scale;
+            float handY = cy + 10 * scale + bobOffset;
+            drawSwordInHand(canvas, paint, handX, handY, scale, 0.5f); // Idle pose
         }
 
         // Head (back view)
@@ -709,11 +705,6 @@ public class PlayerRenderer {
         canvas.drawLine(cx + 5 * scale, cy - 10 * scale + bobOffset * 0.3f,
                 cx + 6 * scale, cy + 5 * scale + bobOffset * 0.3f, paint);
         paint.setStrokeWidth(1);
-
-        // Sword on back (prominently displayed)
-        if (!isAttacking || attackProgress < 0.2f || attackProgress > 0.6f) {
-            drawSwordOnBack(canvas, paint, cx, cy, scale, bobOffset);
-        }
     }
 
 // ... existing code ...
@@ -823,10 +814,8 @@ public class PlayerRenderer {
             paint.setColor(Color.rgb(255, 255, 255));
             canvas.drawPath(rightArm, paint);
 
-            // Draw sword in hand during attack
-            if (attackProgress >= 0.2f && attackProgress <= 0.6f) {
-                drawSwordInHand(canvas, paint, cx + 12 * scale + rightArmExtend, cy + 8 * scale + bobOffset, scale, attackProgress);
-            }
+            // Draw sword in hand (always visible)
+            drawSwordInHand(canvas, paint, cx + 12 * scale + rightArmExtend, cy + 8 * scale + bobOffset, scale, isAttacking ? attackProgress : 0.5f);
         } else if (isMoving) {
             Path leftArm = new Path();
             leftArm.moveTo(cx - 8 * scale, cy - 5 * scale + bobOffset);
@@ -851,6 +840,11 @@ public class PlayerRenderer {
 
             paint.setColor(Color.rgb(255, 255, 255));
             canvas.drawPath(rightArm, paint);
+
+            // Draw sword in hand (always visible)
+            float handX = cx + 12 * scale - armSwing * 0.3f;
+            float handY = cy + 10 * scale + bobOffset;
+            drawSwordInHand(canvas, paint, handX, handY, scale, 0.5f); // Walking pose
         } else {
             Path leftArm = new Path();
             leftArm.moveTo(cx - 8 * scale, cy - 5 * scale + bobOffset);
@@ -875,6 +869,11 @@ public class PlayerRenderer {
 
             paint.setColor(Color.rgb(255, 255, 255));
             canvas.drawPath(rightArm, paint);
+
+            // Draw sword in hand (always visible)
+            float handX = cx + 12 * scale;
+            float handY = cy + 10 * scale + bobOffset;
+            drawSwordInHand(canvas, paint, handX, handY, scale, 0.5f); // Idle pose
         }
 
         // Head (side profile)
@@ -919,6 +918,18 @@ public class PlayerRenderer {
      */
     private void drawSwordInHand(Canvas canvas, Paint paint, float handX, float handY,
                                  float scale, float attackProgress) {
+        // Get equipped weapon
+        EquipmentItem weapon = ItemSystem.getInstance().getEquippedItem(EquipmentItem.Slot.WEAPON);
+        int weaponLevel = 1;
+        if (weapon != null && weapon.getEquipItemInfo() != null) {
+            weaponLevel = Math.max(1, weapon.getEquipItemInfo().getLevel());
+        }
+
+        // Calculate sword length based on level (longer for higher levels)
+        float baseLength = 30 * scale;
+        float lengthBonus = (weaponLevel / 10) * 3 * scale; // Every 10 levels adds 3px
+        float swordLength = baseLength + Math.min(lengthBonus, 30 * scale); // Cap at +30px (max 60px)
+
         // Calculate sword angle based on attack progress
         float angle;
         if (attackProgress < 0.35f) {
@@ -928,56 +939,238 @@ public class PlayerRenderer {
             // Strike: sword swings through
             float strikeProgress = (attackProgress - 0.35f) / 0.1f;
             angle = -60 + 150 * strikeProgress; // -60 to +90 degrees
-        } else {
+        } else if (attackProgress > 0.6f) {
             // Recovery: sword returns
             float recoveryProgress = (attackProgress - 0.45f) / 0.15f;
             angle = 90 - 60 * recoveryProgress;
+        } else {
+            // Idle/Walking pose: sword pointing down-right at 45 degrees
+            angle = 45;
         }
 
         canvas.save();
         canvas.rotate(angle, handX, handY);
 
-        // Sword blade
-        paint.setColor(Color.rgb(220, 220, 240));
-        canvas.drawRect(handX - 2 * scale, handY - 25 * scale,
-                handX + 2 * scale, handY + 5 * scale, paint);
+        // Sword blade color based on level (every 10 levels)
+        int bladeColor;
+        int glowColor;
+        if (weaponLevel >= 100) {
+            // Mythic (rainbow gold)
+            bladeColor = Color.rgb(255, 215, 0);
+            glowColor = Color.argb(120, 255, 200, 0);
+        } else if (weaponLevel >= 80) {
+            // Legendary (orange/gold)
+            bladeColor = Color.rgb(255, 165, 0);
+            glowColor = Color.argb(110, 255, 180, 0);
+        } else if (weaponLevel >= 60) {
+            // Epic (purple)
+            bladeColor = Color.rgb(200, 150, 255);
+            glowColor = Color.argb(100, 180, 100, 255);
+        } else if (weaponLevel >= 40) {
+            // Rare (blue)
+            bladeColor = Color.rgb(100, 200, 255);
+            glowColor = Color.argb(90, 80, 180, 255);
+        } else if (weaponLevel >= 20) {
+            // Uncommon (green-tinted silver)
+            bladeColor = Color.rgb(180, 230, 200);
+            glowColor = Color.argb(80, 150, 220, 180);
+        } else {
+            // Common (silver)
+            bladeColor = Color.rgb(220, 220, 240);
+            glowColor = Color.argb(70, 200, 200, 255);
+        }
 
-        // Sword edge highlight
+        // Blade width increases slightly with level
+        float bladeWidth = 2 * scale + weaponLevel * 0.05f * scale;
+
+        // Draw blade glow (with pointed tip)
+        Path glowPath = new Path();
+        glowPath.moveTo(handX, handY - swordLength - 12 * scale); // Much sharper and longer tip
+        glowPath.lineTo(handX - bladeWidth * 2.5f, handY - swordLength + 8 * scale);
+        glowPath.lineTo(handX - bladeWidth * 1.5f, handY + 5 * scale);
+        glowPath.lineTo(handX + bladeWidth * 1.5f, handY + 5 * scale);
+        glowPath.lineTo(handX + bladeWidth * 2.5f, handY - swordLength + 8 * scale);
+        glowPath.close();
+        paint.setColor(glowColor);
+        canvas.drawPath(glowPath, paint);
+
+        // Sword blade (with pointed tip)
+        Path bladePath = new Path();
+        bladePath.moveTo(handX, handY - swordLength - 3 * scale); // Pointed tip
+        bladePath.lineTo(handX - bladeWidth, handY - swordLength);
+        bladePath.lineTo(handX - bladeWidth, handY + 5 * scale);
+        bladePath.lineTo(handX + bladeWidth, handY + 5 * scale);
+        bladePath.lineTo(handX + bladeWidth, handY - swordLength);
+        bladePath.close();
+        paint.setColor(bladeColor);
+        canvas.drawPath(bladePath, paint);
+
+        // Sword edge highlight (brighter center line, tapered to tip)
+        Path highlightPath = new Path();
+        highlightPath.moveTo(handX, handY - swordLength - 2 * scale); // Tapered tip
+        highlightPath.lineTo(handX - bladeWidth * 0.3f, handY - swordLength);
+        highlightPath.lineTo(handX - bladeWidth * 0.3f, handY + 5 * scale);
+        highlightPath.lineTo(handX + bladeWidth * 0.3f, handY + 5 * scale);
+        highlightPath.lineTo(handX + bladeWidth * 0.3f, handY - swordLength);
+        highlightPath.close();
         paint.setColor(Color.WHITE);
-        canvas.drawRect(handX - 1 * scale, handY - 25 * scale,
-                handX + 0 * scale, handY + 5 * scale, paint);
+        canvas.drawPath(highlightPath, paint);
 
-        // Sword hilt
-        paint.setColor(Color.rgb(139, 69, 19));
-        canvas.drawRect(handX - 4 * scale, handY + 3 * scale,
-                handX + 4 * scale, handY + 6 * scale, paint);
+        // For high-level weapons, add decorative patterns (every 20 levels)
+        if (weaponLevel >= 40) {
+            paint.setColor(Color.argb(150, 255, 255, 255));
+            float patternSpacing = 8 * scale;
+            for (float y = handY - swordLength + patternSpacing; y < handY; y += patternSpacing) {
+                canvas.drawLine(handX - bladeWidth, y, handX + bladeWidth, y, paint);
+            }
+        }
+
+        // Sword hilt (more ornate for higher levels, every 20 levels)
+        if (weaponLevel >= 80) {
+            // Mythic hilt with double guard and gem
+            paint.setColor(Color.rgb(255, 215, 0));
+            canvas.drawRect(handX - 7 * scale, handY + 2 * scale,
+                    handX + 7 * scale, handY + 9 * scale, paint);
+            // Two gems
+            paint.setColor(Color.rgb(255, 50, 50));
+            canvas.drawCircle(handX - 2.5f * scale, handY + 5.5f * scale, 2 * scale, paint);
+            paint.setColor(Color.rgb(50, 150, 255));
+            canvas.drawCircle(handX + 2.5f * scale, handY + 5.5f * scale, 2 * scale, paint);
+        } else if (weaponLevel >= 60) {
+            // Legendary hilt with guard and gem
+            paint.setColor(Color.rgb(255, 215, 0));
+            canvas.drawRect(handX - 6 * scale, handY + 3 * scale,
+                    handX + 6 * scale, handY + 8 * scale, paint);
+            // Gem in hilt
+            paint.setColor(Color.rgb(255, 50, 50));
+            canvas.drawCircle(handX, handY + 5.5f * scale, 2 * scale, paint);
+        } else if (weaponLevel >= 40) {
+            // Epic hilt with simple guard
+            paint.setColor(Color.rgb(200, 180, 100));
+            canvas.drawRect(handX - 5 * scale, handY + 3 * scale,
+                    handX + 5 * scale, handY + 7 * scale, paint);
+        } else {
+            // Simple hilt
+            paint.setColor(Color.rgb(139, 69, 19));
+            canvas.drawRect(handX - 4 * scale, handY + 3 * scale,
+                    handX + 4 * scale, handY + 6 * scale, paint);
+        }
 
         canvas.restore();
     }
 
     /**
-     * Draw sword on back (for up/back view)
+     * Draw sword on back - varies by weapon level
+     * @param isBackView true for back/up view, false for front/down view
      */
-    private void drawSwordOnBack(Canvas canvas, Paint paint, float cx, float cy, float scale, float bobOffset) {
+    private void drawSwordOnBack(Canvas canvas, Paint paint, float cx, float cy, float scale, float bobOffset, boolean isBackView) {
+        // Get equipped weapon
+        EquipmentItem weapon = ItemSystem.getInstance().getEquippedItem(EquipmentItem.Slot.WEAPON);
+        int weaponLevel = 1;
+        if (weapon != null && weapon.getEquipItemInfo() != null) {
+            weaponLevel = Math.max(1, weapon.getEquipItemInfo().getLevel());
+        }
+
+        // Scabbard color based on level
+        int scabbardColor;
+        int decorationColor;
+        if (weaponLevel >= 100) {
+            // Mythic - gold with bright accents
+            scabbardColor = Color.rgb(180, 140, 20);
+            decorationColor = Color.rgb(255, 255, 100);
+        } else if (weaponLevel >= 80) {
+            // Legendary - dark gold
+            scabbardColor = Color.rgb(160, 120, 20);
+            decorationColor = Color.rgb(255, 215, 0);
+        } else if (weaponLevel >= 60) {
+            // Epic - purple-tinted brown
+            scabbardColor = Color.rgb(120, 80, 60);
+            decorationColor = Color.rgb(200, 150, 255);
+        } else if (weaponLevel >= 40) {
+            // Rare - blue-tinted brown
+            scabbardColor = Color.rgb(100, 80, 100);
+            decorationColor = Color.rgb(100, 200, 255);
+        } else if (weaponLevel >= 20) {
+            // Uncommon - greenish brown
+            scabbardColor = Color.rgb(120, 100, 60);
+            decorationColor = Color.rgb(180, 230, 200);
+        } else {
+            // Common - basic brown
+            scabbardColor = Color.rgb(139, 69, 19);
+            decorationColor = Color.rgb(255, 215, 0);
+        }
+
+        // Draw scabbard body (different positions for front vs back view)
+        // Scabbard length varies by weapon level
+        float scabbardLengthBonus = (weaponLevel / 10) * 2 * scale; // Every 10 levels adds 2px to scabbard
         Path scabbard = new Path();
-        scabbard.moveTo(cx + 2 * scale, cy - 18 * scale + bobOffset * 0.3f);
-        scabbard.lineTo(cx + 5 * scale, cy - 16 * scale + bobOffset * 0.3f);
-        scabbard.lineTo(cx, cy + 8 * scale + bobOffset * 0.3f);
-        scabbard.lineTo(cx - 3 * scale, cy + 6 * scale + bobOffset * 0.3f);
+        if (isBackView) {
+            // Back view - centered on back
+            scabbard.moveTo(cx + 2 * scale, cy - 18 * scale + bobOffset * 0.3f);
+            scabbard.lineTo(cx + 5 * scale, cy - 16 * scale + bobOffset * 0.3f);
+            scabbard.lineTo(cx - scabbardLengthBonus * 0.3f, cy + 8 * scale + bobOffset * 0.3f + scabbardLengthBonus);
+            scabbard.lineTo(cx - 3 * scale - scabbardLengthBonus * 0.3f, cy + 6 * scale + bobOffset * 0.3f + scabbardLengthBonus);
+        } else {
+            // Front view - on right side
+            scabbard.moveTo(cx + 7 * scale, cy - 18 * scale + bobOffset * 0.3f);
+            scabbard.lineTo(cx + 10 * scale, cy - 16 * scale + bobOffset * 0.3f);
+            scabbard.lineTo(cx + 5 * scale - scabbardLengthBonus * 0.2f, cy + 8 * scale + bobOffset * 0.3f + scabbardLengthBonus);
+            scabbard.lineTo(cx + 2 * scale - scabbardLengthBonus * 0.2f, cy + 6 * scale + bobOffset * 0.3f + scabbardLengthBonus);
+        }
         scabbard.close();
 
-        paint.setColor(Color.rgb(139, 69, 19));
+        paint.setColor(scabbardColor);
         canvas.drawPath(scabbard, paint);
 
-        // Scabbard decoration
-        paint.setColor(Color.rgb(255, 215, 0));
-        canvas.drawRect(cx + 0.5f * scale, cy - 10 * scale + bobOffset * 0.3f,
-                cx + 2.5f * scale, cy - 8 * scale + bobOffset * 0.3f, paint);
+        // Scabbard decorations (more ornate for higher levels)
+        float decoOffsetX = isBackView ? 0.5f : 5.5f;
+        float decoOffsetX2 = isBackView ? 0f : 5f;
+        if (weaponLevel >= 60) {
+            // Multiple decorative bands
+            paint.setColor(decorationColor);
+            canvas.drawRect(cx + decoOffsetX * scale, cy - 12 * scale + bobOffset * 0.3f,
+                    cx + (decoOffsetX + 2) * scale, cy - 10 * scale + bobOffset * 0.3f, paint);
+            canvas.drawRect(cx + decoOffsetX2 * scale, cy - 6 * scale + bobOffset * 0.3f,
+                    cx + (decoOffsetX2 + 2) * scale, cy - 4 * scale + bobOffset * 0.3f, paint);
+            canvas.drawRect(cx + (decoOffsetX2 - 0.5f) * scale, cy + 0 * scale + bobOffset * 0.3f,
+                    cx + (decoOffsetX2 + 1.5f) * scale, cy + 2 * scale + bobOffset * 0.3f, paint);
+        } else if (weaponLevel >= 30) {
+            // Two decorative bands
+            paint.setColor(decorationColor);
+            canvas.drawRect(cx + decoOffsetX * scale, cy - 10 * scale + bobOffset * 0.3f,
+                    cx + (decoOffsetX + 2) * scale, cy - 8 * scale + bobOffset * 0.3f, paint);
+            canvas.drawRect(cx + decoOffsetX2 * scale, cy - 2 * scale + bobOffset * 0.3f,
+                    cx + (decoOffsetX2 + 2) * scale, cy + 0 * scale + bobOffset * 0.3f, paint);
+        } else {
+            // Single decoration
+            paint.setColor(decorationColor);
+            canvas.drawRect(cx + decoOffsetX * scale, cy - 10 * scale + bobOffset * 0.3f,
+                    cx + (decoOffsetX + 2) * scale, cy - 8 * scale + bobOffset * 0.3f, paint);
+        }
 
-        // Sword hilt
-        paint.setColor(Color.rgb(255, 215, 0));
-        canvas.drawRect(cx + 1.5f * scale, cy - 19 * scale + bobOffset * 0.3f,
-                cx + 6 * scale, cy - 17.5f * scale + bobOffset * 0.3f, paint);
+        // Sword hilt (varies by level)
+        float hiltOffsetX = isBackView ? 1.5f : 6.5f;
+        float hiltWidth = isBackView ? 4.5f : 4.5f;
+        if (weaponLevel >= 80) {
+            // Ornate hilt with wider guard
+            paint.setColor(decorationColor);
+            canvas.drawRect(cx + (hiltOffsetX - 0.5f) * scale, cy - 19.5f * scale + bobOffset * 0.3f,
+                    cx + (hiltOffsetX + hiltWidth + 1) * scale, cy - 17f * scale + bobOffset * 0.3f, paint);
+            // Gem on hilt
+            paint.setColor(Color.rgb(255, 50, 50));
+            float gemX = isBackView ? cx + 3.5f * scale : cx + 8.5f * scale;
+            canvas.drawCircle(gemX, cy - 18.5f * scale + bobOffset * 0.3f, 1.5f * scale, paint);
+        } else if (weaponLevel >= 50) {
+            // Enhanced hilt
+            paint.setColor(decorationColor);
+            canvas.drawRect(cx + hiltOffsetX * scale, cy - 19 * scale + bobOffset * 0.3f,
+                    cx + (hiltOffsetX + hiltWidth) * scale, cy - 17.5f * scale + bobOffset * 0.3f, paint);
+        } else {
+            // Simple hilt
+            paint.setColor(Color.rgb(255, 215, 0));
+            canvas.drawRect(cx + hiltOffsetX * scale, cy - 19 * scale + bobOffset * 0.3f,
+                    cx + (hiltOffsetX + hiltWidth) * scale, cy - 17.5f * scale + bobOffset * 0.3f, paint);
+        }
     }
 
     /**

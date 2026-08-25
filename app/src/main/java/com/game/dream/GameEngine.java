@@ -694,7 +694,7 @@ public class GameEngine {
                         enemy.markSummoned();
                     }
 
-                    // 狐狸精狐媚法术: 向四周发射8道花瓣
+                    // 狐狸精狐媚法术: 向四周发射6道花瓣
                     if (enemy instanceof FoxSpirit && ((FoxSpirit) enemy).isPendingFoxCharm()) {
                         spawnFoxCharmPetals((FoxSpirit) enemy);
                         ((FoxSpirit) enemy).consumeFoxCharm();
@@ -1456,15 +1456,15 @@ public class GameEngine {
     }
 
     /**
-     * 狐狸精狐媚法术: 向四周发射8道花瓣，被击中后受到法术伤害，30%概率眩晕1秒
+     * 狐狸精狐媚法术: 向四周发射6道花瓣，被击中后受到法术伤害，30%概率眩晕1秒
      */
     private void spawnFoxCharmPetals(FoxSpirit fox) {
         float foxX = fox.getX();
         float foxY = fox.getY();
         float petalDistance = 300f; // 花瓣飞行目标距离
 
-        for (int i = 0; i < 8; i++) {
-            double angle = i * Math.PI / 4; // 每45度一道花瓣
+        for (int i = 0; i < 6; i++) {
+            double angle = i * Math.PI / 3; // 每60度一道花瓣
             float targetX = foxX + (float) Math.cos(angle) * petalDistance;
             float targetY = foxY + (float) Math.sin(angle) * petalDistance;
 

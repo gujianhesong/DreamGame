@@ -40,8 +40,8 @@ public class WildBoar extends Enemy {
         EnemyPropertyExtra enemyPropertyExtra = new EnemyPropertyExtra();
         enemyPropertyExtra.detectionRange = 200f;
         enemyPropertyExtra.attackRange = 100;
-        enemyPropertyExtra.rewardExp = 100;
-        enemyPropertyExtra.rewardMoney = 100;
+        enemyPropertyExtra.rewardExp = 240;
+        enemyPropertyExtra.rewardMoney = 120;
         setPropertyExtra(enemyPropertyExtra);
 
         setProperty(400, 70, 50, 70, 40);

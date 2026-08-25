@@ -28,6 +28,10 @@ public class MapGenerator {
     public static final int CITY_ROAD = 11;
     public static final int CITY_WALL = 12;
 
+    // 东海湾地图地形
+    public static final int SAND = 13;
+    public static final int SEA = 14;
+
     public static final int VILLAGE_CAN_PASS = 100;
     public static final int VILLAGE_NO_PASS = 101;
 
@@ -252,7 +256,8 @@ public class MapGenerator {
         int terrain = mapData[y][x];
         if (terrain == MapGenerator.LAKE || terrain == MapGenerator.LAVA
                 || terrain == MapGenerator.RIVER || terrain == MapGenerator.MOUNTAIN
-                || terrain == MapGenerator.VILLAGE_NO_PASS || terrain == MapGenerator.CITY_WALL) {
+                || terrain == MapGenerator.VILLAGE_NO_PASS || terrain == MapGenerator.CITY_WALL
+                || terrain == MapGenerator.SEA) {
             return false;
         }
         return true;

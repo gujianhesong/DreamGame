@@ -134,6 +134,12 @@ public class Minimap {
                     case 12: // CITY_WALL
                         paint.setColor(Color.rgb(100, 95, 90));
                         break;
+                    case 13: // SAND
+                        paint.setColor(Color.rgb(235, 215, 160));
+                        break;
+                    case 14: // SEA
+                        paint.setColor(Color.rgb(20, 80, 170));
+                        break;
                     case 100: // VILLAGE_CAN_PASS
                         paint.setColor(Color.rgb(215, 162, 109));
                         break;

@@ -130,6 +130,15 @@ public class NpcSystem {
                 npcList.add(new AnimalNpc(100242, "小绵羊", NpcType.SHEEP, 32700, 34040));
             }
             break;
+            case MapSystem.MAP_ID_DONGHAI_BAY: {
+                //东海湾
+                npcList.add(new Npc(100301, "驿站车夫", NpcType.COACHMAN, 3000, 4800));
+                npcList.add(new AnimalNpc(100302, "大公鸡", NpcType.CHICKEN, 1200, 4200));
+                npcList.add(new AnimalNpc(100303, "旺财", NpcType.DOG, 800, 5500));
+                npcList.add(new AnimalNpc(100304, "小鸭子", NpcType.DUCK, 5000, 5200));
+                npcList.add(new AnimalNpc(100305, "绵羊", NpcType.SHEEP, 600, 4400));
+            }
+            break;
         }
         return npcList;
     }

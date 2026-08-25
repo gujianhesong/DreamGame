@@ -9,6 +9,8 @@ import android.os.Looper;
 import android.util.Pair;
 
 import com.game.dream.bean.MapInfo;
+import com.game.dream.map.DonghaiBayMapGenerator;
+import com.game.dream.map.DonghaiBayRenderer;
 import com.game.dream.map.JinlingCityRenderer;
 import com.game.dream.map.JinlingMapGenerator;
 import com.game.dream.map.MapGenerator;
@@ -48,8 +50,13 @@ public class MapSystem {
 
     public static final int MAP_ID_QING_XI = 1001; //清溪
     public static final int MAP_ID_JIN_LING = 1002; //金陵
+    public static final int MAP_ID_DONGHAI_BAY = 1003; //东海湾
 
     public static final int MAP_ID_QING_XI_MAZE = 2001; //清溪迷宫
+
+    // 东海湾地图尺寸
+    public static final int DONGHAI_MAP_WIDTH = 10000;
+    public static final int DONGHAI_MAP_HEIGHT = 10000;
 
     // Map data
     private int[][] mapData; // 0=plain, 1=grassland, 2=forest, 3=lake, 4=snow, 5=swamp, 6=lava
@@ -64,6 +71,9 @@ public class MapSystem {
     // 金陵地图专用渲染器
     private JinlingCityRenderer jinlingCityRenderer;
     private List<VillageRenderer> additionalVillageRenderers = new ArrayList<>();
+
+    // 东海湾地图专用渲染器
+    private DonghaiBayRenderer donghaiBayRenderer;
 
     private List<MapInfo> mapInfoList = new ArrayList<>();
     private MapInfo curMapInfo;
@@ -117,6 +127,7 @@ public class MapSystem {
                 mapRenderer = null;
                 villageRenderer = null;
                 jinlingCityRenderer = null;
+                donghaiBayRenderer = null;
                 additionalVillageRenderers.clear();
                 // 初始化迷宫对象
                 MazeSystem.getInstance().initMazeObjects(mapData, mazeGenerator);
@@ -191,6 +202,52 @@ public class MapSystem {
                 mazeRenderer = null;
                 mazeGenerator = null;
                 villageRenderer = null;
+                donghaiBayRenderer = null;
+            } else if (mapId == MAP_ID_DONGHAI_BAY) {
+                // 东海湾地图
+                DonghaiBayMapGenerator donghaiGen = new DonghaiBayMapGenerator(TILE_SIZE);
+                mapData = donghaiGen.generateMap();
+                curMapInfo.setMapData(mapData);
+                mapRenderer = new MapRenderer(mapData, DONGHAI_MAP_WIDTH, DONGHAI_MAP_HEIGHT, TILE_SIZE);
+
+                // 初始化东海湾渲染器
+                donghaiBayRenderer = new DonghaiBayRenderer();
+                int[] vBounds = DonghaiBayMapGenerator.getVillageBounds();
+                donghaiBayRenderer.init(vBounds, DonghaiBayMapGenerator.getGateCenterYs(), DonghaiBayMapGenerator.getGateHeight());
+
+                // 标记村庄建筑为不可通行
+                Rect vBoundsRect = donghaiBayRenderer.getVillageBounds();
+                if (vBoundsRect != null) {
+                    for (int i = vBoundsRect.left; i <= vBoundsRect.right; i += TILE_SIZE) {
+                        for (int j = vBoundsRect.top; j <= vBoundsRect.bottom; j += TILE_SIZE) {
+                            int tx = i / TILE_SIZE, ty = j / TILE_SIZE;
+                            if (ty >= 0 && ty < mapData.length && tx >= 0 && tx < mapData[0].length) {
+                                mapData[ty][tx] = MapGenerator.VILLAGE_CAN_PASS;
+                            }
+                        }
+                    }
+                    for (Rect obs : donghaiBayRenderer.getObstacles()) {
+                        int startCol = obs.left / TILE_SIZE;
+                        int endCol = obs.right / TILE_SIZE;
+                        int startRow = obs.top / TILE_SIZE;
+                        int endRow = obs.bottom / TILE_SIZE;
+                        for (int r = startRow; r <= endRow; r++) {
+                            for (int c = startCol; c <= endCol; c++) {
+                                if (r >= 0 && r < DONGHAI_MAP_HEIGHT / TILE_SIZE
+                                        && c >= 0 && c < DONGHAI_MAP_WIDTH / TILE_SIZE) {
+                                    mapData[r][c] = MapGenerator.VILLAGE_NO_PASS;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // 清除其他渲染器
+                mazeRenderer = null;
+                mazeGenerator = null;
+                villageRenderer = null;
+                jinlingCityRenderer = null;
+                additionalVillageRenderers.clear();
             } else {
                 // 普通地图 (清溪村)
                 mapGenerator = new MapGenerator(findMap.getMapWidth(), findMap.getMapHeight(), TILE_SIZE);
@@ -203,6 +260,7 @@ public class MapSystem {
                 mazeRenderer = null;
                 mazeGenerator = null;
                 jinlingCityRenderer = null;
+                donghaiBayRenderer = null;
                 additionalVillageRenderers.clear();
 
                 // Mark village houses as non-walkable in the map array
@@ -234,6 +292,7 @@ public class MapSystem {
     private void initMapList() {
         mapInfoList.add(new MapInfo(MAP_ID_QING_XI, "清溪", 10000, 10000, new Pair<>(3520, 5430)));
         mapInfoList.add(new MapInfo(MAP_ID_JIN_LING, "金陵", JINLING_MAP_WIDTH, JINLING_MAP_HEIGHT, new Pair<>(30000, 35430)));
+        mapInfoList.add(new MapInfo(MAP_ID_DONGHAI_BAY, "东海湾", DONGHAI_MAP_WIDTH, DONGHAI_MAP_HEIGHT, new Pair<>(3000, 4800)));
 
         mapInfoList.add(new MapInfo(MAP_ID_QING_XI_MAZE, "清溪地下迷宫", 10000, 10000, null));
     }
@@ -320,6 +379,10 @@ public class MapSystem {
             for (VillageRenderer vr : additionalVillageRenderers) {
                 vr.draw(canvas, cameraX, cameraY);
             }
+            // 东海湾渲染（围墙、村庄、海滩）
+            if (donghaiBayRenderer != null) {
+                donghaiBayRenderer.draw(canvas, cameraX, cameraY, screenWidth, screenHeight);
+            }
         }
     }
 
@@ -358,6 +421,15 @@ public class MapSystem {
                         y >= bounds.top - padding && y <= bounds.bottom + padding) {
                     return true;
                 }
+            }
+        }
+        // 东海湾村庄安全区
+        if (donghaiBayRenderer != null && donghaiBayRenderer.getVillageBounds() != null) {
+            Rect bounds = donghaiBayRenderer.getVillageBounds();
+            int padding = 20;
+            if (x >= bounds.left - padding && x <= bounds.right + padding &&
+                    y >= bounds.top - padding && y <= bounds.bottom + padding) {
+                return true;
             }
         }
         return false;
@@ -497,6 +569,7 @@ public class MapSystem {
         mazeRenderer = null;
         mazeGenerator = null;
         villageRenderer = null;
+        donghaiBayRenderer = null;
     }
 
     /**
@@ -513,6 +586,10 @@ public class MapSystem {
         // 城市建筑也纳入避障范围（城里动物需要避开房屋和城墙）
         if (jinlingCityRenderer != null && currentMapId == MAP_ID_JIN_LING) {
             allObs.addAll(jinlingCityRenderer.getObstacles());
+        }
+        // 东海湾村庄障碍物
+        if (donghaiBayRenderer != null && currentMapId == MAP_ID_DONGHAI_BAY) {
+            allObs.addAll(donghaiBayRenderer.getObstacles());
         }
         return allObs;
     }

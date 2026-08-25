@@ -95,7 +95,7 @@ public class FunctionNpcManager {
             }
             case 100201: {
                 //金陵-驿站车夫（主城）
-                List<String> options = Arrays.asList("前往清溪村", "前往碧波渡", "前往云岩寨", "前往稻香屯", "前往翠微庄", "不了");
+                List<String> options = Arrays.asList("前往清溪村", "前往东海湾", "前往碧波渡", "前往云岩寨", "前往稻香屯", "前往翠微庄", "不了");
                 String message = "客官想去哪里？我只收你100金钱";
                 GameEngine.getInstance().showDialog(npc.getName(), message, options, new DialogBox.DialogListener() {
                     @Override
@@ -111,25 +111,30 @@ public class FunctionNpcManager {
                                         RoleSystem.getInstance().getRoleInfo().getMoney() - cost);
                                 GameEngine.getInstance().teleportToMap(MapSystem.MAP_ID_QING_XI);
                                 break;
-                            case 1: // 碧波渡（东北）
+                            case 1: // 东海湾（跨地图）
+                                RoleSystem.getInstance().getRoleInfo().setMoney(
+                                        RoleSystem.getInstance().getRoleInfo().getMoney() - cost);
+                                GameEngine.getInstance().teleportToMap(MapSystem.MAP_ID_DONGHAI_BAY);
+                                break;
+                            case 2: // 碧波渡（东北）
                                 RoleSystem.getInstance().getRoleInfo().setMoney(
                                         RoleSystem.getInstance().getRoleInfo().getMoney() - cost);
                                 GameEngine.getInstance().getPlayer().setX(58900);
                                 GameEngine.getInstance().getPlayer().setY(2470);
                                 break;
-                            case 2: // 云岩寨（东南）
+                            case 3: // 云岩寨（东南）
                                 RoleSystem.getInstance().getRoleInfo().setMoney(
                                         RoleSystem.getInstance().getRoleInfo().getMoney() - cost);
                                 GameEngine.getInstance().getPlayer().setX(57200);
                                 GameEngine.getInstance().getPlayer().setY(58080);
                                 break;
-                            case 3: // 稻香屯（西南）
+                            case 4: // 稻香屯（西南）
                                 RoleSystem.getInstance().getRoleInfo().setMoney(
                                         RoleSystem.getInstance().getRoleInfo().getMoney() - cost);
                                 GameEngine.getInstance().getPlayer().setX(2880);
                                 GameEngine.getInstance().getPlayer().setY(58470);
                                 break;
-                            case 4: // 翠微庄（西北）
+                            case 5: // 翠微庄（西北）
                                 RoleSystem.getInstance().getRoleInfo().setMoney(
                                         RoleSystem.getInstance().getRoleInfo().getMoney() - cost);
                                 GameEngine.getInstance().getPlayer().setX(2870);
@@ -161,6 +166,27 @@ public class FunctionNpcManager {
                             Pair<Integer, Integer> transPos = MapSystem.getInstance().getCurMapInfo().getTransPos();
                             GameEngine.getInstance().getPlayer().setX(transPos.first);
                             GameEngine.getInstance().getPlayer().setY(transPos.second);
+                        }
+                    }
+                });
+                return true;
+            }
+            case 100301: {
+                //东海湾-驿站车夫
+                List<String> options = Arrays.asList("前往金陵主城", "不了");
+                String message = "客官想去哪里？我只收你100金钱";
+                GameEngine.getInstance().showDialog(npc.getName(), message, options, new DialogBox.DialogListener() {
+                    @Override
+                    public void onOptionSelected(int optionIndex) {
+                        if (optionIndex == 0) {
+                            int cost = 100;
+                            if (RoleSystem.getInstance().getRoleInfo().getMoney() < cost) {
+                                GameEngine.getInstance().showCenterToast("金钱不足，需要100金钱");
+                                return;
+                            }
+                            RoleSystem.getInstance().getRoleInfo().setMoney(
+                                    RoleSystem.getInstance().getRoleInfo().getMoney() - cost);
+                            GameEngine.getInstance().teleportToMap(MapSystem.MAP_ID_JIN_LING);
                         }
                     }
                 });

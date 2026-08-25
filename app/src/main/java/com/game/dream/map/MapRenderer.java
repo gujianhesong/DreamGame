@@ -47,6 +47,8 @@ public class MapRenderer {
     private static final int FARMLAND = 10;
     private static final int CITY_ROAD = 11;
     private static final int CITY_WALL = 12;
+    private static final int SAND = 13;
+    private static final int SEA = 14;
 
     public MapRenderer(int[][] map, int mapWidth, int mapHeight, int tileSize) {
         this.map = map;
@@ -160,6 +162,8 @@ public class MapRenderer {
             case FARMLAND:  baseR = 180; baseG = 200; baseB = 100; break;
             case CITY_ROAD: baseR = 190; baseG = 180; baseB = 160; break;
             case CITY_WALL: baseR = 100; baseG = 95;  baseB = 90;  break;
+            case SAND:      baseR = 235; baseG = 215; baseB = 160; break;
+            case SEA:       baseR = 20;  baseG = 80;  baseB = 170; break;
             default:        baseR = 128; baseG = 128; baseB = 128; break;
         }
 
@@ -282,6 +286,12 @@ public class MapRenderer {
                 break;
             case CITY_ROAD:
                 drawCityRoadDeco(canvas, paint, rng, screenX, screenY, cx, cy);
+                break;
+            case SAND:
+                drawSandDeco(canvas, paint, rng, screenX, screenY, cx, cy);
+                break;
+            case SEA:
+                drawSeaDeco(canvas, paint, rng, screenX, screenY, cx, cy);
                 break;
         }
     }
@@ -606,6 +616,51 @@ public class MapRenderer {
     }
 
     /**
+     * Sand: small shells, ripple marks
+     */
+    private void drawSandDeco(Canvas canvas, Paint paint, java.util.Random rng,
+                              int sx, int sy, float cx, float cy) {
+        // Sand ripple lines
+        if (rng.nextInt(2) == 0) {
+            float ry = sy + 4 + rng.nextInt(tileSize - 8);
+            paint.setColor(Color.argb(30, 200, 180, 130));
+            paint.setStrokeWidth(1);
+            canvas.drawLine(sx + 3, ry, sx + tileSize - 3, ry + (rng.nextFloat() - 0.5f) * 2, paint);
+        }
+        // Small shell or pebble
+        if (rng.nextInt(4) == 0) {
+            float px = sx + 4 + rng.nextInt(tileSize - 8);
+            float py = sy + 4 + rng.nextInt(tileSize - 8);
+            paint.setColor(Color.rgb(220, 200, 170));
+            canvas.drawCircle(px, py, 1.2f, paint);
+        }
+    }
+
+    /**
+     * Sea: wave lines, foam spots
+     */
+    private void drawSeaDeco(Canvas canvas, Paint paint, java.util.Random rng,
+                             int sx, int sy, float cx, float cy) {
+        // Wave lines
+        int waves = 1 + rng.nextInt(2);
+        for (int i = 0; i < waves; i++) {
+            float wy = sy + 3 + rng.nextInt(tileSize - 6);
+            float wx = sx + 2 + rng.nextInt(tileSize - 4);
+            float waveLen = 5 + rng.nextFloat() * 8;
+            paint.setColor(Color.argb(50, 80, 160, 255));
+            paint.setStrokeWidth(1);
+            canvas.drawLine(wx, wy, wx + waveLen, wy + (rng.nextFloat() - 0.5f) * 3, paint);
+        }
+        // Foam spots
+        if (rng.nextInt(3) == 0) {
+            float fx = sx + 3 + rng.nextInt(tileSize - 6);
+            float fy = sy + 3 + rng.nextInt(tileSize - 6);
+            paint.setColor(Color.argb(40, 200, 230, 255));
+            canvas.drawCircle(fx, fy, 1.5f, paint);
+        }
+    }
+
+    /**
      * Deterministic hash for tile position
      */
     private int hashTile(int x, int y) {
@@ -651,6 +706,8 @@ public class MapRenderer {
             case FARMLAND:  return new int[]{180, 200, 100};
             case CITY_ROAD: return new int[]{190, 180, 160};
             case CITY_WALL: return new int[]{100, 95, 90};
+            case SAND:      return new int[]{235, 215, 160};
+            case SEA:       return new int[]{20, 80, 170};
             default:        return new int[]{128, 128, 128};
         }
     }

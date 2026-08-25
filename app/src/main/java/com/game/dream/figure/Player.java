@@ -143,7 +143,7 @@ public class Player extends Character {
                     if (terrain != MapGenerator.LAKE && terrain != MapGenerator.LAVA && terrain != MapGenerator.VILLAGE_NO_PASS
                             && terrain != MazeGenerator.MAZE_WALL
                             && terrain != MapGenerator.RIVER && terrain != MapGenerator.MOUNTAIN
-                            && terrain != MapGenerator.CITY_WALL) {
+                            && terrain != MapGenerator.CITY_WALL && terrain != MapGenerator.SEA) {
                         x = newX;
                         y = newY;
                     }
@@ -188,7 +188,7 @@ public class Player extends Character {
                 if (terrain == MapGenerator.LAKE || terrain == MapGenerator.LAVA || terrain == MapGenerator.VILLAGE_NO_PASS
                         || terrain == MazeGenerator.MAZE_WALL
                         || terrain == MapGenerator.RIVER || terrain == MapGenerator.MOUNTAIN
-                        || terrain == MapGenerator.CITY_WALL) {
+                        || terrain == MapGenerator.CITY_WALL || terrain == MapGenerator.SEA) {
                     terrainBlocked = true;
                 }
             }
@@ -271,7 +271,7 @@ public class Player extends Character {
             if (terrain != MapGenerator.LAKE && terrain != MapGenerator.LAVA && terrain != MapGenerator.VILLAGE_NO_PASS
                     && terrain != MazeGenerator.MAZE_WALL
                     && terrain != MapGenerator.RIVER && terrain != MapGenerator.MOUNTAIN
-                    && terrain != MapGenerator.CITY_WALL) {
+                    && terrain != MapGenerator.CITY_WALL && terrain != MapGenerator.SEA) {
                 x = newX;
                 y = newY;
             }
@@ -357,7 +357,7 @@ public class Player extends Character {
             if (terrain == MapGenerator.LAKE || terrain == MapGenerator.LAVA || terrain == MapGenerator.VILLAGE_NO_PASS
                     || terrain == MazeGenerator.MAZE_WALL
                     || terrain == MapGenerator.RIVER || terrain == MapGenerator.MOUNTAIN
-                    || terrain == MapGenerator.CITY_WALL) {
+                    || terrain == MapGenerator.CITY_WALL || terrain == MapGenerator.SEA) {
                 // Hit impassable, stop dash
                 dashDistanceRemaining = 0;
             } else {

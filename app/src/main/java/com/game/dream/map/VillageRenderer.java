@@ -150,9 +150,18 @@ public class VillageRenderer {
         objects.sort((o1, o2) -> Integer.compare(o1.y, o2.y));
 
         for (VillageObject obj : objects) {
-            // 简单的视锥剔除：如果物体完全不在屏幕内就不画
+            // 视锥剔除：树木的 obj.y 是底部，向上延伸 obj.height
+            // 其他物体的 obj.y 是顶部，向下延伸 obj.height
+            float visTop, visBottom;
+            if (obj.type == ObjectType.TREE) {
+                visTop = obj.y - obj.height;   // 树顶在上方
+                visBottom = obj.y;              // 树底在下方
+            } else {
+                visTop = obj.y;
+                visBottom = obj.y + obj.height;
+            }
             if (obj.x + obj.width < cameraX || obj.x > cameraX + canvas.getWidth() ||
-                    obj.y + obj.height < cameraY || obj.y > cameraY + canvas.getHeight()) {
+                    visBottom < cameraY || visTop > cameraY + canvas.getHeight()) {
                 continue;
             }
 

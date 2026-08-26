@@ -64,8 +64,8 @@ public class MapGenerator {
         // Convert to terrain types
         convertToTerrain(map, elevationMap, moistureMap, mapWidthInTiles, mapHeightInTiles);
 
-        // Smooth for natural transitions
-        smoothMap(map, 2);
+        // Smooth for natural transitions（轻平滑：保留少量树林和湖泊的分布）
+        smoothMap(map, 1);
 
         return map;
     }
@@ -138,46 +138,19 @@ public class MapGenerator {
 
     /**
      * Determine terrain type based on elevation and moisture
+     * 清溪村风格：以绿地（GRASSLAND）为绝对主体，散落少量树林（FOREST）和小湖泊（LAKE）
      */
     private int getTerrainType(double elevation, double moisture) {
-        // High elevation - mountains/snow
-        if (elevation > 0.6) {
-            if (elevation > 0.8) {
-                return SNOW; // Snow-capped peaks
-            } else {
-                return FOREST; // Mountain forests
-            }
+        // 低洼 + 高湿度 → 湖泊（约 5~8%，形成小水塘）
+        if (elevation < -0.45 && moisture > 0.25) {
+            return LAKE;
         }
-        // Medium-high elevation
-        else if (elevation > 0.2) {
-            if (moisture > 0.3) {
-                return FOREST; // Wet hills = forest
-            } else if (moisture < -0.3) {
-                return PLAIN; // Dry hills = plains
-            } else {
-                return GRASSLAND; // Moderate = grassland
-            }
+        // 较高海拔 + 一定湿度 → 树林（约 12~15%，形成小片林地）
+        if (elevation > 0.4 && moisture > -0.1) {
+            return FOREST;
         }
-        // Low elevation
-        else if (elevation > -0.2) {
-            if (moisture > 0.5) {
-                return SWAMP; // Very wet lowlands = swamp
-            } else if (moisture > 0.1) {
-                return GRASSLAND; // Wet lowlands = grassland
-            } else {
-                return PLAIN; // Dry/moderate = plain
-            }
-        }
-        // Very low elevation - water bodies
-        else {
-            if (elevation < -0.6) {
-                return LAVA; // Deep pits = lava (rare)
-            } else if (moisture > 0.2) {
-                return LAKE; // Wet depressions = lakes
-            } else {
-                return SWAMP; // Shallow wet areas = swamp
-            }
-        }
+        // 其余全部为绿地
+        return GRASSLAND;
     }
 
     /**
@@ -220,8 +193,9 @@ public class MapGenerator {
                         }
                     }
 
-                    // Only change if there's a strong majority (at least 5 out of 8)
-                    if (maxCount >= 5) {
+                    // Only change if there's a very strong majority (at least 7 out of 8)
+                    // 高阈值避免侵蚀少量地形（树林、湖泊）
+                    if (maxCount >= 7) {
                         newMap[y][x] = mostCommonTerrain;
                     } else {
                         newMap[y][x] = map[y][x];

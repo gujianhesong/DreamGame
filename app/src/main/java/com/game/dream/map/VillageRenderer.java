@@ -397,7 +397,7 @@ public class VillageRenderer {
     private void drawTree(Canvas canvas, Paint paint, float x, float y, int w, int h, int worldX, int worldY) {
         // 用世界坐标做种子，保证同一棵树样式固定（不受摄像机移动影响）
         Random treeRand = new Random(worldX * 73 + worldY * 137);
-        int style = treeRand.nextInt(4);
+        int style = treeRand.nextInt(6);
 
         float cx = x + w / 2f;
         float trunkTop = y + h * 0.35f;
@@ -470,6 +470,32 @@ public class VillageRenderer {
                 // 高光点
                 paint.setColor(Color.argb(30, 150, 230, 100));
                 canvas.drawCircle(cx - bushR * 0.15f, y + h * 0.18f, bushR * 0.3f, paint);
+                break;
+
+            case 4: // 金秋树：金黄色树冠
+                paint.setColor(Color.rgb(90, 60, 30));
+                canvas.drawRect(cx - trunkW * 1.3f, trunkTop, cx + trunkW * 1.3f, y + h, paint);
+                float goldR = w * 0.42f;
+                paint.setColor(Color.rgb(200, 170, 30));
+                canvas.drawCircle(cx - goldR * 0.4f, trunkTop - goldR * 0.2f, goldR * 0.75f, paint);
+                canvas.drawCircle(cx + goldR * 0.4f, trunkTop - goldR * 0.1f, goldR * 0.7f, paint);
+                paint.setColor(Color.rgb(230, 195, 40));
+                canvas.drawCircle(cx, trunkTop - goldR * 0.5f, goldR * 0.8f, paint);
+                paint.setColor(Color.argb(45, 255, 240, 100));
+                canvas.drawCircle(cx - goldR * 0.2f, trunkTop - goldR * 0.7f, goldR * 0.35f, paint);
+                break;
+
+            case 5: // 红枫树：橙红色树冠
+                paint.setColor(Color.rgb(85, 55, 28));
+                canvas.drawRect(cx - trunkW * 1.3f, trunkTop, cx + trunkW * 1.3f, y + h, paint);
+                float redR = w * 0.42f;
+                paint.setColor(Color.rgb(190, 70, 25));
+                canvas.drawCircle(cx - redR * 0.4f, trunkTop - redR * 0.2f, redR * 0.75f, paint);
+                canvas.drawCircle(cx + redR * 0.4f, trunkTop - redR * 0.1f, redR * 0.7f, paint);
+                paint.setColor(Color.rgb(220, 90, 35));
+                canvas.drawCircle(cx, trunkTop - redR * 0.5f, redR * 0.8f, paint);
+                paint.setColor(Color.argb(40, 255, 160, 80));
+                canvas.drawCircle(cx - redR * 0.2f, trunkTop - redR * 0.7f, redR * 0.35f, paint);
                 break;
         }
     }

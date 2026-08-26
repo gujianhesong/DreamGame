@@ -265,6 +265,8 @@ public class MapSystem {
 
                 // Mark village houses as non-walkable in the map array
                 Rect villageBounds = villageRenderer.getVillageBounds();
+                // 排除村庄区域，避免装饰树与村庄树木重叠
+                mapRenderer.addDecorationExclusion(villageBounds);
                 for (int i = villageBounds.left; i <= villageBounds.right; i += TILE_SIZE) {
                     for (int j = villageBounds.top; j <= villageBounds.bottom; j += TILE_SIZE) {
                         mapData[i/TILE_SIZE][j/TILE_SIZE] = MapGenerator.VILLAGE_CAN_PASS;

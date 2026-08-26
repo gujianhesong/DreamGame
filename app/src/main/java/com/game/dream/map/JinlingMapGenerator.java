@@ -36,25 +36,20 @@ public class JinlingMapGenerator {
     }
 
     /**
-     * 生成金陵大地图（算法优化版：哈希噪声替代三角函数，避免线程开销）
+     * 生成金陵大地图（椭圆斑块印章方案）
      */
     public int[][] generateMap() {
         int w = MAP_WIDTH / tileSize;
         int h = MAP_HEIGHT / tileSize;
         int[][] map = new int[h][w];
 
-        // 1. 逐 tile 计算噪声 + 区域修正 + 地形转换
-        for (int y = 0; y < h; y++) {
-            for (int x = 0; x < w; x++) {
-                map[y][x] = computeTerrainAt(x, y, w, h);
-            }
-        }
+        // 1. 以平地为基础，散落圆形/椭圆形草地、树林、湖泊斑块
+        stampTerrainPatches(map, w, h);
 
-        // 2. 平滑处理（1 次迭代）
+        // 2. 轻平滑（柔化斑块边缘）
         smoothMap(map);
 
-        // 3. 刻划主城、道路、村庄（河流已移除，避免阻挡城门道路）
-        // carveRivers(map, w, h);
+        // 3. 刻划主城、道路、村庄
         stampCityArea(map, w, h);
         stampRoads(map, w, h);
         stampVillages(map, w, h);
@@ -62,112 +57,80 @@ public class JinlingMapGenerator {
         return map;
     }
 
-    // ==================== 逐 tile 地形计算（内存优化） ====================
+    // ==================== 椭圆斑块地形 ====================
 
     /**
-     * 计算单个 tile 的地形类型（合并噪声 + 区域修正 + 地形转换）
+     * 在平地底图上盖椭圆斑块：少量草地、树林、湖泊，形状圆润
      */
-    private int computeTerrainAt(int x, int y, int w, int h) {
-        // 基础噪声
-        double elevation = (sampleNoise(x, y, 0.015) * 1.0
-                + sampleNoise(x, y, 0.04) * 0.5
-                + sampleNoise(x, y, 0.08) * 0.25) / 1.75;
-        double moisture = (sampleNoise(x + 5000, y + 5000, 0.02) * 1.0
-                + sampleNoise(x + 5000, y + 5000, 0.06) * 0.5) / 1.5;
-
-        // 区域修正
-        float px = (float) x / w;
-        float py = (float) y / h;
-
-        if (py < 0.22f) {
-            float factor = 1.0f - py / 0.22f;
-            elevation += 0.35 * factor * factor;
-        }
-        float neDist = dist(px, py, 0.82f, 0.18f);
-        if (neDist < 0.18f) {
-            float factor = 1.0f - neDist / 0.18f;
-            elevation -= 0.6 * factor;
-            moisture += 0.5 * factor;
-        }
-        float seDist = dist(px, py, 0.82f, 0.82f);
-        if (seDist < 0.2f) {
-            float factor = 1.0f - seDist / 0.2f;
-            elevation += 0.3 * factor;
-        }
-        float nwDist = dist(px, py, 0.18f, 0.18f);
-        if (nwDist < 0.15f) {
-            float factor = 1.0f - nwDist / 0.15f;
-            elevation += 0.15 * factor;
-            moisture += 0.1 * factor;
-        }
-        float swDist = dist(px, py, 0.2f, 0.8f);
-        if (swDist < 0.25f) {
-            float factor = 1.0f - swDist / 0.25f;
-            elevation -= 0.1 * factor;
-            moisture -= 0.15 * factor;
-        }
-        float centerDist = dist(px, py, 0.5f, 0.5f);
-        if (centerDist < 0.12f) {
-            float factor = 1.0f - centerDist / 0.12f;
-            elevation *= (1.0 - 0.3 * factor);
+    private void stampTerrainPatches(int[][] map, int w, int h) {
+        // 全部填平
+        for (int y = 0; y < h; y++) {
+            for (int x = 0; x < w; x++) {
+                map[y][x] = MapGenerator.PLAIN;
+            }
         }
 
-        return getTerrainType(elevation, moisture);
+        // 树林斑块（约 100 个，散落林地）
+        for (int i = 0; i < 100; i++) {
+            int cx = random.nextInt(w);
+            int cy = random.nextInt(h);
+            int rA = 25 + random.nextInt(31);           // 长轴 25~55 tiles
+            int rB = (int) (rA * (0.55 + random.nextFloat() * 0.45)); // 短轴 = 长轴 × 0.55~1.0
+            float angle = (float) (random.nextFloat() * Math.PI);      // 随机朝向
+            stampOvalPatch(map, w, h, cx, cy, rA, rB, angle, MapGenerator.FOREST);
+        }
+
+        // 草地斑块（约 110 个，零散草甸）
+        for (int i = 0; i < 110; i++) {
+            int cx = random.nextInt(w);
+            int cy = random.nextInt(h);
+            int rA = 20 + random.nextInt(31);           // 长轴 20~50 tiles
+            int rB = (int) (rA * (0.6 + random.nextFloat() * 0.4));
+            float angle = (float) (random.nextFloat() * Math.PI);
+            stampOvalPatch(map, w, h, cx, cy, rA, rB, angle, MapGenerator.GRASSLAND);
+        }
+
+        // 湖泊斑块（约 30 个，小水塘）
+        for (int i = 0; i < 30; i++) {
+            int cx = random.nextInt(w);
+            int cy = random.nextInt(h);
+            int rA = 15 + random.nextInt(18);           // 长轴 15~32 tiles
+            int rB = (int) (rA * (0.6 + random.nextFloat() * 0.4));
+            float angle = (float) (random.nextFloat() * Math.PI);
+            stampOvalPatch(map, w, h, cx, cy, rA, rB, angle, MapGenerator.LAKE);
+        }
     }
-
-    // ==================== 噪声生成（整数哈希，比 sin/cos 快 ~10x）====================
 
     /**
-     * 整数哈希噪声函数，输出范围 [-1, 1]
-     * 替代 Math.sin/Math.cos，纯整数运算，无浮点三角函数开销
+     * 在地图上盖一个椭圆斑块（旋转椭圆方程判定）
+     * 边缘 tile 按距离衰减概率填充，形成自然过渡
      */
-    private double sampleNoise(int x, int y, double frequency) {
-        int ix = (int)(x * frequency);
-        int iy = (int)(y * frequency);
-        int n = ix * 374761393 + iy * 668265263;
-        n = (n ^ (n >> 13)) * 1274126177;
-        n = n ^ (n >> 16);
-        return (double)(n & 0x7fffffff) / 1073741824.0 - 1.0;
-    }
+    private void stampOvalPatch(int[][] map, int w, int h,
+                                int cx, int cy, int rA, int rB, float angle, int terrain) {
+        float cos = (float) Math.cos(angle);
+        float sin = (float) Math.sin(angle);
+        int bound = rA + 1;
 
-    private float dist(float x1, float y1, float x2, float y2) {
-        float dx = x1 - x2;
-        float dy = y1 - y2;
-        return (float) Math.sqrt(dx * dx + dy * dy);
-    }
+        for (int dy = -bound; dy <= bound; dy++) {
+            int ty = cy + dy;
+            if (ty < 0 || ty >= h) continue;
+            for (int dx = -bound; dx <= bound; dx++) {
+                int tx = cx + dx;
+                if (tx < 0 || tx >= w) continue;
 
-    // ==================== 地形转换 ====================
+                // 旋转到椭圆局部坐标
+                float lx = dx * cos + dy * sin;
+                float ly = -dx * sin + dy * cos;
+                float val = (lx * lx) / (float)(rA * rA) + (ly * ly) / (float)(rB * rB);
 
-    private int getTerrainType(double elevation, double moisture) {
-        if (elevation > 0.65) {
-            return MapGenerator.MOUNTAIN; // 裸岩高山
-        } else if (elevation > 0.45) {
-            if (moisture > 0.2) {
-                return MapGenerator.FOREST;
-            } else {
-                return MapGenerator.GRASSLAND;
-            }
-        } else if (elevation > 0.1) {
-            if (moisture > 0.35) {
-                return MapGenerator.FOREST;
-            } else if (moisture > 0.0) {
-                return MapGenerator.GRASSLAND;
-            } else {
-                return MapGenerator.PLAIN;
-            }
-        } else if (elevation > -0.15) {
-            if (moisture > 0.3) {
-                return MapGenerator.SWAMP;
-            } else if (moisture > 0.0) {
-                return MapGenerator.PLAIN;
-            } else {
-                return MapGenerator.PLAIN;
-            }
-        } else {
-            if (moisture > 0.15) {
-                return MapGenerator.LAKE;
-            } else {
-                return MapGenerator.SWAMP;
+                if (val <= 1.0f) {
+                    // 边缘 0.7~1.0 区域按衰减概率填充，形成柔和边界
+                    if (val > 0.7f) {
+                        float prob = (1.0f - val) / 0.3f;
+                        if (random.nextFloat() > prob) continue;
+                    }
+                    map[ty][tx] = terrain;
+                }
             }
         }
     }
@@ -201,7 +164,8 @@ public class JinlingMapGenerator {
                         mostCommon = i;
                     }
                 }
-                newMap[y][x] = (maxCount >= 5) ? mostCommon : map[y][x];
+                // 高阈值避免侵蚀少量地形（草地、树林、湖泊）
+                newMap[y][x] = (maxCount >= 7) ? mostCommon : map[y][x];
             }
         }
         for (int y = 0; y < h; y++) {

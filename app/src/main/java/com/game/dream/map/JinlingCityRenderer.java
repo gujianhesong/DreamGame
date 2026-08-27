@@ -1518,129 +1518,131 @@ public class JinlingCityRenderer {
                 float trunkTop = dy + tH * 0.35f;
                 float trunkW = tW * 0.08f;
 
+                // 风力摇摆：树冠随风偏移，树干不动
+                long windT = System.currentTimeMillis();
+                float windX = (float)(Math.sin(windT * 0.001 + d.x * 0.003) * Math.cos(windT * 0.0007 + d.y * 0.004));
+                float windY = (float)(Math.cos(windT * 0.0012 + d.x * 0.004) * Math.sin(windT * 0.0008 + d.y * 0.003));
+                float wxOff = windX * tW * 0.08f;
+                float wyOff = windY * tW * 0.05f;
+
                 switch (tStyle) {
-                    case 0: // 樟树/阔叶树：粗壮树干 + 多层圆形树冠
+                    case 0: // 樟树/阔叶树：树干不动 + 树冠摇摆
                         paint.setColor(Color.rgb(90, 60, 30));
                         canvas.drawRect(dx - trunkW * 1.3f, trunkTop, dx + trunkW * 1.3f, dy + tH, paint);
                         float canopyR = tW * 0.42f;
                         paint.setColor(Color.rgb(30, 120, 30));
-                        canvas.drawCircle(dx - canopyR * 0.4f, trunkTop - canopyR * 0.2f, canopyR * 0.75f, paint);
-                        canvas.drawCircle(dx + canopyR * 0.4f, trunkTop - canopyR * 0.1f, canopyR * 0.7f, paint);
+                        canvas.drawCircle(dx + wxOff - canopyR * 0.4f, trunkTop + wyOff - canopyR * 0.2f, canopyR * 0.75f, paint);
+                        canvas.drawCircle(dx + wxOff + canopyR * 0.4f, trunkTop + wyOff - canopyR * 0.1f, canopyR * 0.7f, paint);
                         paint.setColor(Color.rgb(40, 140, 40));
-                        canvas.drawCircle(dx, trunkTop - canopyR * 0.5f, canopyR * 0.8f, paint);
+                        canvas.drawCircle(dx + wxOff, trunkTop + wyOff - canopyR * 0.5f, canopyR * 0.8f, paint);
                         paint.setColor(Color.argb(35, 120, 220, 80));
-                        canvas.drawCircle(dx - canopyR * 0.2f, trunkTop - canopyR * 0.7f, canopyR * 0.35f, paint);
+                        canvas.drawCircle(dx + wxOff - canopyR * 0.2f, trunkTop + wyOff - canopyR * 0.7f, canopyR * 0.35f, paint);
                         break;
 
-                    case 1: // 松树：树干 + 三层三角
+                    case 1: // 松树：树干不动 + 三层三角摇摆
                         paint.setColor(Color.rgb(80, 55, 28));
                         canvas.drawRect(dx - trunkW, trunkTop, dx + trunkW, dy + tH, paint);
                         float pineW = tW * 0.45f;
                         float layerH = (trunkTop - dy) * 0.4f;
                         for (int i = 0; i < 3; i++) {
+                            float sway = (i + 1) / 3f;
+                            float lx = wxOff * sway, ly2 = wyOff * sway;
                             float ly = dy + i * layerH * 0.7f;
                             float lw = pineW * (1f - i * 0.2f);
                             paint.setColor(i == 0 ? Color.rgb(25, 100, 25) : Color.rgb(35, 125, 35));
                             android.graphics.Path pTri = new android.graphics.Path();
-                            pTri.moveTo(dx - lw, ly + layerH);
-                            pTri.lineTo(dx, ly);
-                            pTri.lineTo(dx + lw, ly + layerH);
+                            pTri.moveTo(dx + lx - lw, ly + ly2 + layerH);
+                            pTri.lineTo(dx + lx, ly + ly2);
+                            pTri.lineTo(dx + lx + lw, ly + ly2 + layerH);
                             pTri.close();
                             canvas.drawPath(pTri, paint);
                         }
                         break;
 
-                    case 2: // 柳树：树干 + 垂拱形树冠
+                    case 2: // 柳树：树干不动 + 树冠枝条摇摆
                         paint.setColor(Color.rgb(85, 65, 35));
                         canvas.drawRect(dx - trunkW * 1.2f, trunkTop, dx + trunkW * 1.2f, dy + tH, paint);
                         float willowR = tW * 0.48f;
                         paint.setColor(Color.rgb(50, 130, 45));
-                        canvas.drawOval(dx - willowR, trunkTop - willowR * 0.6f, dx + willowR, trunkTop + willowR * 0.3f, paint);
+                        canvas.drawOval(dx + wxOff - willowR, trunkTop + wyOff - willowR * 0.6f,
+                                dx + wxOff + willowR, trunkTop + wyOff + willowR * 0.3f, paint);
                         paint.setColor(Color.rgb(60, 140, 50));
                         paint.setStrokeWidth(2);
                         for (int i = 0; i < 5; i++) {
                             float bx = dx + (treeRand.nextFloat() - 0.5f) * willowR * 1.6f;
                             float by = trunkTop - willowR * 0.3f;
-                            canvas.drawLine(bx, by, bx + (treeRand.nextFloat() - 0.5f) * 8, by + willowR * 0.8f, paint);
+                            canvas.drawLine(bx + wxOff, by + wyOff,
+                                    bx + wxOff + (treeRand.nextFloat() - 0.5f) * 8, by + wyOff + willowR * 0.8f, paint);
                         }
                         paint.setStrokeWidth(1);
                         break;
 
-                    case 3: // 灌木丛：矮粗干 + 扁圆蓬松树冠
+                    case 3: // 灌木丛：树干不动 + 蓬松树冠摇摆
                         paint.setColor(Color.rgb(95, 70, 38));
                         canvas.drawRect(dx - trunkW * 1.5f, dy + tH * 0.5f, dx + trunkW * 1.5f, dy + tH, paint);
                         float bushR = tW * 0.35f;
                         paint.setColor(Color.rgb(45, 130, 40));
-                        canvas.drawCircle(dx - bushR * 0.5f, dy + tH * 0.35f, bushR * 0.7f, paint);
-                        canvas.drawCircle(dx + bushR * 0.5f, dy + tH * 0.35f, bushR * 0.65f, paint);
+                        canvas.drawCircle(dx + wxOff - bushR * 0.5f, dy + tH * 0.35f + wyOff, bushR * 0.7f, paint);
+                        canvas.drawCircle(dx + wxOff + bushR * 0.5f, dy + tH * 0.35f + wyOff, bushR * 0.65f, paint);
                         paint.setColor(Color.rgb(55, 150, 50));
-                        canvas.drawCircle(dx, dy + tH * 0.25f, bushR * 0.75f, paint);
+                        canvas.drawCircle(dx + wxOff, dy + tH * 0.25f + wyOff, bushR * 0.75f, paint);
                         paint.setColor(Color.argb(30, 150, 230, 100));
-                        canvas.drawCircle(dx - bushR * 0.15f, dy + tH * 0.18f, bushR * 0.3f, paint);
+                        canvas.drawCircle(dx + wxOff - bushR * 0.15f, dy + tH * 0.18f + wyOff, bushR * 0.3f, paint);
                         break;
 
-                    case 4: // 果树：粗壮树干 + 茂密树冠 + 红黄果子
+                    case 4: // 果树：树干不动 + 树冠果子摇摆
                         paint.setColor(Color.rgb(85, 55, 25));
                         canvas.drawRect(dx - trunkW * 1.4f, trunkTop, dx + trunkW * 1.4f, dy + tH, paint);
-                        // 主枝干
                         paint.setStrokeWidth(3);
-                        canvas.drawLine(dx - trunkW * 0.5f, trunkTop + 10, dx - tW * 0.25f, trunkTop - tH * 0.15f, paint);
-                        canvas.drawLine(dx + trunkW * 0.5f, trunkTop + 15, dx + tW * 0.22f, trunkTop - tH * 0.12f, paint);
+                        canvas.drawLine(dx + wxOff - trunkW * 0.5f, trunkTop + wyOff + 10, dx + wxOff - tW * 0.25f, trunkTop + wyOff - tH * 0.15f, paint);
+                        canvas.drawLine(dx + wxOff + trunkW * 0.5f, trunkTop + wyOff + 15, dx + wxOff + tW * 0.22f, trunkTop + wyOff - tH * 0.12f, paint);
                         paint.setStrokeWidth(1);
-                        // 树冠（多层深绿圆）
                         float fR = tW * 0.46f;
                         paint.setColor(Color.rgb(25, 105, 25));
-                        canvas.drawCircle(dx - fR * 0.45f, trunkTop - fR * 0.15f, fR * 0.7f, paint);
-                        canvas.drawCircle(dx + fR * 0.4f, trunkTop - fR * 0.1f, fR * 0.65f, paint);
+                        canvas.drawCircle(dx + wxOff - fR * 0.45f, trunkTop + wyOff - fR * 0.15f, fR * 0.7f, paint);
+                        canvas.drawCircle(dx + wxOff + fR * 0.4f, trunkTop + wyOff - fR * 0.1f, fR * 0.65f, paint);
                         paint.setColor(Color.rgb(35, 125, 30));
-                        canvas.drawCircle(dx, trunkTop - fR * 0.45f, fR * 0.8f, paint);
-                        canvas.drawCircle(dx - fR * 0.2f, trunkTop - fR * 0.6f, fR * 0.55f, paint);
-                        canvas.drawCircle(dx + fR * 0.25f, trunkTop - fR * 0.55f, fR * 0.5f, paint);
-                        // 高光
+                        canvas.drawCircle(dx + wxOff, trunkTop + wyOff - fR * 0.45f, fR * 0.8f, paint);
+                        canvas.drawCircle(dx + wxOff - fR * 0.2f, trunkTop + wyOff - fR * 0.6f, fR * 0.55f, paint);
+                        canvas.drawCircle(dx + wxOff + fR * 0.25f, trunkTop + wyOff - fR * 0.55f, fR * 0.5f, paint);
                         paint.setColor(Color.argb(30, 100, 200, 70));
-                        canvas.drawCircle(dx - fR * 0.1f, trunkTop - fR * 0.75f, fR * 0.3f, paint);
-                        // 果子（红/黄随机）
+                        canvas.drawCircle(dx + wxOff - fR * 0.1f, trunkTop + wyOff - fR * 0.75f, fR * 0.3f, paint);
                         int fruitColor = treeRand.nextBoolean() ? Color.rgb(220, 40, 30) : Color.rgb(240, 180, 30);
                         int fruitColor2 = treeRand.nextBoolean() ? Color.rgb(200, 30, 20) : Color.rgb(255, 200, 50);
                         for (int fi = 0; fi < 8; fi++) {
-                            float fx = dx + (treeRand.nextFloat() - 0.5f) * fR * 1.5f;
-                            float fy = trunkTop - fR * 0.7f + treeRand.nextFloat() * fR * 1.1f;
+                            float fx = dx + wxOff + (treeRand.nextFloat() - 0.5f) * fR * 1.5f;
+                            float fy = trunkTop + wyOff - fR * 0.7f + treeRand.nextFloat() * fR * 1.1f;
                             float fr = 3 + treeRand.nextFloat() * 3;
                             paint.setColor(fi % 2 == 0 ? fruitColor : fruitColor2);
                             canvas.drawCircle(fx, fy, fr, paint);
-                            // 果子高光
                             paint.setColor(Color.argb(60, 255, 255, 200));
                             canvas.drawCircle(fx - fr * 0.25f, fy - fr * 0.25f, fr * 0.35f, paint);
                         }
                         break;
 
-                    case 5: // 红叶大树：粗壮干 + 宽大树冠 + 红/橙色叶片
+                    case 5: // 红叶大树：树干不动 + 树冠红叶摇摆
                         paint.setColor(Color.rgb(75, 50, 28));
                         canvas.drawRect(dx - trunkW * 1.5f, trunkTop, dx + trunkW * 1.5f, dy + tH, paint);
-                        // 枝干
                         paint.setStrokeWidth(3);
                         paint.setColor(Color.rgb(80, 55, 30));
-                        canvas.drawLine(dx, trunkTop + 5, dx - tW * 0.3f, trunkTop - tH * 0.2f, paint);
-                        canvas.drawLine(dx, trunkTop + 10, dx + tW * 0.28f, trunkTop - tH * 0.18f, paint);
-                        canvas.drawLine(dx, trunkTop, dx - tW * 0.15f, trunkTop - tH * 0.3f, paint);
+                        canvas.drawLine(dx + wxOff, trunkTop + wyOff + 5, dx + wxOff - tW * 0.3f, trunkTop + wyOff - tH * 0.2f, paint);
+                        canvas.drawLine(dx + wxOff, trunkTop + wyOff + 10, dx + wxOff + tW * 0.28f, trunkTop + wyOff - tH * 0.18f, paint);
+                        canvas.drawLine(dx + wxOff, trunkTop + wyOff, dx + wxOff - tW * 0.15f, trunkTop + wyOff - tH * 0.3f, paint);
                         paint.setStrokeWidth(1);
-                        // 大树冠（红/橙/黄渐变）
                         float rR = tW * 0.5f;
                         paint.setColor(Color.rgb(180, 50, 30));
-                        canvas.drawCircle(dx - rR * 0.4f, trunkTop - rR * 0.2f, rR * 0.7f, paint);
-                        canvas.drawCircle(dx + rR * 0.35f, trunkTop - rR * 0.15f, rR * 0.65f, paint);
+                        canvas.drawCircle(dx + wxOff - rR * 0.4f, trunkTop + wyOff - rR * 0.2f, rR * 0.7f, paint);
+                        canvas.drawCircle(dx + wxOff + rR * 0.35f, trunkTop + wyOff - rR * 0.15f, rR * 0.65f, paint);
                         paint.setColor(Color.rgb(200, 80, 30));
-                        canvas.drawCircle(dx, trunkTop - rR * 0.5f, rR * 0.8f, paint);
+                        canvas.drawCircle(dx + wxOff, trunkTop + wyOff - rR * 0.5f, rR * 0.8f, paint);
                         paint.setColor(Color.rgb(220, 120, 40));
-                        canvas.drawCircle(dx - rR * 0.25f, trunkTop - rR * 0.65f, rR * 0.5f, paint);
-                        canvas.drawCircle(dx + rR * 0.2f, trunkTop - rR * 0.6f, rR * 0.45f, paint);
-                        // 高光
+                        canvas.drawCircle(dx + wxOff - rR * 0.25f, trunkTop + wyOff - rR * 0.65f, rR * 0.5f, paint);
+                        canvas.drawCircle(dx + wxOff + rR * 0.2f, trunkTop + wyOff - rR * 0.6f, rR * 0.45f, paint);
                         paint.setColor(Color.argb(35, 255, 200, 100));
-                        canvas.drawCircle(dx + rR * 0.1f, trunkTop - rR * 0.8f, rR * 0.3f, paint);
-                        // 散落的小红叶点
+                        canvas.drawCircle(dx + wxOff + rR * 0.1f, trunkTop + wyOff - rR * 0.8f, rR * 0.3f, paint);
                         for (int li = 0; li < 6; li++) {
-                            float lx = dx + (treeRand.nextFloat() - 0.5f) * rR * 1.6f;
-                            float ly = trunkTop - rR * 0.8f + treeRand.nextFloat() * rR * 1.2f;
+                            float lx = dx + wxOff + (treeRand.nextFloat() - 0.5f) * rR * 1.6f;
+                            float ly = trunkTop + wyOff - rR * 0.8f + treeRand.nextFloat() * rR * 1.2f;
                             int lc = treeRand.nextInt(3);
                             paint.setColor(lc == 0 ? Color.rgb(230, 60, 30) : (lc == 1 ? Color.rgb(240, 150, 40) : Color.rgb(200, 40, 25)));
                             canvas.drawCircle(lx, ly, 2.5f + treeRand.nextFloat() * 2, paint);

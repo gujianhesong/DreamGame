@@ -205,6 +205,10 @@ public class DonghaiBayRenderer {
         trees.clear();
         Random rng = new Random(42);
 
+        // 门口 Y 中心（3道门）
+        int[] gateCYs = {2500, 5000, 7500};
+        int gateMargin = 450; // 门口前后 450px 不放树（含 ±100px 随机偏移余量）
+
         // --- 沙滩区域：椰子树 ---
         // 沙滩范围: x=6100~8100, y=0~10000
         int beachX1 = WALL_X + WALL_WIDTH; // 6100
@@ -222,10 +226,23 @@ public class DonghaiBayRenderer {
         // --- 草地区域：阔叶树/松树/灌木 ---
         // 草地范围: x=0~6000, 排除村庄(1500,3500,4500,6500)
         int vX1 = 1500, vY1 = 3500, vX2 = 4500, vY2 = 6500;
+        // 门口 Y 范围（3道门，每道 GATE_HEIGHT=400）
+        // gateCYs 和 gateMargin 已在上方定义
+
         for (int gy = 200; gy < MAP_HEIGHT; gy += 500) {
-            for (int gx = 200; gx < WALL_X - 100; gx += 500) {
+            for (int gx = 200; gx < WALL_X - 200; gx += 500) {
                 // 跳过村庄区域（加 150px 边距）
                 if (gx > vX1 - 150 && gx < vX2 + 150 && gy > vY1 - 150 && gy < vY2 + 150) continue;
+                // 跳过门口区域（避免树堵门）
+                boolean nearGate = false;
+                for (int gcy : gateCYs) {
+                    if (gy > gcy - gateMargin && gy < gcy + gateMargin) {
+                        nearGate = true;
+                        break;
+                    }
+                }
+                if (nearGate) continue;
+
                 float tx = gx + rng.nextInt(200) - 100;
                 float ty = gy + rng.nextInt(200) - 100;
                 float size = 80 + rng.nextFloat() * 50; // 80~130
@@ -251,138 +268,158 @@ public class DonghaiBayRenderer {
             if (sy < -t.size * 2 || sy > sh + t.size * 3) continue;
 
             switch (t.type) {
-                case 0: drawCoconutTree(canvas, paint, sx, sy, t.size); break;
-                case 1: drawBroadleafTree(canvas, paint, sx, sy, t.size); break;
-                case 2: drawPineTree(canvas, paint, sx, sy, t.size); break;
-                case 3: drawBush(canvas, paint, sx, sy, t.size); break;
+                case 0: drawCoconutTree(canvas, paint, sx, sy, t.size, t.x, t.y); break;
+                case 1: drawBroadleafTree(canvas, paint, sx, sy, t.size, t.x, t.y); break;
+                case 2: drawPineTree(canvas, paint, sx, sy, t.size, t.x, t.y); break;
+                case 3: drawBush(canvas, paint, sx, sy, t.size, t.x, t.y); break;
             }
         }
     }
 
-    /** 椰子树：弯曲锥形树干 + 顶部放射状棕榈叶 + 椰子 */
-    private void drawCoconutTree(Canvas canvas, Paint paint, float cx, float bottom, float size) {
+    private void drawCoconutTree(Canvas canvas, Paint paint, float cx, float bottom, float size,
+                                   float worldX, float worldY) {
+        // 风力摇摆：树干顶部和树冠随风偏移
+        long windT = System.currentTimeMillis();
+        float windX = (float)(Math.sin(windT * 0.001 + worldX * 0.003) * Math.cos(windT * 0.0007 + worldY * 0.004));
+        float windY = (float)(Math.cos(windT * 0.0012 + worldX * 0.004) * Math.sin(windT * 0.0008 + worldY * 0.003));
+        float wxOff = windX * size * 0.1f;
+        float wyOff = windY * size * 0.06f;
+
         float h = size * 1.6f;
         float topY = bottom - h;
-        float bend = size * 0.2f; // 弯曲偏移量
-        float baseW = size * 0.12f; // 底部宽度
-        float topW = size * 0.06f;  // 顶部宽度
+        float bend = size * 0.2f + wxOff; // 弯曲偏移量 + 风力
+        float baseW = size * 0.12f;
+        float topW = size * 0.06f;
 
-        // 树干：单条平滑曲线填充路径（左边缘 + 右边缘闭合）
-        float topCx = cx + bend; // 顶部中心 x
+        float topCx = cx + bend;
         paint.setColor(Color.rgb(130, 95, 55));
         android.graphics.Path trunk = new android.graphics.Path();
-        // 左边缘：从底部左侧到顶部左侧
         trunk.moveTo(cx - baseW, bottom);
         trunk.quadTo(cx + bend * 0.4f - baseW * 0.7f, bottom - h * 0.5f,
-                     topCx - topW, topY);
-        // 右边缘：从顶部右侧回到底部右侧
-        trunk.lineTo(topCx + topW, topY);
+                     topCx - topW, topY + wyOff);
+        trunk.lineTo(topCx + topW, topY + wyOff);
         trunk.quadTo(cx + bend * 0.4f + baseW * 0.7f, bottom - h * 0.5f,
                      cx + baseW, bottom);
         trunk.close();
         canvas.drawPath(trunk, paint);
 
-        // 树干横纹（沿曲线分布）
+        // 树干横纹
         paint.setColor(Color.argb(35, 0, 0, 0));
         paint.setStrokeWidth(1);
         for (float t = 0.1f; t < 0.95f; t += 0.08f) {
-            // 二次贝塞尔插值：P = (1-t)²P0 + 2(1-t)tP1 + t²P2
-            float py = bottom + 2 * (1 - t) * t * (bottom - h * 0.5f) + t * t * topY - (1 - t) * (1 - t) * bottom;
+            float py = bottom + 2 * (1 - t) * t * (bottom - h * 0.5f) + t * t * (topY + wyOff) - (1 - t) * (1 - t) * bottom;
             float px = cx + 2 * (1 - t) * t * (cx + bend * 0.4f) + t * t * topCx - (1 - t) * (1 - t) * cx;
-            float w = baseW + (topW - baseW) * t; // 当前宽度插值
+            float w = baseW + (topW - baseW) * t;
             canvas.drawLine(px - w, py, px + w, py, paint);
         }
 
-        // 棕榈叶（放射状）
+        // 棕榈叶（随风摇摆）
         float leafLen = size * 0.55f;
         paint.setStrokeWidth(3);
         int leafCount = 7;
         for (int i = 0; i < leafCount; i++) {
             double angle = -Math.PI + Math.PI * i / (leafCount - 1);
             float endX = topCx + (float) Math.cos(angle) * leafLen;
-            float endY = topY + (float) Math.sin(angle) * leafLen * 0.5f + leafLen * 0.3f;
+            float endY = topY + wyOff + (float) Math.sin(angle) * leafLen * 0.5f + leafLen * 0.3f;
             float midX = topCx + (float) Math.cos(angle) * leafLen * 0.5f;
-            float midY = topY + (float) Math.sin(angle) * leafLen * 0.25f - leafLen * 0.1f;
+            float midY = topY + wyOff + (float) Math.sin(angle) * leafLen * 0.25f - leafLen * 0.1f;
 
             paint.setColor(i % 2 == 0 ? Color.rgb(30, 130, 40) : Color.rgb(50, 150, 50));
             android.graphics.Path leaf = new android.graphics.Path();
-            leaf.moveTo(topCx, topY);
+            leaf.moveTo(topCx, topY + wyOff);
             leaf.quadTo(midX, midY, endX, endY);
             canvas.drawPath(leaf, paint);
         }
         paint.setStrokeWidth(1);
 
-        // 椰子（3个小圆）
+        // 椰子
         paint.setColor(Color.rgb(120, 80, 30));
-        canvas.drawCircle(topCx - 6, topY + 10, 5, paint);
-        canvas.drawCircle(topCx + 6, topY + 12, 5, paint);
-        canvas.drawCircle(topCx, topY + 17, 4.5f, paint);
+        canvas.drawCircle(topCx - 6, topY + wyOff + 10, 5, paint);
+        canvas.drawCircle(topCx + 6, topY + wyOff + 12, 5, paint);
+        canvas.drawCircle(topCx, topY + wyOff + 17, 4.5f, paint);
     }
 
-    /** 阔叶树：粗壮树干 + 圆形树冠 */
-    private void drawBroadleafTree(Canvas canvas, Paint paint, float cx, float bottom, float size) {
+    private void drawBroadleafTree(Canvas canvas, Paint paint, float cx, float bottom, float size,
+                                     float worldX, float worldY) {
+        long windT = System.currentTimeMillis();
+        float windX = (float)(Math.sin(windT * 0.001 + worldX * 0.003) * Math.cos(windT * 0.0007 + worldY * 0.004));
+        float windY = (float)(Math.cos(windT * 0.0012 + worldX * 0.004) * Math.sin(windT * 0.0008 + worldY * 0.003));
+        float wxOff = windX * size * 0.07f;
+        float wyOff = windY * size * 0.045f;
+
         float h = size * 1.4f;
         float trunkW = size * 0.08f;
         float topY = bottom - h;
         float trunkTop = bottom - h * 0.45f;
 
-        // 树干
+        // 树干不动
         paint.setColor(Color.rgb(90, 60, 30));
         canvas.drawRect(cx - trunkW * 1.3f, trunkTop, cx + trunkW * 1.3f, bottom, paint);
 
-        // 树冠（多层圆）
+        // 树冠摇摆
         float canopyR = size * 0.42f;
         paint.setColor(Color.rgb(30, 120, 30));
-        canvas.drawCircle(cx - canopyR * 0.4f, trunkTop - canopyR * 0.2f, canopyR * 0.75f, paint);
-        canvas.drawCircle(cx + canopyR * 0.4f, trunkTop - canopyR * 0.1f, canopyR * 0.7f, paint);
+        canvas.drawCircle(cx + wxOff - canopyR * 0.4f, trunkTop + wyOff - canopyR * 0.2f, canopyR * 0.75f, paint);
+        canvas.drawCircle(cx + wxOff + canopyR * 0.4f, trunkTop + wyOff - canopyR * 0.1f, canopyR * 0.7f, paint);
         paint.setColor(Color.rgb(40, 140, 40));
-        canvas.drawCircle(cx, trunkTop - canopyR * 0.5f, canopyR * 0.8f, paint);
-        // 高光
+        canvas.drawCircle(cx + wxOff, trunkTop + wyOff - canopyR * 0.5f, canopyR * 0.8f, paint);
         paint.setColor(Color.argb(35, 120, 220, 80));
-        canvas.drawCircle(cx - canopyR * 0.2f, trunkTop - canopyR * 0.7f, canopyR * 0.35f, paint);
+        canvas.drawCircle(cx + wxOff - canopyR * 0.2f, trunkTop + wyOff - canopyR * 0.7f, canopyR * 0.35f, paint);
     }
 
-    /** 松树：树干 + 三层三角 */
-    private void drawPineTree(Canvas canvas, Paint paint, float cx, float bottom, float size) {
+    private void drawPineTree(Canvas canvas, Paint paint, float cx, float bottom, float size,
+                                float worldX, float worldY) {
+        long windT = System.currentTimeMillis();
+        float windX = (float)(Math.sin(windT * 0.001 + worldX * 0.003) * Math.cos(windT * 0.0007 + worldY * 0.004));
+        float windY = (float)(Math.cos(windT * 0.0012 + worldX * 0.004) * Math.sin(windT * 0.0008 + worldY * 0.003));
+        float wxOff = windX * size * 0.07f;
+        float wyOff = windY * size * 0.045f;
+
         float h = size * 1.5f;
         float trunkW = size * 0.06f;
         float topY = bottom - h;
         float trunkTop = bottom - h * 0.35f;
 
-        // 树干
+        // 树干不动
         paint.setColor(Color.rgb(80, 55, 28));
         canvas.drawRect(cx - trunkW, trunkTop, cx + trunkW, bottom, paint);
 
-        // 三层三角树冠
+        // 三层三角树冠摇摆
         float pineW = size * 0.45f;
         float layerH = (trunkTop - topY) * 0.4f;
         for (int i = 0; i < 3; i++) {
-            float ly = topY + i * layerH * 0.7f;
+            float sway = (i + 1) / 3f;
+            float lx = wxOff * sway, ly = wyOff * sway;
+            float ly2 = topY + i * layerH * 0.7f;
             float lw = pineW * (1f - i * 0.2f);
             paint.setColor(i == 0 ? Color.rgb(25, 100, 25) : Color.rgb(35, 125, 35));
             android.graphics.Path tri = new android.graphics.Path();
-            tri.moveTo(cx - lw, ly + layerH);
-            tri.lineTo(cx, ly);
-            tri.lineTo(cx + lw, ly + layerH);
+            tri.moveTo(cx + lx - lw, ly2 + ly + layerH);
+            tri.lineTo(cx + lx, ly2 + ly);
+            tri.lineTo(cx + lx + lw, ly2 + ly + layerH);
             tri.close();
             canvas.drawPath(tri, paint);
         }
     }
 
-    /** 灌木丛：低矮圆形 */
-    private void drawBush(Canvas canvas, Paint paint, float cx, float bottom, float size) {
+    private void drawBush(Canvas canvas, Paint paint, float cx, float bottom, float size,
+                            float worldX, float worldY) {
+        long windT = System.currentTimeMillis();
+        float windX = (float)(Math.sin(windT * 0.001 + worldX * 0.003) * Math.cos(windT * 0.0007 + worldY * 0.004));
+        float windY = (float)(Math.cos(windT * 0.0012 + worldX * 0.004) * Math.sin(windT * 0.0008 + worldY * 0.003));
+        float wxOff = windX * size * 0.055f;
+        float wyOff = windY * size * 0.035f;
+
         float bushR = size * 0.35f;
         float bushH = size * 0.5f;
-        // 主丛
+        // 主丛摇摆
         paint.setColor(Color.rgb(45, 130, 45));
-        canvas.drawOval(cx - bushR, bottom - bushH, cx + bushR, bottom, paint);
-        // 侧丛
+        canvas.drawOval(cx + wxOff - bushR, bottom - bushH + wyOff, cx + wxOff + bushR, bottom + wyOff, paint);
         paint.setColor(Color.rgb(55, 145, 55));
-        canvas.drawCircle(cx - bushR * 0.6f, bottom - bushH * 0.5f, bushR * 0.6f, paint);
-        canvas.drawCircle(cx + bushR * 0.5f, bottom - bushH * 0.4f, bushR * 0.55f, paint);
-        // 高光点
+        canvas.drawCircle(cx + wxOff - bushR * 0.6f, bottom - bushH * 0.5f + wyOff, bushR * 0.6f, paint);
+        canvas.drawCircle(cx + wxOff + bushR * 0.5f, bottom - bushH * 0.4f + wyOff, bushR * 0.55f, paint);
         paint.setColor(Color.argb(40, 150, 230, 100));
-        canvas.drawCircle(cx - bushR * 0.2f, bottom - bushH * 0.7f, bushR * 0.25f, paint);
+        canvas.drawCircle(cx + wxOff - bushR * 0.2f, bottom - bushH * 0.7f + wyOff, bushR * 0.25f, paint);
     }
 
     // ==================== 沙滩与海面装饰 ====================

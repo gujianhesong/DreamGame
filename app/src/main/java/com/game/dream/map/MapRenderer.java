@@ -862,11 +862,11 @@ public class MapRenderer {
             float sy = wy - cameraY;
 
             switch (style) {
-                case 0: drawDecoBroadleafTree(canvas, sx, sy, size); break;
-                case 1: drawDecoPineTree(canvas, sx, sy, size); break;
-                case 2: drawDecoBush(canvas, sx, sy, size); break;
-                case 3: drawDecoAutumnGoldTree(canvas, sx, sy, size); break;
-                case 4: drawDecoAutumnRedTree(canvas, sx, sy, size); break;
+                case 0: drawDecoBroadleafTree(canvas, sx, sy, size, wx, wy); break;
+                case 1: drawDecoPineTree(canvas, sx, sy, size, wx, wy); break;
+                case 2: drawDecoBush(canvas, sx, sy, size, wx, wy); break;
+                case 3: drawDecoAutumnGoldTree(canvas, sx, sy, size, wx, wy); break;
+                case 4: drawDecoAutumnRedTree(canvas, sx, sy, size, wx, wy); break;
             }
         }
     }
@@ -874,26 +874,33 @@ public class MapRenderer {
     /**
      * 阔叶树：多圆叠加蓬松树冠（村庄风格）
      */
-    private void drawDecoBroadleafTree(Canvas canvas, float cx, float cy, float size) {
+    private void drawDecoBroadleafTree(Canvas canvas, float cx, float cy, float size,
+                                         float worldX, float worldY) {
+        // 风力摇摆：树冠随风偏移，树干不动
+        long t = System.currentTimeMillis();
+        float windX = (float)(Math.sin(t * 0.001 + worldX * 0.003) * Math.cos(t * 0.0007 + worldY * 0.004));
+        float windY = (float)(Math.cos(t * 0.0012 + worldX * 0.004) * Math.sin(t * 0.0008 + worldY * 0.003));
+        float wxOff = windX * size * 0.07f;
+        float wyOff = windY * size * 0.045f;
+
         float canopyR = size * 0.42f;
         float trunkW = size * 0.06f;
         float trunkH = size * 0.55f;
-        // 先画树冠
-        // 阴影
+        // 阴影（随风偏移）
         decoPaint.setColor(Color.argb(40, 0, 30, 0));
-        canvas.drawCircle(cx + 2, cy + 2, canopyR + 3, decoPaint);
+        canvas.drawCircle(cx + wxOff + 2, cy + wyOff + 2, canopyR + 3, decoPaint);
         // 左下圆
         decoPaint.setColor(Color.rgb(25, 105, 25));
-        canvas.drawCircle(cx - canopyR * 0.4f, cy + canopyR * 0.15f, canopyR * 0.75f, decoPaint);
+        canvas.drawCircle(cx + wxOff - canopyR * 0.4f, cy + wyOff + canopyR * 0.15f, canopyR * 0.75f, decoPaint);
         // 右下圆
-        canvas.drawCircle(cx + canopyR * 0.4f, cy + canopyR * 0.1f, canopyR * 0.7f, decoPaint);
+        canvas.drawCircle(cx + wxOff + canopyR * 0.4f, cy + wyOff + canopyR * 0.1f, canopyR * 0.7f, decoPaint);
         // 顶部圆
         decoPaint.setColor(Color.rgb(38, 125, 35));
-        canvas.drawCircle(cx, cy - canopyR * 0.5f, canopyR * 0.8f, decoPaint);
+        canvas.drawCircle(cx + wxOff, cy + wyOff - canopyR * 0.5f, canopyR * 0.8f, decoPaint);
         // 高光
         decoPaint.setColor(Color.argb(50, 100, 210, 70));
-        canvas.drawCircle(cx - canopyR * 0.2f, cy - canopyR * 0.7f, canopyR * 0.35f, decoPaint);
-        // 再画树干（从树冠底部伸出）
+        canvas.drawCircle(cx + wxOff - canopyR * 0.2f, cy + wyOff - canopyR * 0.7f, canopyR * 0.35f, decoPaint);
+        // 树干不动
         decoPaint.setColor(Color.rgb(90, 60, 30));
         canvas.drawRect(cx - trunkW * 1.3f, cy + canopyR * 0.5f,
                         cx + trunkW * 1.3f, cy + canopyR * 0.5f + trunkH, decoPaint);
@@ -902,27 +909,36 @@ public class MapRenderer {
     /**
      * 松树：三层三角树冠
      */
-    private void drawDecoPineTree(Canvas canvas, float cx, float cy, float size) {
+    private void drawDecoPineTree(Canvas canvas, float cx, float cy, float size,
+                                    float worldX, float worldY) {
+        long t = System.currentTimeMillis();
+        float windX = (float)(Math.sin(t * 0.001 + worldX * 0.003) * Math.cos(t * 0.0007 + worldY * 0.004));
+        float windY = (float)(Math.cos(t * 0.0012 + worldX * 0.004) * Math.sin(t * 0.0008 + worldY * 0.003));
+        float wxOff = windX * size * 0.07f;
+        float wyOff = windY * size * 0.045f;
+
         float treeH = size * 1.4f;
         float trunkW = size * 0.05f;
         float trunkH = size * 0.4f;
-        // 先画阴影
+        // 阴影
         decoPaint.setColor(Color.argb(30, 0, 25, 0));
-        canvas.drawCircle(cx + 1, cy + 1, size * 0.45f, decoPaint);
-        // 再画三层三角树冠
+        canvas.drawCircle(cx + wxOff + 1, cy + wyOff + 1, size * 0.45f, decoPaint);
+        // 三层三角（高度越高摇摆越大）
         for (int i = 0; i < 3; i++) {
+            float sway = (i + 1) / 3f;
+            float lx = wxOff * sway, ly = wyOff * sway;
             float layerY = cy + size * 0.35f - i * treeH * 0.3f;
             float layerW = size * (0.45f - i * 0.1f);
             float layerH = treeH * 0.38f;
             decoPaint.setColor(i == 0 ? Color.rgb(20, 88, 20) : Color.rgb(32, 112, 30));
             android.graphics.Path tri = new android.graphics.Path();
-            tri.moveTo(cx - layerW, layerY + layerH);
-            tri.lineTo(cx, layerY);
-            tri.lineTo(cx + layerW, layerY + layerH);
+            tri.moveTo(cx + lx - layerW, layerY + ly + layerH);
+            tri.lineTo(cx + lx, layerY + ly);
+            tri.lineTo(cx + lx + layerW, layerY + ly + layerH);
             tri.close();
             canvas.drawPath(tri, decoPaint);
         }
-        // 最后画树干（从最底层三角下方伸出）
+        // 树干不动
         decoPaint.setColor(Color.rgb(80, 55, 28));
         canvas.drawRect(cx - trunkW, cy + size * 0.55f,
                         cx + trunkW, cy + size * 0.55f + trunkH, decoPaint);
@@ -931,26 +947,32 @@ public class MapRenderer {
     /**
      * 灌木丛：扁圆蓬松
      */
-    private void drawDecoBush(Canvas canvas, float cx, float cy, float size) {
+    private void drawDecoBush(Canvas canvas, float cx, float cy, float size,
+                                float worldX, float worldY) {
+        long t = System.currentTimeMillis();
+        float windX = (float)(Math.sin(t * 0.001 + worldX * 0.003) * Math.cos(t * 0.0007 + worldY * 0.004));
+        float windY = (float)(Math.cos(t * 0.0012 + worldX * 0.004) * Math.sin(t * 0.0008 + worldY * 0.003));
+        float wxOff = windX * size * 0.055f;
+        float wyOff = windY * size * 0.035f;
+
         float bushR = size * 0.35f;
         float trunkW = size * 0.07f;
         float trunkH = size * 0.3f;
-        // 先画树冠
         // 阴影
         decoPaint.setColor(Color.argb(30, 0, 20, 0));
-        canvas.drawCircle(cx + 1.5f, cy + 1.5f, bushR + 2, decoPaint);
+        canvas.drawCircle(cx + wxOff + 1.5f, cy + wyOff + 1.5f, bushR + 2, decoPaint);
         // 左圆
         decoPaint.setColor(Color.rgb(38, 115, 32));
-        canvas.drawCircle(cx - bushR * 0.5f, cy + bushR * 0.2f, bushR * 0.7f, decoPaint);
+        canvas.drawCircle(cx + wxOff - bushR * 0.5f, cy + wyOff + bushR * 0.2f, bushR * 0.7f, decoPaint);
         // 右圆
-        canvas.drawCircle(cx + bushR * 0.5f, cy + bushR * 0.1f, bushR * 0.65f, decoPaint);
+        canvas.drawCircle(cx + wxOff + bushR * 0.5f, cy + wyOff + bushR * 0.1f, bushR * 0.65f, decoPaint);
         // 顶圆
         decoPaint.setColor(Color.rgb(50, 135, 42));
-        canvas.drawCircle(cx, cy - bushR * 0.25f, bushR * 0.75f, decoPaint);
+        canvas.drawCircle(cx + wxOff, cy + wyOff - bushR * 0.25f, bushR * 0.75f, decoPaint);
         // 高光
         decoPaint.setColor(Color.argb(40, 130, 215, 80));
-        canvas.drawCircle(cx - bushR * 0.15f, cy - bushR * 0.5f, bushR * 0.3f, decoPaint);
-        // 再画短粗树干（从树冠底部伸出）
+        canvas.drawCircle(cx + wxOff - bushR * 0.15f, cy + wyOff - bushR * 0.5f, bushR * 0.3f, decoPaint);
+        // 树干不动
         decoPaint.setColor(Color.rgb(95, 70, 38));
         canvas.drawRect(cx - trunkW * 1.5f, cy + bushR * 0.5f,
                         cx + trunkW * 1.5f, cy + bushR * 0.5f + trunkH, decoPaint);
@@ -959,21 +981,27 @@ public class MapRenderer {
     /**
      * 金秋树：金黄色树冠（与绿色明显区分）
      */
-    private void drawDecoAutumnGoldTree(Canvas canvas, float cx, float cy, float size) {
+    private void drawDecoAutumnGoldTree(Canvas canvas, float cx, float cy, float size,
+                                          float worldX, float worldY) {
+        long t = System.currentTimeMillis();
+        float windX = (float)(Math.sin(t * 0.001 + worldX * 0.003) * Math.cos(t * 0.0007 + worldY * 0.004));
+        float windY = (float)(Math.cos(t * 0.0012 + worldX * 0.004) * Math.sin(t * 0.0008 + worldY * 0.003));
+        float wxOff = windX * size * 0.07f;
+        float wyOff = windY * size * 0.045f;
+
         float canopyR = size * 0.42f;
         float trunkW = size * 0.06f;
         float trunkH = size * 0.55f;
-        // 先画树冠
         decoPaint.setColor(Color.argb(40, 30, 20, 0));
-        canvas.drawCircle(cx + 2, cy + 2, canopyR + 3, decoPaint);
+        canvas.drawCircle(cx + wxOff + 2, cy + wyOff + 2, canopyR + 3, decoPaint);
         decoPaint.setColor(Color.rgb(200, 170, 30));
-        canvas.drawCircle(cx - canopyR * 0.4f, cy + canopyR * 0.15f, canopyR * 0.75f, decoPaint);
-        canvas.drawCircle(cx + canopyR * 0.4f, cy + canopyR * 0.1f, canopyR * 0.7f, decoPaint);
+        canvas.drawCircle(cx + wxOff - canopyR * 0.4f, cy + wyOff + canopyR * 0.15f, canopyR * 0.75f, decoPaint);
+        canvas.drawCircle(cx + wxOff + canopyR * 0.4f, cy + wyOff + canopyR * 0.1f, canopyR * 0.7f, decoPaint);
         decoPaint.setColor(Color.rgb(230, 195, 40));
-        canvas.drawCircle(cx, cy - canopyR * 0.5f, canopyR * 0.8f, decoPaint);
+        canvas.drawCircle(cx + wxOff, cy + wyOff - canopyR * 0.5f, canopyR * 0.8f, decoPaint);
         decoPaint.setColor(Color.argb(55, 255, 240, 100));
-        canvas.drawCircle(cx - canopyR * 0.2f, cy - canopyR * 0.7f, canopyR * 0.35f, decoPaint);
-        // 再画树干
+        canvas.drawCircle(cx + wxOff - canopyR * 0.2f, cy + wyOff - canopyR * 0.7f, canopyR * 0.35f, decoPaint);
+        // 树干不动
         decoPaint.setColor(Color.rgb(90, 60, 30));
         canvas.drawRect(cx - trunkW * 1.3f, cy + canopyR * 0.5f,
                         cx + trunkW * 1.3f, cy + canopyR * 0.5f + trunkH, decoPaint);
@@ -982,21 +1010,27 @@ public class MapRenderer {
     /**
      * 红枫树：橙红色树冠（与绿色明显区分）
      */
-    private void drawDecoAutumnRedTree(Canvas canvas, float cx, float cy, float size) {
+    private void drawDecoAutumnRedTree(Canvas canvas, float cx, float cy, float size,
+                                         float worldX, float worldY) {
+        long t = System.currentTimeMillis();
+        float windX = (float)(Math.sin(t * 0.001 + worldX * 0.003) * Math.cos(t * 0.0007 + worldY * 0.004));
+        float windY = (float)(Math.cos(t * 0.0012 + worldX * 0.004) * Math.sin(t * 0.0008 + worldY * 0.003));
+        float wxOff = windX * size * 0.07f;
+        float wyOff = windY * size * 0.045f;
+
         float canopyR = size * 0.42f;
         float trunkW = size * 0.06f;
         float trunkH = size * 0.55f;
-        // 先画树冠
         decoPaint.setColor(Color.argb(40, 30, 10, 0));
-        canvas.drawCircle(cx + 2, cy + 2, canopyR + 3, decoPaint);
+        canvas.drawCircle(cx + wxOff + 2, cy + wyOff + 2, canopyR + 3, decoPaint);
         decoPaint.setColor(Color.rgb(190, 70, 25));
-        canvas.drawCircle(cx - canopyR * 0.4f, cy + canopyR * 0.15f, canopyR * 0.75f, decoPaint);
-        canvas.drawCircle(cx + canopyR * 0.4f, cy + canopyR * 0.1f, canopyR * 0.7f, decoPaint);
+        canvas.drawCircle(cx + wxOff - canopyR * 0.4f, cy + wyOff + canopyR * 0.15f, canopyR * 0.75f, decoPaint);
+        canvas.drawCircle(cx + wxOff + canopyR * 0.4f, cy + wyOff + canopyR * 0.1f, canopyR * 0.7f, decoPaint);
         decoPaint.setColor(Color.rgb(220, 90, 35));
-        canvas.drawCircle(cx, cy - canopyR * 0.5f, canopyR * 0.8f, decoPaint);
+        canvas.drawCircle(cx + wxOff, cy + wyOff - canopyR * 0.5f, canopyR * 0.8f, decoPaint);
         decoPaint.setColor(Color.argb(50, 255, 160, 80));
-        canvas.drawCircle(cx - canopyR * 0.2f, cy - canopyR * 0.7f, canopyR * 0.35f, decoPaint);
-        // 再画树干
+        canvas.drawCircle(cx + wxOff - canopyR * 0.2f, cy + wyOff - canopyR * 0.7f, canopyR * 0.35f, decoPaint);
+        // 树干不动
         decoPaint.setColor(Color.rgb(85, 55, 28));
         canvas.drawRect(cx - trunkW * 1.3f, cy + canopyR * 0.5f,
                         cx + trunkW * 1.3f, cy + canopyR * 0.5f + trunkH, decoPaint);

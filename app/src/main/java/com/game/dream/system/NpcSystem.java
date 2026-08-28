@@ -139,6 +139,13 @@ public class NpcSystem {
                 npcList.add(new AnimalNpc(100305, "绵羊", NpcType.SHEEP, 600, 4400));
             }
             break;
+            case MapSystem.MAP_ID_DONGHAI_SEABED: {
+                //东海海底
+                npcList.add(new Npc(100401, "驿站虾兵", NpcType.SOLDIER, 10000, 13300));
+                npcList.add(new Npc(100402, "龟丞相", NpcType.OLD_MAN, 10500, 10500));
+                npcList.add(new Npc(100403, "龙女", NpcType.BEAUTY, 9500, 10500));
+            }
+            break;
         }
         return npcList;
     }

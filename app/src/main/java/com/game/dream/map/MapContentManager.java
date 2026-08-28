@@ -5,11 +5,15 @@ import static com.game.dream.common.Constants.TILE_SIZE;
 import com.game.dream.GameEngine;
 import com.game.dream.enemy.Enemy;
 import com.game.dream.enemy.Bandit;
+import com.game.dream.enemy.CrabGeneral;
 import com.game.dream.enemy.FoxSpirit;
+import com.game.dream.enemy.LittleGreenDragon;
+import com.game.dream.enemy.ShrimpSoldier;
 import com.game.dream.enemy.Tiger;
 import com.game.dream.enemy.Viper;
 import com.game.dream.enemy.WildBoar;
 import com.game.dream.enemy.Wolf;
+import com.game.dream.enemy.Yaksha;
 import com.game.dream.system.MapSystem;
 
 import java.util.ArrayList;
@@ -73,7 +77,9 @@ public class MapContentManager {
                     canSpawn = (terrain != MapGenerator.LAKE && terrain != MapGenerator.LAVA
                             && terrain != MapGenerator.VILLAGE_CAN_PASS && terrain != MapGenerator.VILLAGE_NO_PASS
                             && terrain != MapGenerator.RIVER && terrain != MapGenerator.MOUNTAIN
-                            && terrain != MapGenerator.CITY_WALL && terrain != MapGenerator.CITY_ROAD);
+                            && terrain != MapGenerator.CITY_WALL && terrain != MapGenerator.CITY_ROAD
+                            && terrain != MapGenerator.DEEP_SEA && terrain != MapGenerator.HYDROTHERMAL
+                            && terrain != MapGenerator.SEA && terrain != MapGenerator.PALACE_GROUND);
                 } else if (mapId > 2000 && mapId < 3000) {
                     // 迷宫: 只能在地板上生成
                     canSpawn = (terrain == MazeGenerator.MAZE_FLOOR || terrain == MazeGenerator.MAZE_ENTRANCE || terrain == MazeGenerator.MAZE_EXIT);
@@ -150,6 +156,23 @@ public class MapContentManager {
                 } else {
                     enemy = new FoxSpirit(spawnX, spawnY);
                     enemy.setName("狐狸精");
+                }
+                break;
+            }
+            case MapSystem.MAP_ID_DONGHAI_SEABED: {
+                // 东海海底
+                if (rand < 0.30) {
+                    enemy = new ShrimpSoldier(spawnX, spawnY);
+                    enemy.setName("虾兵");
+                } else if (rand < 0.55) {
+                    enemy = new CrabGeneral(spawnX, spawnY);
+                    enemy.setName("蟹将");
+                } else if (rand < 0.80) {
+                    enemy = new Yaksha(spawnX, spawnY);
+                    enemy.setName("夜叉");
+                } else {
+                    enemy = new LittleGreenDragon(spawnX, spawnY);
+                    enemy.setName("小青龙");
                 }
                 break;
             }

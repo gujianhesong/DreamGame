@@ -173,8 +173,33 @@ public class FunctionNpcManager {
             }
             case 100301: {
                 //东海湾-驿站车夫
-                List<String> options = Arrays.asList("前往金陵主城", "不了");
+                List<String> options = Arrays.asList("前往金陵主城", "潜入东海海底", "不了");
                 String message = "客官想去哪里？我只收你100金钱";
+                GameEngine.getInstance().showDialog(npc.getName(), message, options, new DialogBox.DialogListener() {
+                    @Override
+                    public void onOptionSelected(int optionIndex) {
+                        int cost = 100;
+                        if (RoleSystem.getInstance().getRoleInfo().getMoney() < cost) {
+                            GameEngine.getInstance().showCenterToast("金钱不足，需要100金钱");
+                            return;
+                        }
+                        if (optionIndex == 0) {
+                            RoleSystem.getInstance().getRoleInfo().setMoney(
+                                    RoleSystem.getInstance().getRoleInfo().getMoney() - cost);
+                            GameEngine.getInstance().teleportToMap(MapSystem.MAP_ID_JIN_LING);
+                        } else if (optionIndex == 1) {
+                            RoleSystem.getInstance().getRoleInfo().setMoney(
+                                    RoleSystem.getInstance().getRoleInfo().getMoney() - cost);
+                            GameEngine.getInstance().teleportToMap(MapSystem.MAP_ID_DONGHAI_SEABED);
+                        }
+                    }
+                });
+                return true;
+            }
+            case 100401: {
+                //东海海底-驿站虾兵
+                List<String> options = Arrays.asList("返回东海湾", "不了");
+                String message = "少侠想回海面吗？我只收你100金钱";
                 GameEngine.getInstance().showDialog(npc.getName(), message, options, new DialogBox.DialogListener() {
                     @Override
                     public void onOptionSelected(int optionIndex) {
@@ -186,7 +211,7 @@ public class FunctionNpcManager {
                             }
                             RoleSystem.getInstance().getRoleInfo().setMoney(
                                     RoleSystem.getInstance().getRoleInfo().getMoney() - cost);
-                            GameEngine.getInstance().teleportToMap(MapSystem.MAP_ID_JIN_LING);
+                            GameEngine.getInstance().teleportToMap(MapSystem.MAP_ID_DONGHAI_BAY);
                         }
                     }
                 });

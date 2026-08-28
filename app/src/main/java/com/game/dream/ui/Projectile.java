@@ -90,6 +90,18 @@ public class Projectile {
                     this.lifetime = 1800;
                     this.rotationSpeed = 25f; // 花瓣快速旋转
                     break;
+                case ENEMY_WaterBolt:
+                    speed = 350;
+                    this.size = 14;
+                    this.color = Color.rgb(80, 200, 255);
+                    this.lifetime = 1500;
+                    break;
+                case ENEMY_DragonLightning:
+                    speed = 550;
+                    this.size = 12;
+                    this.color = Color.rgb(200, 255, 100);
+                    this.lifetime = 1200;
+                    break;
                 default:
                     speed = 300;
                     this.size = 10;
@@ -162,6 +174,12 @@ public class Projectile {
                 break;
             case ENEMY_FoxCharm:
                 drawPetal(canvas, paint, screenX, screenY);
+                break;
+            case ENEMY_WaterBolt:
+                drawWaterBolt(canvas, paint, screenX, screenY);
+                break;
+            case ENEMY_DragonLightning:
+                drawDragonLightning(canvas, paint, screenX, screenY);
                 break;
         }
     }
@@ -326,5 +344,62 @@ public class Projectile {
         paint.setColor(Color.argb(160, 255, 225, 240));
         canvas.drawOval(cx - size * 0.5f, cy - size * 0.3f, cx + size * 0.5f, cy + size * 0.3f, paint);
         canvas.restore();
+    }
+
+    /**
+     * 绘制水龙弹（蓝色水柱，带拖尾）
+     */
+    private void drawWaterBolt(Canvas canvas, Paint paint, float cx, float cy) {
+        // 外圈水光
+        paint.setColor(Color.argb(60, 80, 180, 255));
+        canvas.drawCircle(cx, cy, size * 1.6f, paint);
+
+        // 水柱主体（蓝色渐变感）
+        paint.setColor(Color.rgb(60, 180, 255));
+        canvas.drawCircle(cx, cy, size, paint);
+
+        // 核心（亮白蓝）
+        paint.setColor(Color.rgb(200, 240, 255));
+        canvas.drawCircle(cx, cy, size * 0.45f, paint);
+
+        // 水花飞溅（周围小点）
+        paint.setColor(Color.argb(120, 100, 200, 255));
+        for (int i = 0; i < 4; i++) {
+            float angle = rotation + i * (float) Math.PI / 2;
+            float sx = cx + (float) Math.cos(angle) * size * 1.2f;
+            float sy = cy + (float) Math.sin(angle) * size * 1.2f;
+            canvas.drawCircle(sx, sy, size * 0.2f, paint);
+        }
+    }
+
+    /**
+     * 绘制龙雷（黄绿色闪电球）
+     */
+    private void drawDragonLightning(Canvas canvas, Paint paint, float cx, float cy) {
+        // 电弧光晕
+        paint.setColor(Color.argb(70, 180, 255, 80));
+        canvas.drawCircle(cx, cy, size * 2f, paint);
+
+        // 闪电核心
+        paint.setColor(Color.rgb(220, 255, 120));
+        canvas.drawCircle(cx, cy, size * 0.7f, paint);
+
+        // 明亮核心
+        paint.setColor(Color.rgb(255, 255, 230));
+        canvas.drawCircle(cx, cy, size * 0.3f, paint);
+
+        // 闪电分叉（锯齿线）
+        paint.setColor(Color.argb(200, 200, 255, 100));
+        paint.setStrokeWidth(2);
+        for (int i = 0; i < 3; i++) {
+            float angle = rotation * 2 + i * (float) Math.PI * 2 / 3;
+            float endX = cx + (float) Math.cos(angle) * size * 1.8f;
+            float endY = cy + (float) Math.sin(angle) * size * 1.8f;
+            float midX = (cx + endX) / 2 + (float) Math.sin(angle * 3) * size * 0.4f;
+            float midY = (cy + endY) / 2 + (float) Math.cos(angle * 3) * size * 0.4f;
+            canvas.drawLine(cx, cy, midX, midY, paint);
+            canvas.drawLine(midX, midY, endX, endY, paint);
+        }
+        paint.setStrokeWidth(1);
     }
 }

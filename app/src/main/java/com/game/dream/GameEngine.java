@@ -18,12 +18,16 @@ import com.game.dream.bean.RoleInfo;
 import com.game.dream.bean.SkillInfo;
 import com.game.dream.bean.SkillStartInfo;
 import com.game.dream.enemy.Bandit;
+import com.game.dream.enemy.CrabGeneral;
 import com.game.dream.enemy.Enemy;
 import com.game.dream.enemy.FoxSpirit;
+import com.game.dream.enemy.LittleGreenDragon;
+import com.game.dream.enemy.ShrimpSoldier;
 import com.game.dream.enemy.Tiger;
 import com.game.dream.enemy.Viper;
 import com.game.dream.enemy.WildBoar;
 import com.game.dream.enemy.Wolf;
+import com.game.dream.enemy.Yaksha;
 import com.game.dream.enums.SkillType;
 import com.game.dream.enums.SpecialEffect;
 import com.game.dream.figure.Character;
@@ -269,8 +273,8 @@ public class GameEngine {
             }
         }
 
-        // Update day-night cycle
-        if (dayNightCycle != null) {
+        // Update day-night cycle (海底地图关闭昼夜系统)
+        if (dayNightCycle != null && MapSystem.getInstance().getCurrentMapId() != MapSystem.MAP_ID_DONGHAI_SEABED) {
             dayNightCycle.update(deltaTime);
         }
 
@@ -699,6 +703,44 @@ public class GameEngine {
                         spawnFoxCharmPetals((FoxSpirit) enemy);
                         ((FoxSpirit) enemy).consumeFoxCharm();
                     }
+
+                    // 小青龙水龙弹
+                    if (enemy instanceof LittleGreenDragon && ((LittleGreenDragon) enemy).isPendingWaterBolt()) {
+                        float[] targetPos = {player.getX(), player.getY()};
+                        Projectile waterBolt = new Projectile(
+                                enemy.getX(), enemy.getY(),
+                                targetPos[0], targetPos[1],
+                                com.game.dream.enums.SkillType.ENEMY_WaterBolt
+                        );
+                        waterBolt.setFromEnemy(enemy);
+                        projectiles.add(waterBolt);
+                        ((LittleGreenDragon) enemy).consumeWaterBolt();
+                    }
+
+                    // 小青龙闪电
+                    if (enemy instanceof LittleGreenDragon && ((LittleGreenDragon) enemy).isPendingLightning()) {
+                        float[] targetPos = {player.getX(), player.getY()};
+                        Projectile lightning = new Projectile(
+                                enemy.getX(), enemy.getY(),
+                                targetPos[0], targetPos[1],
+                                com.game.dream.enums.SkillType.ENEMY_DragonLightning
+                        );
+                        lightning.setFromEnemy(enemy);
+                        projectiles.add(lightning);
+                        ((LittleGreenDragon) enemy).consumeLightning();
+                    }
+
+                    // 小青龙龙威光环：减速玩家
+                    if (enemy instanceof LittleGreenDragon) {
+                        LittleGreenDragon dragon = (LittleGreenDragon) enemy;
+                        float auraDx = player.getX() - enemy.getX();
+                        float auraDy = player.getY() - enemy.getY();
+                        float auraDist = (float) Math.sqrt(auraDx * auraDx + auraDy * auraDy);
+                        if (auraDist < dragon.getDragonAuraRange() && !MapSystem.getInstance().isLocationSafe(player.getX(), player.getY())) {
+                            player.applyCC(com.game.dream.figure.Character.CrowdControlType.SLOW,
+                                    dragon.getAuraSlowDuration());
+                        }
+                    }
                 } else {
                     // Far away enemies don't need AI updates
                     // They stay in their current state
@@ -944,8 +986,8 @@ public class GameEngine {
         // Draw map using MapRenderer
         MapSystem.getInstance().render(canvas, cameraX, cameraY, screenWidth, screenHeight);
 
-        // Draw day-night overlay (after map, before player)
-        if (dayNightCycle != null) {
+        // Draw day-night overlay (after map, before player, 海底地图关闭)
+        if (dayNightCycle != null && MapSystem.getInstance().getCurrentMapId() != MapSystem.MAP_ID_DONGHAI_SEABED) {
             dayNightCycle.draw(canvas, screenWidth, screenHeight);
         }
 
@@ -1540,6 +1582,18 @@ public class GameEngine {
         } else if (boss instanceof FoxSpirit) {
             minion = new FoxSpirit(spawnX, spawnY);
             minionName = "狐狸精";
+        } else if (boss instanceof ShrimpSoldier) {
+            minion = new ShrimpSoldier(spawnX, spawnY);
+            minionName = "虾兵";
+        } else if (boss instanceof CrabGeneral) {
+            minion = new CrabGeneral(spawnX, spawnY);
+            minionName = "蟹将";
+        } else if (boss instanceof Yaksha) {
+            minion = new Yaksha(spawnX, spawnY);
+            minionName = "夜叉";
+        } else if (boss instanceof LittleGreenDragon) {
+            minion = new LittleGreenDragon(spawnX, spawnY);
+            minionName = "小青龙";
         } else {
             // Default to Wolf
             minion = new Wolf(spawnX, spawnY);

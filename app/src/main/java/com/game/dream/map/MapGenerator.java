@@ -32,6 +32,14 @@ public class MapGenerator {
     public static final int SAND = 13;
     public static final int SEA = 14;
 
+    // 东海海底地图地形
+    public static final int DEEP_SEA = 15;       // 深海（不可通行）
+    public static final int CORAL_REEF = 16;     // 珊瑚礁
+    public static final int SEA_FLOOR = 17;      // 海底沙地
+    public static final int KELP_FOREST = 18;   // 海藻森林
+    public static final int HYDROTHERMAL = 19;   // 热液喷口（不可通行）
+    public static final int PALACE_GROUND = 20;  // 龙宫地面
+
     public static final int VILLAGE_CAN_PASS = 100;
     public static final int VILLAGE_NO_PASS = 101;
 
@@ -231,7 +239,8 @@ public class MapGenerator {
         if (terrain == MapGenerator.LAKE || terrain == MapGenerator.LAVA
                 || terrain == MapGenerator.RIVER || terrain == MapGenerator.MOUNTAIN
                 || terrain == MapGenerator.VILLAGE_NO_PASS || terrain == MapGenerator.CITY_WALL
-                || terrain == MapGenerator.SEA) {
+                || terrain == MapGenerator.SEA || terrain == MapGenerator.DEEP_SEA
+                || terrain == MapGenerator.HYDROTHERMAL) {
             return false;
         }
         return true;

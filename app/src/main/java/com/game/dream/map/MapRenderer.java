@@ -59,6 +59,12 @@ public class MapRenderer {
     private static final int CITY_WALL = 12;
     private static final int SAND = 13;
     private static final int SEA = 14;
+    private static final int DEEP_SEA = 15;
+    private static final int CORAL_REEF = 16;
+    private static final int SEA_FLOOR = 17;
+    private static final int KELP_FOREST = 18;
+    private static final int HYDROTHERMAL = 19;
+    private static final int PALACE_GROUND = 20;
 
     public MapRenderer(int[][] map, int mapWidth, int mapHeight, int tileSize) {
         this.map = map;
@@ -185,6 +191,12 @@ public class MapRenderer {
             case CITY_WALL: baseR = 100; baseG = 95;  baseB = 90;  break;
             case SAND:      baseR = 235; baseG = 215; baseB = 160; break;
             case SEA:       baseR = 20;  baseG = 80;  baseB = 170; break;
+            case DEEP_SEA:      baseR = 8;   baseG = 30;  baseB = 80;  break;
+            case CORAL_REEF:    baseR = 25;  baseG = 100; baseB = 150; break;
+            case SEA_FLOOR:     baseR = 45;  baseG = 130; baseB = 150; break;
+            case KELP_FOREST:   baseR = 15;  baseG = 70;  baseB = 95;  break;
+            case HYDROTHERMAL:  baseR = 55;  baseG = 25;  baseB = 25;  break;
+            case PALACE_GROUND: baseR = 70;  baseG = 115; baseB = 135; break;
             default:        baseR = 128; baseG = 128; baseB = 128; break;
         }
 
@@ -313,6 +325,24 @@ public class MapRenderer {
                 break;
             case SEA:
                 drawSeaDeco(canvas, paint, rng, screenX, screenY, cx, cy);
+                break;
+            case DEEP_SEA:
+                drawDeepSeaDeco(canvas, paint, rng, screenX, screenY, cx, cy);
+                break;
+            case CORAL_REEF:
+                drawCoralReefDeco(canvas, paint, rng, screenX, screenY, cx, cy);
+                break;
+            case SEA_FLOOR:
+                drawSeaFloorDeco(canvas, paint, rng, screenX, screenY, cx, cy);
+                break;
+            case KELP_FOREST:
+                drawKelpForestDeco(canvas, paint, rng, screenX, screenY, cx, cy);
+                break;
+            case HYDROTHERMAL:
+                drawHydrothermalDeco(canvas, paint, rng, screenX, screenY, cx, cy);
+                break;
+            case PALACE_GROUND:
+                drawPalaceGroundDeco(canvas, paint, rng, screenX, screenY, cx, cy);
                 break;
         }
     }
@@ -776,6 +806,143 @@ public class MapRenderer {
             float fy = sy + 3 + rng.nextInt(tileSize - 6);
             paint.setColor(Color.argb(40, 200, 230, 255));
             canvas.drawCircle(fx, fy, 1.5f, paint);
+        }
+    }
+
+    /**
+     * DeepSea: 微小光点、暗流纹
+     */
+    private void drawDeepSeaDeco(Canvas canvas, Paint paint, java.util.Random rng,
+                                  int sx, int sy, float cx, float cy) {
+        // 微弱发光点（深海生物荧光）
+        if (rng.nextInt(3) == 0) {
+            float gx = sx + 3 + rng.nextInt(tileSize - 6);
+            float gy = sy + 3 + rng.nextInt(tileSize - 6);
+            int color = rng.nextInt(3);
+            switch (color) {
+                case 0: paint.setColor(Color.argb(35, 80, 150, 255)); break;
+                case 1: paint.setColor(Color.argb(30, 100, 255, 200)); break;
+                case 2: paint.setColor(Color.argb(25, 200, 100, 255)); break;
+            }
+            canvas.drawCircle(gx, gy, 1 + rng.nextFloat(), paint);
+        }
+        // 暗流纹
+        if (rng.nextInt(4) == 0) {
+            float dx = sx + 2 + rng.nextInt(tileSize - 4);
+            float dy = sy + 4 + rng.nextInt(tileSize - 8);
+            paint.setColor(Color.argb(20, 40, 80, 150));
+            paint.setStrokeWidth(1);
+            canvas.drawLine(dx, dy, dx + 5 + rng.nextFloat() * 4, dy + (rng.nextFloat() - 0.5f) * 2, paint);
+        }
+    }
+
+    /**
+     * CoralReef: 小珊瑚碎片、贝壳
+     */
+    private void drawCoralReefDeco(Canvas canvas, Paint paint, java.util.Random rng,
+                                    int sx, int sy, float cx, float cy) {
+        // 小珊瑚碎片
+        int corals = 1 + rng.nextInt(2);
+        for (int i = 0; i < corals; i++) {
+            float px = sx + 3 + rng.nextInt(tileSize - 6);
+            float py = sy + 3 + rng.nextInt(tileSize - 6);
+            int type = rng.nextInt(4);
+            switch (type) {
+                case 0: paint.setColor(Color.rgb(220, 80, 80)); break;
+                case 1: paint.setColor(Color.rgb(255, 140, 60)); break;
+                case 2: paint.setColor(Color.rgb(180, 80, 200)); break;
+                case 3: paint.setColor(Color.rgb(255, 200, 80)); break;
+            }
+            canvas.drawCircle(px, py, 1.2f + rng.nextFloat() * 1.5f, paint);
+        }
+        // 小贝壳
+        if (rng.nextInt(4) == 0) {
+            float bx = sx + 4 + rng.nextInt(tileSize - 8);
+            float by = sy + 4 + rng.nextInt(tileSize - 8);
+            paint.setColor(Color.rgb(230, 210, 180));
+            canvas.drawCircle(bx, by, 1.5f, paint);
+        }
+    }
+
+    /**
+     * SeaFloor: 沙纹、小石子、贝壳
+     */
+    private void drawSeaFloorDeco(Canvas canvas, Paint paint, java.util.Random rng,
+                                   int sx, int sy, float cx, float cy) {
+        // 海底沙纹
+        if (rng.nextInt(2) == 0) {
+            float ry = sy + 4 + rng.nextInt(tileSize - 8);
+            paint.setColor(Color.argb(25, 80, 160, 180));
+            paint.setStrokeWidth(1);
+            canvas.drawLine(sx + 3, ry, sx + tileSize - 3, ry + (rng.nextFloat() - 0.5f) * 2, paint);
+        }
+        // 小石子
+        if (rng.nextInt(3) == 0) {
+            float rx = sx + 4 + rng.nextInt(tileSize - 8);
+            float ry = sy + 4 + rng.nextInt(tileSize - 8);
+            int gray = 80 + rng.nextInt(40);
+            paint.setColor(Color.rgb(gray, gray + 10, gray + 20));
+            canvas.drawCircle(rx, ry, 1 + rng.nextFloat(), paint);
+        }
+    }
+
+    /**
+     * KelpForest: 海藻叶片、暗色阴影
+     */
+    private void drawKelpForestDeco(Canvas canvas, Paint paint, java.util.Random rng,
+                                     int sx, int sy, float cx, float cy) {
+        // 海藻叶片标记
+        int blades = 1 + rng.nextInt(2);
+        for (int i = 0; i < blades; i++) {
+            float bx = sx + 3 + rng.nextInt(tileSize - 6);
+            float by = sy + 3 + rng.nextInt(tileSize - 6);
+            paint.setColor(Color.argb(50, 20, 100, 60));
+            paint.setStrokeWidth(1.5f);
+            canvas.drawLine(bx, by, bx + (rng.nextFloat() - 0.5f) * 3, by - 3 - rng.nextFloat() * 3, paint);
+        }
+        // 暗色阴影（遮挡感）
+        if (rng.nextInt(3) == 0) {
+            paint.setColor(Color.argb(20, 0, 30, 40));
+            canvas.drawCircle(cx, cy, tileSize * 0.3f, paint);
+        }
+    }
+
+    /**
+     * Hydrothermal: 热液喷口、暗红发光
+     */
+    private void drawHydrothermalDeco(Canvas canvas, Paint paint, java.util.Random rng,
+                                       int sx, int sy, float cx, float cy) {
+        // 暗红发光点
+        if (rng.nextInt(2) == 0) {
+            float hx = sx + 3 + rng.nextInt(tileSize - 6);
+            float hy = sy + 3 + rng.nextInt(tileSize - 6);
+            paint.setColor(Color.argb(60, 200, 60, 20));
+            canvas.drawCircle(hx, hy, 1.5f + rng.nextFloat(), paint);
+        }
+        // 烟雾效果
+        paint.setColor(Color.argb(15, 100, 80, 60));
+        canvas.drawCircle(cx, cy, tileSize * 0.35f, paint);
+    }
+
+    /**
+     * PalaceGround: 玉石纹路、金色光点
+     */
+    private void drawPalaceGroundDeco(Canvas canvas, Paint paint, java.util.Random rng,
+                                       int sx, int sy, float cx, float cy) {
+        // 玉石纹路
+        if (rng.nextInt(3) == 0) {
+            float lx = sx + 2 + rng.nextInt(tileSize - 4);
+            float ly = sy + 3 + rng.nextInt(tileSize - 6);
+            paint.setColor(Color.argb(25, 120, 180, 200));
+            paint.setStrokeWidth(1);
+            canvas.drawLine(lx, ly, lx + 4 + rng.nextFloat() * 4, ly + (rng.nextFloat() - 0.5f) * 2, paint);
+        }
+        // 金色光点
+        if (rng.nextInt(4) == 0) {
+            float gx = sx + 4 + rng.nextInt(tileSize - 8);
+            float gy = sy + 4 + rng.nextInt(tileSize - 8);
+            paint.setColor(Color.argb(40, 220, 200, 100));
+            canvas.drawCircle(gx, gy, 1 + rng.nextFloat(), paint);
         }
     }
 

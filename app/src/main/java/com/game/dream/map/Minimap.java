@@ -140,6 +140,24 @@ public class Minimap {
                     case 14: // SEA
                         paint.setColor(Color.rgb(20, 80, 170));
                         break;
+                    case 15: // DEEP_SEA
+                        paint.setColor(Color.rgb(8, 30, 80));
+                        break;
+                    case 16: // CORAL_REEF
+                        paint.setColor(Color.rgb(25, 100, 150));
+                        break;
+                    case 17: // SEA_FLOOR
+                        paint.setColor(Color.rgb(45, 130, 150));
+                        break;
+                    case 18: // KELP_FOREST
+                        paint.setColor(Color.rgb(15, 70, 95));
+                        break;
+                    case 19: // HYDROTHERMAL
+                        paint.setColor(Color.rgb(55, 25, 25));
+                        break;
+                    case 20: // PALACE_GROUND
+                        paint.setColor(Color.rgb(70, 115, 135));
+                        break;
                     case 100: // VILLAGE_CAN_PASS
                         paint.setColor(Color.rgb(215, 162, 109));
                         break;

@@ -7,6 +7,7 @@ import com.game.dream.enemy.Enemy;
 import com.game.dream.enemy.Bandit;
 import com.game.dream.enemy.CrabGeneral;
 import com.game.dream.enemy.FoxSpirit;
+import com.game.dream.enemy.GiantSeaTurtle;
 import com.game.dream.enemy.LittleGreenDragon;
 import com.game.dream.enemy.ShrimpSoldier;
 import com.game.dream.enemy.Tiger;
@@ -173,6 +174,29 @@ public class MapContentManager {
                 } else {
                     enemy = new LittleGreenDragon(spawnX, spawnY);
                     enemy.setName("小青龙");
+                }
+                break;
+            }
+            case MapSystem.MAP_ID_DONGHAI_BAY: {
+                // 东海湾
+                enemy = new GiantSeaTurtle(spawnX, spawnY);
+                enemy.setName("大海龟");
+                break;
+            }
+            case MapSystem.MAP_ID_UNDERWATER_MAZE: {
+                // 海底迷宫
+                if (rand < 0.30) {
+                    enemy = new Yaksha(spawnX, spawnY);
+                    enemy.setName("夜叉");
+                } else if (rand < 0.55) {
+                    enemy = new LittleGreenDragon(spawnX, spawnY);
+                    enemy.setName("小青龙");
+                } else if (rand < 0.80) {
+                    enemy = new ShrimpSoldier(spawnX, spawnY);
+                    enemy.setName("虾兵");
+                } else {
+                    enemy = new CrabGeneral(spawnX, spawnY);
+                    enemy.setName("蟹将");
                 }
                 break;
             }

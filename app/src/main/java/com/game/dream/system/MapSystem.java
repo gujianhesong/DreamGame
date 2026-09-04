@@ -19,6 +19,8 @@ import com.game.dream.map.MapGenerator;
 import com.game.dream.map.MapRenderer;
 import com.game.dream.map.MazeGenerator;
 import com.game.dream.map.MazeRenderer;
+import com.game.dream.map.UnderwaterMazeGenerator;
+import com.game.dream.map.UnderwaterMazeRenderer;
 import com.game.dream.map.VillageRenderer;
 
 import java.util.ArrayList;
@@ -56,6 +58,11 @@ public class MapSystem {
     public static final int MAP_ID_DONGHAI_SEABED = 1004; //东海海底
 
     public static final int MAP_ID_QING_XI_MAZE = 2001; //清溪迷宫
+    public static final int MAP_ID_UNDERWATER_MAZE = 2002; //海底迷宫
+
+    // 海底迷宫尺寸
+    public static final int UNDERWATER_MAZE_WIDTH = 10000;
+    public static final int UNDERWATER_MAZE_HEIGHT = 10000;
 
     // 东海湾地图尺寸
     public static final int DONGHAI_MAP_WIDTH = 10000;
@@ -70,9 +77,11 @@ public class MapSystem {
     // Map generator
     private MapGenerator mapGenerator;
     private MazeGenerator mazeGenerator;
+    private UnderwaterMazeGenerator underwaterMazeGenerator;
     // Map renderer (extracted to separate class)
     private MapRenderer mapRenderer;
     private MazeRenderer mazeRenderer;
+    private UnderwaterMazeRenderer underwaterMazeRenderer;
     private VillageRenderer villageRenderer;
 
     // 金陵地图专用渲染器
@@ -133,15 +142,37 @@ public class MapSystem {
                 mapData = mazeGenerator.generateMap();
                 curMapInfo.setMapData(mapData);
                 mazeRenderer = new MazeRenderer(mapData, MAP_WIDTH, MAP_HEIGHT, TILE_SIZE);
-                // 清除村庄渲染器
+                // 清除其他渲染器
                 mapRenderer = null;
                 villageRenderer = null;
                 jinlingCityRenderer = null;
                 donghaiBayRenderer = null;
                 donghaiSeabedRenderer = null;
+                underwaterMazeRenderer = null;
+                underwaterMazeGenerator = null;
                 additionalVillageRenderers.clear();
                 // 初始化迷宫对象
                 MazeSystem.getInstance().initMazeObjects(mapData, mazeGenerator);
+            } else if (mapId == MAP_ID_UNDERWATER_MAZE) {
+                // 海底迷宫
+                underwaterMazeGenerator = new UnderwaterMazeGenerator(findMap.getMapWidth(), findMap.getMapHeight(), TILE_SIZE);
+                mapData = underwaterMazeGenerator.generateMap();
+                curMapInfo.setMapData(mapData);
+                underwaterMazeRenderer = new UnderwaterMazeRenderer(mapData, UNDERWATER_MAZE_WIDTH, UNDERWATER_MAZE_HEIGHT, TILE_SIZE);
+                underwaterMazeRenderer.findExitAndEntrance();
+                // 清除其他渲染器
+                mapRenderer = null;
+                villageRenderer = null;
+                jinlingCityRenderer = null;
+                donghaiBayRenderer = null;
+                donghaiSeabedRenderer = null;
+                mazeRenderer = null;
+                mazeGenerator = null;
+                additionalVillageRenderers.clear();
+                // 初始化迷宫对象（复用 MazeSystem，传入海底迷宫的入口/出口坐标）
+                MazeSystem.getInstance().initMazeObjects(mapData,
+                        underwaterMazeGenerator.getEntranceX(), underwaterMazeGenerator.getEntranceY(),
+                        underwaterMazeGenerator.getExitX(), underwaterMazeGenerator.getExitY());
             } else if (mapId == MAP_ID_JIN_LING) {
                 // 金陵大地图
                 JinlingMapGenerator jinlingGen = new JinlingMapGenerator(TILE_SIZE);
@@ -347,6 +378,7 @@ public class MapSystem {
                 new Pair<>(10000, DonghaiSeabedMapGenerator.PALACE_Y2 + 300)));
 
         mapInfoList.add(new MapInfo(MAP_ID_QING_XI_MAZE, "清溪地下迷宫", 10000, 10000, null));
+        mapInfoList.add(new MapInfo(MAP_ID_UNDERWATER_MAZE, "海底迷宫", UNDERWATER_MAZE_WIDTH, UNDERWATER_MAZE_HEIGHT, null));
     }
 
     public MapInfo getBornMap() {
@@ -407,6 +439,9 @@ public class MapSystem {
         if (mazeRenderer != null) {
             mazeRenderer.cleanup();
         }
+        if (underwaterMazeRenderer != null) {
+            underwaterMazeRenderer.cleanup();
+        }
         if (donghaiSeabedRenderer != null) {
             donghaiSeabedRenderer.cleanup();
         }
@@ -417,6 +452,11 @@ public class MapSystem {
             // 迷宫地图渲染
             if (mazeRenderer != null) {
                 mazeRenderer.draw(canvas, cameraX, cameraY, screenWidth, screenHeight);
+            }
+        } else if (currentMapId == MAP_ID_UNDERWATER_MAZE) {
+            // 海底迷宫渲染
+            if (underwaterMazeRenderer != null) {
+                underwaterMazeRenderer.draw(canvas, cameraX, cameraY, screenWidth, screenHeight);
             }
         } else {
             // 普通地图渲染
@@ -450,7 +490,7 @@ public class MapSystem {
      */
     public boolean isLocationSafe(float x, float y) {
         // 迷宫中没有安全区
-        if (currentMapId == MAP_ID_QING_XI_MAZE) {
+        if (isCurrentMazaMap()) {
             return false;
         }
         // 清溪村安全区
@@ -531,6 +571,10 @@ public class MapSystem {
 
     public MazeGenerator getMazeGenerator() {
         return mazeGenerator;
+    }
+
+    public UnderwaterMazeGenerator getUnderwaterMazeGenerator() {
+        return underwaterMazeGenerator;
     }
 
     /**

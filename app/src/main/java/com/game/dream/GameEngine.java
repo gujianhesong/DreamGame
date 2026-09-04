@@ -21,6 +21,7 @@ import com.game.dream.enemy.Bandit;
 import com.game.dream.enemy.CrabGeneral;
 import com.game.dream.enemy.Enemy;
 import com.game.dream.enemy.FoxSpirit;
+import com.game.dream.enemy.GiantSeaTurtle;
 import com.game.dream.enemy.LittleGreenDragon;
 import com.game.dream.enemy.ShrimpSoldier;
 import com.game.dream.enemy.Tiger;
@@ -36,6 +37,7 @@ import com.game.dream.item.GroundItem;
 import com.game.dream.item.ItemStack;
 import com.game.dream.map.MapContentManager;
 import com.game.dream.map.MazeGenerator;
+import com.game.dream.map.UnderwaterMazeGenerator;
 import com.game.dream.npc.AnimalNpc;
 import com.game.dream.npc.Npc;
 import com.game.dream.npc.TreasureChest;
@@ -268,13 +270,20 @@ public class GameEngine {
         // 检查迷宫出口传送
         if (MapSystem.getInstance().isCurrentMazaMap() && MazeSystem.getInstance().isInitialized()) {
             if (MazeSystem.getInstance().checkExitPortal(player.getX(), player.getY())) {
-                teleportToMap(MapSystem.MAP_ID_QING_XI);
+                // 不同迷宫出口目的地不同
+                int curMapId = MapSystem.getInstance().getCurrentMapId();
+                if (curMapId == MapSystem.MAP_ID_UNDERWATER_MAZE) {
+                    teleportToMap(MapSystem.MAP_ID_DONGHAI_BAY);
+                } else {
+                    teleportToMap(MapSystem.MAP_ID_QING_XI);
+                }
                 return; // 传送后本帧不再继续更新
             }
         }
 
-        // Update day-night cycle (海底地图关闭昼夜系统)
-        if (dayNightCycle != null && MapSystem.getInstance().getCurrentMapId() != MapSystem.MAP_ID_DONGHAI_SEABED) {
+        // Update day-night cycle (海底地图和海底迷宫关闭昼夜系统)
+        int curId = MapSystem.getInstance().getCurrentMapId();
+        if (dayNightCycle != null && curId != MapSystem.MAP_ID_DONGHAI_SEABED && curId != MapSystem.MAP_ID_UNDERWATER_MAZE) {
             dayNightCycle.update(deltaTime);
         }
 
@@ -1056,8 +1065,9 @@ public class GameEngine {
             effect.draw(canvas, (int) -cameraX, (int) -cameraY);
         }
 
-        // Draw weather effects
-        if (weatherSystem != null) {
+        // Draw weather effects (海底地图和海底迷宫不显示天气)
+        int drawMapId = MapSystem.getInstance().getCurrentMapId();
+        if (weatherSystem != null && drawMapId != MapSystem.MAP_ID_DONGHAI_SEABED && drawMapId != MapSystem.MAP_ID_UNDERWATER_MAZE) {
             weatherSystem.draw(canvas);
         }
 
@@ -1267,6 +1277,13 @@ public class GameEngine {
                     if (mazeGen != null) {
                         player.setX(mazeGen.getEntranceX());
                         player.setY(mazeGen.getEntranceY() + 100); // 入口下方一点
+                    } else {
+                        // 海底迷宫入口在左侧，人物放在入口右侧
+                        UnderwaterMazeGenerator uwGen = MapSystem.getInstance().getUnderwaterMazeGenerator();
+                        if (uwGen != null) {
+                            player.setX(uwGen.getEntranceX() + 100);
+                            player.setY(uwGen.getEntranceY());
+                        }
                     }
                 } else {
                     // 重置迷宫系统
@@ -1457,6 +1474,20 @@ public class GameEngine {
                     hit.enemy.applyKnockback(player.getX(), player.getY(), 300f, 200);
                     // 受击硬直: 短暂停顿
                     hit.enemy.applyCC(Character.CrowdControlType.STUN, 150);
+
+                    // 大海龟反伤: 反弹 20% 伤害给玩家
+                    if (hit.enemy instanceof GiantSeaTurtle) {
+                        int reflectDmg = ((GiantSeaTurtle) hit.enemy).consumeReflectDamage();
+                        if (reflectDmg > 0) {
+                            player.takeDamage(reflectDmg);
+                            damageNumbers.add(new DamageNumber(
+                                    player.getX(),
+                                    player.getY() - 40,
+                                    reflectDmg,
+                                    false
+                            ));
+                        }
+                    }
                 } else {
                     // 未命中也显示
                     damageNumbers.add(new DamageNumber(
@@ -1594,6 +1625,9 @@ public class GameEngine {
         } else if (boss instanceof LittleGreenDragon) {
             minion = new LittleGreenDragon(spawnX, spawnY);
             minionName = "小青龙";
+        } else if (boss instanceof GiantSeaTurtle) {
+            minion = new GiantSeaTurtle(spawnX, spawnY);
+            minionName = "大海龟";
         } else {
             // Default to Wolf
             minion = new Wolf(spawnX, spawnY);

@@ -41,6 +41,29 @@ public class MazeSystem {
         exitPortalX = mazeGen.getExitX();
         exitPortalY = mazeGen.getExitY();
 
+        placeTreasureChests(mapData);
+    }
+
+    /**
+     * 初始化迷宫对象 - 直接传入入口/出口坐标（用于海底迷宫等非 MazeGenerator 生成的迷宫）
+     */
+    public void initMazeObjects(int[][] mapData, int entranceX, int entranceY, int exitX, int exitY) {
+        treasureChests.clear();
+        isInitialized = true;
+
+        this.entranceX = entranceX;
+        this.entranceY = entranceY;
+        this.exitPortalX = exitX;
+        this.exitPortalY = exitY;
+
+        placeTreasureChests(mapData);
+    }
+
+    /**
+     * 在迷宫中随机放置宝箱
+     */
+    private void placeTreasureChests(int[][] mapData) {
+
         // 在迷宫中随机放置宝箱
         Random random = new Random(99999);
         int chestCount = 15 + random.nextInt(6); // 15-20 个宝箱

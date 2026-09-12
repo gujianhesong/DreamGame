@@ -68,7 +68,9 @@ public class Wolf extends Enemy {
 
     @Override
     public List<Item> getPossibleDropList() {
-        ProssibleDropsUtil.addPossibleDrops_sceneLevel1(this);
+        if (possibleDrops.isEmpty()) {
+            ProssibleDropsUtil.addPossibleDrops_sceneLevel1(this);
+        }
         return possibleDrops;
     }
 

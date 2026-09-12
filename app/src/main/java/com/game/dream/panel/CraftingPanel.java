@@ -217,6 +217,9 @@ public class CraftingPanel {
     public void draw(Canvas canvas) {
         if (!isVisible) return;
 
+        // 绘制前同步按钮布局，避免 recipeButtons 与当前配方列表数量不一致
+        updateRecipeButtons();
+
         Paint paint = new Paint();
         paint.setAntiAlias(true);
 
@@ -248,9 +251,9 @@ public class CraftingPanel {
         canvas.clipRect(recipeListArea);
 
         List<Recipe> recipes = getCurrentTabRecipeList();
-        List<Rect> curButtons = new ArrayList<>(recipeButtons);
-        for (int i = 0; i < recipes.size(); i++) {
-            Rect btn = curButtons.get(i);
+        int drawCount = Math.min(recipes.size(), recipeButtons.size());
+        for (int i = 0; i < drawCount; i++) {
+            Rect btn = recipeButtons.get(i);
             if (btn.bottom < recipeListArea.top || btn.top > recipeListArea.bottom) continue;
 
             Recipe recipe = recipes.get(i);
@@ -431,8 +434,10 @@ public class CraftingPanel {
     public boolean handleTouchUp(float x, float y) {
         if (!isVisible || isDragging) return false;
 
+        updateRecipeButtons();
         List<Recipe> recipes = getCurrentTabRecipeList();
-        for (int i = 0; i < recipes.size(); i++) {
+        int touchCount = Math.min(recipes.size(), recipeButtons.size());
+        for (int i = 0; i < touchCount; i++) {
             Rect btn = recipeButtons.get(i);
             Rect craftBtn = new Rect(btn.right - 100, btn.top + 25, btn.right - 10, btn.bottom - 25);
 

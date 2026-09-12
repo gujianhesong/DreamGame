@@ -13,7 +13,6 @@ public class ProssibleDropsUtil {
     public static void addPossibleDrops_sceneLevel1(Enemy enemy){
         if(enemy == null) return;
 
-        enemy.getPossibleDropList().clear();
         Enemy.EnemyLevel enemyLevel = enemy.getEnemyLevel();
         if (enemyLevel == Enemy.EnemyLevel.BOSS) {
             //药品
@@ -90,7 +89,6 @@ public class ProssibleDropsUtil {
     public static void addPossibleDrops_sceneLevel2(Enemy enemy){
         if(enemy == null) return;
         
-        enemy.getPossibleDropList().clear();
         Enemy.EnemyLevel enemyLevel = enemy.getEnemyLevel();
         if (enemyLevel == Enemy.EnemyLevel.BOSS) {
             //药品
@@ -168,8 +166,6 @@ public class ProssibleDropsUtil {
      */
     public static void addPossibleDrops_sceneLevel3(Enemy enemy){
         if(enemy == null) return;
-
-        enemy.getPossibleDropList().clear();
 
         Enemy.EnemyLevel enemyLevel = enemy.getEnemyLevel();
         if (enemyLevel == Enemy.EnemyLevel.BOSS) {

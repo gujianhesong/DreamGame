@@ -142,7 +142,9 @@ public class GiantSeaTurtle extends Enemy {
 
     @Override
     public List<Item> getPossibleDropList() {
-        ProssibleDropsUtil.addPossibleDrops_sceneLevel2(this);
+        if (possibleDrops.isEmpty()) {
+            ProssibleDropsUtil.addPossibleDrops_sceneLevel2(this);
+        }
         return possibleDrops;
     }
 

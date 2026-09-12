@@ -73,7 +73,7 @@ public abstract class Enemy extends Character {
     protected boolean isAggroed;
 
     // Possible drops
-    protected List<Item> possibleDrops;
+    protected List<Item> possibleDrops = new ArrayList<>();
 
     protected boolean isCastingSpell;
 

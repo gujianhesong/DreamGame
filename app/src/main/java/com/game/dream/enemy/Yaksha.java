@@ -121,7 +121,9 @@ public class Yaksha extends Enemy {
 
     @Override
     public List<Item> getPossibleDropList() {
-        ProssibleDropsUtil.addPossibleDrops_sceneLevel3(this);
+        if (possibleDrops.isEmpty()) {
+            ProssibleDropsUtil.addPossibleDrops_sceneLevel3(this);
+        }
         return possibleDrops;
     }
 

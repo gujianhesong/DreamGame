@@ -1273,4 +1273,8 @@ public abstract class Enemy extends Character {
     public boolean isBurning() {
         return burnDamagePerSecond > 0 && System.currentTimeMillis() < burnEndTime;
     }
+
+    public EnemyLevel getEnemyLevel() {
+        return enemyLevel;
+    }
 }

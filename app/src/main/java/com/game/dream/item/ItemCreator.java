@@ -836,6 +836,12 @@ public class ItemCreator {
         );
     }
 
+    public static Item createGemstone(int level) {
+        GemtoneType[] gemtoneTypes = GemtoneType.values();
+        int randomIndex = (int) (Math.random() * gemtoneTypes.length);
+        return createGemstone(gemtoneTypes[randomIndex], level);
+    }
+
     public static Item createGemstone(GemtoneType gemtoneType, int level) {
         int id = 230001 + level * 100 + gemtoneType.ordinal();
 

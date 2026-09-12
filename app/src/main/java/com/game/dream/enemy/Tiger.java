@@ -5,14 +5,9 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 
-import com.game.dream.item.EquipCreator;
-import com.game.dream.item.EquipmentItem;
 import com.game.dream.item.Item;
-import com.game.dream.item.ItemCreator;
-import com.game.dream.system.MapSystem;
-import com.game.dream.utils.Utils;
+import com.game.dream.utils.ProssibleDropsUtil;
 
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -69,66 +64,7 @@ public class Tiger extends Enemy {
 
     @Override
     public List<Item> getPossibleDropList() {
-        possibleDrops.clear();
-
-        if (enemyLevel == EnemyLevel.BOSS) {
-            addPossibleDrop(EquipCreator.createEquip(30, null));
-            addPossibleDrop(EquipCreator.createEquip(40, null));
-
-            addPossibleDrop(ItemCreator.createBuildEquipBook(30, null));
-            addPossibleDrop(ItemCreator.createBuildEquipBook(40, null));
-            addPossibleDrop(ItemCreator.createBuildEquipIron(30));
-            addPossibleDrop(ItemCreator.createBuildEquipIron(40));
-
-            addPossibleDrop(ItemCreator.createGain_hp_2());
-            addPossibleDrop(ItemCreator.createGain_attack_2());
-            addPossibleDrop(ItemCreator.createGain_defense_2());
-            addPossibleDrop(ItemCreator.createGain_mana_2());
-            addPossibleDrop(ItemCreator.createGain_speed_2());
-
-            addPossibleDrop(ItemCreator.createHp2_1_Zishiying());
-            addPossibleDrop(ItemCreator.createHp2_2_Liuhuangcao());
-            addPossibleDrop(ItemCreator.createMp2_1_Diyulingzhi());
-            addPossibleDrop(ItemCreator.createMp2_2_Xianhuxian());
-        } else if (enemyLevel == EnemyLevel.ELITE) {
-            addPossibleDrop(EquipCreator.createEquip(10, null));
-            addPossibleDrop(EquipCreator.createEquip(20, null));
-
-            addPossibleDrop(ItemCreator.createBuildEquipBook(10, null));
-            addPossibleDrop(ItemCreator.createBuildEquipBook(20, null));
-            addPossibleDrop(ItemCreator.createBuildEquipIron(10));
-            addPossibleDrop(ItemCreator.createBuildEquipIron(20));
-
-            addPossibleDrop(ItemCreator.createGain_hp_1());
-            addPossibleDrop(ItemCreator.createGain_attack_1());
-            addPossibleDrop(ItemCreator.createGain_defense_1());
-            addPossibleDrop(ItemCreator.createGain_mana_1());
-            addPossibleDrop(ItemCreator.createGain_speed_1());
-
-            addPossibleDrop(ItemCreator.createHp1_3_Lurong());
-            addPossibleDrop(ItemCreator.createHp1_4_Xuesechahua());
-            addPossibleDrop(ItemCreator.createMp1_3_Shexiang());
-            addPossibleDrop(ItemCreator.createMp1_4_Dingxiangshui());
-        } else if (enemyLevel == EnemyLevel.LEADER) {
-            addPossibleDrop(EquipCreator.createEquip(0, null));
-            addPossibleDrop(EquipCreator.createEquip(10, null));
-
-            addPossibleDrop(ItemCreator.createBuildEquipBook(10, null));
-            addPossibleDrop(ItemCreator.createBuildEquipIron(10));
-
-            addPossibleDrop(ItemCreator.createHp1_2_QiyeLian());
-            addPossibleDrop(ItemCreator.createHp1_3_Lurong());
-            addPossibleDrop(ItemCreator.createMp1_2_Xiangye());
-            addPossibleDrop(ItemCreator.createMp1_3_Shexiang());
-        } else {
-            addPossibleDrop(EquipCreator.createEquip(0, null));
-
-            addPossibleDrop(ItemCreator.createHp1_1_Siyehua());
-            addPossibleDrop(ItemCreator.createHp1_2_QiyeLian());
-            addPossibleDrop(ItemCreator.createMp1_1_Foshou());
-            addPossibleDrop(ItemCreator.createMp1_2_Xiangye());
-        }
-
+        ProssibleDropsUtil.addPossibleDrops_sceneLevel1(this);
         return possibleDrops;
     }
 

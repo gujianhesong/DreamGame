@@ -5,9 +5,8 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 
-import com.game.dream.item.EquipCreator;
 import com.game.dream.item.Item;
-import com.game.dream.item.ItemCreator;
+import com.game.dream.utils.ProssibleDropsUtil;
 
 import java.util.List;
 
@@ -143,59 +142,7 @@ public class GiantSeaTurtle extends Enemy {
 
     @Override
     public List<Item> getPossibleDropList() {
-        possibleDrops.clear();
-
-        if (enemyLevel == EnemyLevel.BOSS) {
-            addPossibleDrop(EquipCreator.createEquip(40, null));
-            addPossibleDrop(EquipCreator.createEquip(50, null));
-            addPossibleDrop(ItemCreator.createBuildEquipBook(40, null));
-            addPossibleDrop(ItemCreator.createBuildEquipBook(50, null));
-            addPossibleDrop(ItemCreator.createBuildEquipIron(40));
-            addPossibleDrop(ItemCreator.createBuildEquipIron(50));
-            addPossibleDrop(ItemCreator.createGain_hp_3());
-            addPossibleDrop(ItemCreator.createGain_attack_3());
-            addPossibleDrop(ItemCreator.createGain_defense_3());
-            addPossibleDrop(ItemCreator.createGain_mana_3());
-            addPossibleDrop(ItemCreator.createGain_speed_3());
-            addPossibleDrop(ItemCreator.createHp2_1_Zishiying());
-            addPossibleDrop(ItemCreator.createHp2_2_Liuhuangcao());
-            addPossibleDrop(ItemCreator.createMp2_1_Diyulingzhi());
-            addPossibleDrop(ItemCreator.createMp2_2_Xianhuxian());
-        } else if (enemyLevel == EnemyLevel.ELITE) {
-            addPossibleDrop(EquipCreator.createEquip(30, null));
-            addPossibleDrop(EquipCreator.createEquip(40, null));
-            addPossibleDrop(ItemCreator.createBuildEquipBook(30, null));
-            addPossibleDrop(ItemCreator.createBuildEquipBook(40, null));
-            addPossibleDrop(ItemCreator.createBuildEquipIron(30));
-            addPossibleDrop(ItemCreator.createBuildEquipIron(40));
-            addPossibleDrop(ItemCreator.createGain_hp_2());
-            addPossibleDrop(ItemCreator.createGain_attack_2());
-            addPossibleDrop(ItemCreator.createGain_defense_2());
-            addPossibleDrop(ItemCreator.createGain_mana_2());
-            addPossibleDrop(ItemCreator.createGain_speed_2());
-            addPossibleDrop(ItemCreator.createHp2_1_Zishiying());
-            addPossibleDrop(ItemCreator.createHp2_2_Liuhuangcao());
-            addPossibleDrop(ItemCreator.createMp2_1_Diyulingzhi());
-            addPossibleDrop(ItemCreator.createMp2_2_Xianhuxian());
-        } else if (enemyLevel == EnemyLevel.LEADER) {
-            addPossibleDrop(EquipCreator.createEquip(20, null));
-            addPossibleDrop(EquipCreator.createEquip(30, null));
-            addPossibleDrop(ItemCreator.createBuildEquipBook(30, null));
-            addPossibleDrop(ItemCreator.createBuildEquipIron(30));
-            addPossibleDrop(ItemCreator.createHp1_3_Lurong());
-            addPossibleDrop(ItemCreator.createHp1_4_Xuesechahua());
-            addPossibleDrop(ItemCreator.createMp1_3_Shexiang());
-            addPossibleDrop(ItemCreator.createMp1_4_Dingxiangshui());
-        } else {
-            addPossibleDrop(EquipCreator.createEquip(20, null));
-            addPossibleDrop(ItemCreator.createBuildEquipBook(20, null));
-            addPossibleDrop(ItemCreator.createBuildEquipIron(20));
-            addPossibleDrop(ItemCreator.createHp1_3_Lurong());
-            addPossibleDrop(ItemCreator.createHp1_4_Xuesechahua());
-            addPossibleDrop(ItemCreator.createMp1_3_Shexiang());
-            addPossibleDrop(ItemCreator.createMp1_4_Dingxiangshui());
-        }
-
+        ProssibleDropsUtil.addPossibleDrops_sceneLevel2(this);
         return possibleDrops;
     }
 

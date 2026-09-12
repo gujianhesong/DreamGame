@@ -104,6 +104,7 @@ public abstract class Enemy extends Character {
     }
     protected List<AttackType> availableAttackTypes = new ArrayList<>();
     protected AttackType currentAttackType = AttackType.MELEE;
+    protected AttackType lastSelectedAttackType = null;
 
     // 冲击(Charge)攻击相关
     protected boolean isCharging = false;
@@ -274,11 +275,10 @@ public abstract class Enemy extends Character {
                 if (!isAggroed && distanceToPlayer > propertyExtra.detectionRange * 1.5f || MapSystem.getInstance().isLocationSafe(playerX, playerY)) {
                     currentState = State.IDLE;
                     stateTimer = currentTime;
-                } else if (distanceToPlayer < propertyExtra.attackRange
-                        && (currentAttackType != AttackType.POUNCE || currentTime - lastAttackTime >= attackCooldown)) {
+                } else if (shouldBeginAttacking(distanceToPlayer, currentTime)) {
                     currentState = State.ATTACKING;
                     stateTimer = currentTime;
-                    selectCurrentAttackType();
+                    selectCurrentAttackType(distanceToPlayer);
                     // 开始攻击前摇
                     isWindingUp = true;
                     windUpStartTime = currentTime;
@@ -783,15 +783,214 @@ public abstract class Enemy extends Character {
     }
 
     /**
-     * Randomly select attack type from available types
+     * 根据距离、血量与上次招式加权选择攻击类型
      */
-    protected void selectCurrentAttackType() {
+    protected void selectCurrentAttackType(float distanceToPlayer) {
         if (availableAttackTypes.isEmpty()) {
             currentAttackType = AttackType.MELEE;
-        } else {
-            currentAttackType = availableAttackTypes.get((int) (Math.random() * availableAttackTypes.size()));
+            lastSelectedAttackType = AttackType.MELEE;
+            resetAttackSelectionState();
+            return;
         }
-        // Reset previous attack state
+
+        float rangeRatio = distanceToPlayer / Math.max(propertyExtra.attackRange, 1f);
+        float hpRatio = maxHealth > 0 ? (float) health / maxHealth : 1f;
+
+        List<AttackType> candidates = new ArrayList<>(availableAttackTypes);
+        if (candidates.size() > 1) {
+            if (rangeRatio > 0.85f) {
+                List<AttackType> gapClosers = filterGapCloserAttacks(candidates);
+                if (!gapClosers.isEmpty()) {
+                    candidates = gapClosers;
+                }
+            } else if (rangeRatio < 0.45f) {
+                List<AttackType> meleeTypes = filterMeleeAttacks(candidates);
+                if (!meleeTypes.isEmpty()) {
+                    candidates = meleeTypes;
+                }
+            }
+
+            // BOSS 低血量：优先使用高威胁招式
+            if (enemyLevel == EnemyLevel.BOSS && hpRatio <= 0.5f) {
+                List<AttackType> finisherTypes = filterFinisherAttacks(candidates);
+                if (!finisherTypes.isEmpty()) {
+                    candidates = finisherTypes;
+                }
+            }
+        }
+
+        currentAttackType = pickWeightedAttack(candidates, rangeRatio, hpRatio);
+        lastSelectedAttackType = currentAttackType;
+        resetAttackSelectionState();
+    }
+
+    /**
+     * 是否进入攻击状态（突进类技能允许在略远距离开手）
+     */
+    protected boolean shouldBeginAttacking(float distanceToPlayer, long currentTime) {
+        if (currentAttackType == AttackType.POUNCE && currentTime - lastAttackTime < attackCooldown) {
+            return false;
+        }
+        if (distanceToPlayer < propertyExtra.attackRange) {
+            return true;
+        }
+        if (distanceToPlayer < propertyExtra.attackRange * 1.2f && hasGapCloserAttack()) {
+            float rangeRatio = distanceToPlayer / propertyExtra.attackRange;
+            return rangeRatio >= 0.75f;
+        }
+        return false;
+    }
+
+    protected boolean hasGapCloserAttack() {
+        for (AttackType type : availableAttackTypes) {
+            if (isGapCloserAttack(type)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    protected boolean isGapCloserAttack(AttackType type) {
+        return type == AttackType.POUNCE
+                || type == AttackType.CHARGE
+                || type == AttackType.BLINK_STRIKE
+                || type == AttackType.LEAP_SLAM;
+    }
+
+    protected boolean isMeleeAttack(AttackType type) {
+        return type == AttackType.MELEE
+                || type == AttackType.COMBO
+                || type == AttackType.DRAIN_BITE
+                || type == AttackType.SPIN_ATTACK;
+    }
+
+    protected boolean isFinisherAttack(AttackType type) {
+        return type == AttackType.LEAP_SLAM
+                || type == AttackType.POUNCE
+                || type == AttackType.BLINK_STRIKE
+                || type == AttackType.CHARGE
+                || type == AttackType.SPIN_ATTACK;
+    }
+
+    protected List<AttackType> filterGapCloserAttacks(List<AttackType> types) {
+        List<AttackType> filtered = new ArrayList<>();
+        for (AttackType type : types) {
+            if (isGapCloserAttack(type)) {
+                filtered.add(type);
+            }
+        }
+        return filtered;
+    }
+
+    protected List<AttackType> filterMeleeAttacks(List<AttackType> types) {
+        List<AttackType> filtered = new ArrayList<>();
+        for (AttackType type : types) {
+            if (isMeleeAttack(type)) {
+                filtered.add(type);
+            }
+        }
+        return filtered;
+    }
+
+    protected List<AttackType> filterFinisherAttacks(List<AttackType> types) {
+        List<AttackType> filtered = new ArrayList<>();
+        for (AttackType type : types) {
+            if (isFinisherAttack(type)) {
+                filtered.add(type);
+            }
+        }
+        return filtered;
+    }
+
+    /**
+     * 计算各攻击类型权重（子类可覆盖以定制物种战术）
+     */
+    protected float calculateAttackWeight(AttackType type, float rangeRatio, float hpRatio) {
+        float weight;
+
+        switch (type) {
+            case MELEE:
+                weight = rangeRatio < 0.5f ? 3.0f : (rangeRatio < 0.85f ? 2.0f : 0.4f);
+                break;
+            case COMBO:
+                weight = rangeRatio < 0.75f ? 2.8f : 0.9f;
+                break;
+            case DRAIN_BITE:
+                weight = rangeRatio < 0.65f ? 2.5f : 0.7f;
+                if (hpRatio < 0.5f) {
+                    weight *= 1.6f;
+                }
+                break;
+            case SPIN_ATTACK:
+                weight = rangeRatio < 0.9f ? 2.2f : 0.5f;
+                break;
+            case POUNCE:
+                if (rangeRatio < 0.35f) {
+                    weight = 0.5f;
+                } else if (rangeRatio <= 1.05f) {
+                    weight = 3.2f;
+                } else {
+                    weight = 1.5f;
+                }
+                break;
+            case CHARGE:
+                if (rangeRatio >= 0.35f && rangeRatio <= 1.0f) {
+                    weight = 3.0f;
+                } else {
+                    weight = 1.0f;
+                }
+                break;
+            case BLINK_STRIKE:
+                weight = rangeRatio >= 0.5f ? 2.8f : 0.6f;
+                break;
+            case LEAP_SLAM:
+                weight = rangeRatio >= 0.4f ? 2.0f : 0.7f;
+                if (hpRatio <= 0.5f) {
+                    weight *= 2.2f;
+                }
+                if (enemyLevel == EnemyLevel.BOSS) {
+                    weight *= 1.4f;
+                }
+                break;
+            default:
+                weight = 1.0f;
+                break;
+        }
+
+        if (type == lastSelectedAttackType) {
+            weight *= 0.2f;
+        }
+
+        return Math.max(weight, 0.05f);
+    }
+
+    protected AttackType pickWeightedAttack(List<AttackType> candidates, float rangeRatio, float hpRatio) {
+        if (candidates.isEmpty()) {
+            return AttackType.MELEE;
+        }
+        if (candidates.size() == 1) {
+            return candidates.get(0);
+        }
+
+        float totalWeight = 0f;
+        float[] weights = new float[candidates.size()];
+        for (int i = 0; i < candidates.size(); i++) {
+            weights[i] = calculateAttackWeight(candidates.get(i), rangeRatio, hpRatio);
+            totalWeight += weights[i];
+        }
+
+        float roll = (float) Math.random() * totalWeight;
+        float cumulative = 0f;
+        for (int i = 0; i < weights.length; i++) {
+            cumulative += weights[i];
+            if (roll <= cumulative) {
+                return candidates.get(i);
+            }
+        }
+        return candidates.get(candidates.size() - 1);
+    }
+
+    protected void resetAttackSelectionState() {
         isCharging = false;
         comboCurrentHit = 0;
         comboHitStartTime = System.currentTimeMillis();

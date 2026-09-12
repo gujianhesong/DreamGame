@@ -459,9 +459,11 @@ public class GameEngine {
                             continue;
                         }
 
-                        // Elite/Leader enemys have chance to use magic attacks
+                        // 首领/精英/BOSS 近战时有概率改用火球（自有法术体系的怪物除外）
                         boolean usedMagic = false;
-                        if (enemy.canCastSpell() && Math.random() < 0.9f) {
+                        boolean hasOwnSpellKit = enemy instanceof com.game.dream.enemy.FoxSpirit
+                                || enemy instanceof com.game.dream.enemy.LittleGreenDragon;
+                        if (enemy.canCastSpell() && !hasOwnSpellKit && Math.random() < 0.25f) {
                             // Cast magic spell - create projectile
                             float[] targetPos = enemy.castMagicSpell(player.getX(), player.getY());
                             if (targetPos != null) {
@@ -515,6 +517,13 @@ public class GameEngine {
                                     knockbackDuration = 250;
                                 }
                                 player.applyKnockback(enemy.getX(), enemy.getY(), knockbackForce, knockbackDuration);
+
+                                // BOSS跳跃砸击: 命中后眩晕1秒
+                                if (enemy.getEnemyLevel() == Enemy.EnemyLevel.BOSS
+                                        && enemy.getCurrentAttackType() == Enemy.AttackType.LEAP_SLAM) {
+                                    player.applyCC(Character.CrowdControlType.STUN, 1000);
+                                    showCenterToast("你被泰山压顶眩晕了!", 1000);
+                                }
                             } else {
                                 //未命中
                                 damageNumbers.add(new DamageNumber(
@@ -1595,47 +1604,9 @@ public class GameEngine {
         float spawnX = bossX + (float) Math.cos(angle) * distance;
         float spawnY = bossY + (float) Math.sin(angle) * distance;
 
-        Enemy minion;
-        String minionName;
-
-        if (boss instanceof Tiger) {
-            minion = new Tiger(spawnX, spawnY);
-            minionName = "猛虎";
-        } else if (boss instanceof WildBoar) {
-            minion = new WildBoar(spawnX, spawnY);
-            minionName = "野猪";
-        } else if (boss instanceof Viper) {
-            minion = new Viper(spawnX, spawnY);
-            minionName = "毒蛇";
-        } else if (boss instanceof Bandit) {
-            minion = new Bandit(spawnX, spawnY);
-            minionName = "强盗";
-        } else if (boss instanceof FoxSpirit) {
-            minion = new FoxSpirit(spawnX, spawnY);
-            minionName = "狐狸精";
-        } else if (boss instanceof ShrimpSoldier) {
-            minion = new ShrimpSoldier(spawnX, spawnY);
-            minionName = "虾兵";
-        } else if (boss instanceof CrabGeneral) {
-            minion = new CrabGeneral(spawnX, spawnY);
-            minionName = "蟹将";
-        } else if (boss instanceof Yaksha) {
-            minion = new Yaksha(spawnX, spawnY);
-            minionName = "夜叉";
-        } else if (boss instanceof LittleGreenDragon) {
-            minion = new LittleGreenDragon(spawnX, spawnY);
-            minionName = "小青龙";
-        } else if (boss instanceof GiantSeaTurtle) {
-            minion = new GiantSeaTurtle(spawnX, spawnY);
-            minionName = "大海龟";
-        } else {
-            // Default to Wolf
-            minion = new Wolf(spawnX, spawnY);
-            minionName = "野狼";
-        }
-
-        // 强制设置等级(覆盖构造函数中的随机等级)
-        setEnemyLevel(minion, level, minionName);
+        String minionName = getMinionBaseName(boss);
+        Enemy minion = spawnMinionWithLevel(boss, spawnX, spawnY, level);
+        minion.setName(formatMinionName(minionName, level));
 
         // 设置仇恨状态，让小弟主动攻击玩家(仇恨持续60秒)
         minion.setAggro(60000);
@@ -1644,22 +1615,69 @@ public class GameEngine {
     }
 
     /**
-     * 强制设置怪物等级和属性
+     * 反复生成直到等级匹配，确保属性/技能与目标等级一致
      */
-    private void setEnemyLevel(Enemy enemy, Enemy.EnemyLevel level, String baseName) {
-        enemy.setEnemyLevel(level);
-
-        if (level == Enemy.EnemyLevel.BOSS) {
-            enemy.setSize(enemy.getSize() * 3);
-            enemy.setName(baseName + "BOSS");
-        } else if (level == Enemy.EnemyLevel.ELITE) {
-            enemy.setSize(enemy.getSize() * 2);
-            enemy.setName(baseName + "精英");
-        } else if (level == Enemy.EnemyLevel.LEADER) {
-            enemy.setSize((int) (enemy.getSize() * 1.3f));
-            enemy.setName(baseName + "首领");
-        } else {
-            enemy.setName(baseName);
+    private Enemy spawnMinionWithLevel(Enemy boss, float spawnX, float spawnY, Enemy.EnemyLevel level) {
+        for (int attempt = 0; attempt < 200; attempt++) {
+            Enemy minion = createMinionInstance(boss, spawnX, spawnY);
+            if (minion.getEnemyLevel() == level) {
+                return minion;
+            }
         }
+
+        LogUtil.w("BossSummon", "Failed to spawn " + level + " minion after 200 attempts, using last roll");
+        return createMinionInstance(boss, spawnX, spawnY);
+    }
+
+    private Enemy createMinionInstance(Enemy boss, float spawnX, float spawnY) {
+        if (boss instanceof Tiger) {
+            return new Tiger(spawnX, spawnY);
+        } else if (boss instanceof WildBoar) {
+            return new WildBoar(spawnX, spawnY);
+        } else if (boss instanceof Viper) {
+            return new Viper(spawnX, spawnY);
+        } else if (boss instanceof Bandit) {
+            return new Bandit(spawnX, spawnY);
+        } else if (boss instanceof FoxSpirit) {
+            return new FoxSpirit(spawnX, spawnY);
+        } else if (boss instanceof ShrimpSoldier) {
+            return new ShrimpSoldier(spawnX, spawnY);
+        } else if (boss instanceof CrabGeneral) {
+            return new CrabGeneral(spawnX, spawnY);
+        } else if (boss instanceof Yaksha) {
+            return new Yaksha(spawnX, spawnY);
+        } else if (boss instanceof LittleGreenDragon) {
+            return new LittleGreenDragon(spawnX, spawnY);
+        } else if (boss instanceof GiantSeaTurtle) {
+            return new GiantSeaTurtle(spawnX, spawnY);
+        } else if (boss instanceof Wolf) {
+            return new Wolf(spawnX, spawnY);
+        }
+        return new Wolf(spawnX, spawnY);
+    }
+
+    private String getMinionBaseName(Enemy boss) {
+        if (boss instanceof Tiger) return "猛虎";
+        if (boss instanceof WildBoar) return "野猪";
+        if (boss instanceof Viper) return "毒蛇";
+        if (boss instanceof Bandit) return "强盗";
+        if (boss instanceof FoxSpirit) return "狐狸精";
+        if (boss instanceof ShrimpSoldier) return "虾兵";
+        if (boss instanceof CrabGeneral) return "蟹将";
+        if (boss instanceof Yaksha) return "夜叉";
+        if (boss instanceof LittleGreenDragon) return "小青龙";
+        if (boss instanceof GiantSeaTurtle) return "大海龟";
+        return "野狼";
+    }
+
+    private String formatMinionName(String baseName, Enemy.EnemyLevel level) {
+        if (level == Enemy.EnemyLevel.BOSS) {
+            return baseName + "BOSS";
+        } else if (level == Enemy.EnemyLevel.ELITE) {
+            return baseName + "精英";
+        } else if (level == Enemy.EnemyLevel.LEADER) {
+            return baseName + "首领";
+        }
+        return baseName;
     }
 }

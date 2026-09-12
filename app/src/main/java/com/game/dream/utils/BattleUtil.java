@@ -399,7 +399,7 @@ public class BattleUtil {
             isHit = true;
             isCrit = false;
 
-            float castBaseValue = 0f;
+            float castBaseValue = 10f;
             switch (skillType) {
                 case MAIN_FIREBALL:
                     castBaseValue = 10f;
@@ -412,6 +412,12 @@ public class BattleUtil {
                     break;
                 case ENEMY_FoxCharm:
                     castBaseValue = 12f;
+                    break;
+                case ENEMY_WaterBolt:
+                    castBaseValue = 11f;
+                    break;
+                case ENEMY_DragonLightning:
+                    castBaseValue = 15f;
                     break;
             }
 

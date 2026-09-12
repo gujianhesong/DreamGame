@@ -22,8 +22,9 @@ public class LittleGreenDragon extends Enemy {
     private static final long AURA_SLOW_DURATION = 500; // 减速持续 500ms（持续刷新）
     private long lastAuraApplyTime = 0;
 
-    // 法术冷却
-    private long lastSpellTime = 0;
+    // 法术冷却（水龙弹与龙雷独立计时，避免互相阻塞）
+    private long lastWaterBoltTime = 0;
+    private long lastLightningTime = 0;
     private boolean pendingWaterBolt = false;
     private boolean pendingLightning = false;
 
@@ -84,27 +85,26 @@ public class LittleGreenDragon extends Enemy {
         float dy = playerY - y;
         float dist = (float) Math.sqrt(dx * dx + dy * dy);
         if (dist < DRAGON_AURA_RANGE && now - lastAuraApplyTime > 300) {
-            // 通知 GameEngine 对玩家施加减速
-            pendingWaterBolt = false; // 不冲突
+            // 龙威光环由 GameEngine 对玩家施加减速
             lastAuraApplyTime = now;
         }
 
         // === 远程法术攻击 ===
         if (currentState == State.CHASING || currentState == State.IDLE) {
             // 水龙弹冷却
-            long waterBoltCd = (enemyLevel == EnemyLevel.BOSS) ? 2000 : 
+            long waterBoltCd = (enemyLevel == EnemyLevel.BOSS) ? 2000 :
                                (enemyLevel == EnemyLevel.ELITE) ? 2500 : 3500;
-            if (dist < propertyExtra.detectionRange && now - lastSpellTime > waterBoltCd) {
+            if (dist < propertyExtra.detectionRange && now - lastWaterBoltTime > waterBoltCd) {
                 pendingWaterBolt = true;
-                lastSpellTime = now;
+                lastWaterBoltTime = now;
             }
 
             // 闪电（精英以上）
             if (enemyLevel == EnemyLevel.ELITE || enemyLevel == EnemyLevel.BOSS) {
                 long lightningCd = 4000;
-                if (dist < propertyExtra.detectionRange * 0.8f && now - lastSpellTime > lightningCd) {
+                if (dist < propertyExtra.detectionRange * 0.8f && now - lastLightningTime > lightningCd) {
                     pendingLightning = true;
-                    lastSpellTime = now;
+                    lastLightningTime = now;
                 }
             }
         }

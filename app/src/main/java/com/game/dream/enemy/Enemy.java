@@ -77,6 +77,22 @@ public abstract class Enemy extends Character {
 
     protected boolean isCastingSpell;
 
+    // 法术前摇与通用火球冷却
+    protected static final int SPELL_NONE = 0;
+    protected static final int SPELL_GENERIC_FIREBALL = 1;
+    protected static final int SPELL_FOX_CHARM = 2;
+    protected static final int SPELL_WATER_BOLT = 3;
+    protected static final int SPELL_DRAGON_LIGHTNING = 4;
+
+    protected boolean isSpellWindingUp = false;
+    protected long spellWindUpStartTime = 0;
+    protected long spellWindUpDuration = 500;
+    protected int pendingSpellAfterWindUp = SPELL_NONE;
+    protected long lastGenericSpellTime = 0;
+    protected long genericSpellCooldown = 3500;
+    protected long lastSpellCastRollTime = 0;
+    protected static final long SPELL_CAST_CHECK_INTERVAL = 800;
+
     // Attack wind-up (攻击前摇)
     protected boolean isWindingUp = false;
     protected long windUpStartTime = 0;
@@ -242,7 +258,10 @@ public abstract class Enemy extends Character {
         }
 
         // If stunned or frozen, skip all AI logic
-        if (isStunned() || isFrozen()) return;
+        if (isStunned() || isFrozen()) {
+            cancelSpellCasting();
+            return;
+        }
 
         long currentTime = System.currentTimeMillis();
         float deltaSeconds = deltaTime / 1000f;
@@ -645,25 +664,177 @@ public abstract class Enemy extends Character {
         targetX = playerX;
         targetY = playerY;
 
+        long currentTime = System.currentTimeMillis();
+        float dx = playerX - x;
+        float dy = playerY - y;
+        float distanceToPlayer = (float) Math.sqrt(dx * dx + dy * dy);
+
+        tickSpellWindUp(currentTime, playerX, playerY);
+
         // If rooted, do not move
         if (isRooted()) {
             return;
         }
 
-        // Elite and Leader tigers can cast spells while chasing
-        if (enemyLevel == EnemyLevel.BOSS || enemyLevel == EnemyLevel.ELITE || enemyLevel == EnemyLevel.LEADER) {
-            // Check if should cast spell (15% chance per update, with cooldown)
-            long currentTime = System.currentTimeMillis();
-            if (canCastSpell() && (currentTime - lastAttackTime > 3000) && Math.random() < 0.3f) {
-                // Will cast spell - this will be handled by GameEngine
-                isCastingSpell = true;
-                lastAttackTime = currentTime;
-                LogUtil.d("Tiger preparing magic spell while chasing!");
-            }
+        // 法术前摇期间原地蓄力
+        if (isSpellWindingUp) {
+            return;
         }
+
+        tryCastGenericSpell(distanceToPlayer, currentTime);
 
         float chaseSpeed = speed * 1.1f;
         moveToTargetWithSpeed(deltaSeconds, chaseSpeed);
+    }
+
+    /**
+     * 是否使用通用火球（狐狸精、小青龙等有专属法术的怪物应返回 false）
+     */
+    public boolean usesGenericFireball() {
+        return canCastSpell();
+    }
+
+    /**
+     * 通用火球数量：首领1颗、精英2颗、BOSS3颗
+     */
+    public int getGenericFireballCount() {
+        if (enemyLevel == EnemyLevel.BOSS) {
+            return 3;
+        } else if (enemyLevel == EnemyLevel.ELITE) {
+            return 2;
+        } else if (enemyLevel == EnemyLevel.LEADER) {
+            return 1;
+        }
+        return 0;
+    }
+
+    /**
+     * 根据距离与血量计算通用法术触发概率
+     */
+    protected float calculateGenericSpellCastChance(float rangeRatio, float hpRatio) {
+        float chance;
+        if (rangeRatio < 0.45f) {
+            chance = 0.05f;
+        } else if (rangeRatio < 0.75f) {
+            chance = 0.14f;
+        } else if (rangeRatio <= 1.3f) {
+            chance = 0.38f;
+        } else if (rangeRatio <= 2.5f) {
+            chance = 0.24f;
+        } else {
+            chance = 0.07f;
+        }
+
+        if (enemyLevel == EnemyLevel.BOSS) {
+            chance *= 1.25f;
+        } else if (enemyLevel == EnemyLevel.ELITE) {
+            chance *= 1.1f;
+        }
+        if (hpRatio <= 0.5f) {
+            chance *= 1.15f;
+        }
+        return Math.min(chance, 0.45f);
+    }
+
+    /**
+     * 近战命中时是否改用火球（概率低于追击施法）
+     */
+    public boolean rollMeleeSpellSubstitution(float distanceToPlayer) {
+        if (!usesGenericFireball()) {
+            return false;
+        }
+        float rangeRatio = distanceToPlayer / Math.max(propertyExtra.attackRange, 1f);
+        float hpRatio = maxHealth > 0 ? (float) health / maxHealth : 1f;
+        return Math.random() < calculateGenericSpellCastChance(rangeRatio, hpRatio) * 0.35f;
+    }
+
+    protected void tryCastGenericSpell(float distanceToPlayer, long currentTime) {
+        if (!usesGenericFireball()) {
+            return;
+        }
+        if (isSpellWindingUp || isCastingSpell) {
+            return;
+        }
+        if (currentState != State.CHASING) {
+            return;
+        }
+        if (distanceToPlayer > propertyExtra.detectionRange) {
+            return;
+        }
+        if (currentTime - lastGenericSpellTime < genericSpellCooldown) {
+            return;
+        }
+        if (currentTime - lastAttackTime < 1200) {
+            return;
+        }
+        if (currentTime - lastSpellCastRollTime < SPELL_CAST_CHECK_INTERVAL) {
+            return;
+        }
+        lastSpellCastRollTime = currentTime;
+
+        float rangeRatio = distanceToPlayer / Math.max(propertyExtra.attackRange, 1f);
+        float hpRatio = maxHealth > 0 ? (float) health / maxHealth : 1f;
+        if (Math.random() >= calculateGenericSpellCastChance(rangeRatio, hpRatio)) {
+            return;
+        }
+
+        beginSpellWindUp(SPELL_GENERIC_FIREBALL);
+        LogUtil.d("Enemy", getName() + " 开始吟唱火球术");
+    }
+
+    protected void beginSpellWindUp(int spellId) {
+        isSpellWindingUp = true;
+        spellWindUpStartTime = System.currentTimeMillis();
+        pendingSpellAfterWindUp = spellId;
+    }
+
+    protected void tickSpellWindUp(long currentTime, float playerX, float playerY) {
+        if (!isSpellWindingUp) {
+            return;
+        }
+        targetX = playerX;
+        targetY = playerY;
+        if (currentTime - spellWindUpStartTime >= spellWindUpDuration) {
+            finishSpellWindUp(currentTime);
+        }
+    }
+
+    protected void finishSpellWindUp(long currentTime) {
+        isSpellWindingUp = false;
+        int spellId = pendingSpellAfterWindUp;
+        pendingSpellAfterWindUp = SPELL_NONE;
+
+        if (spellId == SPELL_GENERIC_FIREBALL) {
+            isCastingSpell = true;
+            lastGenericSpellTime = currentTime;
+        } else {
+            onSpecialSpellWindUpComplete(spellId, currentTime);
+        }
+    }
+
+    /**
+     * 专属法术前摇结束（由子类实现）
+     */
+    protected void onSpecialSpellWindUpComplete(int spellId, long currentTime) {
+        // 子类覆盖
+    }
+
+    protected void cancelSpellCasting() {
+        isSpellWindingUp = false;
+        isCastingSpell = false;
+        pendingSpellAfterWindUp = SPELL_NONE;
+    }
+
+    public boolean isSpellWindingUp() {
+        return isSpellWindingUp;
+    }
+
+    public float getSpellWindUpProgress() {
+        if (!isSpellWindingUp) {
+            return 0f;
+        }
+        long elapsed = System.currentTimeMillis() - spellWindUpStartTime;
+        return Math.min(1.0f, (float) elapsed / spellWindUpDuration);
     }
 
     /**
@@ -1172,6 +1343,7 @@ public abstract class Enemy extends Character {
             isSpinning = false;
             isBlinkDashing = false;
             isSlamLeaping = false;
+            cancelSpellCasting();
 
             // Set aggro timer - enemy will chase for 10 seconds after being hit
             isAggroed = true;
@@ -1320,6 +1492,7 @@ public abstract class Enemy extends Character {
         isSpinning = false;
         isBlinkDashing = false;
         isSlamLeaping = false;
+        cancelSpellCasting();
     }
 
     /**
@@ -1337,6 +1510,10 @@ public abstract class Enemy extends Character {
     @Override
     public void draw(Canvas canvas, int offsetX, int offsetY) {
         super.draw(canvas, offsetX, offsetY);
+
+        if (isSpellWindingUp) {
+            drawSpellWindUpIndicator(canvas, offsetX, offsetY, getSpellWindUpProgress());
+        }
 
         if (isWindingUp) {
             float screenX = getX() + offsetX;
@@ -1437,6 +1614,36 @@ public abstract class Enemy extends Character {
                 }
             }
         }
+    }
+
+    /**
+     * 绘制法术前摇指示（蓝色「咒」字 + 魔法圈）
+     */
+    protected void drawSpellWindUpIndicator(Canvas canvas, int offsetX, int offsetY, float progress) {
+        float screenX = getX() + offsetX;
+        float screenY = getY() + offsetY;
+
+        Paint spellPaint = new Paint();
+        spellPaint.setAntiAlias(true);
+        int alpha = (int) (90 + progress * 165);
+        spellPaint.setColor(Color.argb(alpha, 120, 80, 255));
+        spellPaint.setTextSize(14 + progress * 8);
+        spellPaint.setTextAlign(Paint.Align.CENTER);
+        spellPaint.setFakeBoldText(true);
+        canvas.drawText("咒", screenX, screenY - getSize() - 20 - (int) (progress * 6), spellPaint);
+
+        Paint circlePaint = new Paint();
+        circlePaint.setAntiAlias(true);
+        circlePaint.setColor(Color.argb((int) (progress * 70), 100, 60, 255));
+        circlePaint.setStyle(Paint.Style.FILL);
+        canvas.drawCircle(screenX, screenY, getSize() * (0.4f + progress * 0.25f), circlePaint);
+
+        Paint ringPaint = new Paint();
+        ringPaint.setAntiAlias(true);
+        ringPaint.setColor(Color.argb((int) (100 + progress * 155), 160, 120, 255));
+        ringPaint.setStyle(Paint.Style.STROKE);
+        ringPaint.setStrokeWidth(2 + progress * 2);
+        canvas.drawCircle(screenX, screenY, getSize() * (0.55f + progress * 0.35f), ringPaint);
     }
 
     /**

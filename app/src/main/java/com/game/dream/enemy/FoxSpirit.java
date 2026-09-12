@@ -21,6 +21,7 @@ public class FoxSpirit extends Enemy {
 
     // 狐媚法术相关
     private long lastFoxCharmTime = 0;          // 上次施放狐媚的时间
+    private long foxCharmCooldownMs = 6000;     // 当前冷却时长（施法后刷新）
     private boolean pendingFoxCharm = false;     // 待处理狐媚花瓣生成(通知GameEngine)
 
     public FoxSpirit(float x, float y) {
@@ -78,6 +79,11 @@ public class FoxSpirit extends Enemy {
         }
     }
 
+    @Override
+    public boolean usesGenericFireball() {
+        return false;
+    }
+
     /**
      * 狐媚法术: 向四周发射6道花瓣，被击中后受到法术伤害，30%概率眩晕1秒
      * 冷却时间: 普通5-8秒，精英4-6秒，BOSS3-5秒
@@ -88,26 +94,65 @@ public class FoxSpirit extends Enemy {
 
         if (!isAlive() || isStunned() || isFrozen()) return;
 
-        // 狐媚法术冷却计时
         long now = System.currentTimeMillis();
-        long cooldown;
+        tickSpellWindUp(now, playerX, playerY);
+        tryCastFoxCharm(playerX, playerY, now);
+    }
+
+    private void refreshFoxCharmCooldown() {
         if (enemyLevel == EnemyLevel.BOSS) {
-            cooldown = 3000 + (long)(Math.random() * 2000); // 3-5秒
+            foxCharmCooldownMs = 3000 + (long) (Math.random() * 2000);
         } else if (enemyLevel == EnemyLevel.ELITE) {
-            cooldown = 4000 + (long)(Math.random() * 2000); // 4-6秒
+            foxCharmCooldownMs = 4000 + (long) (Math.random() * 2000);
         } else {
-            cooldown = 5000 + (long)(Math.random() * 3000); // 5-8秒
+            foxCharmCooldownMs = 5000 + (long) (Math.random() * 3000);
+        }
+    }
+
+    private float calculateFoxCharmCastChance(float distanceToPlayer) {
+        float detectRatio = distanceToPlayer / Math.max(propertyExtra.detectionRange, 1f);
+        if (detectRatio < 0.35f) {
+            return 0.08f;
+        } else if (detectRatio <= 1.0f) {
+            return 0.42f;
+        } else if (detectRatio <= 1.5f) {
+            return 0.22f;
+        }
+        return 0.04f;
+    }
+
+    private void tryCastFoxCharm(float playerX, float playerY, long now) {
+        if (isSpellWindingUp || pendingFoxCharm) {
+            return;
+        }
+        if (now - lastFoxCharmTime < foxCharmCooldownMs) {
+            return;
+        }
+        if (now - lastSpellCastRollTime < SPELL_CAST_CHECK_INTERVAL) {
+            return;
         }
 
-        if (now - lastFoxCharmTime > cooldown) {
-            // 检测玩家是否在感知范围内
-            float dx = playerX - x;
-            float dy = playerY - y;
-            float dist = (float) Math.sqrt(dx * dx + dy * dy);
-            if (dist < propertyExtra.detectionRange * 1.5f) {
-                pendingFoxCharm = true;
-                lastFoxCharmTime = now;
-            }
+        float dx = playerX - x;
+        float dy = playerY - y;
+        float dist = (float) Math.sqrt(dx * dx + dy * dy);
+        if (dist >= propertyExtra.detectionRange * 1.5f) {
+            return;
+        }
+
+        lastSpellCastRollTime = now;
+        if (Math.random() >= calculateFoxCharmCastChance(dist)) {
+            return;
+        }
+
+        beginSpellWindUp(SPELL_FOX_CHARM);
+    }
+
+    @Override
+    protected void onSpecialSpellWindUpComplete(int spellId, long currentTime) {
+        if (spellId == SPELL_FOX_CHARM) {
+            pendingFoxCharm = true;
+            lastFoxCharmTime = currentTime;
+            refreshFoxCharmCooldown();
         }
     }
 

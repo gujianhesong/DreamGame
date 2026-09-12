@@ -459,26 +459,11 @@ public class GameEngine {
                             continue;
                         }
 
-                        // 首领/精英/BOSS 近战时有概率改用火球（自有法术体系的怪物除外）
+                        // 首领/精英/BOSS 近战时有概率改用火球（距离加权，专属法术怪物除外）
                         boolean usedMagic = false;
-                        boolean hasOwnSpellKit = enemy instanceof com.game.dream.enemy.FoxSpirit
-                                || enemy instanceof com.game.dream.enemy.LittleGreenDragon;
-                        if (enemy.canCastSpell() && !hasOwnSpellKit && Math.random() < 0.25f) {
-                            // Cast magic spell - create projectile
-                            float[] targetPos = enemy.castMagicSpell(player.getX(), player.getY());
-                            if (targetPos != null) {
-                                Projectile magicProj = new Projectile(
-                                        enemy.getX(),
-                                        enemy.getY(),
-                                        targetPos[0],
-                                        targetPos[1],
-                                        SkillType.MAIN_FIREBALL
-                                );
-                                magicProj.setFromEnemy(enemy);
-                                projectiles.add(magicProj);
-                                usedMagic = true;
-                                LogUtil.d("Elite Enemy casts fireball!");
-                            }
+                        if (enemy.rollMeleeSpellSubstitution(distance)) {
+                            spawnEnemyGenericFireballs(enemy, player.getX(), player.getY());
+                            usedMagic = true;
                         }
 
                         // If didn't use magic, perform physical attack
@@ -691,22 +676,8 @@ public class GameEngine {
                     // Check if elite/leader enemy is casting spell while chasing
                     if (enemy.isCastingSpell()) {
                         if (enemy.getState() == Enemy.State.CHASING) {
-                            // Cast magic spell - create projectile
-                            float[] targetPos = enemy.castMagicSpell(player.getX(), player.getY());
-                            if (targetPos != null) {
-                                Projectile magicProj = new Projectile(
-                                        enemy.getX(),
-                                        enemy.getY(),
-                                        targetPos[0],
-                                        targetPos[1],
-                                        SkillType.MAIN_FIREBALL
-                                );
-                                magicProj.setFromEnemy(enemy);
-                                projectiles.add(magicProj);
-                                LogUtil.d("Elite Enemy casts fireball!");
-                            }
+                            spawnEnemyGenericFireballs(enemy, player.getX(), player.getY());
                         }
-                        // Reset casting state
                         enemy.resetCastingState();
                     }
 
@@ -1535,6 +1506,39 @@ public class GameEngine {
                 }
             }
         }
+    }
+
+    /**
+     * 怪物通用火球：首领1颗、精英2颗、BOSS3颗（扇形散射）
+     */
+    private void spawnEnemyGenericFireballs(Enemy enemy, float targetX, float targetY) {
+        int count = enemy.getGenericFireballCount();
+        if (count <= 0) {
+            return;
+        }
+
+        float ex = enemy.getX();
+        float ey = enemy.getY();
+        float dx = targetX - ex;
+        float dy = targetY - ey;
+        float distance = (float) Math.sqrt(dx * dx + dy * dy);
+        float baseAngle = (float) Math.atan2(dy, dx);
+        float flyDistance = Math.max(distance, 250f);
+
+        float spreadStep = (count == 1) ? 0f : (count == 2 ? 0.18f : 0.22f);
+        float startAngle = baseAngle - spreadStep * (count - 1) / 2f;
+
+        for (int i = 0; i < count; i++) {
+            float angle = startAngle + spreadStep * i;
+            float tx = ex + (float) Math.cos(angle) * flyDistance;
+            float ty = ey + (float) Math.sin(angle) * flyDistance;
+
+            Projectile magicProj = new Projectile(ex, ey, tx, ty, SkillType.MAIN_FIREBALL);
+            magicProj.setFromEnemy(enemy);
+            projectiles.add(magicProj);
+        }
+
+        LogUtil.d("EnemySpell", enemy.getName() + " 发射了 " + count + " 颗火球");
     }
 
     /**

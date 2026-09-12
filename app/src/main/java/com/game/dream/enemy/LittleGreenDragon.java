@@ -72,6 +72,11 @@ public class LittleGreenDragon extends Enemy {
     }
 
     @Override
+    public boolean usesGenericFireball() {
+        return false;
+    }
+
+    @Override
     public void update(long deltaTime, float playerX, float playerY, int[][] map, int mapWidth, int mapHeight) {
         // 先调用父类 update 处理 CC/灼烧/AI 状态机
         super.update(deltaTime, playerX, playerY, map, mapWidth, mapHeight);
@@ -80,33 +85,93 @@ public class LittleGreenDragon extends Enemy {
 
         long now = System.currentTimeMillis();
 
-        // === 龙威光环：持续减速附近玩家 ===
         float dx = playerX - x;
         float dy = playerY - y;
         float dist = (float) Math.sqrt(dx * dx + dy * dy);
+
+        tickSpellWindUp(now, playerX, playerY);
+
+        // === 龙威光环：持续减速附近玩家 ===
         if (dist < DRAGON_AURA_RANGE && now - lastAuraApplyTime > 300) {
-            // 龙威光环由 GameEngine 对玩家施加减速
             lastAuraApplyTime = now;
         }
 
-        // === 远程法术攻击 ===
+        // === 远程法术攻击（追击/待机时尝试施法） ===
         if (currentState == State.CHASING || currentState == State.IDLE) {
-            // 水龙弹冷却
-            long waterBoltCd = (enemyLevel == EnemyLevel.BOSS) ? 2000 :
-                               (enemyLevel == EnemyLevel.ELITE) ? 2500 : 3500;
-            if (dist < propertyExtra.detectionRange && now - lastWaterBoltTime > waterBoltCd) {
-                pendingWaterBolt = true;
-                lastWaterBoltTime = now;
-            }
+            tryCastDragonSpells(dist, now);
+        }
+    }
 
-            // 闪电（精英以上）
-            if (enemyLevel == EnemyLevel.ELITE || enemyLevel == EnemyLevel.BOSS) {
-                long lightningCd = 4000;
-                if (dist < propertyExtra.detectionRange * 0.8f && now - lastLightningTime > lightningCd) {
-                    pendingLightning = true;
-                    lastLightningTime = now;
-                }
-            }
+    private long getWaterBoltCooldown() {
+        if (enemyLevel == EnemyLevel.BOSS) {
+            return 2000;
+        } else if (enemyLevel == EnemyLevel.ELITE) {
+            return 2500;
+        }
+        return 3500;
+    }
+
+    private float calculateWaterBoltCastChance(float distanceToPlayer) {
+        if (distanceToPlayer < MIN_DISTANCE) {
+            return 0.06f;
+        } else if (distanceToPlayer <= PREFERRED_DISTANCE) {
+            return 0.45f;
+        } else if (distanceToPlayer <= propertyExtra.detectionRange) {
+            return 0.28f;
+        }
+        return 0.05f;
+    }
+
+    private float calculateLightningCastChance(float distanceToPlayer) {
+        if (distanceToPlayer > propertyExtra.detectionRange * 0.85f) {
+            return 0.05f;
+        } else if (distanceToPlayer <= MIN_DISTANCE * 1.2f) {
+            return 0.35f;
+        }
+        return 0.25f;
+    }
+
+    private void tryCastDragonSpells(float dist, long now) {
+        if (isSpellWindingUp || pendingWaterBolt || pendingLightning) {
+            return;
+        }
+        if (dist >= propertyExtra.detectionRange) {
+            return;
+        }
+        if (now - lastSpellCastRollTime < SPELL_CAST_CHECK_INTERVAL) {
+            return;
+        }
+
+        boolean canLightning = enemyLevel == EnemyLevel.ELITE || enemyLevel == EnemyLevel.BOSS;
+        boolean waterReady = now - lastWaterBoltTime >= getWaterBoltCooldown();
+        boolean lightningReady = canLightning && now - lastLightningTime >= 4000;
+
+        if (!waterReady && !lightningReady) {
+            return;
+        }
+
+        lastSpellCastRollTime = now;
+
+        // 近身优先龙雷，中远距优先水龙弹
+        if (lightningReady && dist <= propertyExtra.detectionRange * 0.85f
+                && Math.random() < calculateLightningCastChance(dist)) {
+            beginSpellWindUp(SPELL_DRAGON_LIGHTNING);
+            return;
+        }
+
+        if (waterReady && Math.random() < calculateWaterBoltCastChance(dist)) {
+            beginSpellWindUp(SPELL_WATER_BOLT);
+        }
+    }
+
+    @Override
+    protected void onSpecialSpellWindUpComplete(int spellId, long currentTime) {
+        if (spellId == SPELL_WATER_BOLT) {
+            pendingWaterBolt = true;
+            lastWaterBoltTime = currentTime;
+        } else if (spellId == SPELL_DRAGON_LIGHTNING) {
+            pendingLightning = true;
+            lastLightningTime = currentTime;
         }
     }
 
@@ -121,6 +186,11 @@ public class LittleGreenDragon extends Enemy {
         float dist = (float) Math.sqrt(dx * dx + dy * dy);
 
         if (isRooted()) return;
+
+        // 法术前摇期间停止走位
+        if (isSpellWindingUp) {
+            return;
+        }
 
         if (dist < MIN_DISTANCE) {
             // 太近了，后退拉开距离

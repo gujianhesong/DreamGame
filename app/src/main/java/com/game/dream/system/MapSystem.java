@@ -9,6 +9,7 @@ import android.os.Looper;
 import android.util.Pair;
 
 import com.game.dream.bean.MapInfo;
+import com.game.dream.map.IllusionRealmMapGenerator;
 import com.game.dream.map.DonghaiBayMapGenerator;
 import com.game.dream.map.DonghaiBayRenderer;
 import com.game.dream.map.DonghaiSeabedMapGenerator;
@@ -59,6 +60,10 @@ public class MapSystem {
 
     public static final int MAP_ID_QING_XI_MAZE = 2001; //清溪迷宫
     public static final int MAP_ID_UNDERWATER_MAZE = 2002; //海底迷宫
+
+    public static final int MAP_ID_ILLUSION_REALM = 3001; //幻境挑战
+    public static final int ILLUSION_MAP_WIDTH = 3000;
+    public static final int ILLUSION_MAP_HEIGHT = 3000;
 
     // 海底迷宫尺寸
     public static final int UNDERWATER_MAZE_WIDTH = 10000;
@@ -133,8 +138,10 @@ public class MapSystem {
         if (findMap != null) {
             curMapInfo = findMap;
             currentMapId = mapId;
-            // 同步更新角色记录的地图ID, 确保存档能保存当前地图
-            RoleSystem.getInstance().getRoleInfo().setMapId(mapId);
+            // 幻境为临时副本，不写入存档地图ID
+            if (mapId != MAP_ID_ILLUSION_REALM) {
+                RoleSystem.getInstance().getRoleInfo().setMapId(mapId);
+            }
 
             if (mapId == MAP_ID_QING_XI_MAZE) {
                 // 迷宫地图
@@ -292,6 +299,21 @@ public class MapSystem {
                 jinlingCityRenderer = null;
                 donghaiSeabedRenderer = null;
                 additionalVillageRenderers.clear();
+            } else if (mapId == MAP_ID_ILLUSION_REALM) {
+                int realmTheme = IllusionRealmSystem.getInstance().getCurrentRealm();
+                mapData = IllusionRealmMapGenerator.generate(
+                        findMap.getMapWidth(), findMap.getMapHeight(), TILE_SIZE, realmTheme);
+                curMapInfo.setMapData(mapData);
+                mapRenderer = new MapRenderer(mapData, ILLUSION_MAP_WIDTH, ILLUSION_MAP_HEIGHT, TILE_SIZE);
+                mazeRenderer = null;
+                mazeGenerator = null;
+                villageRenderer = null;
+                jinlingCityRenderer = null;
+                donghaiBayRenderer = null;
+                donghaiSeabedRenderer = null;
+                underwaterMazeRenderer = null;
+                underwaterMazeGenerator = null;
+                additionalVillageRenderers.clear();
             } else if (mapId == MAP_ID_DONGHAI_SEABED) {
                 // 东海海底地图
                 DonghaiSeabedMapGenerator seabedGen = new DonghaiSeabedMapGenerator(TILE_SIZE);
@@ -379,6 +401,12 @@ public class MapSystem {
 
         mapInfoList.add(new MapInfo(MAP_ID_QING_XI_MAZE, "清溪地下迷宫", 10000, 10000, null));
         mapInfoList.add(new MapInfo(MAP_ID_UNDERWATER_MAZE, "海底迷宫", UNDERWATER_MAZE_WIDTH, UNDERWATER_MAZE_HEIGHT, null));
+        mapInfoList.add(new MapInfo(MAP_ID_ILLUSION_REALM, "幻境挑战",
+                ILLUSION_MAP_WIDTH, ILLUSION_MAP_HEIGHT, new Pair<>(1400, 1400)));
+    }
+
+    public boolean isIllusionRealmMap() {
+        return currentMapId == MAP_ID_ILLUSION_REALM;
     }
 
     public MapInfo getBornMap() {

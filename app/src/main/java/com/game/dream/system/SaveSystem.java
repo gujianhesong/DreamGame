@@ -54,6 +54,9 @@ public class SaveSystem {
             saveInfo.setQuestInfos(QuestSystem.getInstance().getAcceptedQuests());
             saveInfo.setDefaultHpPotionIds(ItemSystem.getInstance().getDefaultHpPotionIds());
             saveInfo.setDefaultMpPotionIds(ItemSystem.getInstance().getDefaultMpPotionIds());
+            if (this.saveInfo != null) {
+                saveInfo.setIllusionRealmInfo(this.saveInfo.getIllusionRealmInfo());
+            }
 
             // Convert to JSON and save
             String jsonData = gson.toJson(saveInfo);

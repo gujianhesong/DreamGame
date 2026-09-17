@@ -215,6 +215,25 @@ public abstract class Enemy extends Character {
         this.mana = Utils.getWaveValueInt(mana, 0.2f);
     }
 
+    public void setState(State state) {
+        this.currentState = state;
+    }
+
+    /**
+     * 幻境挑战：在现有属性上按关卡倍率强化
+     */
+    public void applyIllusionChallengeStats(float multiplier) {
+        if (multiplier <= 1f) {
+            return;
+        }
+        maxHealth = Math.max(1, (int) (maxHealth * multiplier));
+        health = maxHealth;
+        attackDamage = Math.max(1, (int) (attackDamage * multiplier));
+        defense = Math.max(0, (int) (defense * multiplier));
+        speed = Math.max(1, (int) (speed * multiplier));
+        propertyExtra.detectionRange *= 1.15f;
+    }
+
     public void setPropertyExtra(EnemyPropertyExtra enemyPropertyExtra){
         this.propertyExtra = enemyPropertyExtra;
     }

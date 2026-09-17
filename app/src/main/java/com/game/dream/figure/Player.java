@@ -20,6 +20,7 @@ import com.game.dream.item.ItemStack;
 import com.game.dream.map.MapGenerator;
 import com.game.dream.map.MazeGenerator;
 import com.game.dream.system.ItemSystem;
+import com.game.dream.system.MapSystem;
 import com.game.dream.system.RoleSystem;
 import com.game.dream.system.SkillSystem;
 import com.game.dream.ui.FloatingText;
@@ -148,8 +149,7 @@ public class Player extends Character {
                         y = newY;
                     }
                 }
-                RoleSystem.getInstance().getRoleInfo().setMapX((int) x);
-                RoleSystem.getInstance().getRoleInfo().setMapY((int) y);
+                persistMapPositionToRole();
             }
             return;
         }
@@ -200,8 +200,7 @@ public class Player extends Character {
                 y = newY;
                 attackLungeRemaining -= lungeMove;
             }
-            RoleSystem.getInstance().getRoleInfo().setMapX((int) x);
-            RoleSystem.getInstance().getRoleInfo().setMapY((int) y);
+            persistMapPositionToRole();
         }
 
         boolean isMoving = false;
@@ -280,8 +279,7 @@ public class Player extends Character {
             y = newY;
         }
 
-        RoleSystem.getInstance().getRoleInfo().setMapX((int) x);
-        RoleSystem.getInstance().getRoleInfo().setMapY((int) y);
+        persistMapPositionToRole();
     }
 
     /**
@@ -372,8 +370,7 @@ public class Player extends Character {
         // Fast walk cycle during dash
         walkCycle = (walkCycle + 4) % 60;
 
-        RoleSystem.getInstance().getRoleInfo().setMapX((int) x);
-        RoleSystem.getInstance().getRoleInfo().setMapY((int) y);
+        persistMapPositionToRole();
 
         // Check if dash is complete
         if (dashDistanceRemaining <= 0) {
@@ -889,6 +886,15 @@ public class Player extends Character {
             this.y = y;
             this.timestamp = timestamp;
         }
+    }
+
+    /** 幻境内移动不写入存档坐标 */
+    private void persistMapPositionToRole() {
+        if (MapSystem.getInstance().isIllusionRealmMap()) {
+            return;
+        }
+        RoleSystem.getInstance().getRoleInfo().setMapX((int) x);
+        RoleSystem.getInstance().getRoleInfo().setMapY((int) y);
     }
 
 }

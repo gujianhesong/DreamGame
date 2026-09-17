@@ -16,6 +16,9 @@ import com.game.dream.figure.Player;
 import com.game.dream.bean.SkillInfo;
 import com.game.dream.panel.BuildEquipPanel;
 import com.game.dream.panel.CraftingPanel;
+import com.game.dream.panel.IllusionRealmPanel;
+import com.game.dream.system.IllusionRealmSystem;
+import com.game.dream.system.MapSystem;
 import com.game.dream.panel.ItemsPanel;
 import com.game.dream.panel.QuestPanel;
 import com.game.dream.panel.RoleInfoPanel;
@@ -85,6 +88,9 @@ public class GameUI {
     private Rect buildEquipButton;
     private Rect craftButton;
     private Rect questButton;
+    private Rect illusionRealmButton;
+
+    private IllusionRealmPanel illusionRealmPanel;
 
     // For tracking scroll gestures
     private float lastSkillsPanelTouchY = 0;
@@ -154,6 +160,8 @@ public class GameUI {
 
         // Initialize Quest panel
         questPanel = new QuestPanel();
+
+        illusionRealmPanel = new IllusionRealmPanel();
 
         // Initialize Shop panel
         shopPanel = new ShopPanel();
@@ -278,6 +286,14 @@ public class GameUI {
             int panelX = (width - panelWidth) / 2;
             int panelY = (height - panelHeight) / 2;
             questPanel.setBounds(panelX, panelY, panelWidth, panelHeight);
+        }
+
+        if (illusionRealmPanel != null) {
+            int panelWidth = Math.min(900, width - 40);
+            int panelHeight = Math.min(780, height - 80);
+            int panelX = (width - panelWidth) / 2;
+            int panelY = (height - panelHeight) / 2;
+            illusionRealmPanel.setBounds(panelX, panelY, panelWidth, panelHeight);
         }
 
         // Initialize shop panel (center of screen)
@@ -466,6 +482,14 @@ public class GameUI {
                 screenHeight - infoPadding
         );
 
+        // 幻境入口（左上角，避免与底栏过挤）
+        illusionRealmButton = new Rect(
+                infoPadding,
+                infoPadding,
+                infoPadding + infoButtonSize,
+                infoPadding + infoButtonSize
+        );
+
     }
 
     public void draw(Canvas canvas) {
@@ -509,6 +533,10 @@ public class GameUI {
             questPanel.draw(canvas);
         }
 
+        if (illusionRealmPanel != null && illusionRealmPanel.isVisible()) {
+            illusionRealmPanel.draw(canvas);
+        }
+
         // Draw ShopPanel
         if (shopPanel != null && shopPanel.isVisible()) {
             shopPanel.draw(canvas);
@@ -534,6 +562,11 @@ public class GameUI {
             centerToast.draw(canvas, GameEngine.getScreenWidth(), GameEngine.getScreenHeight());
         }
 
+        if (MapSystem.getInstance().isIllusionRealmMap()
+                && IllusionRealmSystem.getInstance().isActive()) {
+            IllusionRealmSystem.getInstance().drawHud(canvas, screenWidth);
+        }
+
         // Draw message panel (always on top)
         if (messagePanel != null) {
             messagePanel.draw(canvas);
@@ -553,6 +586,14 @@ public class GameUI {
         // Handle message panel touch (check first, before other panels)
         if (messagePanel != null && messagePanel.handleTouch(action, x, y)) {
             return true;
+        }
+
+        if (MapSystem.getInstance().isIllusionRealmMap()
+                && IllusionRealmSystem.getInstance().isActive()) {
+            if (action == MotionEvent.ACTION_UP
+                    && IllusionRealmSystem.getInstance().handleHudTouch(x, y)) {
+                return true;
+            }
         }
 
         // EquipSellDialog touch (highest priority for dialogs)
@@ -645,6 +686,16 @@ public class GameUI {
                     return craftingPanel.handleTouchMove(x, y);
                 case MotionEvent.ACTION_UP:
                     return craftingPanel.handleTouchUp(x, y);
+            }
+            return true;
+        }
+
+        if (illusionRealmPanel != null && illusionRealmPanel.isVisible()) {
+            switch (action) {
+                case MotionEvent.ACTION_DOWN:
+                    return illusionRealmPanel.handleTouchDown(x, y);
+                case MotionEvent.ACTION_UP:
+                    return illusionRealmPanel.handleTouchUp(x, y);
             }
             return true;
         }
@@ -1139,6 +1190,12 @@ public class GameUI {
         if (questButton != null) {
             drawMenuButton("📜", canvas, questButton, questPanel != null && questPanel.isVisible());
         }
+
+        if (illusionRealmButton != null
+                && !(MapSystem.getInstance().isIllusionRealmMap() && IllusionRealmSystem.getInstance().isActive())) {
+            drawMenuButton("境", canvas, illusionRealmButton,
+                    illusionRealmPanel != null && illusionRealmPanel.isVisible());
+        }
     }
 
     /**
@@ -1521,6 +1578,23 @@ public class GameUI {
             }
         }
 
+        if (illusionRealmButton != null && TouchUtil.checkIsInTouchRectFloat(illusionRealmButton, x, y)) {
+            if (IllusionRealmSystem.getInstance().isActive()) {
+                return true;
+            }
+            if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_POINTER_DOWN) {
+                return true;
+            }
+            if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_POINTER_UP) {
+                if (illusionRealmPanel != null) {
+                    boolean wasVisible = illusionRealmPanel.isVisible();
+                    closeAllPanels();
+                    if (!wasVisible) illusionRealmPanel.show();
+                }
+                return true;
+            }
+        }
+
         return false;
     }
 
@@ -1534,6 +1608,7 @@ public class GameUI {
         if (buildEquipPanel != null) buildEquipPanel.hide();
         if (craftingPanel != null) craftingPanel.hide();
         if (questPanel != null) questPanel.hide();
+        if (illusionRealmPanel != null) illusionRealmPanel.hide();
         if (shopPanel != null) shopPanel.hide();
     }
 

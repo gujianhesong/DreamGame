@@ -45,6 +45,7 @@ import com.game.dream.panel.ShopPanel;
 import com.game.dream.skill.SkillEffect;
 import com.game.dream.skill.LightningChainEffect;
 import com.game.dream.system.DayNightCycle;
+import com.game.dream.system.IllusionRealmSystem;
 import com.game.dream.system.ItemSystem;
 import com.game.dream.system.MapSystem;
 import com.game.dream.system.MazeSystem;
@@ -151,6 +152,7 @@ public class GameEngine {
         instance = this;
         this.context = context.getApplicationContext();
         this.accumulatedRecoveryTime = 0; // Initialize recovery timer
+        IllusionRealmSystem.getInstance().init(this.context);
 
         initGame();
     }
@@ -176,8 +178,9 @@ public class GameEngine {
         }
 
         int mapId = roleInfo.getMapId();
-        if (mapId <= 0) {
+        if (mapId <= 0 || mapId == MapSystem.MAP_ID_ILLUSION_REALM) {
             mapId = MapSystem.getInstance().getBornMap().getMapId();
+            roleInfo.setMapId(mapId);
         }
 
         // 初始化不依赖地图的组件
@@ -283,7 +286,9 @@ public class GameEngine {
 
         // Update day-night cycle (海底地图和海底迷宫关闭昼夜系统)
         int curId = MapSystem.getInstance().getCurrentMapId();
-        if (dayNightCycle != null && curId != MapSystem.MAP_ID_DONGHAI_SEABED && curId != MapSystem.MAP_ID_UNDERWATER_MAZE) {
+        if (dayNightCycle != null && curId != MapSystem.MAP_ID_DONGHAI_SEABED
+                && curId != MapSystem.MAP_ID_UNDERWATER_MAZE
+                && curId != MapSystem.MAP_ID_ILLUSION_REALM) {
             dayNightCycle.update(deltaTime);
         }
 
@@ -291,6 +296,8 @@ public class GameEngine {
         if (weatherSystem != null) {
             weatherSystem.update(deltaTime, screenWidth, screenHeight);
         }
+
+        IllusionRealmSystem.getInstance().update(deltaTime);
 
         // Update enemies
         checkEnemiesUpdate(deltaTime);
@@ -519,8 +526,7 @@ public class GameEngine {
                             }
 
                             if (died) {
-                                // Player died - respawn
-                                player.respawn();
+                                handlePlayerDeath();
                             }
                         }
                     }
@@ -737,6 +743,12 @@ public class GameEngine {
 
                 // Remove dead enemies
                 if (!enemy.isAlive()) {
+                    if (MapSystem.getInstance().isIllusionRealmMap()
+                            && IllusionRealmSystem.getInstance().isActive()) {
+                        IllusionRealmSystem.getInstance().onIllusionEnemyKilled();
+                        enemies.remove(i);
+                        continue;
+                    }
                     // Grant reward to player
                     int expReward = enemy.getExperienceReward();
                     int moneyReward = enemy.getMoneyReward();
@@ -882,7 +894,7 @@ public class GameEngine {
                                 }
 
                                 if (died) {
-                                    player.respawn();
+                                    handlePlayerDeath();
                                 }
                             }
 
@@ -1279,8 +1291,12 @@ public class GameEngine {
                     }
                 }
 
-                // 重新初始化敌人
-                initializeEnemies();
+                if (MapSystem.getInstance().isIllusionRealmMap()) {
+                    enemies = new java.util.ArrayList<>();
+                    IllusionRealmSystem.getInstance().onIllusionMapReady();
+                } else {
+                    initializeEnemies();
+                }
 
                 // 刷新小地图
                 if (gameUI != null) {
@@ -1288,9 +1304,68 @@ public class GameEngine {
                 }
 
                 isLoading = false;
-                showCenterToast("到达了" + mapName);
+                if (!MapSystem.getInstance().isIllusionRealmMap()) {
+                    showCenterToast("到达了" + mapName);
+                }
             }
         });
+    }
+
+    public void teleportToMapWithPosition(int mapId, float x, float y) {
+        isLoading = true;
+        MapSystem.getInstance().loadMapAsync(mapId, new MapSystem.OnLoadMapCallback() {
+            @Override
+            public void onLoadMapFinish(int mapId, int[][] mapData) {
+                MazeSystem.getInstance().reset();
+                player.setX(x);
+                player.setY(y);
+                player.setRespawnPoint(x, y);
+                RoleInfo roleInfo = RoleSystem.getInstance().getRoleInfo();
+                roleInfo.setMapId(mapId);
+                roleInfo.setMapX((int) x);
+                roleInfo.setMapY((int) y);
+                initializeEnemies();
+                if (gameUI != null) {
+                    gameUI.refreshMinimap();
+                }
+                isLoading = false;
+            }
+        });
+    }
+
+    public void clearEnemies() {
+        if (enemies != null) {
+            enemies.clear();
+        }
+    }
+
+    public void addEnemy(Enemy enemy) {
+        if (enemies == null) {
+            enemies = new java.util.ArrayList<>();
+        }
+        enemies.add(enemy);
+    }
+
+    public int getAliveEnemyCount() {
+        if (enemies == null) {
+            return 0;
+        }
+        int count = 0;
+        for (Enemy e : enemies) {
+            if (e.isAlive()) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private void handlePlayerDeath() {
+        if (MapSystem.getInstance().isIllusionRealmMap()
+                && IllusionRealmSystem.getInstance().isActive()) {
+            IllusionRealmSystem.getInstance().onPlayerDefeated();
+            return;
+        }
+        player.respawn();
     }
 
     public List<Enemy> getEnemies() {

@@ -14,6 +14,8 @@ public class SaveInfo {
     private List<Integer> defaultHpPotionIds;
     private List<Integer> defaultMpPotionIds;
 
+    private IllusionRealmInfo illusionRealmInfo;
+
     public RoleInfo getRoleInfo() {
         return roleInfo;
     }
@@ -92,5 +94,13 @@ public class SaveInfo {
 
     public void setDefaultMpPotionIds(List<Integer> defaultMpPotionIds) {
         this.defaultMpPotionIds = defaultMpPotionIds;
+    }
+
+    public IllusionRealmInfo getIllusionRealmInfo() {
+        return illusionRealmInfo;
+    }
+
+    public void setIllusionRealmInfo(IllusionRealmInfo illusionRealmInfo) {
+        this.illusionRealmInfo = illusionRealmInfo;
     }
 }

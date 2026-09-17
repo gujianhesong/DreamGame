@@ -49,6 +49,10 @@ public class MapContentManager {
     public List<Enemy> initializeEnemies(int mapId) {
         List<Enemy> enemies = new ArrayList<>();
 
+        if (mapId == MapSystem.MAP_ID_ILLUSION_REALM) {
+            return enemies;
+        }
+
         int enemyCount;
         if (mapId >= 2000 && mapId < 3000) {
             enemyCount = 120; // 迷宫中怪物少一些

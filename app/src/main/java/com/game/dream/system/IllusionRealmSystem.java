@@ -578,6 +578,8 @@ public class IllusionRealmSystem {
         if (!isActive()) {
             return;
         }
+        // 幻境失败回满血，同时清除带入的中毒
+        GameEngine.getInstance().getPlayer().clearPoisonDebuff();
         RoleSystem.getInstance().getRoleInfo().setHp(RoleSystem.getInstance().getRoleInfo().getBloodCap());
         RoleSystem.getInstance().getRoleInfo().setMp(RoleSystem.getInstance().getRoleInfo().getMagicCap());
         GameEngine.getInstance().showCenterToast("挑战失败，无惩罚", 2500);

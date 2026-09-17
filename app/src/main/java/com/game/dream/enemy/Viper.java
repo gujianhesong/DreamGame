@@ -11,7 +11,7 @@ import com.game.dream.utils.ProssibleDropsUtil;
 import java.util.List;
 
 /**
- * 毒蛇敌人 - 具有毒素伤害和 S 型游走动画
+ * 毒蛇敌人 - 毒击（{@link AttackType#POISON_STRIKE}）+ 吸血，S 型游走动画
  */
 public class Viper extends Enemy {
     private float waveOffset; // 用于 S 型游走的相位
@@ -19,7 +19,7 @@ public class Viper extends Enemy {
     public Viper(float x, float y) {
         super(x, y, 60);
         setAttackShape(AttackShape.RECT); // 蛇头前咬 - 矩形
-        addAvailableAttackType(AttackType.DRAIN_BITE); // 吸血撕咬
+        addAvailableAttackType(AttackType.POISON_STRIKE);
         windUpDuration = 300; // 蛇咬前摇较短，快速出击
         this.waveOffset = 0;
 
@@ -61,6 +61,11 @@ public class Viper extends Enemy {
         if (enemyLevel == EnemyLevel.BOSS) {
             addAvailableAttackType(AttackType.LEAP_SLAM);
         }
+    }
+
+    @Override
+    protected void onPoisonStrikeLanded() {
+        pendingDrainHeal = (int) (attackDamage * drainHealPercent);
     }
 
     @Override

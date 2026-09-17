@@ -1022,6 +1022,16 @@ public class GameUI {
                 expBarX + 70 + expBarWidth / 2,
                 expBarY + 5, paint);
 
+        // 中毒 Debuff 剩余时间
+        Player poisonPlayer = GameEngine.getInstance().getPlayer();
+        if (poisonPlayer != null && poisonPlayer.isPoisoned()) {
+            paint.setColor(Color.rgb(140, 230, 90));
+            paint.setTextSize(22);
+            paint.setTextAlign(Paint.Align.LEFT);
+            long poisonSec = Math.max(1, (poisonPlayer.getPoisonRemainingMs() + 999) / 1000);
+            canvas.drawText("中毒 " + poisonSec + "s", expBarX, expBarY + 32, paint);
+        }
+
         paint.setTextSize(30);
         // Draw FPS (top-right corner)
         paint.setTextAlign(Paint.Align.LEFT);

@@ -267,6 +267,16 @@ public class GameEngine {
         player.update(MapSystem.getInstance().getCurMapInfo().getMapData(),
                 getCurrentMapWidth() / TILE_SIZE, getCurrentMapHeight() / TILE_SIZE, TILE_SIZE, deltaTime);
 
+        // 中毒 DoT：跳伤飘字与毒杀
+        int poisonTickDamage = player.consumePendingPoisonTickDamage();
+        if (poisonTickDamage > 0) {
+            damageNumbers.add(DamageNumber.poison(
+                    player.getX(), player.getY() - 48, poisonTickDamage));
+        }
+        if (player.consumePoisonDeathFlag()) {
+            handlePlayerDeath();
+        }
+
         // Update camera to follow player
         updateCamera();
 
@@ -440,9 +450,13 @@ public class GameEngine {
      * Check if enemies are attacking the player
      */
     private void checkEnemyAttacksOnPlayer() {
-        long currentTime = System.currentTimeMillis();
+        if (enemies == null || enemies.isEmpty()) {
+            return;
+        }
+        // 遍历副本：命中后可能 handlePlayerDeath → clearEnemies，不可直接 foreach 原列表
+        java.util.List<Enemy> attackPass = new java.util.ArrayList<>(enemies);
 
-        for (Enemy enemy : enemies) {
+        for (Enemy enemy : attackPass) {
             if (!enemy.isAlive()) continue;
 
             // Check if enemy is in attacking state and close to player
@@ -500,6 +514,13 @@ public class GameEngine {
                                     ));
                                 }
 
+                                // 毒击类攻击命中：按 Enemy.getPoisonHitChance 尝试中毒，已中毒不刷新
+                                if (Enemy.causesPoisonOnHit(enemy.getCurrentAttackType())) {
+                                    if (player.tryApplyPoisonDebuff(enemy.getPoisonHitChance())) {
+                                        showCenterToast("中毒了！", 1500);
+                                    }
+                                }
+
                                 // 敌人攻击玩家击退效果: 从敌人位置推开玩家
                                 float knockbackForce = 150f;
                                 long knockbackDuration = 150;
@@ -527,6 +548,7 @@ public class GameEngine {
 
                             if (died) {
                                 handlePlayerDeath();
+                                return;
                             }
                         }
                     }

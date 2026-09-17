@@ -111,6 +111,8 @@ public abstract class Enemy extends Character {
         COMBO,
         /** 吸血撕咬: 近战攻击命中后回复自身生命 */
         DRAIN_BITE,
+        /** 毒击: 近战前摇攻击，命中可对玩家施加中毒（见 GameEngine + Player.tryApplyPoisonDebuff） */
+        POISON_STRIKE,
         /** 环绕斩击: 原地旋转持续多段伤害，范围内所有方向均判定 */
         SPIN_ATTACK,
         /** 闪现突击: 短暂前摇后高速闪现到玩家身边攻击 */
@@ -445,6 +447,34 @@ public abstract class Enemy extends Character {
                                 if (distanceToPlayer < propertyExtra.attackRange * 1.2f) {
                                     attackJustFired = true;
                                     pendingDrainHeal = (int) (attackDamage * drainHealPercent);
+                                    lastAttackTime = currentTime;
+                                }
+                            }
+                        } else {
+                            updateAttacking(deltaSeconds, playerX, playerY);
+
+                            if (currentTime - lastAttackTime >= attackCooldown) {
+                                if (distanceToPlayer < propertyExtra.attackRange) {
+                                    isWindingUp = true;
+                                    windUpStartTime = currentTime;
+                                } else {
+                                    currentState = State.CHASING;
+                                    stateTimer = currentTime;
+                                }
+                            }
+                        }
+                        break;
+
+                    case POISON_STRIKE:
+                        if (isWindingUp) {
+                            targetX = playerX;
+                            targetY = playerY;
+
+                            if (currentTime - windUpStartTime >= windUpDuration) {
+                                isWindingUp = false;
+                                if (distanceToPlayer < propertyExtra.attackRange * 1.2f) {
+                                    attackJustFired = true;
+                                    onPoisonStrikeLanded();
                                     lastAttackTime = currentTime;
                                 }
                             }
@@ -1051,7 +1081,22 @@ public abstract class Enemy extends Character {
         return type == AttackType.MELEE
                 || type == AttackType.COMBO
                 || type == AttackType.DRAIN_BITE
+                || type == AttackType.POISON_STRIKE
                 || type == AttackType.SPIN_ATTACK;
+    }
+
+    /** 该攻击类型命中时是否尝试对玩家施加中毒 */
+    public static boolean causesPoisonOnHit(AttackType type) {
+        return type == AttackType.POISON_STRIKE;
+    }
+
+    /** 当前攻击命中时的中毒触发概率（仅 {@link #causesPoisonOnHit} 为 true 时有效） */
+    public float getPoisonHitChance() {
+        return causesPoisonOnHit(currentAttackType) ? 1f : 0f;
+    }
+
+    /** 毒击前摇结束且判定命中时回调，子类可附加吸血等效果 */
+    protected void onPoisonStrikeLanded() {
     }
 
     protected boolean isFinisherAttack(AttackType type) {
@@ -1110,6 +1155,9 @@ public abstract class Enemy extends Character {
                 if (hpRatio < 0.5f) {
                     weight *= 1.6f;
                 }
+                break;
+            case POISON_STRIKE:
+                weight = rangeRatio < 0.65f ? 2.6f : 0.75f;
                 break;
             case SPIN_ATTACK:
                 weight = rangeRatio < 0.9f ? 2.2f : 0.5f;

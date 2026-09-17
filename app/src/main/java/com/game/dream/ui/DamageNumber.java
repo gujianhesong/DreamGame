@@ -12,6 +12,8 @@ public class DamageNumber {
     private int damage;
     private boolean isCritical;
     private int healAmount = 0; // >0 时显示绿色治疗数字
+    /** 中毒 DoT 跳伤（绿色飘字） */
+    private boolean isPoisonDamage;
     private long createdTime;
     private long lifetime;
     private boolean isActive;
@@ -47,6 +49,13 @@ public class DamageNumber {
     public static DamageNumber heal(float x, float y, int healAmount) {
         DamageNumber dn = new DamageNumber(x, y, 0, false);
         dn.healAmount = healAmount;
+        return dn;
+    }
+
+    /** 中毒持续伤害飘字 */
+    public static DamageNumber poison(float x, float y, int damage) {
+        DamageNumber dn = new DamageNumber(x, y, damage, false);
+        dn.isPoisonDamage = true;
         return dn;
     }
 
@@ -102,6 +111,8 @@ public class DamageNumber {
         if (healAmount > 0) {
             // Heal - green
             textColor = Color.rgb(50, 255, 100);
+        } else if (isPoisonDamage) {
+            textColor = Color.rgb(120, 220, 80);
         } else if (isCritical) {
             // Critical hit - bright red/orange
             textColor = Color.rgb(255, 50, 50);

@@ -88,6 +88,18 @@ public class Player extends Character {
 
     private HashMap<SkillType, Long> lastCasterTimeHashMap = new HashMap<>();
 
+    // 敌人毒击（AttackType.POISON_STRIKE）施加的中毒 DoT：不叠加，已中毒时忽略新的尝试
+    private static final long POISON_DURATION_MS = 16_000;
+    private static final long POISON_TICK_MS = 2_000;
+
+    private long poisonEndTime;
+    private long poisonNextTickTime;
+    /** 本次中毒每跳伤害 = 最大气血 × 该比例（施加时在 0.4%～0.5% 间随机） */
+    private float poisonPercentPerTick;
+    /** 本帧毒伤，供 GameEngine 生成飘字后清零 */
+    private int pendingPoisonTickDamage;
+    /** 毒伤致死标记，供 GameEngine 触发死亡流程 */
+    private boolean poisonCausedDeath;
 
     public Player(float x, float y) {
         super(x, y, 85);
@@ -120,6 +132,9 @@ public class Player extends Character {
     public void update(int[][] map, int mapWidth, int mapHeight, int tileSize, long deltaTime) {
         // Update CC state
         updateCCState();
+
+        // 中毒 DoT 跳伤（与 CC 独立）
+        updatePoisonTicks();
 
         // 集气回复: 每秒回复 DASH_CHARGE_REGEN
         if (dashCharge < DASH_CHARGE_MAX && deltaTime > 0) {
@@ -581,6 +596,7 @@ public class Player extends Character {
      * Respawn player at respawn point
      */
     public void respawn() {
+        clearPoisonDebuff(); // 复活时清除中毒
         x = respawnX;
         y = respawnY;
         RoleInfo roleInfo = RoleSystem.getInstance().getRoleInfo();
@@ -886,6 +902,105 @@ public class Player extends Character {
             this.y = y;
             this.timestamp = timestamp;
         }
+    }
+
+    public boolean isPoisoned() {
+        return System.currentTimeMillis() < poisonEndTime;
+    }
+
+    public long getPoisonRemainingMs() {
+        if (!isPoisoned()) {
+            return 0;
+        }
+        return poisonEndTime - System.currentTimeMillis();
+    }
+
+    /**
+     * 敌人毒击命中后尝试中毒：已中毒则不刷新、不叠加。
+     *
+     * @param applyChance 触发概率（0～1，由 Enemy.getPoisonHitChance 提供）
+     * @return 是否新施加中毒
+     */
+    public boolean tryApplyPoisonDebuff(float applyChance) {
+        if (isPoisoned() || applyChance <= 0f) {
+            return false;
+        }
+        if (Math.random() >= applyChance) {
+            return false;
+        }
+        long now = System.currentTimeMillis();
+        poisonPercentPerTick = 0.004f + (float) (Math.random() * 0.001f);
+        poisonEndTime = now + POISON_DURATION_MS;
+        poisonNextTickTime = now + POISON_TICK_MS;
+        return true;
+    }
+
+    /** 取出本帧毒伤并清零（由 GameEngine 显示飘字） */
+    public int consumePendingPoisonTickDamage() {
+        int dmg = pendingPoisonTickDamage;
+        pendingPoisonTickDamage = 0;
+        return dmg;
+    }
+
+    /** 取出毒杀标记并清零（由 GameEngine 调用 handlePlayerDeath） */
+    public boolean consumePoisonDeathFlag() {
+        boolean died = poisonCausedDeath;
+        poisonCausedDeath = false;
+        return died;
+    }
+
+    /** 清除中毒状态（到期、复活、幻境失败等） */
+    public void clearPoisonDebuff() {
+        poisonEndTime = 0;
+        poisonNextTickTime = 0;
+        poisonPercentPerTick = 0;
+        pendingPoisonTickDamage = 0;
+        poisonCausedDeath = false;
+    }
+
+    /** 按 2 秒间隔结算毒伤，持续 16 秒；到期或毒杀后清除状态 */
+    private void updatePoisonTicks() {
+        long now = System.currentTimeMillis();
+        if (now >= poisonEndTime) {
+            if (poisonEndTime > 0) {
+                clearPoisonDebuff();
+            }
+            return;
+        }
+        while (now < poisonEndTime && now >= poisonNextTickTime) {
+            int maxHp = getMaxHealth();
+            int dmg = Math.max(1, (int) (maxHp * poisonPercentPerTick));
+            pendingPoisonTickDamage = dmg;
+            if (applyPoisonDamage(dmg)) {
+                poisonCausedDeath = true;
+                clearPoisonDebuff();
+                return;
+            }
+            poisonNextTickTime += POISON_TICK_MS;
+        }
+    }
+
+    /** 中毒伤害：不受无敌帧/冲刺无敌影响 */
+    private boolean applyPoisonDamage(int damage) {
+        int health = getHealth();
+        health -= damage;
+        health = Math.max(0, health);
+        lastDamageTime = System.currentTimeMillis();
+        triggerHitFlash();
+
+        if (isJinGangState) {
+            health = Math.max(1, health);
+        }
+
+        if (health <= 0 && ItemSystem.getInstance().isEquipedSpecialEffect(SpecialEffect.SE_ShenYou)) {
+            if (Math.random() < 0.2) {
+                health = RoleSystem.getInstance().getRoleInfo().getBloodCap();
+                GameEngine.getInstance().showCenterToast("神佑复生！");
+            }
+        }
+
+        RoleSystem.getInstance().getRoleInfo().setHp(health);
+        return health <= 0;
     }
 
     /** 幻境内移动不写入存档坐标 */

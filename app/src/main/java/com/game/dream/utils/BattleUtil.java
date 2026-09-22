@@ -419,6 +419,9 @@ public class BattleUtil {
                 case ENEMY_DragonLightning:
                     castBaseValue = 15f;
                     break;
+                case ENEMY_SoulTear:
+                    castBaseValue = 13f;
+                    break;
             }
 
             if (castBaseValue > 0) {

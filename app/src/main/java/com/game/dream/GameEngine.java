@@ -23,6 +23,8 @@ import com.game.dream.enemy.Enemy;
 import com.game.dream.enemy.FoxSpirit;
 import com.game.dream.enemy.GiantSeaTurtle;
 import com.game.dream.enemy.LittleGreenDragon;
+import com.game.dream.enemy.LonelySpirit;
+import com.game.dream.enemy.SavageWraith;
 import com.game.dream.enemy.ShrimpSoldier;
 import com.game.dream.enemy.Tiger;
 import com.game.dream.enemy.Viper;
@@ -37,6 +39,7 @@ import com.game.dream.item.GroundItem;
 import com.game.dream.item.ItemStack;
 import com.game.dream.map.MapContentManager;
 import com.game.dream.map.MazeGenerator;
+import com.game.dream.map.NetherworldMapGenerator;
 import com.game.dream.map.UnderwaterMazeGenerator;
 import com.game.dream.npc.AnimalNpc;
 import com.game.dream.npc.Npc;
@@ -294,10 +297,11 @@ public class GameEngine {
             }
         }
 
-        // Update day-night cycle (海底地图和海底迷宫关闭昼夜系统)
+        // Update day-night cycle (海底地图、海底迷宫、地府、幻境关闭昼夜系统)
         int curId = MapSystem.getInstance().getCurrentMapId();
         if (dayNightCycle != null && curId != MapSystem.MAP_ID_DONGHAI_SEABED
                 && curId != MapSystem.MAP_ID_UNDERWATER_MAZE
+                && curId != MapSystem.MAP_ID_NETHERWORLD
                 && curId != MapSystem.MAP_ID_ILLUSION_REALM) {
             dayNightCycle.update(deltaTime);
         }
@@ -537,6 +541,18 @@ public class GameEngine {
                                     player.applyCC(Character.CrowdControlType.STUN, 1000);
                                     showCenterToast("你被泰山压顶眩晕了!", 1000);
                                 }
+
+                                // 孤魂怨灵哀嘆: 命中后减速30%，持续1.5秒
+                                if (enemy instanceof LonelySpirit) {
+                                    player.applyCC(Character.CrowdControlType.SLOW, 1500);
+                                    showCenterToast("怨灵哀嘆侵蚀了你，移动速度降低!", 1200);
+                                }
+
+                                // 野鬼暴怒冲锋: 命中后强力击退
+                                if (enemy instanceof SavageWraith
+                                        && enemy.getCurrentAttackType() == Enemy.AttackType.CHARGE) {
+                                    player.applyKnockback(enemy.getX(), enemy.getY(), 450f, 350);
+                                }
                             } else {
                                 //未命中
                                 damageNumbers.add(new DamageNumber(
@@ -721,6 +737,18 @@ public class GameEngine {
                         ((FoxSpirit) enemy).consumeFoxCharm();
                     }
 
+                    // 孤魂幽蓝泪珠: 向玩家发射缓慢飞行的蓝色光球
+                    if (enemy instanceof LonelySpirit && ((LonelySpirit) enemy).isPendingSoulTear()) {
+                        Projectile soulTear = new Projectile(
+                                enemy.getX(), enemy.getY(),
+                                player.getX(), player.getY(),
+                                SkillType.ENEMY_SoulTear
+                        );
+                        soulTear.setFromEnemy(enemy);
+                        projectiles.add(soulTear);
+                        ((LonelySpirit) enemy).consumeSoulTear();
+                    }
+
                     // 小青龙水龙弹
                     if (enemy instanceof LittleGreenDragon && ((LittleGreenDragon) enemy).isPendingWaterBolt()) {
                         float[] targetPos = {player.getX(), player.getY()};
@@ -765,6 +793,37 @@ public class GameEngine {
 
                 // Remove dead enemies
                 if (!enemy.isAlive()) {
+                    // 野鬼怨爆: 死亡后膨胀0.5秒再爆炸，对周围玩家造成伤害
+                    if (enemy instanceof SavageWraith) {
+                        SavageWraith wraith = (SavageWraith) enemy;
+                        if (!wraith.hasExploded()) {
+                            if (!wraith.shouldExplode()) {
+                                // 还在膨胀中，不移除，等待爆炸
+                                continue;
+                            }
+                            // 触发爆炸
+                            wraith.markExploded();
+                            float expDx = player.getX() - enemy.getX();
+                            float expDy = player.getY() - enemy.getY();
+                            float expDist = (float) Math.sqrt(expDx * expDx + expDy * expDy);
+                            if (expDist < wraith.getExplosionRange()) {
+                                int expDamage = wraith.getExplosionDamage();
+                                boolean died = player.takeDamage(expDamage);
+                                damageNumbers.add(new DamageNumber(
+                                        player.getX(), player.getY() - 40,
+                                        expDamage, false
+                                ));
+                                player.applyKnockback(enemy.getX(), enemy.getY(), 350f, 300);
+                                showCenterToast("野鬼怨爆!", 1000);
+                                if (died) {
+                                    handlePlayerDeath();
+                                    enemies.remove(i);
+                                    return;
+                                }
+                            }
+                        }
+                    }
+
                     if (MapSystem.getInstance().isIllusionRealmMap()
                             && IllusionRealmSystem.getInstance().isActive()) {
                         IllusionRealmSystem.getInstance().onIllusionEnemyKilled();
@@ -1009,8 +1068,12 @@ public class GameEngine {
         // Draw map using MapRenderer
         MapSystem.getInstance().render(canvas, cameraX, cameraY, screenWidth, screenHeight);
 
-        // Draw day-night overlay (after map, before player, 海底地图关闭)
-        if (dayNightCycle != null && MapSystem.getInstance().getCurrentMapId() != MapSystem.MAP_ID_DONGHAI_SEABED) {
+        // Draw day-night overlay (after map, before player, 与 update() 保持一致：海底/海底迷宫/地府/幻境关闭)
+        int curMapIdForDraw = MapSystem.getInstance().getCurrentMapId();
+        if (dayNightCycle != null && curMapIdForDraw != MapSystem.MAP_ID_DONGHAI_SEABED
+                && curMapIdForDraw != MapSystem.MAP_ID_UNDERWATER_MAZE
+                && curMapIdForDraw != MapSystem.MAP_ID_NETHERWORLD
+                && curMapIdForDraw != MapSystem.MAP_ID_ILLUSION_REALM) {
             dayNightCycle.draw(canvas, screenWidth, screenHeight);
         }
 
@@ -1079,9 +1142,11 @@ public class GameEngine {
             effect.draw(canvas, (int) -cameraX, (int) -cameraY);
         }
 
-        // Draw weather effects (海底地图和海底迷宫不显示天气)
+        // Draw weather effects (海底地图、海底迷宫、地府不显示天气)
         int drawMapId = MapSystem.getInstance().getCurrentMapId();
-        if (weatherSystem != null && drawMapId != MapSystem.MAP_ID_DONGHAI_SEABED && drawMapId != MapSystem.MAP_ID_UNDERWATER_MAZE) {
+        if (weatherSystem != null && drawMapId != MapSystem.MAP_ID_DONGHAI_SEABED
+                && drawMapId != MapSystem.MAP_ID_UNDERWATER_MAZE
+                && drawMapId != MapSystem.MAP_ID_NETHERWORLD) {
             weatherSystem.draw(canvas);
         }
 
@@ -1387,7 +1452,19 @@ public class GameEngine {
             IllusionRealmSystem.getInstance().onPlayerDefeated();
             return;
         }
-        player.respawn();
+        // 死亡后魂归地府幽魂牢：先扣除死亡惩罚，再恢复状态，最后传送
+        RoleInfo roleInfo = RoleSystem.getInstance().getRoleInfo();
+        // 死亡惩罚：扣除 10% 经验与 10% 金钱
+        long expLoss = roleInfo.getExp() / 10;
+        long moneyLoss = roleInfo.getMoney() / 10;
+        roleInfo.setExp(roleInfo.getExp() - expLoss);
+        roleInfo.setMoney(roleInfo.getMoney() - moneyLoss);
+        roleInfo.setHp(roleInfo.getBloodCap());
+        roleInfo.setMp(roleInfo.getMagicCap());
+        player.clearPoisonDebuff();
+        Pair<Integer, Integer> prisonPos = NetherworldMapGenerator.getPrisonSpawnPosition();
+        teleportToMapWithPosition(MapSystem.MAP_ID_NETHERWORLD, prisonPos.first, prisonPos.second);
+        showCenterToast("你已身死，魂魄被拘入地府幽魂牢……失去 " + expLoss + " 经验、" + moneyLoss + " 金钱");
     }
 
     public List<Enemy> getEnemies() {

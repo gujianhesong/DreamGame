@@ -44,6 +44,15 @@ public class Npc {
             this.size = 80;
         } else if (type == NpcType.SOLDIER || type == NpcType.HUNTER || type == NpcType.BANDIT) {
             this.size = 90;
+        } else if (type == NpcType.JUDGE_YANLUO) {
+            this.size = 120; // 阎罗王：威严巨大
+        } else if (type == NpcType.GHOST_OFFICER_BLACK || type == NpcType.GHOST_OFFICER_WHITE
+                || type == NpcType.COW_HEAD || type == NpcType.HORSE_FACE) {
+            this.size = 105; // 黑白无常/牛头马面：高大
+        } else if (type == NpcType.JUDGE_CUI) {
+            this.size = 95;
+        } else if (type == NpcType.LOST_SOUL || type == NpcType.MENG_PO) {
+            this.size = 78;
         } else {
             this.size = 85;
         }
@@ -299,6 +308,86 @@ public class Npc {
                 paint.setColor(Color.rgb(230, 230, 240));
                 canvas.drawRoundRect(bodyRect, 10, 10, paint);
                 break;
+
+            // ==================== 地府 NPC ====================
+            case JUDGE_YANLUO:
+                // 阎罗王：玄黑龙袍 + 金红蟠龙纹
+                paint.setColor(Color.rgb(25, 15, 35));
+                canvas.drawRoundRect(bodyRect, 10, 10, paint);
+                // 金色龙纹（胸前两道金边）
+                paint.setColor(Color.rgb(200, 170, 60));
+                canvas.drawRect(bodyRect.left, bodyRect.top + 8, bodyRect.right, bodyRect.top + 12, paint);
+                canvas.drawRect(bodyRect.left, bodyRect.bottom - 14, bodyRect.right, bodyRect.bottom - 10, paint);
+                break;
+
+            case JUDGE_CUI:
+                // 崔判官：深红官袍
+                paint.setColor(Color.rgb(140, 30, 30));
+                canvas.drawRoundRect(bodyRect, 10, 10, paint);
+                // 胸前方形官服补子
+                paint.setColor(Color.rgb(200, 170, 60));
+                canvas.drawRect(cx - size / 8f, cy - size / 8f, cx + size / 8f, cy + size / 8f, paint);
+                break;
+
+            case GHOST_OFFICER_BLACK:
+                // 黑无常：漆黑夜行服
+                paint.setColor(Color.rgb(15, 12, 20));
+                canvas.drawRoundRect(bodyRect, 8, 8, paint);
+                // 白色腰带
+                paint.setColor(Color.rgb(220, 220, 210));
+                canvas.drawRect(bodyRect.left, cy - 3, bodyRect.right, cy + 3, paint);
+                break;
+
+            case GHOST_OFFICER_WHITE:
+                // 白无常：惨白长袍
+                paint.setColor(Color.rgb(238, 238, 232));
+                canvas.drawRoundRect(bodyRect, 8, 8, paint);
+                // 黑色腰带
+                paint.setColor(Color.rgb(30, 25, 35));
+                canvas.drawRect(bodyRect.left, cy - 3, bodyRect.right, cy + 3, paint);
+                break;
+
+            case COW_HEAD:
+                // 牛头：深棕皂服
+                paint.setColor(Color.rgb(90, 60, 40));
+                canvas.drawRect(bodyRect, paint);
+                // 胸前皮带
+                paint.setColor(Color.rgb(50, 30, 20));
+                canvas.drawRect(bodyRect.left, cy - 5, bodyRect.right, cy + 5, paint);
+                break;
+
+            case HORSE_FACE:
+                // 马面：灰蓝皂服
+                paint.setColor(Color.rgb(80, 85, 100));
+                canvas.drawRect(bodyRect, paint);
+                // 胸前皮带
+                paint.setColor(Color.rgb(40, 45, 60));
+                canvas.drawRect(bodyRect.left, cy - 5, bodyRect.right, cy + 5, paint);
+                break;
+
+            case MENG_PO:
+                // 孟婆：素灰长袍
+                paint.setColor(Color.rgb(130, 125, 115));
+                canvas.drawRoundRect(bodyRect, 10, 10, paint);
+                // 素色围裙
+                paint.setColor(Color.rgb(180, 175, 165));
+                canvas.drawRect(cx - size / 5f, cy - size / 8f, cx + size / 5f, cy + size / 2.5f, paint);
+                break;
+
+            case GHOST_CLERK:
+                // 鬼差：青黑差役服
+                paint.setColor(Color.rgb(50, 60, 70));
+                canvas.drawRoundRect(bodyRect, 8, 8, paint);
+                // 红色腰带
+                paint.setColor(Color.rgb(150, 40, 30));
+                canvas.drawRect(bodyRect.left, cy - 3, bodyRect.right, cy + 3, paint);
+                break;
+
+            case LOST_SOUL:
+                // 游魂：半透明白袍（幽灵感）
+                paint.setColor(Color.argb(140, 220, 225, 235));
+                canvas.drawRoundRect(bodyRect, 12, 12, paint);
+                break;
         }
 
         // 2. 绘制脚部/鞋子（在所有身体之后，配饰之前）
@@ -387,6 +476,38 @@ public class Npc {
             case DOCTOR:
                 // 整洁的黑色布鞋，低调稳重
                 paint.setColor(Color.rgb(50, 50, 50));
+                canvas.drawOval(cx - footWidth * 1.2f, footY, cx - footWidth * 0.2f, footY + footHeight, paint);
+                canvas.drawOval(cx + footWidth * 0.2f, footY, cx + footWidth * 1.2f, footY + footHeight, paint);
+                break;
+
+            case LOST_SOUL:
+                // 游魂：无脚（漂浮），袍底呈不规则飘带
+                paint.setColor(Color.argb(120, 210, 215, 225));
+                canvas.drawOval(cx - size / 3f, cy + size / 2.6f, cx + size / 3f, cy + size / 2f, paint);
+                break;
+
+            case JUDGE_YANLUO:
+            case JUDGE_CUI:
+            case GHOST_OFFICER_BLACK:
+            case GHOST_OFFICER_WHITE:
+                // 黑靴
+                paint.setColor(Color.rgb(20, 15, 25));
+                canvas.drawRect(cx - footWidth * 1.3f, footY - footHeight / 2, cx - footWidth * 0.3f, footY + footHeight, paint);
+                canvas.drawRect(cx + footWidth * 0.3f, footY - footHeight / 2, cx + footWidth * 1.3f, footY + footHeight, paint);
+                break;
+
+            case COW_HEAD:
+            case HORSE_FACE:
+            case GHOST_CLERK:
+                // 皂靴
+                paint.setColor(Color.rgb(35, 30, 40));
+                canvas.drawRect(cx - footWidth * 1.3f, footY - footHeight / 2, cx - footWidth * 0.3f, footY + footHeight, paint);
+                canvas.drawRect(cx + footWidth * 0.3f, footY - footHeight / 2, cx + footWidth * 1.3f, footY + footHeight, paint);
+                break;
+
+            case MENG_PO:
+                // 素布鞋
+                paint.setColor(Color.rgb(90, 85, 80));
                 canvas.drawOval(cx - footWidth * 1.2f, footY, cx - footWidth * 0.2f, footY + footHeight, paint);
                 canvas.drawOval(cx + footWidth * 0.2f, footY, cx + footWidth * 1.2f, footY + footHeight, paint);
                 break;
@@ -550,6 +671,115 @@ public class Npc {
                 canvas.drawLine(boxCx - 4, boxCy, boxCx + 4, boxCy, paint);
                 canvas.drawLine(boxCx, boxCy - 4, boxCx, boxCy + 4, paint);
                 break;
+
+            // ==================== 地府 NPC 配饰 ====================
+            case JUDGE_YANLUO:
+                // 惊堂木（右手）
+                paint.setColor(Color.rgb(120, 80, 40));
+                canvas.drawRect(cx + size / 2.2f, cy + size / 6f, cx + size / 1.5f, cy + size / 4f, paint);
+                // 金色腰带
+                paint.setColor(Color.rgb(220, 180, 60));
+                canvas.drawRect(cx - size / 2.5f, cy + size / 8f, cx + size / 2.5f, cy + size / 8f + 6, paint);
+                // 背後光晕（幽幽金光）
+                paint.setColor(Color.argb(60, 255, 210, 100));
+                canvas.drawCircle(cx, cy - size / 6f, size / 1.6f, paint);
+                break;
+
+            case JUDGE_CUI:
+                // 生死簿（左手抱着）
+                paint.setColor(Color.rgb(90, 50, 30));
+                canvas.drawRect(cx - size / 1.8f, cy - size / 8f, cx - size / 3f, cy + size / 3f, paint);
+                // 簿面金线
+                paint.setColor(Color.rgb(200, 170, 60));
+                canvas.drawLine(cx - size / 1.9f, cy + size / 12f, cx - size / 2.8f, cy + size / 12f, paint);
+                // 判官笔（右手）
+                paint.setColor(Color.rgb(30, 20, 15));
+                canvas.drawRect(cx + size / 2.5f, cy - size / 8f, cx + size / 2.2f, cy + size / 3f, paint);
+                paint.setColor(Color.rgb(200, 170, 60));
+                canvas.drawRect(cx + size / 2.55f, cy - size / 8f, cx + size / 2.15f, cy - size / 12f, paint);
+                break;
+
+            case GHOST_OFFICER_BLACK:
+                // 哭丧棒（右手，白布缠）
+                paint.setColor(Color.rgb(80, 60, 40));
+                canvas.drawRect(cx + size / 2.2f, cy - size / 2f, cx + size / 2f, cy + size / 2f, paint);
+                paint.setColor(Color.rgb(230, 230, 220));
+                for (int i = 0; i < 5; i++) {
+                    canvas.drawRect(cx + size / 2.3f, cy - size / 2.2f + i * size / 8f,
+                            cx + size / 1.9f, cy - size / 2.2f + i * size / 8f + 3, paint);
+                }
+                // 锁链（胸前飘垂）
+                paint.setColor(Color.rgb(160, 155, 145));
+                paint.setStrokeWidth(2);
+                for (int i = 0; i < 6; i++) {
+                    canvas.drawCircle(cx - size / 6f + i * 4, cy + size / 8f + i * 5, 2.5f, paint);
+                }
+                paint.setStrokeWidth(1);
+                break;
+
+            case GHOST_OFFICER_WHITE:
+                // 扇子（右手）
+                paint.setColor(Color.rgb(240, 235, 220));
+                canvas.drawArc(cx + size / 3f, cy - size / 8f, cx + size / 1.4f, cy + size / 3f, 0, 180, true, paint);
+                // 手铐（左手提）
+                paint.setColor(Color.rgb(160, 155, 145));
+                paint.setStrokeWidth(2);
+                canvas.drawCircle(cx - size / 2.2f, cy + size / 3f, 6, paint);
+                canvas.drawCircle(cx - size / 2.2f + 12, cy + size / 3f, 6, paint);
+                paint.setStrokeWidth(1);
+                break;
+
+            case COW_HEAD:
+                // 钢叉（三叉）
+                paint.setColor(Color.rgb(140, 135, 130));
+                paint.setStrokeWidth(3);
+                canvas.drawLine(cx + size / 2.2f, cy - size / 2f, cx + size / 2.2f, cy + size / 2f, paint);
+                canvas.drawLine(cx + size / 2.6f, cy - size / 2f, cx + size / 2.6f, cy - size / 3f, paint);
+                canvas.drawLine(cx + size / 1.9f, cy - size / 2f, cx + size / 1.9f, cy - size / 3f, paint);
+                paint.setStrokeWidth(1);
+                break;
+
+            case HORSE_FACE:
+                // 铁棍
+                paint.setColor(Color.rgb(90, 85, 90));
+                paint.setStrokeWidth(5);
+                canvas.drawLine(cx + size / 2.2f, cy - size / 2.5f, cx + size / 2.2f, cy + size / 2f, paint);
+                paint.setStrokeWidth(1);
+                break;
+
+            case MENG_PO:
+                // 孟婆汤碗（双手捧着）
+                paint.setColor(Color.rgb(120, 90, 60));
+                canvas.drawOval(cx - size / 4f, cy + size / 8f, cx + size / 4f, cy + size / 3.5f, paint);
+                // 汤面（幽绿）
+                paint.setColor(Color.argb(200, 140, 220, 170));
+                canvas.drawOval(cx - size / 5f, cy + size / 8f, cx + size / 5f, cy + size / 5f, paint);
+                break;
+
+            case GHOST_CLERK:
+                // 铁链（手中提）
+                paint.setColor(Color.rgb(140, 135, 130));
+                paint.setStrokeWidth(2);
+                for (int i = 0; i < 5; i++) {
+                    canvas.drawCircle(cx + size / 2.2f, cy + i * 6, 3, paint);
+                }
+                paint.setStrokeWidth(1);
+                // 胸前“幽”字牌
+                paint.setColor(Color.rgb(30, 25, 35));
+                canvas.drawRect(cx - size / 8f, cy - size / 6f, cx + size / 8f, cy + size / 12f, paint);
+                paint.setColor(Color.rgb(200, 170, 60));
+                paint.setTextSize(size / 6f);
+                paint.setTextAlign(Paint.Align.CENTER);
+                canvas.drawText("幽", cx, cy + size / 30f, paint);
+                break;
+
+            case LOST_SOUL:
+                // 游魂：周围飘浮幽光（幽灵尾迹）
+                paint.setColor(Color.argb(80, 180, 220, 200));
+                canvas.drawCircle(cx - size / 3f, cy + size / 4f, 4, paint);
+                canvas.drawCircle(cx + size / 3f, cy + size / 3f, 3, paint);
+                canvas.drawCircle(cx - size / 4f, cy + size / 2f, 2.5f, paint);
+                break;
         }
     }
 
@@ -695,6 +925,145 @@ public class Npc {
                 canvas.drawArc(cx - radius, cy - radius * 1.1f, cx + radius, cy - radius / 3, 180, 180, true, paint);
                 // 小发髻
                 canvas.drawCircle(cx, cy - radius * 1.25f, radius / 3f, paint);
+                break;
+
+            // ==================== 地府 NPC 发型 ====================
+            case JUDGE_YANLUO:
+                // 冕冠：黑底金边平板 + 前后珠帘
+                canvas.drawArc(cx - radius, cy - radius * 1.1f, cx + radius, cy - radius / 3, 180, 180, true, paint);
+                // 冕板
+                paint.setColor(Color.rgb(20, 15, 30));
+                canvas.drawRect(cx - radius * 1.4f, cy - radius * 1.7f, cx + radius * 1.4f, cy - radius * 1.4f, paint);
+                paint.setColor(Color.rgb(200, 170, 60));
+                canvas.drawRect(cx - radius * 1.4f, cy - radius * 1.42f, cx + radius * 1.4f, cy - radius * 1.38f, paint);
+                // 珠帘（前后各三道）
+                paint.setColor(Color.rgb(220, 180, 60));
+                for (int i = 0; i < 3; i++) {
+                    float px = cx - radius * 1.2f + i * radius * 0.4f;
+                    canvas.drawLine(px, cy - radius * 1.4f, px, cy - radius * 1.05f, paint);
+                    canvas.drawCircle(px, cy - radius * 1.05f, 2, paint);
+                    float px2 = cx + radius * 1.2f - i * radius * 0.4f;
+                    canvas.drawLine(px2, cy - radius * 1.4f, px2, cy - radius * 1.05f, paint);
+                    canvas.drawCircle(px2, cy - radius * 1.05f, 2, paint);
+                }
+                break;
+
+            case JUDGE_CUI:
+                // 判官帽：黑底展脚帽（两侧有长翅）
+                canvas.drawArc(cx - radius, cy - radius * 1.1f, cx + radius, cy - radius / 3, 180, 180, true, paint);
+                paint.setColor(Color.rgb(25, 20, 35));
+                canvas.drawRect(cx - radius, cy - radius * 1.5f, cx + radius, cy - radius, paint);
+                // 两展脚
+                canvas.drawRect(cx - radius * 2, cy - radius * 1.35f, cx - radius, cy - radius * 1.15f, paint);
+                canvas.drawRect(cx + radius, cy - radius * 1.35f, cx + radius * 2, cy - radius * 1.15f, paint);
+                // 帽顶金饰
+                paint.setColor(Color.rgb(200, 170, 60));
+                canvas.drawCircle(cx, cy - radius * 1.5f, radius / 4f, paint);
+                break;
+
+            case GHOST_OFFICER_BLACK:
+                // 高帽：“一见生财”
+                canvas.drawArc(cx - radius, cy - radius * 1.1f, cx + radius, cy - radius / 3, 180, 180, true, paint);
+                paint.setColor(Color.rgb(15, 12, 20));
+                canvas.drawRect(cx - radius * 0.9f, cy - radius * 3f, cx + radius * 0.9f, cy - radius, paint);
+                // 白字
+                paint.setColor(Color.rgb(240, 240, 235));
+                paint.setTextSize(radius * 0.55f);
+                paint.setTextAlign(Paint.Align.CENTER);
+                canvas.drawText("一", cx, cy - radius * 2.4f, paint);
+                canvas.drawText("见", cx, cy - radius * 1.85f, paint);
+                canvas.drawText("生", cx, cy - radius * 1.3f, paint);
+                break;
+
+            case GHOST_OFFICER_WHITE:
+                // 高帽：“天下太平”
+                canvas.drawArc(cx - radius, cy - radius * 1.1f, cx + radius, cy - radius / 3, 180, 180, true, paint);
+                paint.setColor(Color.rgb(240, 240, 235));
+                canvas.drawRect(cx - radius * 0.9f, cy - radius * 3f, cx + radius * 0.9f, cy - radius, paint);
+                // 黑字
+                paint.setColor(Color.rgb(20, 15, 25));
+                paint.setTextSize(radius * 0.5f);
+                paint.setTextAlign(Paint.Align.CENTER);
+                canvas.drawText("天", cx, cy - radius * 2.5f, paint);
+                canvas.drawText("下", cx, cy - radius * 1.95f, paint);
+                canvas.drawText("太", cx, cy - radius * 1.4f, paint);
+                break;
+
+            case COW_HEAD:
+                // 牛头：头顶双弯角（代替头发）
+                paint.setColor(Color.rgb(220, 215, 195));
+                android.graphics.Path horn1 = new android.graphics.Path();
+                horn1.moveTo(cx - radius, cy - radius * 0.6f);
+                horn1.quadTo(cx - radius * 1.6f, cy - radius * 1.4f, cx - radius * 0.9f, cy - radius * 1.3f);
+                horn1.lineTo(cx - radius * 0.85f, cy - radius * 0.9f);
+                horn1.close();
+                canvas.drawPath(horn1, paint);
+                android.graphics.Path horn2 = new android.graphics.Path();
+                horn2.moveTo(cx + radius, cy - radius * 0.6f);
+                horn2.quadTo(cx + radius * 1.6f, cy - radius * 1.4f, cx + radius * 0.9f, cy - radius * 1.3f);
+                horn2.lineTo(cx + radius * 0.85f, cy - radius * 0.9f);
+                horn2.close();
+                canvas.drawPath(horn2, paint);
+                break;
+
+            case HORSE_FACE:
+                // 马面：马耳 + 长鬃
+                canvas.drawArc(cx - radius, cy - radius * 1.1f, cx + radius, cy - radius / 3, 180, 180, true, paint);
+                // 双耳（尖长）
+                android.graphics.Path ear1 = new android.graphics.Path();
+                ear1.moveTo(cx - radius * 0.7f, cy - radius);
+                ear1.lineTo(cx - radius * 0.9f, cy - radius * 1.8f);
+                ear1.lineTo(cx - radius * 0.4f, cy - radius * 1.1f);
+                ear1.close();
+                canvas.drawPath(ear1, paint);
+                android.graphics.Path ear2 = new android.graphics.Path();
+                ear2.moveTo(cx + radius * 0.7f, cy - radius);
+                ear2.lineTo(cx + radius * 0.9f, cy - radius * 1.8f);
+                ear2.lineTo(cx + radius * 0.4f, cy - radius * 1.1f);
+                ear2.close();
+                canvas.drawPath(ear2, paint);
+                break;
+
+            case MENG_PO:
+                // 孟婆：银白发髈（老妇）
+                paint.setColor(Color.rgb(220, 218, 210));
+                canvas.drawArc(cx - radius, cy - radius * 1.15f, cx + radius, cy - radius / 3, 180, 180, true, paint);
+                // 后发髈
+                canvas.drawCircle(cx, cy - radius * 1.25f, radius / 2.2f, paint);
+                // 银簪
+                paint.setColor(Color.rgb(200, 200, 210));
+                canvas.drawLine(cx - radius / 2, cy - radius * 1.25f, cx + radius / 2, cy - radius * 1.25f, paint);
+                break;
+
+            case GHOST_CLERK:
+                // 鬼差：皂色尖顶小帽
+                canvas.drawArc(cx - radius, cy - radius * 1.1f, cx + radius, cy - radius / 3, 180, 180, true, paint);
+                paint.setColor(Color.rgb(35, 30, 45));
+                android.graphics.Path cap = new android.graphics.Path();
+                cap.moveTo(cx - radius, cy - radius * 0.9f);
+                cap.lineTo(cx, cy - radius * 1.9f);
+                cap.lineTo(cx + radius, cy - radius * 0.9f);
+                cap.close();
+                canvas.drawPath(cap, paint);
+                // 红顶珠
+                paint.setColor(Color.rgb(180, 40, 30));
+                canvas.drawCircle(cx, cy - radius * 1.9f, radius / 5f, paint);
+                break;
+
+            case LOST_SOUL:
+                // 游魂：飘散乱发（半透明）
+                paint.setColor(Color.argb(150, 200, 205, 215));
+                for (int i = 0; i < 8; i++) {
+                    float angle = (float) (Math.PI + (i * Math.PI / 7));
+                    float hx = cx + (float) Math.cos(angle) * radius * 1.1f;
+                    float hy = cy + (float) Math.sin(angle) * radius * 0.9f;
+                    canvas.drawCircle(hx, hy, radius / 3f, paint);
+                }
+                // 长飘发丝（向下飘垂）
+                paint.setStrokeWidth(2);
+                canvas.drawLine(cx - radius, cy, cx - radius * 1.2f, cy + radius * 1.2f, paint);
+                canvas.drawLine(cx + radius, cy, cx + radius * 1.2f, cy + radius * 1.2f, paint);
+                paint.setStrokeWidth(1);
                 break;
         }
         paint.setStyle(Paint.Style.FILL);
@@ -974,6 +1343,141 @@ public class Npc {
                 paint.setStrokeWidth(2);
                 canvas.drawArc(cx - radius / 1.5f, cy + radius / 6, cx - radius / 6, cy + radius / 2, 0, -180, false, paint);
                 canvas.drawArc(cx + radius / 6, cy + radius / 6, cx + radius / 1.5f, cy + radius / 2, 0, -180, false, paint);
+                break;
+
+            // ==================== 地府 NPC 面容 ====================
+            case JUDGE_YANLUO:
+                // 威严的怒目 + 长须
+                paint.setColor(Color.rgb(200, 40, 30));
+                canvas.drawCircle(cx - radius / 2.5f, cy - radius / 5, radius / 6, paint);
+                canvas.drawCircle(cx + radius / 2.5f, cy - radius / 5, radius / 6, paint);
+                paint.setColor(Color.BLACK);
+                canvas.drawCircle(cx - radius / 2.5f, cy - radius / 5, radius / 12, paint);
+                canvas.drawCircle(cx + radius / 2.5f, cy - radius / 5, radius / 12, paint);
+                // 怒眉
+                paint.setStrokeWidth(4);
+                canvas.drawLine(cx - radius / 1.4f, cy - radius / 1.6f, cx - radius / 4f, cy - radius / 2.5f, paint);
+                canvas.drawLine(cx + radius / 4f, cy - radius / 2.5f, cx + radius / 1.4f, cy - radius / 1.6f, paint);
+                // 长须（黑灰）
+                paint.setStrokeWidth(2);
+                paint.setColor(Color.rgb(80, 75, 80));
+                for (int i = 0; i < 6; i++) {
+                    float ox = cx - radius / 2 + i * radius / 5f;
+                    canvas.drawLine(ox, cy + radius / 2, ox + (i - 2.5f) * 0.6f, cy + radius * 1.4f, paint);
+                }
+                paint.setStrokeWidth(1);
+                break;
+
+            case JUDGE_CUI:
+                // 官相：细长眼 + 长须
+                paint.setColor(Color.BLACK);
+                canvas.drawOval(cx - radius / 1.8f, cy - radius / 3, cx - radius / 4, cy - radius / 6, paint);
+                canvas.drawOval(cx + radius / 4, cy - radius / 3, cx + radius / 1.8f, cy - radius / 6, paint);
+                // 长黑须
+                paint.setStrokeWidth(2);
+                for (int i = 0; i < 5; i++) {
+                    float ox = cx - radius / 2.5f + i * radius / 4f;
+                    canvas.drawLine(ox, cy + radius / 2, ox, cy + radius * 1.3f, paint);
+                }
+                paint.setStrokeWidth(1);
+                break;
+
+            case GHOST_OFFICER_BLACK:
+                // 黑脸：白目 + 长红舌
+                paint.setColor(Color.WHITE);
+                canvas.drawCircle(cx - radius / 2.5f, cy - radius / 5, radius / 5, paint);
+                canvas.drawCircle(cx + radius / 2.5f, cy - radius / 5, radius / 5, paint);
+                paint.setColor(Color.RED);
+                canvas.drawCircle(cx - radius / 2.5f, cy - radius / 5, radius / 12, paint);
+                canvas.drawCircle(cx + radius / 2.5f, cy - radius / 5, radius / 12, paint);
+                // 长舌（伸到胸前）
+                paint.setColor(Color.rgb(220, 60, 60));
+                canvas.drawOval(cx - radius / 4, cy + radius / 3, cx + radius / 4, cy + radius * 1.6f, paint);
+                break;
+
+            case GHOST_OFFICER_WHITE:
+                // 白脸：黑目 + 微笑 + 短红舌
+                paint.setColor(Color.BLACK);
+                canvas.drawArc(cx - radius / 1.6f, cy - radius / 2, cx - radius / 4, cy - radius / 6, 0, -180, false, paint);
+                canvas.drawArc(cx + radius / 4, cy - radius / 2, cx + radius / 1.6f, cy - radius / 6, 0, -180, false, paint);
+                // 微笑
+                paint.setStrokeWidth(2);
+                canvas.drawArc(cx - radius / 2, cy + radius / 6, cx + radius / 2, cy + radius / 1.8f, 0, 180, false, paint);
+                // 短红舌
+                paint.setColor(Color.rgb(220, 60, 60));
+                canvas.drawOval(cx - radius / 6, cy + radius / 2, cx + radius / 6, cy + radius, paint);
+                paint.setStrokeWidth(1);
+                break;
+
+            case COW_HEAD:
+                // 牛头：大牛眼 + 牛鼻
+                paint.setColor(Color.rgb(200, 195, 175));
+                canvas.drawRect(cx - radius, cy - radius * 0.4f, cx + radius, cy + radius * 1.1f, paint);
+                // 牛眼（黄色发光）
+                paint.setColor(Color.rgb(255, 210, 60));
+                canvas.drawCircle(cx - radius / 2, cy - radius / 6, radius / 5, paint);
+                canvas.drawCircle(cx + radius / 2, cy - radius / 6, radius / 5, paint);
+                paint.setColor(Color.BLACK);
+                canvas.drawCircle(cx - radius / 2, cy - radius / 6, radius / 12, paint);
+                canvas.drawCircle(cx + radius / 2, cy - radius / 6, radius / 12, paint);
+                // 牛鼻（两个大鼻孔）
+                paint.setColor(Color.rgb(80, 50, 40));
+                canvas.drawOval(cx - radius / 2, cy + radius / 2, cx - radius / 6, cy + radius, paint);
+                canvas.drawOval(cx + radius / 6, cy + radius / 2, cx + radius / 2, cy + radius, paint);
+                break;
+
+            case HORSE_FACE:
+                // 马面：长脸 + 马眼
+                paint.setColor(Color.rgb(190, 185, 170));
+                canvas.drawOval(cx - radius * 0.7f, cy - radius * 0.3f, cx + radius * 0.7f, cy + radius * 1.4f, paint);
+                // 马眼（长目）
+                paint.setColor(Color.BLACK);
+                canvas.drawOval(cx - radius / 1.6f, cy - radius / 4, cx - radius / 4, cy - radius / 8, paint);
+                canvas.drawOval(cx + radius / 4, cy - radius / 4, cx + radius / 1.6f, cy - radius / 8, paint);
+                // 鼻孔
+                canvas.drawCircle(cx - radius / 4, cy + radius, radius / 8, paint);
+                canvas.drawCircle(cx + radius / 4, cy + radius, radius / 8, paint);
+                break;
+
+            case MENG_PO:
+                // 孟婆：慈祥皱纹 + 银发
+                paint.setColor(Color.BLACK);
+                // 眩着眼（弧线）
+                paint.setStrokeWidth(2);
+                canvas.drawArc(cx - radius / 1.6f, cy - radius / 4, cx - radius / 4, cy - radius / 8, 0, 180, false, paint);
+                canvas.drawArc(cx + radius / 4, cy - radius / 4, cx + radius / 1.6f, cy - radius / 8, 0, 180, false, paint);
+                // 微笑
+                canvas.drawArc(cx - radius / 3, cy + radius / 4, cx + radius / 3, cy + radius / 1.5f, 200, 140, false, paint);
+                paint.setStrokeWidth(1);
+                // 皱纹
+                paint.setColor(Color.argb(120, 120, 90, 80));
+                canvas.drawLine(cx - radius / 1.5f, cy - radius / 2, cx - radius / 1.2f, cy - radius / 2.5f, paint);
+                canvas.drawLine(cx + radius / 1.5f, cy - radius / 2, cx + radius / 1.2f, cy - radius / 2.5f, paint);
+                break;
+
+            case GHOST_CLERK:
+                // 鬼差：严肃的皂色面孔（带青黑）
+                paint.setColor(Color.rgb(160, 180, 160)); // 幽青面色
+                canvas.drawCircle(cx, cy, radius * 0.95f, paint);
+                paint.setColor(Color.BLACK);
+                canvas.drawCircle(cx - radius / 2.5f, cy - radius / 5, radius / 8, paint);
+                canvas.drawCircle(cx + radius / 2.5f, cy - radius / 5, radius / 8, paint);
+                // 紧抿的嘴
+                paint.setStrokeWidth(2);
+                canvas.drawLine(cx - radius / 3, cy + radius / 3, cx + radius / 3, cy + radius / 3, paint);
+                paint.setStrokeWidth(1);
+                break;
+
+            case LOST_SOUL:
+                // 游魂：空洞的眼窝 + 半透明面
+                paint.setColor(Color.argb(160, 220, 225, 235));
+                canvas.drawCircle(cx, cy, radius, paint);
+                // 黑眼窝（无瞳孔）
+                paint.setColor(Color.argb(200, 10, 5, 15));
+                canvas.drawOval(cx - radius / 1.8f, cy - radius / 3, cx - radius / 4, cy + radius / 8, paint);
+                canvas.drawOval(cx + radius / 4, cy - radius / 3, cx + radius / 1.8f, cy + radius / 8, paint);
+                // 张开的口（呆滞）
+                canvas.drawOval(cx - radius / 5, cy + radius / 2, cx + radius / 5, cy + radius * 0.9f, paint);
                 break;
         }
         paint.setStyle(Paint.Style.FILL); // Reset style

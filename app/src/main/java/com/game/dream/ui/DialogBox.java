@@ -105,8 +105,9 @@ public class DialogBox {
         }
         if (message != null) {
             tempPaint.setTextSize(30);
-            String[] lines = message.split("\n");
-            contentY += lines.length * 42; // message lines (30px font + 12px line height)
+            float maxTextWidth = bounds.width() - 60;
+            List<String> wrappedLines = wrapText(message, tempPaint, maxTextWidth);
+            contentY += wrappedLines.size() * 42;
         }
         contentY += 30; // gap before buttons
         int startY = contentY;
@@ -161,9 +162,10 @@ public class DialogBox {
 
             posY += 60;
 
-            // Draw message with simple line breaking
-            String[] lines = message.split("\n");
-            for (String line : lines) {
+            // Draw message with automatic text wrapping
+            float maxTextWidth = bounds.width() - 60;
+            List<String> wrappedLines = wrapText(message, paint, maxTextWidth);
+            for (String line : wrappedLines) {
                 canvas.drawText(line, bounds.left + 30, posY, paint);
                 posY += 45;
             }
@@ -203,6 +205,31 @@ public class DialogBox {
         paint.setStrokeWidth(3);
         canvas.drawLine(closeButton.left + 10, closeButton.top + 10, closeButton.right - 10, closeButton.bottom - 10, paint);
         canvas.drawLine(closeButton.right - 10, closeButton.top + 10, closeButton.left + 10, closeButton.bottom - 10, paint);
+    }
+
+    /**
+     * 自动换行：按可用宽度拆分文本，同时支持显式 \n 换行
+     */
+    private List<String> wrapText(String text, Paint paint, float maxWidth) {
+        List<String> result = new ArrayList<>();
+        String[] paragraphs = text.split("\n");
+        for (String paragraph : paragraphs) {
+            if (paragraph.isEmpty()) {
+                result.add("");
+                continue;
+            }
+            int start = 0;
+            while (start < paragraph.length()) {
+                int count = paint.breakText(paragraph, start, paragraph.length(), true, maxWidth, null);
+                if (count <= 0) {
+                    // 防止死循环：至少取一个字符
+                    count = 1;
+                }
+                result.add(paragraph.substring(start, start + count));
+                start += count;
+            }
+        }
+        return result;
     }
 
     public boolean handleTouch(float x, float y) {

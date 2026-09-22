@@ -30,9 +30,9 @@ public class FunctionNpcManager {
     public boolean handleNpcClick(Npc npc) {
         switch (npc.getId()) {
             case 100101: {
-                // 清溪村村长 - 迷宫入口 / 金陵入口
-                List<String> options = Arrays.asList("探索迷宫", "前往金陵", "不了");
-                String message = "少侠想去哪里？村外有一处迷雾迷宫，另外南方有一座繁华的大城金陵，也可以去闯荡一番。";
+                // 清溪村村长 - 迷宫入口 / 金陵入口 / 地府入口
+                List<String> options = Arrays.asList("探索迷宫", "前往金陵", "前往地府", "不了");
+                String message = "少侠想去哪里？村外有一处迷雾迷宫，另外南方有一座繁华的大城金陵，也可以去闯荡一番。若少侠胆量过人，北面乱葬岗下有一道陰门，直通地府……";
                 GameEngine.getInstance().showDialog(npc.getName(), message, options, new DialogBox.DialogListener() {
                     @Override
                     public void onOptionSelected(int optionIndex) {
@@ -40,6 +40,8 @@ public class FunctionNpcManager {
                             GameEngine.getInstance().teleportToMap(MapSystem.MAP_ID_QING_XI_MAZE);
                         } else if (optionIndex == 1) {
                             GameEngine.getInstance().teleportToMap(MapSystem.MAP_ID_JIN_LING);
+                        } else if (optionIndex == 2) {
+                            GameEngine.getInstance().teleportToMap(MapSystem.MAP_ID_NETHERWORLD);
                         }
                     }
                 });
@@ -216,6 +218,49 @@ public class FunctionNpcManager {
                             RoleSystem.getInstance().getRoleInfo().setMoney(
                                     RoleSystem.getInstance().getRoleInfo().getMoney() - cost);
                             GameEngine.getInstance().teleportToMap(MapSystem.MAP_ID_DONGHAI_BAY);
+                        }
+                    }
+                });
+                return true;
+            }
+            case 100501: {
+                //地府-引魂使者（返回人间）
+                List<String> options = Arrays.asList("返回清溪村", "不了");
+                String message = "阴阳两隔，活人不宜久留于此。少侠若想回返人间，小吽可代为引魂……";
+                GameEngine.getInstance().showDialog(npc.getName(), message, options, new DialogBox.DialogListener() {
+                    @Override
+                    public void onOptionSelected(int optionIndex) {
+                        if (optionIndex == 0) {
+                            GameEngine.getInstance().teleportToMap(MapSystem.MAP_ID_QING_XI);
+                        }
+                    }
+                });
+                return true;
+            }
+            case 100502: {
+                //地府-阎罗王
+                String message = "大胆！阳人何以闯入森罗殿？……哼，念你初犯，且退下吧。";
+                GameEngine.getInstance().showDialog(npc.getName(), message);
+                return true;
+            }
+            case 100508: {
+                //地府-孟婆
+                String message = "奈何桥上无老少，一碗孟婆汤忘前尘。少侠尚是阳身，这汤……可饮不得。";
+                GameEngine.getInstance().showDialog(npc.getName(), message);
+                return true;
+            }
+            case 100531:
+            case 100532: {
+                //幽魂牢-黑白无常（主角死亡后囚禁于此，可送返回人间）
+                List<String> options = Arrays.asList("恳请二位送我回阳间", "不了");
+                String message = npc.getId() == 100531
+                        ? "嘿嘿……阳寿未尽却已魂归幽魂牢，看来阎王爷也懒得收你。若想还阳，得答应一个条件——回去后多行善事，莫再轻掷性命。"
+                        : "阳间寿数未终，本不该拘你魂魄。奈何你已身死，只能暂寄此牢。若愿还阳，我兄弟二人可代为引魂……只是回去后须得惜命。";
+                GameEngine.getInstance().showDialog(npc.getName(), message, options, new DialogBox.DialogListener() {
+                    @Override
+                    public void onOptionSelected(int optionIndex) {
+                        if (optionIndex == 0) {
+                            GameEngine.getInstance().teleportToMap(MapSystem.MAP_ID_QING_XI);
                         }
                     }
                 });

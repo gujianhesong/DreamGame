@@ -65,6 +65,14 @@ public class MapRenderer {
     private static final int KELP_FOREST = 18;
     private static final int HYDROTHERMAL = 19;
     private static final int PALACE_GROUND = 20;
+    private static final int NETHER_WASTELAND    = 21;
+    private static final int YELLOW_SPRING_RIVER = 22;
+    private static final int STONE_BRIDGE        = 23;
+    private static final int SPIDER_LILY_FIELD   = 24;
+    private static final int GHOST_GATE_WALL     = 25;
+    private static final int JUDGE_HALL_GROUND   = 26;
+    private static final int HELL_PIT            = 27;
+    private static final int BONE_PILE           = 28;
 
     public MapRenderer(int[][] map, int mapWidth, int mapHeight, int tileSize) {
         this.map = map;
@@ -197,6 +205,14 @@ public class MapRenderer {
             case KELP_FOREST:   baseR = 15;  baseG = 70;  baseB = 95;  break;
             case HYDROTHERMAL:  baseR = 55;  baseG = 25;  baseB = 25;  break;
             case PALACE_GROUND: baseR = 70;  baseG = 115; baseB = 135; break;
+            case NETHER_WASTELAND:    baseR = 46;  baseG = 36;  baseB = 56;  break;
+            case YELLOW_SPRING_RIVER: baseR = 30;  baseG = 52;  baseB = 46;  break;
+            case STONE_BRIDGE:        baseR = 96;  baseG = 88;  baseB = 92;  break;
+            case SPIDER_LILY_FIELD:   baseR = 62;  baseG = 24;  baseB = 30;  break;
+            case GHOST_GATE_WALL:     baseR = 28;  baseG = 24;  baseB = 40;  break;
+            case JUDGE_HALL_GROUND:   baseR = 54;  baseG = 42;  baseB = 58;  break;
+            case HELL_PIT:            baseR = 26;  baseG = 10;  baseB = 12;  break;
+            case BONE_PILE:           baseR = 132; baseG = 122; baseB = 108; break;
             default:        baseR = 128; baseG = 128; baseB = 128; break;
         }
 
@@ -343,6 +359,30 @@ public class MapRenderer {
                 break;
             case PALACE_GROUND:
                 drawPalaceGroundDeco(canvas, paint, rng, screenX, screenY, cx, cy);
+                break;
+            case NETHER_WASTELAND:
+                drawNetherWastelandDeco(canvas, paint, rng, screenX, screenY, cx, cy);
+                break;
+            case YELLOW_SPRING_RIVER:
+                drawYellowSpringRiverDeco(canvas, paint, rng, screenX, screenY, cx, cy);
+                break;
+            case STONE_BRIDGE:
+                drawStoneBridgeDeco(canvas, paint, rng, screenX, screenY, cx, cy);
+                break;
+            case SPIDER_LILY_FIELD:
+                drawSpiderLilyFieldDeco(canvas, paint, rng, screenX, screenY, cx, cy);
+                break;
+            case GHOST_GATE_WALL:
+                drawGhostGateWallDeco(canvas, paint, rng, screenX, screenY, cx, cy);
+                break;
+            case JUDGE_HALL_GROUND:
+                drawJudgeHallGroundDeco(canvas, paint, rng, screenX, screenY, cx, cy);
+                break;
+            case HELL_PIT:
+                drawHellPitDeco(canvas, paint, rng, screenX, screenY, cx, cy);
+                break;
+            case BONE_PILE:
+                drawBonePileDeco(canvas, paint, rng, screenX, screenY, cx, cy);
                 break;
         }
     }
@@ -947,6 +987,246 @@ public class MapRenderer {
     }
 
     /**
+     * NetherWasteland: 幽冥荒原 —— 零星灰紫小草、碎石、裂纹
+     */
+    private void drawNetherWastelandDeco(Canvas canvas, Paint paint, java.util.Random rng,
+                                          int sx, int sy, float cx, float cy) {
+        // 枯草（1~2 簇，灰紫色）
+        if (rng.nextInt(2) == 0) {
+            int tufts = 1 + rng.nextInt(2);
+            for (int i = 0; i < tufts; i++) {
+                float gx = sx + 3 + rng.nextInt(tileSize - 6);
+                float gy = sy + 3 + rng.nextInt(tileSize - 6);
+                paint.setColor(Color.argb(120, 90, 75, 110));
+                paint.setStrokeWidth(1);
+                float h = 2.5f + rng.nextFloat() * 2.5f;
+                canvas.drawLine(gx, gy, gx - 1.2f, gy - h, paint);
+                canvas.drawLine(gx, gy, gx + 0.5f, gy - h - 0.5f, paint);
+                canvas.drawLine(gx, gy, gx + 1.4f, gy - h, paint);
+            }
+        }
+        // 小碎石
+        if (rng.nextInt(3) == 0) {
+            float rx = sx + 4 + rng.nextInt(tileSize - 8);
+            float ry = sy + 4 + rng.nextInt(tileSize - 8);
+            int g = 55 + rng.nextInt(30);
+            paint.setColor(Color.rgb(g, g - 5, g + 5));
+            canvas.drawCircle(rx, ry, 1 + rng.nextFloat() * 0.8f, paint);
+        }
+        // 裂纹
+        if (rng.nextInt(5) == 0) {
+            float x1 = sx + 3 + rng.nextInt(tileSize - 6);
+            float y1 = sy + 3 + rng.nextInt(tileSize - 6);
+            float x2 = x1 + (rng.nextFloat() - 0.5f) * 7;
+            float y2 = y1 + (rng.nextFloat() - 0.5f) * 7;
+            paint.setColor(Color.argb(90, 20, 15, 30));
+            paint.setStrokeWidth(1);
+            canvas.drawLine(x1, y1, x2, y2, paint);
+        }
+    }
+
+    /**
+     * YellowSpringRiver: 黄泉河 —— 墨绿漩涡、幽光、漂浮纸灰
+     */
+    private void drawYellowSpringRiverDeco(Canvas canvas, Paint paint, java.util.Random rng,
+                                            int sx, int sy, float cx, float cy) {
+        // 暗流纹
+        if (rng.nextInt(2) == 0) {
+            float wx = sx + 2 + rng.nextInt(tileSize - 4);
+            float wy = sy + 4 + rng.nextInt(tileSize - 8);
+            paint.setColor(Color.argb(60, 70, 110, 90));
+            paint.setStrokeWidth(1);
+            canvas.drawLine(wx, wy, wx + 5 + rng.nextFloat() * 5, wy + (rng.nextFloat() - 0.5f) * 2, paint);
+        }
+        // 幽绿光点（磷火倒映）
+        if (rng.nextInt(4) == 0) {
+            float gx = sx + 3 + rng.nextInt(tileSize - 6);
+            float gy = sy + 3 + rng.nextInt(tileSize - 6);
+            paint.setColor(Color.argb(60, 130, 220, 160));
+            canvas.drawCircle(gx, gy, 1 + rng.nextFloat() * 0.6f, paint);
+        }
+        // 漂浮灰白纸灰
+        if (rng.nextInt(6) == 0) {
+            float fx = sx + 4 + rng.nextInt(tileSize - 8);
+            float fy = sy + 4 + rng.nextInt(tileSize - 8);
+            paint.setColor(Color.argb(140, 210, 205, 190));
+            canvas.drawCircle(fx, fy, 0.9f, paint);
+        }
+    }
+
+    /**
+     * StoneBridge: 奈何桥石板 —— 桥面砖缝、苔痕
+     */
+    private void drawStoneBridgeDeco(Canvas canvas, Paint paint, java.util.Random rng,
+                                      int sx, int sy, float cx, float cy) {
+        // 石板缝
+        paint.setColor(Color.argb(60, 60, 55, 65));
+        paint.setStrokeWidth(1);
+        canvas.drawLine(sx, sy + tileSize / 2, sx + tileSize, sy + tileSize / 2, paint);
+        canvas.drawLine(sx + tileSize / 2, sy, sx + tileSize / 2, sy + tileSize, paint);
+        // 苔痕
+        if (rng.nextInt(4) == 0) {
+            float mx = sx + 3 + rng.nextInt(tileSize - 6);
+            float my = sy + 3 + rng.nextInt(tileSize - 6);
+            paint.setColor(Color.argb(50, 80, 110, 70));
+            canvas.drawCircle(mx, my, 1.2f, paint);
+        }
+    }
+
+    /**
+     * SpiderLilyField: 彼岸花田 —— 血红五瓣花、细长花茎
+     */
+    private void drawSpiderLilyFieldDeco(Canvas canvas, Paint paint, java.util.Random rng,
+                                          int sx, int sy, float cx, float cy) {
+        // 每格 1~2 朵彼岸花
+        int flowers = 1 + rng.nextInt(2);
+        for (int i = 0; i < flowers; i++) {
+            float fx = sx + 3 + rng.nextInt(tileSize - 6);
+            float fy = sy + 4 + rng.nextInt(tileSize - 8);
+            // 花茎
+            paint.setColor(Color.rgb(70, 90, 50));
+            paint.setStrokeWidth(1);
+            canvas.drawLine(fx, fy + 3, fx, fy - 1, paint);
+            // 五瓣（细长的血红花瓣）
+            int petalShade = rng.nextInt(40);
+            paint.setColor(Color.rgb(200 + petalShade / 2, 30 + petalShade / 3, 40));
+            for (int p = 0; p < 5; p++) {
+                float ang = (float) (p * Math.PI * 2 / 5);
+                float px = fx + (float) Math.cos(ang) * 2.2f;
+                float py = fy + (float) Math.sin(ang) * 2.2f;
+                canvas.drawLine(fx, fy, px, py, paint);
+            }
+            // 花心亮点
+            paint.setColor(Color.argb(200, 255, 200, 180));
+            canvas.drawCircle(fx, fy, 0.8f, paint);
+        }
+        // 偶发白花（忘川彼岸）
+        if (rng.nextInt(8) == 0) {
+            float wx = sx + 4 + rng.nextInt(tileSize - 8);
+            float wy = sy + 4 + rng.nextInt(tileSize - 8);
+            paint.setColor(Color.argb(200, 235, 230, 220));
+            canvas.drawCircle(wx, wy, 1.4f, paint);
+        }
+    }
+
+    /**
+     * GhostGateWall: 鬼门关城墙 —— 黑铁砖纹 + 血锈
+     */
+    private void drawGhostGateWallDeco(Canvas canvas, Paint paint, java.util.Random rng,
+                                        int sx, int sy, float cx, float cy) {
+        // 砖缝
+        paint.setColor(Color.argb(120, 15, 10, 25));
+        paint.setStrokeWidth(1);
+        canvas.drawLine(sx, sy + tileSize / 2, sx + tileSize, sy + tileSize / 2, paint);
+        canvas.drawLine(sx + tileSize / 2, sy, sx + tileSize / 2, sy + tileSize / 2, paint);
+        canvas.drawLine(sx + tileSize / 4, sy + tileSize / 2, sx + tileSize / 4, sy + tileSize, paint);
+        canvas.drawLine(sx + tileSize * 3 / 4, sy + tileSize / 2, sx + tileSize * 3 / 4, sy + tileSize, paint);
+        // 血锈斑
+        if (rng.nextInt(3) == 0) {
+            float rx = sx + 3 + rng.nextInt(tileSize - 6);
+            float ry = sy + 3 + rng.nextInt(tileSize - 6);
+            paint.setColor(Color.argb(90, 120, 25, 20));
+            canvas.drawCircle(rx, ry, 1 + rng.nextFloat() * 1.2f, paint);
+        }
+        // 幽绿苔光
+        if (rng.nextInt(6) == 0) {
+            float gx = sx + 3 + rng.nextInt(tileSize - 6);
+            float gy = sy + 3 + rng.nextInt(tileSize - 6);
+            paint.setColor(Color.argb(50, 100, 200, 140));
+            canvas.drawCircle(gx, gy, 1, paint);
+        }
+    }
+
+    /**
+     * JudgeHallGround: 阎罗殿地面 —— 玄色石砖 + 金色暗纹
+     */
+    private void drawJudgeHallGroundDeco(Canvas canvas, Paint paint, java.util.Random rng,
+                                          int sx, int sy, float cx, float cy) {
+        // 石砖缝
+        paint.setColor(Color.argb(70, 25, 20, 35));
+        paint.setStrokeWidth(1);
+        canvas.drawLine(sx, sy + tileSize / 2, sx + tileSize, sy + tileSize / 2, paint);
+        canvas.drawLine(sx + tileSize / 2, sy, sx + tileSize / 2, sy + tileSize, paint);
+        // 金色暗纹（云纹感）
+        if (rng.nextInt(4) == 0) {
+            float gx = sx + 4 + rng.nextInt(tileSize - 8);
+            float gy = sy + 4 + rng.nextInt(tileSize - 8);
+            paint.setColor(Color.argb(50, 190, 160, 60));
+            canvas.drawCircle(gx, gy, 1 + rng.nextFloat() * 0.6f, paint);
+        }
+        // 幽光点
+        if (rng.nextInt(6) == 0) {
+            float lx = sx + 3 + rng.nextInt(tileSize - 6);
+            float ly = sy + 3 + rng.nextInt(tileSize - 6);
+            paint.setColor(Color.argb(45, 150, 220, 180));
+            canvas.drawCircle(lx, ly, 0.9f, paint);
+        }
+    }
+
+    /**
+     * HellPit: 地狱深渊 —— 暗红发光裂纹、火星
+     */
+    private void drawHellPitDeco(Canvas canvas, Paint paint, java.util.Random rng,
+                                  int sx, int sy, float cx, float cy) {
+        // 岩浆裂纹
+        int cracks = 1 + rng.nextInt(2);
+        for (int i = 0; i < cracks; i++) {
+            float x1 = sx + 2 + rng.nextInt(tileSize - 4);
+            float y1 = sy + 2 + rng.nextInt(tileSize - 4);
+            float x2 = x1 + (rng.nextFloat() - 0.5f) * 9;
+            float y2 = y1 + (rng.nextFloat() - 0.5f) * 9;
+            paint.setColor(Color.argb(140, 200, 60, 20));
+            paint.setStrokeWidth(1);
+            canvas.drawLine(x1, y1, x2, y2, paint);
+        }
+        // 火星
+        if (rng.nextInt(2) == 0) {
+            float hx = sx + 3 + rng.nextInt(tileSize - 6);
+            float hy = sy + 3 + rng.nextInt(tileSize - 6);
+            paint.setColor(Color.argb(120, 255, 140, 40));
+            canvas.drawCircle(hx, hy, 1 + rng.nextFloat() * 0.8f, paint);
+        }
+        // 红色余晖
+        paint.setColor(Color.argb(20, 180, 40, 20));
+        canvas.drawCircle(cx, cy, tileSize * 0.4f, paint);
+    }
+
+    /**
+     * BonePile: 白骨堆 —— 小骨头、颅骨
+     */
+    private void drawBonePileDeco(Canvas canvas, Paint paint, java.util.Random rng,
+                                   int sx, int sy, float cx, float cy) {
+        // 骨段（1~2 根）
+        int bones = 1 + rng.nextInt(2);
+        for (int i = 0; i < bones; i++) {
+            float bx = sx + 3 + rng.nextInt(tileSize - 6);
+            float by = sy + 4 + rng.nextInt(tileSize - 8);
+            float ang = rng.nextFloat() * (float) Math.PI;
+            float dx = (float) Math.cos(ang) * 3;
+            float dy = (float) Math.sin(ang) * 3;
+            paint.setColor(Color.rgb(220, 215, 195));
+            paint.setStrokeWidth(2);
+            canvas.drawLine(bx - dx, by - dy, bx + dx, by + dy, paint);
+            // 骨端小球
+            paint.setColor(Color.rgb(235, 230, 210));
+            canvas.drawCircle(bx - dx, by - dy, 1.1f, paint);
+            canvas.drawCircle(bx + dx, by + dy, 1.1f, paint);
+            paint.setStrokeWidth(1);
+        }
+        // 颅骨（15% 概率）
+        if (rng.nextInt(7) == 0) {
+            float kx = sx + 5 + rng.nextInt(tileSize - 10);
+            float ky = sy + 5 + rng.nextInt(tileSize - 10);
+            paint.setColor(Color.rgb(230, 225, 205));
+            canvas.drawCircle(kx, ky, 2.2f, paint);
+            // 眼窝
+            paint.setColor(Color.rgb(30, 25, 30));
+            canvas.drawCircle(kx - 0.8f, ky - 0.3f, 0.5f, paint);
+            canvas.drawCircle(kx + 0.8f, ky - 0.3f, 0.5f, paint);
+        }
+    }
+
+    /**
      * Deterministic hash for tile position
      */
     private int hashTile(int x, int y) {
@@ -1235,6 +1515,20 @@ public class MapRenderer {
             case CITY_WALL: return new int[]{100, 95, 90};
             case SAND:      return new int[]{235, 215, 160};
             case SEA:       return new int[]{20, 80, 170};
+            case DEEP_SEA:      return new int[]{8, 30, 80};
+            case CORAL_REEF:    return new int[]{25, 100, 150};
+            case SEA_FLOOR:     return new int[]{45, 130, 150};
+            case KELP_FOREST:   return new int[]{15, 70, 95};
+            case HYDROTHERMAL:  return new int[]{55, 25, 25};
+            case PALACE_GROUND: return new int[]{70, 115, 135};
+            case NETHER_WASTELAND:    return new int[]{46, 36, 56};
+            case YELLOW_SPRING_RIVER: return new int[]{30, 52, 46};
+            case STONE_BRIDGE:        return new int[]{96, 88, 92};
+            case SPIDER_LILY_FIELD:   return new int[]{62, 24, 30};
+            case GHOST_GATE_WALL:     return new int[]{28, 24, 40};
+            case JUDGE_HALL_GROUND:   return new int[]{54, 42, 58};
+            case HELL_PIT:            return new int[]{26, 10, 12};
+            case BONE_PILE:           return new int[]{132, 122, 108};
             default:        return new int[]{128, 128, 128};
         }
     }

@@ -102,6 +102,13 @@ public class Projectile {
                     this.color = Color.rgb(200, 255, 100);
                     this.lifetime = 1200;
                     break;
+                case ENEMY_SoulTear:
+                    speed = 180;
+                    this.size = 16;
+                    this.color = Color.rgb(100, 180, 255);
+                    this.lifetime = 2500;
+                    this.rotationSpeed = 3f; // 缓慢旋转，飘忽感
+                    break;
                 default:
                     speed = 300;
                     this.size = 10;
@@ -180,6 +187,9 @@ public class Projectile {
                 break;
             case ENEMY_DragonLightning:
                 drawDragonLightning(canvas, paint, screenX, screenY);
+                break;
+            case ENEMY_SoulTear:
+                drawSoulTear(canvas, paint, screenX, screenY);
                 break;
         }
     }
@@ -401,5 +411,41 @@ public class Projectile {
             canvas.drawLine(midX, midY, endX, endY, paint);
         }
         paint.setStrokeWidth(1);
+    }
+
+    /**
+     * 绘制幽蓝泪珠（孤魂远程法术）—— 缓慢飘行的蓝色光球，带泪滴拖尾
+     */
+    private void drawSoulTear(Canvas canvas, Paint paint, float cx, float cy) {
+        long now = System.currentTimeMillis();
+        float pulse = 1.0f + 0.15f * (float) Math.sin(now / 200.0);
+
+        // 外层幽蓝光晕
+        paint.setColor(Color.argb(40, 80, 160, 255));
+        canvas.drawCircle(cx, cy, size * 2.2f * pulse, paint);
+
+        // 中层光球
+        paint.setColor(Color.argb(100, 100, 180, 255));
+        canvas.drawCircle(cx, cy, size * 1.3f * pulse, paint);
+
+        // 主体泪珠（椭圆，像一滴眼泪）
+        paint.setColor(Color.argb(200, 130, 200, 255));
+        canvas.save();
+        canvas.rotate(rotation * 30f, cx, cy);
+        canvas.drawOval(cx - size * 0.6f, cy - size, cx + size * 0.6f, cy + size, paint);
+        canvas.restore();
+
+        // 核心亮点
+        paint.setColor(Color.argb(230, 220, 240, 255));
+        canvas.drawCircle(cx, cy - size * 0.2f, size * 0.35f, paint);
+
+        // 拖尾粒子（向后飘散的小光点）
+        paint.setColor(Color.argb(80, 100, 180, 255));
+        for (int i = 1; i <= 4; i++) {
+            float tailX = cx - vx * 0.01f * i + (float) Math.sin(now / 150.0 + i) * 3;
+            float tailY = cy - vy * 0.01f * i + (float) Math.cos(now / 180.0 + i) * 2;
+            float tailSize = size * (0.4f - i * 0.07f);
+            canvas.drawCircle(tailX, tailY, tailSize, paint);
+        }
     }
 }

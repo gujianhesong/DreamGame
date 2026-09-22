@@ -158,6 +158,30 @@ public class Minimap {
                     case 20: // PALACE_GROUND
                         paint.setColor(Color.rgb(70, 115, 135));
                         break;
+                    case 21: // NETHER_WASTELAND
+                        paint.setColor(Color.rgb(60, 45, 55));
+                        break;
+                    case 22: // YELLOW_SPRING_RIVER
+                        paint.setColor(Color.rgb(90, 70, 40));
+                        break;
+                    case 23: // STONE_BRIDGE
+                        paint.setColor(Color.rgb(120, 110, 105));
+                        break;
+                    case 24: // SPIDER_LILY_FIELD
+                        paint.setColor(Color.rgb(140, 30, 40));
+                        break;
+                    case 25: // GHOST_GATE_WALL
+                        paint.setColor(Color.rgb(45, 35, 50));
+                        break;
+                    case 26: // JUDGE_HALL_GROUND
+                        paint.setColor(Color.rgb(85, 70, 90));
+                        break;
+                    case 27: // HELL_PIT
+                        paint.setColor(Color.rgb(120, 20, 15));
+                        break;
+                    case 28: // BONE_PILE
+                        paint.setColor(Color.rgb(170, 165, 150));
+                        break;
                     case 100: // VILLAGE_CAN_PASS
                         paint.setColor(Color.rgb(215, 162, 109));
                         break;

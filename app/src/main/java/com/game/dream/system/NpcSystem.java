@@ -146,6 +146,46 @@ public class NpcSystem {
                 npcList.add(new Npc(100403, "龙女", NpcType.BEAUTY, 9500, 10500));
             }
             break;
+            case MapSystem.MAP_ID_NETHERWORLD: {
+                //地府
+                // 引魂使者（返回人间入口，位于鬼门关外、奈何桥北端）
+                npcList.add(new Npc(100501, "引魂使者", NpcType.GHOST_CLERK, 10320, 13400));
+
+                // 森罗殿主殿
+                npcList.add(new Npc(100502, "阎罗王", NpcType.JUDGE_YANLUO, 10000, 9500));
+                npcList.add(new Npc(100503, "崔判官", NpcType.JUDGE_CUI, 10350, 9800));
+
+                // 鬼门关内两侧（黑白无常）
+                npcList.add(new Npc(100504, "黑无常", NpcType.GHOST_OFFICER_BLACK, 9750, 12600));
+                npcList.add(new Npc(100505, "白无常", NpcType.GHOST_OFFICER_WHITE, 10250, 12600));
+
+                // 鬼门关外两侧（牛头马面）
+                npcList.add(new Npc(100506, "牛头", NpcType.COW_HEAD, 9600, 13250));
+                npcList.add(new Npc(100507, "马面", NpcType.HORSE_FACE, 10400, 13250));
+
+                // 奈何桥头（孟婆）
+                npcList.add(new Npc(100508, "孟婆", NpcType.MENG_PO, 10000, 15500));
+
+                // 殿前鬼差（巡视）
+                npcList.add(new Npc(100511, "鬼差·甲", NpcType.GHOST_CLERK, 8500, 11500));
+                npcList.add(new Npc(100512, "鬼差·乙", NpcType.GHOST_CLERK, 11500, 11500));
+                npcList.add(new Npc(100513, "鬼差·丙", NpcType.GHOST_CLERK, 8500, 8500));
+                npcList.add(new Npc(100514, "鬼差·丁", NpcType.GHOST_CLERK, 11500, 8500));
+
+                // 游魂（散布在彼岸花田）
+                npcList.add(new Npc(100521, "游魂", NpcType.LOST_SOUL, 14200, 10200));
+                npcList.add(new Npc(100522, "游魂", NpcType.LOST_SOUL, 5800, 9800));
+                npcList.add(new Npc(100523, "游魂", NpcType.LOST_SOUL, 10000, 5500));
+                npcList.add(new Npc(100524, "游魂", NpcType.LOST_SOUL, 13200, 13800));
+                npcList.add(new Npc(100525, "游魂", NpcType.LOST_SOUL, 6800, 13500));
+                npcList.add(new Npc(100526, "游魂", NpcType.LOST_SOUL, 12500, 6500));
+
+                // 幽魂牢（东南角封闭囚室，主角死亡后囚禁于此）
+                // 牢内中心 (18800, 18800)，黑白无常守在两侧，可送主角返回人间
+                npcList.add(new Npc(100531, "黑无常", NpcType.GHOST_OFFICER_BLACK, 18550, 18800));
+                npcList.add(new Npc(100532, "白无常", NpcType.GHOST_OFFICER_WHITE, 19050, 18800));
+            }
+            break;
         }
         return npcList;
     }

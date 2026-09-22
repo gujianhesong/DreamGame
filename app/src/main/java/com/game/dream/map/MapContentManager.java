@@ -9,6 +9,8 @@ import com.game.dream.enemy.CrabGeneral;
 import com.game.dream.enemy.FoxSpirit;
 import com.game.dream.enemy.GiantSeaTurtle;
 import com.game.dream.enemy.LittleGreenDragon;
+import com.game.dream.enemy.LonelySpirit;
+import com.game.dream.enemy.SavageWraith;
 import com.game.dream.enemy.ShrimpSoldier;
 import com.game.dream.enemy.Tiger;
 import com.game.dream.enemy.Viper;
@@ -58,6 +60,8 @@ public class MapContentManager {
             enemyCount = 120; // 迷宫中怪物少一些
         } else if (mapId == MapSystem.MAP_ID_JIN_LING) {
             enemyCount = 3000; // 金陵大地图怪物多一些
+        } else if (mapId == MapSystem.MAP_ID_NETHERWORLD) {
+            enemyCount = 400; // 地府危险区域，怪物较多
         } else {
             enemyCount = 180;
         }
@@ -77,7 +81,24 @@ public class MapContentManager {
 
                 // Spawn on passable terrain
                 boolean canSpawn = false;
-                if (mapId > 1000 && mapId < 2000) {
+                if (mapId == MapSystem.MAP_ID_NETHERWORLD) {
+                    // 地府: 孤魂在彼岸花田/黄泉河两岸，野鬼在幽冥荒原/白骨堆
+                    // 阎罗殿/奈何桥/幽魂牢/地狱深渊/鬼门关城墙不刷怪
+                    canSpawn = (terrain == MapGenerator.SPIDER_LILY_FIELD
+                            || terrain == MapGenerator.NETHER_WASTELAND
+                            || terrain == MapGenerator.BONE_PILE);
+                    // 幽魂牢区域绝对不刷怪
+                    if (canSpawn) {
+                        float wx = gridX * TILE_SIZE + TILE_SIZE / 2f;
+                        float wy = gridY * TILE_SIZE + TILE_SIZE / 2f;
+                        if (wx >= NetherworldMapGenerator.PRISON_X1 - 200
+                                && wx <= NetherworldMapGenerator.PRISON_X2 + 200
+                                && wy >= NetherworldMapGenerator.PRISON_Y1 - 200
+                                && wy <= NetherworldMapGenerator.PRISON_Y2 + 200) {
+                            canSpawn = false;
+                        }
+                    }
+                } else if (mapId > 1000 && mapId < 2000) {
                     // 普通大地图: 不能在水/岩浆/村庄建筑/河流/山脉/城墙上生成
                     canSpawn = (terrain != MapGenerator.LAKE && terrain != MapGenerator.LAVA
                             && terrain != MapGenerator.VILLAGE_CAN_PASS && terrain != MapGenerator.VILLAGE_NO_PASS
@@ -201,6 +222,37 @@ public class MapContentManager {
                 } else {
                     enemy = new CrabGeneral(spawnX, spawnY);
                     enemy.setName("蟹将");
+                }
+                break;
+            }
+            case MapSystem.MAP_ID_NETHERWORLD: {
+                // 地府: 孤魂(彼岸花田/黄泉河畔) + 野鬼(幽冥荒原/白骨堆)
+                // 根据刷新点地形决定怪物类型
+                int[][] netherMap = MapSystem.getInstance().getCurMapInfo().getMapData();
+                int gx = (int) (spawnX / TILE_SIZE);
+                int gy = (int) (spawnY / TILE_SIZE);
+                int terrain = 0;
+                if (netherMap != null && gy >= 0 && gy < netherMap.length && gx >= 0 && gx < netherMap[0].length) {
+                    terrain = netherMap[gy][gx];
+                }
+                if (terrain == MapGenerator.SPIDER_LILY_FIELD) {
+                    // 彼岸花田 → 孤魂为主
+                    if (rand < 0.70) {
+                        enemy = new LonelySpirit(spawnX, spawnY);
+                        enemy.setName("孤魂");
+                    } else {
+                        enemy = new SavageWraith(spawnX, spawnY);
+                        enemy.setName("野鬼");
+                    }
+                } else {
+                    // 幽冥荒原/白骨堆 → 野鬼为主
+                    if (rand < 0.70) {
+                        enemy = new SavageWraith(spawnX, spawnY);
+                        enemy.setName("野鬼");
+                    } else {
+                        enemy = new LonelySpirit(spawnX, spawnY);
+                        enemy.setName("孤魂");
+                    }
                 }
                 break;
             }

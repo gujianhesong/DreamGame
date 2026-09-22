@@ -31,4 +31,15 @@ public enum NpcType {
     PHARMACIST, //药店老板
     TAVERN_KEEPER, //酒馆老板
     DOCTOR, //郎中
+
+    // 地府 NPC
+    JUDGE_YANLUO,       // 阎罗王
+    JUDGE_CUI,          // 崔判官
+    GHOST_OFFICER_BLACK,// 黑无常
+    GHOST_OFFICER_WHITE,// 白无常
+    COW_HEAD,           // 牛头
+    HORSE_FACE,         // 马面
+    MENG_PO,            // 孟婆
+    GHOST_CLERK,        // 鬼差（小吽）
+    LOST_SOUL,          // 游魂
 }

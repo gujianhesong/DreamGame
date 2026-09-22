@@ -21,6 +21,7 @@ public enum SkillType {
     ENEMY_FoxCharm, //狐媚
     ENEMY_WaterBolt, //水龙弹（小青龙）
     ENEMY_DragonLightning, //龙雷（小青龙精英）
+    ENEMY_SoulTear, //幽蓝泪珠（孤魂）
 
     //辅助技能
     AST_QiangShen, //强身

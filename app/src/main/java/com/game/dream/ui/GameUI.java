@@ -1063,14 +1063,22 @@ public class GameUI {
 //        canvas.drawText("Chunks: " + mapRenderer.getCachedChunkCount(), 10, 200, paint);
 //        canvas.drawText("Active: " + mapRenderer.getActiveChunkCount(), 10, 240, paint);
 
-        // Draw time info
-        if (GameEngine.getInstance().getDayNightCycle() != null) {
+        // Draw time info (海底/海底迷宫/地府/幻境 无昼夜概念，不显示)
+        int curMapId = MapSystem.getInstance().getCurrentMapId();
+        boolean hasDayNight = curMapId != MapSystem.MAP_ID_DONGHAI_SEABED
+                && curMapId != MapSystem.MAP_ID_UNDERWATER_MAZE
+                && curMapId != MapSystem.MAP_ID_NETHERWORLD
+                && curMapId != MapSystem.MAP_ID_ILLUSION_REALM;
+        if (hasDayNight && GameEngine.getInstance().getDayNightCycle() != null) {
             paint.setColor(Color.rgb(255, 255, 200)); // Light yellow
             canvas.drawText(GameEngine.getInstance().getDayNightCycle().getTimePhase(), 10, 200, paint);
         }
 
-        // Draw weather info
-        if (GameEngine.getInstance().getWeatherSystem() != null) {
+        // Draw weather info (海底/海底迷宫/地府 不显示天气)
+        boolean hasWeather = curMapId != MapSystem.MAP_ID_DONGHAI_SEABED
+                && curMapId != MapSystem.MAP_ID_UNDERWATER_MAZE
+                && curMapId != MapSystem.MAP_ID_NETHERWORLD;
+        if (hasWeather && GameEngine.getInstance().getWeatherSystem() != null) {
             paint.setColor(Color.rgb(200, 220, 255)); // Light blue
             canvas.drawText("Weather: " + GameEngine.getInstance().getWeatherSystem().getWeatherDescription(), 10, 240, paint);
         }

@@ -40,6 +40,16 @@ public class MapGenerator {
     public static final int HYDROTHERMAL = 19;   // 热液喷口（不可通行）
     public static final int PALACE_GROUND = 20;  // 龙宫地面
 
+    // 地府地图地形
+    public static final int NETHER_WASTELAND   = 21; // 幽冥荒原（可通行，主体地表）
+    public static final int YELLOW_SPRING_RIVER= 22; // 黄泉河（不可通行）
+    public static final int STONE_BRIDGE       = 23; // 奈何桥（可通行）
+    public static final int SPIDER_LILY_FIELD  = 24; // 彼岸花田（可通行）
+    public static final int GHOST_GATE_WALL    = 25; // 鬼门关城墙（不可通行）
+    public static final int JUDGE_HALL_GROUND  = 26; // 阎罗殿地面（可通行）
+    public static final int HELL_PIT           = 27; // 地狱深渊（不可通行，边界）
+    public static final int BONE_PILE          = 28; // 白骨堆（可通行）
+
     public static final int VILLAGE_CAN_PASS = 100;
     public static final int VILLAGE_NO_PASS = 101;
 
@@ -240,7 +250,10 @@ public class MapGenerator {
                 || terrain == MapGenerator.RIVER || terrain == MapGenerator.MOUNTAIN
                 || terrain == MapGenerator.VILLAGE_NO_PASS || terrain == MapGenerator.CITY_WALL
                 || terrain == MapGenerator.SEA || terrain == MapGenerator.DEEP_SEA
-                || terrain == MapGenerator.HYDROTHERMAL) {
+                || terrain == MapGenerator.HYDROTHERMAL
+                || terrain == MapGenerator.YELLOW_SPRING_RIVER
+                || terrain == MapGenerator.GHOST_GATE_WALL
+                || terrain == MapGenerator.HELL_PIT) {
             return false;
         }
         return true;

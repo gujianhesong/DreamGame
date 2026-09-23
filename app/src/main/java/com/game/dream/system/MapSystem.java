@@ -9,6 +9,8 @@ import android.os.Looper;
 import android.util.Pair;
 
 import com.game.dream.bean.MapInfo;
+import com.game.dream.map.HellMazeGenerator;
+import com.game.dream.map.HellMazeRenderer;
 import com.game.dream.map.IllusionRealmMapGenerator;
 import com.game.dream.map.DonghaiBayMapGenerator;
 import com.game.dream.map.DonghaiBayRenderer;
@@ -63,6 +65,10 @@ public class MapSystem {
 
     public static final int MAP_ID_QING_XI_MAZE = 2001; //清溪迷宫
     public static final int MAP_ID_UNDERWATER_MAZE = 2002; //海底迷宫
+    public static final int MAP_ID_HELL_MAZE_1 = 2003; //地狱迷宫第1层-黄泉迷径
+    public static final int MAP_ID_HELL_MAZE_2 = 2004; //地狱迷宫第2层-血池炼狱
+    public static final int MAP_ID_HELL_MAZE_3 = 2005; //地狱迷宫第3层-枉死城
+    public static final int MAP_ID_HELL_MAZE_4 = 2006; //地狱迷宫第4层-阎罗殿
 
     public static final int MAP_ID_ILLUSION_REALM = 3001; //幻境挑战
     public static final int ILLUSION_MAP_WIDTH = 3000;
@@ -71,6 +77,12 @@ public class MapSystem {
     // 海底迷宫尺寸
     public static final int UNDERWATER_MAZE_WIDTH = 10000;
     public static final int UNDERWATER_MAZE_HEIGHT = 10000;
+
+    // 地狱迷宫尺寸
+    public static final int HELL_MAZE_WIDTH = 8000;
+    public static final int HELL_MAZE_HEIGHT = 8000;
+    public static final int HELL_MAZE_4_WIDTH = 6000;
+    public static final int HELL_MAZE_4_HEIGHT = 6000;
 
     // 东海湾地图尺寸
     public static final int DONGHAI_MAP_WIDTH = 10000;
@@ -108,6 +120,10 @@ public class MapSystem {
 
     // 地府地图专用渲染器
     private NetherworldRenderer netherworldRenderer;
+
+    // 地狱迷宫渲染器
+    private HellMazeRenderer hellMazeRenderer;
+    private HellMazeGenerator hellMazeGenerator;
 
     private List<MapInfo> mapInfoList = new ArrayList<>();
     private MapInfo curMapInfo;
@@ -153,6 +169,12 @@ public class MapSystem {
                 RoleSystem.getInstance().getRoleInfo().setMapId(mapId);
             }
 
+            // 非地狱迷宫时清除地狱迷宫渲染器
+            if (mapId < MAP_ID_HELL_MAZE_1 || mapId > MAP_ID_HELL_MAZE_4) {
+                hellMazeRenderer = null;
+                hellMazeGenerator = null;
+            }
+
             if (mapId == MAP_ID_QING_XI_MAZE) {
                 // 迷宫地图
                 mazeGenerator = new MazeGenerator(findMap.getMapWidth(), findMap.getMapHeight(), TILE_SIZE);
@@ -192,6 +214,29 @@ public class MapSystem {
                 MazeSystem.getInstance().initMazeObjects(mapData,
                         underwaterMazeGenerator.getEntranceX(), underwaterMazeGenerator.getEntranceY(),
                         underwaterMazeGenerator.getExitX(), underwaterMazeGenerator.getExitY());
+            } else if (mapId >= MAP_ID_HELL_MAZE_1 && mapId <= MAP_ID_HELL_MAZE_4) {
+                // 地狱迷宫（4层）
+                int hellFloor = mapId - MAP_ID_HELL_MAZE_1 + 1;
+                hellMazeGenerator = new HellMazeGenerator(findMap.getMapWidth(), findMap.getMapHeight(), TILE_SIZE, hellFloor);
+                mapData = hellMazeGenerator.generateMap();
+                curMapInfo.setMapData(mapData);
+                hellMazeRenderer = new HellMazeRenderer(mapData, findMap.getMapWidth(), findMap.getMapHeight(), TILE_SIZE, hellFloor);
+                // 清除其他渲染器
+                mapRenderer = null;
+                villageRenderer = null;
+                jinlingCityRenderer = null;
+                donghaiBayRenderer = null;
+                donghaiSeabedRenderer = null;
+                netherworldRenderer = null;
+                mazeRenderer = null;
+                mazeGenerator = null;
+                underwaterMazeRenderer = null;
+                underwaterMazeGenerator = null;
+                additionalVillageRenderers.clear();
+                // 初始化迷宫对象
+                MazeSystem.getInstance().initMazeObjects(mapData,
+                        hellMazeGenerator.getEntranceX(), hellMazeGenerator.getEntranceY(),
+                        hellMazeGenerator.getExitX(), hellMazeGenerator.getExitY());
             } else if (mapId == MAP_ID_JIN_LING) {
                 // 金陵大地图
                 JinlingMapGenerator jinlingGen = new JinlingMapGenerator(TILE_SIZE);
@@ -457,6 +502,10 @@ public class MapSystem {
 
         mapInfoList.add(new MapInfo(MAP_ID_QING_XI_MAZE, "清溪地下迷宫", 10000, 10000, null));
         mapInfoList.add(new MapInfo(MAP_ID_UNDERWATER_MAZE, "海底迷宫", UNDERWATER_MAZE_WIDTH, UNDERWATER_MAZE_HEIGHT, null));
+        mapInfoList.add(new MapInfo(MAP_ID_HELL_MAZE_1, "黄泉迷径", HELL_MAZE_WIDTH, HELL_MAZE_HEIGHT, null));
+        mapInfoList.add(new MapInfo(MAP_ID_HELL_MAZE_2, "血池炼狱", HELL_MAZE_WIDTH, HELL_MAZE_HEIGHT, null));
+        mapInfoList.add(new MapInfo(MAP_ID_HELL_MAZE_3, "枉死城", HELL_MAZE_WIDTH, HELL_MAZE_HEIGHT, null));
+        mapInfoList.add(new MapInfo(MAP_ID_HELL_MAZE_4, "阎罗殿", HELL_MAZE_4_WIDTH, HELL_MAZE_4_HEIGHT, null));
         mapInfoList.add(new MapInfo(MAP_ID_ILLUSION_REALM, "幻境挑战",
                 ILLUSION_MAP_WIDTH, ILLUSION_MAP_HEIGHT, new Pair<>(1400, 1400)));
     }
@@ -532,6 +581,9 @@ public class MapSystem {
         if (netherworldRenderer != null) {
             netherworldRenderer.cleanup();
         }
+        if (hellMazeRenderer != null) {
+            hellMazeRenderer.cleanup();
+        }
     }
 
     public void render(Canvas canvas, float cameraX, float cameraY, int screenWidth, int screenHeight) {
@@ -544,6 +596,11 @@ public class MapSystem {
             // 海底迷宫渲染
             if (underwaterMazeRenderer != null) {
                 underwaterMazeRenderer.draw(canvas, cameraX, cameraY, screenWidth, screenHeight);
+            }
+        } else if (currentMapId >= MAP_ID_HELL_MAZE_1 && currentMapId <= MAP_ID_HELL_MAZE_4) {
+            // 地狱迷宫渲染
+            if (hellMazeRenderer != null) {
+                hellMazeRenderer.draw(canvas, cameraX, cameraY, screenWidth, screenHeight);
             }
         } else {
             // 普通地图渲染
@@ -653,6 +710,34 @@ public class MapSystem {
      */
     public boolean isCurrentMazaMap() {
         return currentMapId >= 2000 && currentMapId < 3000;
+    }
+
+    /**
+     * 是否地狱迷宫地图
+     */
+    public boolean isCurrentHellMazeMap() {
+        return currentMapId >= MAP_ID_HELL_MAZE_1 && currentMapId <= MAP_ID_HELL_MAZE_4;
+    }
+
+    /**
+     * 获取当前地狱迷宫层数（1-4），非地狱迷宫返回0
+     */
+    public int getHellMazeFloor() {
+        if (!isCurrentHellMazeMap()) return 0;
+        return currentMapId - MAP_ID_HELL_MAZE_1 + 1;
+    }
+
+    public HellMazeGenerator getHellMazeGenerator() {
+        return hellMazeGenerator;
+    }
+
+    /**
+     * 地形发生变化时（如陷阱触发）失效包含指定 tile 的 chunk 缓存
+     */
+    public void invalidateHellMazeChunkAt(int tileX, int tileY) {
+        if (hellMazeRenderer != null) {
+            hellMazeRenderer.invalidateChunkAt(tileX, tileY);
+        }
     }
 
     /**

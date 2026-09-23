@@ -31,12 +31,21 @@ import com.game.dream.enemy.Viper;
 import com.game.dream.enemy.WildBoar;
 import com.game.dream.enemy.Wolf;
 import com.game.dream.enemy.Yaksha;
+import com.game.dream.enemy.YellowSpringGuide;
+import com.game.dream.enemy.BloodPoolDemonKing;
+import com.game.dream.enemy.JudgeCuiYu;
+import com.game.dream.enemy.HellGuardian;
+import com.game.dream.enemy.KingYanluo;
+import com.game.dream.enemy.Vampire;
+import com.game.dream.enemy.ChainBoundWraith;
+import com.game.dream.enemy.GhostGeneral;
 import com.game.dream.enums.SkillType;
 import com.game.dream.enums.SpecialEffect;
 import com.game.dream.figure.Character;
 import com.game.dream.figure.Player;
 import com.game.dream.item.GroundItem;
 import com.game.dream.item.ItemStack;
+import com.game.dream.map.HellMazeGenerator;
 import com.game.dream.map.MapContentManager;
 import com.game.dream.map.MazeGenerator;
 import com.game.dream.map.NetherworldMapGenerator;
@@ -122,6 +131,12 @@ public class GameEngine {
 
     private GameUI gameUI;
 
+
+    // 地狱迷宫特殊机制计时器
+    private long hellBloodPoolTickAcc = 0;      // 血池 DoT 累计（每 800ms 一跳）
+    private long hellSafeStoneTickAcc = 0;      // 安全石台回复累计（每 1000ms 一跳）
+    private static final long HELL_BLOOD_POOL_TICK = 800;
+    private static final long HELL_SAFE_STONE_TICK = 1000;
 
     // Resource recovery tracking (every 60 seconds)
     private long accumulatedRecoveryTime = 0; // Accumulated game time in milliseconds
@@ -290,6 +305,9 @@ public class GameEngine {
                 int curMapId = MapSystem.getInstance().getCurrentMapId();
                 if (curMapId == MapSystem.MAP_ID_UNDERWATER_MAZE) {
                     teleportToMap(MapSystem.MAP_ID_DONGHAI_BAY);
+                } else if (curMapId >= MapSystem.MAP_ID_HELL_MAZE_1 && curMapId <= MapSystem.MAP_ID_HELL_MAZE_4) {
+                    // 地狱迷宫层间传送
+                    handleHellMazeExit(curMapId);
                 } else {
                     teleportToMap(MapSystem.MAP_ID_QING_XI);
                 }
@@ -297,12 +315,16 @@ public class GameEngine {
             }
         }
 
-        // Update day-night cycle (海底地图、海底迷宫、地府、幻境关闭昼夜系统)
+        // 地狱迷宫特殊地形机制（血池 DoT / 安全石台 / 陷阱）
+        checkHellMazeHazards(deltaTime);
+
+        // Update day-night cycle (海底地图、海底迷宫、地府、地狱迷宫、幻境关闭昼夜系统)
         int curId = MapSystem.getInstance().getCurrentMapId();
         if (dayNightCycle != null && curId != MapSystem.MAP_ID_DONGHAI_SEABED
                 && curId != MapSystem.MAP_ID_UNDERWATER_MAZE
                 && curId != MapSystem.MAP_ID_NETHERWORLD
-                && curId != MapSystem.MAP_ID_ILLUSION_REALM) {
+                && curId != MapSystem.MAP_ID_ILLUSION_REALM
+                && !MapSystem.getInstance().isCurrentHellMazeMap()) {
             dayNightCycle.update(deltaTime);
         }
 
@@ -552,10 +574,30 @@ public class GameEngine {
                                     showCenterToast("怨灵哀嘆侵蚀了你，移动速度降低!", 1200);
                                 }
 
+                                // 缚链怨魂锁链缠绕: 命中后定身1.5秒
+                                if (enemy instanceof ChainBoundWraith) {
+                                    player.applyCC(Character.CrowdControlType.ROOT, 1500);
+                                    showCenterToast("生锈锁链缠绕了你，无法移动!", 1200);
+                                }
+
                                 // 野鬼暴怒冲锋: 命中后强力击退
                                 if (enemy instanceof SavageWraith
                                         && enemy.getCurrentAttackType() == Enemy.AttackType.CHARGE) {
                                     player.applyKnockback(enemy.getX(), enemy.getY(), 450f, 350);
+                                }
+
+                                // 鬼将冲锋突刺: 命中后眩晕0.8秒
+                                if (enemy instanceof GhostGeneral
+                                        && enemy.getCurrentAttackType() == Enemy.AttackType.CHARGE) {
+                                    player.applyCC(Character.CrowdControlType.STUN, 800);
+                                    showCenterToast("鬼将冲锋将你撞晕了!", 1000);
+                                }
+
+                                // 鬼将跳劈震地: 命中后定身1秒（所有等级）
+                                if (enemy instanceof GhostGeneral
+                                        && enemy.getCurrentAttackType() == Enemy.AttackType.LEAP_SLAM) {
+                                    player.applyCC(Character.CrowdControlType.ROOT, 1000);
+                                    showCenterToast("震地碎石卡住了你!", 1000);
                                 }
                             } else {
                                 //未命中
@@ -1370,7 +1412,14 @@ public class GameEngine {
             @Override
             public void onLoadMapFinish(int mapId, int[][] mapData) {
                 // 设置玩家位置
-                if(MapSystem.getInstance().isCurrentMazaMap()){
+                if(MapSystem.getInstance().isCurrentHellMazeMap()){
+                    // 地狱迷宫：使用专属生成器的入口坐标
+                    HellMazeGenerator hellGen = MapSystem.getInstance().getHellMazeGenerator();
+                    if (hellGen != null) {
+                        player.setX(hellGen.getEntranceX());
+                        player.setY(hellGen.getEntranceY() + 100);
+                    }
+                } else if(MapSystem.getInstance().isCurrentMazaMap()){
                     //迷宫地图
                     //设置人物位置
                     MazeGenerator mazeGen = MapSystem.getInstance().getMazeGenerator();
@@ -1480,6 +1529,104 @@ public class GameEngine {
                 && px <= NetherworldMapGenerator.PRISON_X2
                 && py >= NetherworldMapGenerator.PRISON_Y1
                 && py <= NetherworldMapGenerator.PRISON_Y2;
+    }
+
+    /**
+     * 地狱迷宫各层特殊地形机制：
+     *   第2层 HELL_BLOOD_POOL→ 持续伤害；HELL_SAFE_STONE → 缓慢回复
+     *   第3层 HELL_TRAP → 一次性陷阱伤害，触发后转为普通地板
+     */
+    private void checkHellMazeHazards(long deltaTime) {
+        int curMapId = MapSystem.getInstance().getCurrentMapId();
+        if (curMapId < MapSystem.MAP_ID_HELL_MAZE_1 || curMapId > MapSystem.MAP_ID_HELL_MAZE_4) {
+            hellBloodPoolTickAcc = 0;
+            hellSafeStoneTickAcc = 0;
+            return;
+        }
+        int[][] map = MapSystem.getInstance().getCurMapInfo().getMapData();
+        if (map == null) return;
+        int tx = (int) (player.getX() / TILE_SIZE);
+        int ty = (int) (player.getY() / TILE_SIZE);
+        if (ty < 0 || ty >= map.length || tx < 0 || tx >= map[0].length) return;
+        int terrain = map[ty][tx];
+
+        RoleInfo roleInfo = RoleSystem.getInstance().getRoleInfo();
+
+        // 第2层：血池 DoT
+        if (terrain == HellMazeGenerator.HELL_BLOOD_POOL) {
+            hellBloodPoolTickAcc += deltaTime;
+            while (hellBloodPoolTickAcc >= HELL_BLOOD_POOL_TICK) {
+                hellBloodPoolTickAcc -= HELL_BLOOD_POOL_TICK;
+                int dmg = Math.max(1, (int) (roleInfo.getBloodCap() * 0.05f));
+                boolean died = player.takeDamage(dmg);
+                damageNumbers.add(new DamageNumber(player.getX(), player.getY() - 40, dmg));
+                if (died) {
+                    handlePlayerDeath();
+                    return;
+                }
+            }
+            hellSafeStoneTickAcc = 0;
+            return;
+        }
+
+        // 第2层：安全石台缓慢回复
+        if (terrain == HellMazeGenerator.HELL_SAFE_STONE) {
+            hellSafeStoneTickAcc += deltaTime;
+            while (hellSafeStoneTickAcc >= HELL_SAFE_STONE_TICK) {
+                hellSafeStoneTickAcc -= HELL_SAFE_STONE_TICK;
+                int healHp = Math.max(1, (int) (roleInfo.getBloodCap() * 0.02f));
+                int healMp = Math.max(1, (int) (roleInfo.getMagicCap() * 0.02f));
+                roleInfo.setHp(Math.min(roleInfo.getBloodCap(), roleInfo.getHp() + healHp));
+                roleInfo.setMp(Math.min(roleInfo.getMagicCap(), roleInfo.getMp() + healMp));
+                floatingTexts.add(new FloatingText(player.getX(), player.getY() - 60,
+                        "+" + healHp + " HP", FloatingText.Type.HEAL));
+            }
+            hellBloodPoolTickAcc = 0;
+            return;
+        }
+
+        // 第3层：陷阱（一次性触发，触发后地形变为地板）
+        if (terrain == HellMazeGenerator.HELL_TRAP) {
+            int dmg = Math.max(1, (int) (roleInfo.getBloodCap() * 0.15f));
+            boolean died = player.takeDamage(dmg);
+            damageNumbers.add(new DamageNumber(player.getX(), player.getY() - 40, dmg, true));
+            showCenterToast("触发陷阱！");
+            map[ty][tx] = HellMazeGenerator.HELL_FLOOR;
+            // 通知渲染器重建对应 chunk 缓存
+            MapSystem.getInstance().invalidateHellMazeChunkAt(tx, ty);
+            if (died) {
+                handlePlayerDeath();
+                return;
+            }
+        }
+
+        hellBloodPoolTickAcc = 0;
+        hellSafeStoneTickAcc = 0;
+    }
+
+    /**
+     * 地狱迷宫层间传送逻辑
+     */
+    private void handleHellMazeExit(int curMapId) {
+        if (curMapId == MapSystem.MAP_ID_HELL_MAZE_1) {
+            showCenterToast("你踏入了血池炼狱……");
+            teleportToMap(MapSystem.MAP_ID_HELL_MAZE_2);
+        } else if (curMapId == MapSystem.MAP_ID_HELL_MAZE_2) {
+            showCenterToast("你进入了枉死城……");
+            teleportToMap(MapSystem.MAP_ID_HELL_MAZE_3);
+        } else if (curMapId == MapSystem.MAP_ID_HELL_MAZE_3) {
+            showCenterToast("阎罗殿的大门缓缓开启……");
+            teleportToMap(MapSystem.MAP_ID_HELL_MAZE_4);
+        } else if (curMapId == MapSystem.MAP_ID_HELL_MAZE_4) {
+            // 通关奖励
+            RoleInfo roleInfo = RoleSystem.getInstance().getRoleInfo();
+            long expReward = 50000;
+            long moneyReward = 20000;
+            roleInfo.setExp(roleInfo.getExp() + expReward);
+            roleInfo.setMoney(roleInfo.getMoney() + moneyReward);
+            showCenterToast("地狱迷宫通关！获得 " + expReward + " 经验、" + moneyReward + " 金钱");
+            teleportToMap(MapSystem.MAP_ID_NETHERWORLD);
+        }
     }
 
     private void handlePlayerDeath() {
@@ -1866,6 +2013,36 @@ public class GameEngine {
             return new GiantSeaTurtle(spawnX, spawnY);
         } else if (boss instanceof Wolf) {
             return new Wolf(spawnX, spawnY);
+        } else if (boss instanceof YellowSpringGuide) {
+            // 黄泉引路人召唤吸血鬼/幽灵
+            if (Math.random() < 0.5) {
+                return new Vampire(spawnX, spawnY);
+            }
+            return new ChainBoundWraith(spawnX, spawnY);
+        } else if (boss instanceof BloodPoolDemonKing) {
+            // 血池鬼王召唤吸血鬼/幽灵
+            if (Math.random() < 0.6) {
+                return new Vampire(spawnX, spawnY);
+            }
+            return new ChainBoundWraith(spawnX, spawnY);
+        } else if (boss instanceof JudgeCuiYu) {
+            // 判官崔钰：召唤吸血鬼/幽灵/鬼将
+            double r = Math.random();
+            if (r < 0.35) return new Vampire(spawnX, spawnY);
+            if (r < 0.70) return new ChainBoundWraith(spawnX, spawnY);
+            return new GhostGeneral(spawnX, spawnY);
+        } else if (boss instanceof HellGuardian) {
+            // 地狱守卫：混合召唤鬼将/吸血鬼/幽灵
+            double r = Math.random();
+            if (r < 0.35) return new GhostGeneral(spawnX, spawnY);
+            if (r < 0.70) return new Vampire(spawnX, spawnY);
+            return new ChainBoundWraith(spawnX, spawnY);
+        } else if (boss instanceof KingYanluo) {
+            // 阎罗王：召唤鬼将/吸血鬼/幽灵
+            double r = Math.random();
+            if (r < 0.40) return new GhostGeneral(spawnX, spawnY);
+            if (r < 0.70) return new Vampire(spawnX, spawnY);
+            return new ChainBoundWraith(spawnX, spawnY);
         }
         return new Wolf(spawnX, spawnY);
     }
@@ -1881,6 +2058,23 @@ public class GameEngine {
         if (boss instanceof Yaksha) return "夜叉";
         if (boss instanceof LittleGreenDragon) return "小青龙";
         if (boss instanceof GiantSeaTurtle) return "大海龟";
+        if (boss instanceof YellowSpringGuide) return "亡魂";
+        if (boss instanceof BloodPoolDemonKing) return "血奴";
+        if (boss instanceof JudgeCuiYu) return "待审亡魂";
+        if (boss instanceof HellGuardian) {
+            HellGuardian g = (HellGuardian) boss;
+            switch (g.getGuardType()) {
+                case COW_HEAD: return "牛头小子";
+                case HORSE_FACE: return "马面小子";
+                case BLACK: return "黑旗亡魂";
+                case WHITE: return "白旗亡魂";
+            }
+            return "守卫亡魂";
+        }
+        if (boss instanceof KingYanluo) return "轮回亡魂";
+        if (boss instanceof Vampire) return "血仆";
+        if (boss instanceof ChainBoundWraith) return "同因亡魂";
+        if (boss instanceof GhostGeneral) return "冥界战卒";
         return "野狼";
     }
 

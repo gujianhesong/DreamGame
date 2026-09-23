@@ -17,6 +17,14 @@ import com.game.dream.enemy.Viper;
 import com.game.dream.enemy.WildBoar;
 import com.game.dream.enemy.Wolf;
 import com.game.dream.enemy.Yaksha;
+import com.game.dream.enemy.YellowSpringGuide;
+import com.game.dream.enemy.BloodPoolDemonKing;
+import com.game.dream.enemy.JudgeCuiYu;
+import com.game.dream.enemy.HellGuardian;
+import com.game.dream.enemy.KingYanluo;
+import com.game.dream.enemy.Vampire;
+import com.game.dream.enemy.ChainBoundWraith;
+import com.game.dream.enemy.GhostGeneral;
 import com.game.dream.system.MapSystem;
 
 import java.util.ArrayList;
@@ -56,7 +64,13 @@ public class MapContentManager {
         }
 
         int enemyCount;
-        if (mapId >= 2000 && mapId < 3000) {
+        if (mapId >= MapSystem.MAP_ID_HELL_MAZE_1 && mapId <= MapSystem.MAP_ID_HELL_MAZE_4) {
+            // 地狱迷宫：第4层无小怪（纯BOSS战）
+            if (mapId == MapSystem.MAP_ID_HELL_MAZE_4) {
+                return enemies;
+            }
+            enemyCount = 80 + (mapId - MapSystem.MAP_ID_HELL_MAZE_1) * 30; // 80/110/140
+        } else if (mapId >= 2000 && mapId < 3000) {
             enemyCount = 120; // 迷宫中怪物少一些
         } else if (mapId == MapSystem.MAP_ID_JIN_LING) {
             enemyCount = 3000; // 金陵大地图怪物多一些
@@ -106,6 +120,15 @@ public class MapContentManager {
                             && terrain != MapGenerator.CITY_WALL && terrain != MapGenerator.CITY_ROAD
                             && terrain != MapGenerator.DEEP_SEA && terrain != MapGenerator.HYDROTHERMAL
                             && terrain != MapGenerator.SEA && terrain != MapGenerator.PALACE_GROUND);
+                } else if (mapId >= MapSystem.MAP_ID_HELL_MAZE_1 && mapId <= MapSystem.MAP_ID_HELL_MAZE_4) {
+                    // 地狱迷宫: 地板+特殊地形均可刷怪
+                    canSpawn = (terrain == MazeGenerator.MAZE_FLOOR
+                            || terrain == MazeGenerator.MAZE_ENTRANCE
+                            || terrain == MazeGenerator.MAZE_EXIT
+                            || terrain == HellMazeGenerator.HELL_BLOOD_POOL
+                            || terrain == HellMazeGenerator.HELL_SAFE_STONE
+                            || terrain == HellMazeGenerator.HELL_TRAP
+                            || terrain == HellMazeGenerator.HELL_BOSS_ARENA);
                 } else if (mapId > 2000 && mapId < 3000) {
                     // 迷宫: 只能在地板上生成
                     canSpawn = (terrain == MazeGenerator.MAZE_FLOOR || terrain == MazeGenerator.MAZE_ENTRANCE || terrain == MazeGenerator.MAZE_EXIT);
@@ -133,7 +156,71 @@ public class MapContentManager {
                 }
             }
         }
+
+        // 地狱迷宫：在出口前放置守护BOSS
+        if (mapId >= MapSystem.MAP_ID_HELL_MAZE_1 && mapId <= MapSystem.MAP_ID_HELL_MAZE_4) {
+            spawnHellMazeBoss(mapId, enemies);
+        }
         return enemies;
+    }
+
+    /**
+     * 在地狱迷宫出口前方生成层BOSS
+     */
+    private void spawnHellMazeBoss(int mapId, List<Enemy> enemies) {
+        HellMazeGenerator gen = MapSystem.getInstance().getHellMazeGenerator();
+        if (gen == null) return;
+
+        // 第4层：在 3 个 BOSS 房间中心分别生成守卫与阎罗王
+        if (mapId == MapSystem.MAP_ID_HELL_MAZE_4) {
+            int[] centers = gen.getBossArenaCenters();
+            if (centers != null && centers.length >= 6) {
+                // 房间1：牛头 + 马面
+                Enemy cow = new HellGuardian(centers[0] - 120, centers[1], HellGuardian.GuardType.COW_HEAD);
+                cow.setName("牛头");
+                enemies.add(cow);
+                Enemy horse = new HellGuardian(centers[0] + 120, centers[1], HellGuardian.GuardType.HORSE_FACE);
+                horse.setName("马面");
+                enemies.add(horse);
+
+                // 房间2：黑无常 + 白无常
+                Enemy black = new HellGuardian(centers[2] - 120, centers[3], HellGuardian.GuardType.BLACK);
+                black.setName("黑无常");
+                enemies.add(black);
+                Enemy white = new HellGuardian(centers[2] + 120, centers[3], HellGuardian.GuardType.WHITE);
+                white.setName("白无常");
+                enemies.add(white);
+
+                // 房间3：阎罗王
+                Enemy yanluo = new KingYanluo(centers[4], centers[5]);
+                yanluo.setName("阎罗王");
+                enemies.add(yanluo);
+            }
+            return;
+        }
+
+        // 第1~3层：BOSS 守在出口前约 200px，防止一入层就碰到传送门
+        float bx = gen.getExitX();
+        float by = Math.max(200, gen.getExitY() - 200);
+        Enemy boss = null;
+        switch (mapId) {
+            case MapSystem.MAP_ID_HELL_MAZE_1:
+                boss = new YellowSpringGuide(bx, by);
+                boss.setName("黄泉引路人");
+                break;
+            case MapSystem.MAP_ID_HELL_MAZE_2:
+                boss = new BloodPoolDemonKing(bx, by);
+                boss.setName("血池鬼王");
+                break;
+            case MapSystem.MAP_ID_HELL_MAZE_3:
+                boss = new JudgeCuiYu(bx, by);
+                boss.setName("判官崔钰");
+                break;
+        }
+        if (boss != null) {
+            boss.setAggro(0); // 不主动仇恨，靠近时才反应
+            enemies.add(boss);
+        }
     }
 
     private Enemy generateEnemyOnMap(int mapId, float spawnX, float spawnY) {
@@ -253,6 +340,42 @@ public class MapContentManager {
                         enemy = new LonelySpirit(spawnX, spawnY);
                         enemy.setName("孤魂");
                     }
+                }
+                break;
+            }
+            case MapSystem.MAP_ID_HELL_MAZE_1: {
+                // 黄泉迷径：吸血鬼50% + 幽灵50%
+                if (rand < 0.50) {
+                    enemy = new Vampire(spawnX, spawnY);
+                    enemy.setName("吸血鬼");
+                } else {
+                    enemy = new ChainBoundWraith(spawnX, spawnY);
+                    enemy.setName("幽灵");
+                }
+                break;
+            }
+            case MapSystem.MAP_ID_HELL_MAZE_2: {
+                // 血池炼狱：吸血鬼50% + 幽灵50%
+                if (rand < 0.50) {
+                    enemy = new Vampire(spawnX, spawnY);
+                    enemy.setName("吸血鬼");
+                } else {
+                    enemy = new ChainBoundWraith(spawnX, spawnY);
+                    enemy.setName("幽灵");
+                }
+                break;
+            }
+            case MapSystem.MAP_ID_HELL_MAZE_3: {
+                // 枉死城：吸血鬼35% + 幽灵35% + 鬼将30%
+                if (rand < 0.35) {
+                    enemy = new Vampire(spawnX, spawnY);
+                    enemy.setName("吸血鬼");
+                } else if (rand < 0.70) {
+                    enemy = new ChainBoundWraith(spawnX, spawnY);
+                    enemy.setName("幽灵");
+                } else {
+                    enemy = new GhostGeneral(spawnX, spawnY);
+                    enemy.setName("鬼将");
                 }
                 break;
             }

@@ -184,6 +184,9 @@ public class NpcSystem {
                 // 牢内中心 (18800, 18800)，黑白无常守在两侧，可送主角返回人间
                 npcList.add(new Npc(100531, "黑无常", NpcType.GHOST_OFFICER_BLACK, 18550, 18800));
                 npcList.add(new Npc(100532, "白无常", NpcType.GHOST_OFFICER_WHITE, 19050, 18800));
+
+                // 地狱迷宫入口（鬼门关外西侧，守护四层炼狱之门）
+                npcList.add(new Npc(100540, "地狱鬼差", NpcType.GHOST_CLERK, 9300, 13400));
             }
             break;
         }

@@ -266,6 +266,20 @@ public class FunctionNpcManager {
                 });
                 return true;
             }
+            case 100540: {
+                //地狱鬼差（地狱迷宫入口）
+                List<String> options = Arrays.asList("闯地狱迷宫", "不了");
+                String message = "阳人休得靠近！此地乃四层炼狱之门，一层黄泉迷径、二层血池炼狱、三层枉死城、四层阎罗殿，入者九死一生。少侠若自认道行深厂，小吾可代为开门……";
+                GameEngine.getInstance().showDialog(npc.getName(), message, options, new DialogBox.DialogListener() {
+                    @Override
+                    public void onOptionSelected(int optionIndex) {
+                        if (optionIndex == 0) {
+                            GameEngine.getInstance().teleportToMap(MapSystem.MAP_ID_HELL_MAZE_1);
+                        }
+                    }
+                });
+                return true;
+            }
         }
 
         return false;

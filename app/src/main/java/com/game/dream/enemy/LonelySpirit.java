@@ -58,22 +58,10 @@ public class LonelySpirit extends Enemy {
         setPropertyExtra(prop);
 
         // HP中低、攻击(物理)低、防御极低、速度慢、法力高(魔抗高)
-        setProperty(1000, 200, 200, 120, 400);
+        setProperty(1500, 200, 200, 120, 600);
 
         // 等级分布
-        if (Math.random() < 0.02) {
-            enemyLevel = EnemyLevel.BOSS;
-            size = size * 3;
-            setProperty(maxHealth * 50, attackDamage * 8, defense * 8, speed * 6, mana * 8);
-        } else if (Math.random() < 0.07) {
-            enemyLevel = EnemyLevel.ELITE;
-            size = size * 2;
-            setProperty(maxHealth * 10, attackDamage * 4, defense * 4, speed * 4, mana * 5);
-        } else if (Math.random() < 0.30) {
-            enemyLevel = EnemyLevel.LEADER;
-            size = (int) (size * 1.3f);
-            setProperty(maxHealth * 3, attackDamage * 2, defense * 2, speed * 2, mana * 3);
-        }
+        resetPropertyWithLevel();
     }
 
     @Override

@@ -37,24 +37,10 @@ public class FoxSpirit extends Enemy {
         setPropertyExtra(enemyPropertyExtra);
 
         // 狐狸精：生命较低，魔法伤害高，速度快
-        setProperty(450, 150, 280, 130, 250);
+        setProperty(600, 200, 280, 200, 300);
 
-        if (Math.random() < 0.02) {
-            //BOSS - 九尾天狐
-            enemyLevel = EnemyLevel.BOSS;
-            size = size * 3;
-            setProperty(maxHealth * 50, attackDamage * 8, defense * 8, speed * 8, mana * 4);
-        } else if (Math.random() < 0.07) {
-            //精英
-            enemyLevel = EnemyLevel.ELITE;
-            size = size * 2;
-            setProperty(maxHealth * 10, attackDamage * 4, defense * 4, speed * 4, (int) (mana * 2.5));
-        } else if (Math.random() < 0.30) {
-            //首领
-            enemyLevel = EnemyLevel.LEADER;
-            size = (int) (size * 1.3f);
-            setProperty(maxHealth * 3, attackDamage * 2, defense * 2, speed * 2, (int) (mana * 1.5));
-        }
+        // 等级分布
+        resetPropertyWithLevel();
 
         // 尾巴数量根据等级决定
         if (enemyLevel == EnemyLevel.BOSS) {

@@ -29,27 +29,10 @@ public class Tiger extends Enemy {
         enemyPropertyExtra.rewardMoney = 150;
         setPropertyExtra(enemyPropertyExtra);
 
-        setProperty(500, 80, 60, 80, 40);
+        setProperty(700, 150, 100, 80, 100);
 
-        if (Math.random() < 0.02) {
-            //BOSS
-            enemyLevel = EnemyLevel.BOSS;
-            size = size * 3;
-
-            setProperty(maxHealth * 50, attackDamage * 8, defense * 8, speed * 8, mana * 8);
-        } else if (Math.random() < 0.07) {
-            //精英
-            enemyLevel = EnemyLevel.ELITE;
-            size = size * 2;
-
-            setProperty(maxHealth * 10, attackDamage * 4, defense * 4, speed * 4, mana * 4);
-        } else if (Math.random() < 0.30) {
-            //首领
-            enemyLevel = EnemyLevel.LEADER;
-            size = (int) (size * 1.3f);
-
-            setProperty(maxHealth * 3, attackDamage * 2, defense * 2, speed * 2, mana * 2);
-        }
+        // 等级分布
+        resetPropertyWithLevel();
 
         // 精英/BOSS老虎可以使用环绕斩击
         if (enemyLevel == EnemyLevel.ELITE || enemyLevel == EnemyLevel.BOSS) {

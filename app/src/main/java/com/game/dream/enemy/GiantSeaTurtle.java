@@ -43,25 +43,10 @@ public class GiantSeaTurtle extends Enemy {
         setPropertyExtra(prop);
 
         // 大海龟：血量极高、防御极高、速度极慢、攻击中等
-        setProperty(800, 200, 300, 30, 120);
+        setProperty(1200, 200, 400, 80, 180);
 
         // 等级分布
-        if (Math.random() < 0.02) {
-            // BOSS - 千年玄龟
-            enemyLevel = EnemyLevel.BOSS;
-            size = size * 3;
-            setProperty(maxHealth * 60, attackDamage * 8, defense * 8, speed * 5, mana * 6);
-        } else if (Math.random() < 0.07) {
-            // 精英 - 百岁灵龟
-            enemyLevel = EnemyLevel.ELITE;
-            size = size * 2;
-            setProperty(maxHealth * 12, attackDamage * 4, defense * 4, speed * 3, mana * 3);
-        } else if (Math.random() < 0.30) {
-            // 首领 - 老成巨龟
-            enemyLevel = EnemyLevel.LEADER;
-            size = (int) (size * 1.4f);
-            setProperty(maxHealth * 4, attackDamage * 2, defense * 2, speed * 2, mana * 2);
-        }
+        resetPropertyWithLevel();
 
         // 所有大海龟使用连续爪击（龟爪连击）
         addAvailableAttackType(AttackType.COMBO);

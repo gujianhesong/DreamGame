@@ -21,33 +21,16 @@ public class Wolf extends Enemy {
         setAttackShape(AttackShape.ARC); // 狼爪横扫 - 扇形
 
         EnemyPropertyExtra enemyPropertyExtra = new EnemyPropertyExtra();
-        enemyPropertyExtra.detectionRange = 250;
-        enemyPropertyExtra.attackRange = 110;
+        enemyPropertyExtra.detectionRange = 300;
+        enemyPropertyExtra.attackRange = 150;
         enemyPropertyExtra.rewardExp = 200;
         enemyPropertyExtra.rewardMoney = 100;
         setPropertyExtra(enemyPropertyExtra);
 
-        setProperty(350, 60, 50, 60, 30);
+        setProperty(400, 90, 60, 60, 40);
 
-        if (Math.random() < 0.02) {
-            //BOSS
-            enemyLevel = EnemyLevel.BOSS;
-            size = size * 3;
-
-            setProperty(maxHealth * 50, attackDamage * 8, defense * 8, speed * 8, mana * 8);
-        } else if (Math.random() < 0.07) {
-            //精英
-            enemyLevel = EnemyLevel.ELITE;
-            size = size * 2;
-
-            setProperty(maxHealth * 10, attackDamage * 4, defense * 4, speed * 4, mana * 4);
-        } else if (Math.random() < 0.30) {
-            //首领
-            enemyLevel = EnemyLevel.LEADER;
-            size = (int) (size * 1.3f);
-
-            setProperty(maxHealth * 3, attackDamage * 2, defense * 2, speed * 2, mana * 2);
-        }
+        // 等级分布
+        resetPropertyWithLevel();
 
         // 首领/精英/BOSS狼可以使用连续爪击
         if (enemyLevel == EnemyLevel.LEADER || enemyLevel == EnemyLevel.ELITE || enemyLevel == EnemyLevel.BOSS) {

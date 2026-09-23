@@ -67,22 +67,10 @@ public class SavageWraith extends Enemy {
         setPropertyExtra(prop);
 
         // HP高、攻击高、防御中等、速度中等、法力低(魔抗低)
-        setProperty(1300, 500, 400, 200, 250);
+        setProperty(2000, 700, 400, 200, 300);
 
         // 等级分布
-        if (Math.random() < 0.02) {
-            enemyLevel = EnemyLevel.BOSS;
-            size = size * 3;
-            setProperty(maxHealth * 50, attackDamage * 8, defense * 8, speed * 7, mana * 4);
-        } else if (Math.random() < 0.07) {
-            enemyLevel = EnemyLevel.ELITE;
-            size = size * 2;
-            setProperty(maxHealth * 10, attackDamage * 4, defense * 4, speed * 4, mana * 2);
-        } else if (Math.random() < 0.30) {
-            enemyLevel = EnemyLevel.LEADER;
-            size = (int) (size * 1.3f);
-            setProperty(maxHealth * 3, attackDamage * 2, defense * 2, speed * 2, mana * 2);
-        }
+        resetPropertyWithLevel();
 
         // 精英/BOSS 可额外使用猛扑
         if (enemyLevel == EnemyLevel.ELITE || enemyLevel == EnemyLevel.BOSS) {

@@ -37,33 +37,16 @@ public class WildBoar extends Enemy {
         this.bodyBob = 0;
 
         EnemyPropertyExtra enemyPropertyExtra = new EnemyPropertyExtra();
-        enemyPropertyExtra.detectionRange = 200f;
-        enemyPropertyExtra.attackRange = 100;
+        enemyPropertyExtra.detectionRange = 400;
+        enemyPropertyExtra.attackRange = 200;
         enemyPropertyExtra.rewardExp = 240;
         enemyPropertyExtra.rewardMoney = 120;
         setPropertyExtra(enemyPropertyExtra);
 
-        setProperty(400, 70, 50, 70, 40);
+        setProperty(500, 120, 80, 70, 80);
 
-        if (Math.random() < 0.02) {
-            //BOSS
-            enemyLevel = EnemyLevel.BOSS;
-            size = size * 3;
-
-            setProperty(maxHealth * 50, attackDamage * 8, defense * 8, speed * 8, mana * 8);
-        } else if (Math.random() < 0.07) {
-            //精英
-            enemyLevel = EnemyLevel.ELITE;
-            size = size * 2;
-
-            setProperty(maxHealth * 10, attackDamage * 4, defense * 4, speed * 4, mana * 4);
-        } else if (Math.random() < 0.30) {
-            //首领
-            enemyLevel = EnemyLevel.LEADER;
-            size = (int) (size * 1.3f);
-
-            setProperty(maxHealth * 3, attackDamage * 2, defense * 2, speed * 2, mana * 2);
-        }
+        // 等级分布
+        resetPropertyWithLevel();
 
         // 精英/BOSS野猪可以使用环绕斩击
         if (enemyLevel == EnemyLevel.ELITE || enemyLevel == EnemyLevel.BOSS) {

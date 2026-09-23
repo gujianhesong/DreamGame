@@ -37,25 +37,10 @@ public class CrabGeneral extends Enemy {
         setPropertyExtra(prop);
 
         // 蟹将：血量高、防御高、速度慢、攻击高
-        setProperty(1000, 400, 350, 100, 200);
+        setProperty(1500, 400, 400, 150, 200);
 
         // 等级分布
-        if (Math.random() < 0.02) {
-            // BOSS - 蟹帅
-            enemyLevel = EnemyLevel.BOSS;
-            size = size * 3;
-            setProperty(maxHealth * 50, attackDamage * 8, defense * 10, speed * 6, mana * 6);
-        } else if (Math.random() < 0.07) {
-            // 精英
-            enemyLevel = EnemyLevel.ELITE;
-            size = size * 2;
-            setProperty(maxHealth * 10, attackDamage * 4, defense * 5, speed * 3, mana * 3);
-        } else if (Math.random() < 0.30) {
-            // 首领
-            enemyLevel = EnemyLevel.LEADER;
-            size = (int) (size * 1.3f);
-            setProperty(maxHealth * 3, attackDamage * 2, defense * 3, speed * 2, mana * 2);
-        }
+        resetPropertyWithLevel();
 
         // 所有蟹将使用连续爪击（双螯交替夹击）
         addAvailableAttackType(AttackType.COMBO);

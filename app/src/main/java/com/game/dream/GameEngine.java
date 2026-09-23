@@ -457,6 +457,10 @@ public class GameEngine {
         if (enemies == null || enemies.isEmpty()) {
             return;
         }
+        // 幽魂牢内玩家不可被怪物攻击
+        if (isPlayerInPrison()) {
+            return;
+        }
         // 遍历副本：命中后可能 handlePlayerDeath → clearEnemies，不可直接 foreach 原列表
         java.util.List<Enemy> attackPass = new java.util.ArrayList<>(enemies);
 
@@ -938,6 +942,11 @@ public class GameEngine {
                 if (proj.isActive()) {
 
                     if (proj.isEnemyProjectile()) {
+                        // 幽魂牢内玩家不可被怪物攻击
+                        if (isPlayerInPrison()) {
+                            proj.deactivate();
+                            continue;
+                        }
                         // Check if this is an enemy projectile hitting the player
                         float dx = proj.getX() - player.getX();
                         float dy = proj.getY() - player.getY();
@@ -947,7 +956,19 @@ public class GameEngine {
                             // Enemy projectile hit player
                             boolean died = false;
                             int skillLevel = 1;
-                            AttackResult attackResult = BattleUtil.caculateEnemyCasterDamage(proj.getFromEnemy(), proj.getSkillType(), skillLevel);
+                            Enemy enemy = proj.getFromEnemy();
+                            switch (enemy.getEnemyLevel()){
+                                case BOSS:
+                                    skillLevel = 10;
+                                    break;
+                                case ELITE:
+                                    skillLevel = 5;
+                                    break;
+                                case LEADER:
+                                    skillLevel = 3;
+                                    break;
+                            }
+                            AttackResult attackResult = BattleUtil.caculateEnemyCasterDamage(enemy, proj.getSkillType(), skillLevel);
                             if (attackResult != null) {
                                 if (attackResult.isHit) {
                                     int damage = attackResult.damageValue;
@@ -1444,6 +1465,21 @@ public class GameEngine {
             }
         }
         return count;
+    }
+
+    /**
+     * 判断玩家是否在地府幽魂牢区域内
+     */
+    private boolean isPlayerInPrison() {
+        if (MapSystem.getInstance().getCurrentMapId() != MapSystem.MAP_ID_NETHERWORLD) {
+            return false;
+        }
+        float px = player.getX();
+        float py = player.getY();
+        return px >= NetherworldMapGenerator.PRISON_X1
+                && px <= NetherworldMapGenerator.PRISON_X2
+                && py >= NetherworldMapGenerator.PRISON_Y1
+                && py <= NetherworldMapGenerator.PRISON_Y2;
     }
 
     private void handlePlayerDeath() {

@@ -217,6 +217,23 @@ public abstract class Enemy extends Character {
         this.mana = Utils.getWaveValueInt(mana, 0.2f);
     }
 
+    public void resetPropertyWithLevel() {
+        // 等级分布
+        if (Math.random() < 0.02) {
+            enemyLevel = EnemyLevel.BOSS;
+            size = size * 3;
+            setProperty(maxHealth * 40, attackDamage * 5, defense * 6, speed * 6, mana * 5);
+        } else if (Math.random() < 0.07) {
+            enemyLevel = EnemyLevel.ELITE;
+            size = size * 2;
+            setProperty(maxHealth * 8, attackDamage * 3, defense * 4, speed * 4, mana * 3);
+        } else if (Math.random() < 0.30) {
+            enemyLevel = EnemyLevel.LEADER;
+            size = (int) (size * 1.3f);
+            setProperty(maxHealth * 3, (int) (attackDamage * 1.5), (int) (defense * 2), (int) (speed * 2), (int) (mana * 1.5));
+        }
+    }
+
     public void setState(State state) {
         this.currentState = state;
     }

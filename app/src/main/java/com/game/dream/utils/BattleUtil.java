@@ -16,6 +16,11 @@ import java.util.List;
 
 public class BattleUtil {
 
+    /** 物理防御减伤常量 K：reduction = defense / (defense + K)，K越大防御越值钱 */
+    public static int DEFENSE_K = 250;
+    /** 法术抗性常量 K：resist = spirit / (spirit + K)，K越大灵力抗性越值钱 */
+    public static int MAGIC_RESIST_K = 200;
+
     /**
      * 计算人物输出的物理伤害
      *
@@ -93,9 +98,11 @@ public class BattleUtil {
     }
 
     private static int calculateAttackDamage(float attack, int defense) {
-        int damageValue = (int) (attack * 0.2 + (attack - defense) * 1.1);
-        damageValue = Math.max(0, damageValue);
-        damageValue += (int) (attack * 0.05);
+        // 比率减伤公式：reduction = defense / (defense + K)
+        float reduction = (float) defense / (defense + DEFENSE_K);
+        int damageValue = (int) (attack * (1 - reduction));
+        // 保底 4% 攻击力
+        damageValue = Math.max(damageValue, (int) (attack * 0.04f));
         return damageValue;
     }
 
@@ -221,28 +228,27 @@ public class BattleUtil {
 
     private static int calculateMagicDamage(float baseDamage, int casterSpirit,
                                             int acceptSpirit, int skillLevel) {
-        float spiritDelta = casterSpirit - acceptSpirit;
-        float playerSpiritMultiplier = (float) Math.pow(casterSpirit, 0.5f); // 平方根软化
+        // 比率抗性：resist = acceptSpirit / (acceptSpirit + K)
+        float resist = (float) acceptSpirit / (acceptSpirit + MAGIC_RESIST_K);
+        float casterMultiplier = (float) Math.pow(casterSpirit, 0.5f);
 
-        // 3. Skill level multiplier
+        // Skill level multiplier
         float skillMultiplier = 1.0f + (skillLevel - 1) * 0.15f;
         skillMultiplier = Math.min(skillMultiplier, 3.0f);
 
-        // 4. Calculate final damage
-        float finalDamage = spiritDelta * 0.3f + baseDamage * skillMultiplier * (0.45f + playerSpiritMultiplier * 0.55f);
-
-//        LogUtil.i("baseDamage  spiritDelta:" + spiritDelta + ",playerSpiritMultiplier:" + playerSpiritMultiplier);
-//        LogUtil.i("baseDamage:" + baseDamage + ",playerSpirit:" + playerSpirit + ",enemySpirit:" + enemySpirit
-//                + ",skillLevel:" + skillLevel + ",result:" + finalDamage);
+        // Calculate final damage
+        float finalDamage = casterSpirit * 0.8f * (1 - resist) + baseDamage * skillMultiplier * 8;
 
         // Random variance ±10%
         float variance = 0.9f + (float) (Math.random() * 0.2);
         finalDamage *= variance;
 
-        int result = Math.max(1, (int) finalDamage);
+        // 保底：灵力 * 3%
+        int minDamage = (int) (casterSpirit * 0.03f);
+        int result = Math.max(minDamage, (int) finalDamage);
 
         LogUtil.i("baseDamage:" + baseDamage + ",casterSpirit:" + casterSpirit + ",acceptSpirit:" + acceptSpirit
-                + ",skillLevel:" + skillLevel + ",result:" + result);
+                + ",skillLevel:" + skillLevel + ",resist:" + resist + ",result:" + result);
         return result;
     }
 
@@ -332,12 +338,10 @@ public class BattleUtil {
             //计算伤害
             damageValue = calculateAttackDamage(enemyAttack, playerDefense);
 
-            //计算修炼加成(计算伤害结果后加成)
+            //计算修炼加成(计算伤害结果后加成) — 纯乘法每层减2%
             int practiceDefense = roleInfo.getPracticeDefense();
             if (practiceDefense > 0) {
-                for (int i = 0; i < practiceDefense; i++) {
-                    damageValue = (int) (damageValue * 0.98 - 5);
-                }
+                damageValue = (int) (damageValue * Math.pow(0.98, practiceDefense));
             }
 
             damageValue = (int) (damageValue * (0.9 + Math.random() * 0.2));
@@ -358,7 +362,7 @@ public class BattleUtil {
                 }
             }
 
-            damageValue = Math.max(damageValue, 1);
+            damageValue = Math.max(damageValue, (int) (enemy.getAttackDamage() * 0.04f));
         }
 
         AttackResult attackResult = new AttackResult();
@@ -400,6 +404,7 @@ public class BattleUtil {
             isCrit = false;
 
             float castBaseValue = 10f;
+
             switch (skillType) {
                 case MAIN_FIREBALL:
                     castBaseValue = 10f;
@@ -438,12 +443,10 @@ public class BattleUtil {
                 damageValue = calculateEnemyMagicDamage(castBaseValue, enemyMana, roleMana, skillLevel);
                 LogUtil.i("aaaaaaaaaaaaaaa 怪物法术输出伤害 " + damageValue);
 
-                //计算修炼加成(计算伤害结果后加成)
+                //计算修炼加成(计算伤害结果后加成) — 纯乘法每层减2%
                 int practiceMagicDefense = roleInfo.getPracticeMagicDefense();
                 if (practiceMagicDefense > 0) {
-                    for (int i = 0; i < practiceMagicDefense; i++) {
-                        damageValue = (int) (damageValue * 0.98 - 5);
-                    }
+                    damageValue = (int) (damageValue * Math.pow(0.98, practiceMagicDefense));
                 }
 
                 //浮动伤害
@@ -465,7 +468,7 @@ public class BattleUtil {
                     }
                 }
 
-                damageValue = Math.max(damageValue, 1);
+                damageValue = Math.max(damageValue, (int) (enemy.getMana() * 0.03f));
             }
         }
 
@@ -482,28 +485,27 @@ public class BattleUtil {
 
     private static int calculateEnemyMagicDamage(float baseDamage, int casterSpirit,
                                                  int acceptSpirit, int skillLevel) {
-        float spiritDelta = casterSpirit - acceptSpirit;
-        float playerSpiritMultiplier = (float) Math.pow(casterSpirit, 0.5f); // 平方根软化
+        // 比率抗性：resist = acceptSpirit / (acceptSpirit + K)
+        float resist = (float) acceptSpirit / (acceptSpirit + MAGIC_RESIST_K);
+        float casterMultiplier = (float) Math.pow(casterSpirit, 0.5f);
 
-        // 3. Skill level multiplier
+        // Skill level multiplier
         float skillMultiplier = 1.0f + (skillLevel - 1) * 0.15f;
         skillMultiplier = Math.min(skillMultiplier, 3.0f);
 
-        // 4. Calculate final damage
-        float finalDamage = spiritDelta * 0.3f + baseDamage * skillMultiplier * (0.45f + playerSpiritMultiplier * 0.4f);
-
-//        LogUtil.i("baseDamage  spiritDelta:" + spiritDelta + ",playerSpiritMultiplier:" + playerSpiritMultiplier);
-//        LogUtil.i("baseDamage:" + baseDamage + ",playerSpirit:" + playerSpirit + ",enemySpirit:" + enemySpirit
-//                + ",skillLevel:" + skillLevel + ",result:" + finalDamage);
+        // Calculate final damage
+        float finalDamage = casterSpirit * 0.8f * (1 - resist) + baseDamage * skillMultiplier * 8;
 
         // Random variance ±10%
         float variance = 0.9f + (float) (Math.random() * 0.2);
         finalDamage *= variance;
 
-        int result = Math.max(1, (int) finalDamage);
+        // 保底：灵力 * 3%
+        int minDamage = (int) (casterSpirit * 0.03f);
+        int result = Math.max(minDamage, (int) finalDamage);
 
         LogUtil.i("baseDamage:" + baseDamage + ",casterSpirit:" + casterSpirit + ",acceptSpirit:" + acceptSpirit
-                + ",skillLevel:" + skillLevel + ",result:" + result);
+                + ",skillLevel:" + skillLevel + ",resist:" + resist + ",result:" + result);
         return result;
     }
 }

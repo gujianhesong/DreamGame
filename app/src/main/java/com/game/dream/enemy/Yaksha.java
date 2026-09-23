@@ -45,28 +45,7 @@ public class Yaksha extends Enemy {
         baseSpeed = speed;
 
         // 等级分布
-        if (Math.random() < 0.02) {
-            // BOSS - 九幽夜叉王
-            enemyLevel = EnemyLevel.BOSS;
-            size = size * 3;
-            setProperty(maxHealth * 50, attackDamage * 8, defense * 7, speed * 7, mana * 6);
-            baseAttackDamage = attackDamage;
-            baseSpeed = speed;
-        } else if (Math.random() < 0.07) {
-            // 精英 - 噬魂夜叉
-            enemyLevel = EnemyLevel.ELITE;
-            size = size * 2;
-            setProperty(maxHealth * 10, attackDamage * 4, defense * 3, speed * 4, mana * 3);
-            baseAttackDamage = attackDamage;
-            baseSpeed = speed;
-        } else if (Math.random() < 0.30) {
-            // 首领 - 夜叉头目
-            enemyLevel = EnemyLevel.LEADER;
-            size = (int) (size * 1.3f);
-            setProperty(maxHealth * 3, attackDamage * 2, defense * 2, speed * 2, mana * 2);
-            baseAttackDamage = attackDamage;
-            baseSpeed = speed;
-        }
+        resetPropertyWithLevel();
 
         // 所有夜叉使用猛扑（夜叉扑杀）
         addAvailableAttackType(AttackType.POUNCE);

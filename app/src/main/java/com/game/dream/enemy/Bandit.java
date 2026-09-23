@@ -18,7 +18,7 @@ public class Bandit extends Enemy {
     private long slashAnimStartTime = 0; // 挥砍动画开始时间
 
     public Bandit(float x, float y) {
-        super(x, y, 85);
+        super(x, y, 100);
         attackCooldown = 2000;
         setAttackShape(AttackShape.ARC); // 刀光斩击 - 扇形
 
@@ -29,27 +29,10 @@ public class Bandit extends Enemy {
         enemyPropertyExtra.rewardMoney = 180;
         setPropertyExtra(enemyPropertyExtra);
 
-        setProperty(600, 300, 200, 100, 100);
+        setProperty(800, 300, 200, 120, 150);
 
-        if (Math.random() < 0.02) {
-            //BOSS
-            enemyLevel = EnemyLevel.BOSS;
-            size = size * 3;
-
-            setProperty(maxHealth * 50, attackDamage * 8, defense * 8, speed * 8, mana * 8);
-        } else if (Math.random() < 0.07) {
-            //精英
-            enemyLevel = EnemyLevel.ELITE;
-            size = size * 2;
-
-            setProperty(maxHealth * 10, attackDamage * 4, defense * 4, speed * 4, mana * 4);
-        } else if (Math.random() < 0.30) {
-            //首领
-            enemyLevel = EnemyLevel.LEADER;
-            size = (int) (size * 1.3f);
-
-            setProperty(maxHealth * 3, attackDamage * 2, defense * 2, speed * 2, mana * 2);
-        }
+        // 等级分布
+        resetPropertyWithLevel();
 
         // 首领/精英/BOSS强盗可以使用连斩
         if (enemyLevel == EnemyLevel.LEADER || enemyLevel == EnemyLevel.ELITE || enemyLevel == EnemyLevel.BOSS) {

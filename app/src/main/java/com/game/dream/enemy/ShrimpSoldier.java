@@ -30,25 +30,10 @@ public class ShrimpSoldier extends Enemy {
         setPropertyExtra(prop);
 
         // 虾兵：速度高、血量低、攻击中等
-        setProperty(800, 320, 250, 200, 150);
+        setProperty(800, 320, 250, 300, 150);
 
         // 等级分布
-        if (Math.random() < 0.02) {
-            // BOSS - 虾帅
-            enemyLevel = EnemyLevel.BOSS;
-            size = size * 3;
-            setProperty(maxHealth * 50, attackDamage * 8, defense * 6, speed * 7, mana * 6);
-        } else if (Math.random() < 0.07) {
-            // 精英
-            enemyLevel = EnemyLevel.ELITE;
-            size = size * 2;
-            setProperty(maxHealth * 10, attackDamage * 4, defense * 3, speed * 4, mana * 3);
-        } else if (Math.random() < 0.30) {
-            // 首领
-            enemyLevel = EnemyLevel.LEADER;
-            size = (int) (size * 1.3f);
-            setProperty(maxHealth * 3, attackDamage * 2, defense * 2, speed * 2, mana * 2);
-        }
+        resetPropertyWithLevel();
 
         // 所有虾兵使用猛扑（虾弹跳射）
         addAvailableAttackType(AttackType.POUNCE);

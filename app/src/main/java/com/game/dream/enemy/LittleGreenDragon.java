@@ -45,25 +45,10 @@ public class LittleGreenDragon extends Enemy {
         setPropertyExtra(prop);
 
         // 小青龙：血量低、防御低、速度中等、魔法伤害高
-        setProperty(1200, 200, 200, 150, 400);
+        setProperty(1200, 200, 300, 150, 500);
 
         // 等级分布
-        if (Math.random() < 0.02) {
-            // BOSS - 东海龙子
-            enemyLevel = EnemyLevel.BOSS;
-            size = size * 3;
-            setProperty(maxHealth * 50, attackDamage * 6, defense * 5, speed * 7, mana * 8);
-        } else if (Math.random() < 0.07) {
-            // 精英 - 青龙太子
-            enemyLevel = EnemyLevel.ELITE;
-            size = size * 2;
-            setProperty(maxHealth * 10, attackDamage * 4, defense * 3, speed * 4, mana * 5);
-        } else if (Math.random() < 0.30) {
-            // 首领 - 青龙侍从
-            enemyLevel = EnemyLevel.LEADER;
-            size = (int) (size * 1.3f);
-            setProperty(maxHealth * 3, attackDamage * 2, defense * 2, speed * 2, mana * 3);
-        }
+        resetPropertyWithLevel();
 
         // 近战时使用环绕斩击（龙尾横扫）作为最后的挣扎
         addAvailableAttackType(AttackType.SPIN_ATTACK);

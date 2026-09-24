@@ -192,7 +192,7 @@ public class QuestPanel {
         paint.setStyle(Paint.Style.FILL);
 
         paint.setColor(Color.WHITE);
-        paint.setTextSize(22);
+        paint.setTextSize(26);
         paint.setTextAlign(Paint.Align.CENTER);
         canvas.drawText(label, tab.centerX(), tab.centerY() + 8, paint);
     }
@@ -256,12 +256,12 @@ public class QuestPanel {
 
         // Quest name
         paint.setColor(Color.WHITE);
-        paint.setTextSize(26);
+        paint.setTextSize(30);
         paint.setTextAlign(Paint.Align.LEFT);
         canvas.drawText(quest.getName(), x + 15, y + 30, paint);
 
         // Status tag
-        paint.setTextSize(18);
+        paint.setTextSize(22);
         paint.setTextAlign(Paint.Align.RIGHT);
         if (quest.isCompleted()) {
             paint.setColor(Color.rgb(100, 255, 100));
@@ -273,7 +273,7 @@ public class QuestPanel {
 
         // Quest description (truncate if too long)
         paint.setColor(Color.rgb(200, 200, 200));
-        paint.setTextSize(18);
+        paint.setTextSize(22);
         paint.setTextAlign(Paint.Align.LEFT);
         String descText = quest.getDesc();
         if (descText != null && !descText.isEmpty()) {
@@ -283,7 +283,7 @@ public class QuestPanel {
 
         // Current stage description
         paint.setColor(Color.rgb(200, 220, 255));
-        paint.setTextSize(20);
+        paint.setTextSize(24);
         String stageDesc = quest.getCurrentStageDesc();
         if (!stageDesc.isEmpty()) {
             canvas.drawText("当前: " + stageDesc, x + 15, y + 90, paint);
@@ -320,13 +320,13 @@ public class QuestPanel {
 
         // Progress text
         paint.setColor(Color.WHITE);
-        paint.setTextSize(18);
+        paint.setTextSize(22);
         paint.setTextAlign(Paint.Align.CENTER);
         canvas.drawText(quest.getStage() + " / " + quest.getTotalStages(),
                 barX + barWidth / 2, barY + 16, paint);
 
         // Stage list (all stages with completion marks)
-        paint.setTextSize(16);
+        paint.setTextSize(20);
         paint.setTextAlign(Paint.Align.LEFT);
         List<String> stageDescs = quest.getStageDescs();
         if (stageDescs != null) {

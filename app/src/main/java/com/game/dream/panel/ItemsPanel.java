@@ -47,8 +47,8 @@ public class ItemsPanel {
     // Inventory grid (right side)
     private Rect[][] inventorySlots;
     private static final int INVENTORY_COLS = 6; // Increased from 5 to 6
-    private static final int INVENTORY_ROWS = 5; // Reduced from 6 to 5 to fit better
-    private static final int SLOT_SIZE = 120; // Slightly larger slots
+    private static final int INVENTORY_ROWS = 5; // 5 rows allocated, clipped to fit panel
+    private static final int SLOT_SIZE = 140; // Slightly larger slots
     private static final int SLOT_GAP = 8;
     private static final int SLOT_GAP_EQUIP = 20;
 
@@ -215,8 +215,8 @@ public class ItemsPanel {
             }
         }
 
-        // Bottom action buttons (below inventory grid, only visible in multi-select mode)
-        int bottomY = inventoryStartY + INVENTORY_ROWS * (SLOT_SIZE + SLOT_GAP) + 10;
+        // Bottom action buttons (fixed at panel bottom, only visible in multi-select mode)
+        int bottomY = panelBounds.bottom - 54;
         int actionBtnWidth = 140;
         int actionBtnHeight = 44;
         int bottomCenterX = (inventoryStartX + inventorySlots[INVENTORY_ROWS - 1][INVENTORY_COLS - 1].right) / 2 + inventoryStartX / 2;
@@ -308,7 +308,7 @@ public class ItemsPanel {
     private void drawEquipmentSection(Canvas canvas, Paint paint) {
         // Section title
         paint.setColor(Color.rgb(200, 200, 220));
-        paint.setTextSize(24);
+        paint.setTextSize(26);
         paint.setTextAlign(Paint.Align.CENTER);
         canvas.drawText("装备栏", helmetSlot.centerX() - 20, helmetSlot.top - 20, paint);
 
@@ -359,7 +359,7 @@ public class ItemsPanel {
         if (equipped != null) {
             // Draw equipped item name (no background box)
             paint.setColor(Color.WHITE);
-            paint.setTextSize(18);
+            paint.setTextSize(22);
             paint.setTextAlign(Paint.Align.CENTER);
 
             // Item name (truncated if too long)
@@ -367,7 +367,7 @@ public class ItemsPanel {
             canvas.drawText(itemName, slot.centerX(), slot.centerY() + 5, paint);
 
             // Rarity indicator
-            paint.setTextSize(16);
+            paint.setTextSize(20);
             canvas.drawText(ItemsUtil.getRarityText(equipped.getRarity()),
                     slot.centerX(), slot.bottom - 8, paint);
         } else {
@@ -435,7 +435,7 @@ public class ItemsPanel {
 
             // Tab text
             paint.setColor(Color.WHITE);
-            paint.setTextSize(20);
+            paint.setTextSize(22);
             paint.setTextAlign(Paint.Align.CENTER);
             canvas.drawText(TAB_NAMES[i], tab.centerX(), tab.centerY() + 7, paint);
         }
@@ -499,12 +499,15 @@ public class ItemsPanel {
         // Clamp scroll offset
         inventoryScrollOffset = Math.max(0, Math.min(inventoryScrollOffset, maxInventoryScrollOffset));
 
-        // 3. Define the clipping area (the visible inventory box)
+        // 3. Define the clipping area (the visible inventory box, capped to panel bottom)
+        int clipBottom = Math.min(
+                inventorySlots[INVENTORY_ROWS - 1][INVENTORY_COLS - 1].bottom + 10,
+                panelBounds.bottom - 30);
         Rect clipRect = new Rect(
                 inventorySlots[0][0].left - 10,
                 inventorySlots[0][0].top - 30,
                 inventorySlots[INVENTORY_ROWS - 1][INVENTORY_COLS - 1].right + 10,
-                inventorySlots[INVENTORY_ROWS - 1][INVENTORY_COLS - 1].bottom + 10
+                clipBottom
         );
         canvas.save();
         canvas.clipRect(clipRect);
@@ -565,20 +568,20 @@ public class ItemsPanel {
                     // Item name
                     paint.setStyle(Paint.Style.FILL);
                     paint.setColor(Color.WHITE);
-                    paint.setTextSize(18);
+                    paint.setTextSize(22);
                     paint.setTextAlign(Paint.Align.CENTER);
 
                     String itemName = item.getName();
                     if (itemName.length() > 6) {
                         canvas.drawText(itemName.substring(0, 6), drawSlot.centerX(), drawSlot.centerY() - 2, paint);
-                        canvas.drawText(itemName.substring(6), drawSlot.centerX(), drawSlot.centerY() - 2 + 20, paint);
+                        canvas.drawText(itemName.substring(6), drawSlot.centerX(), drawSlot.centerY() - 2 + 24, paint);
                     } else {
                         canvas.drawText(itemName, drawSlot.centerX(), drawSlot.centerY() - 2, paint);
                     }
 
                     // Quantity
                     if (stack.getQuantity() > 1) {
-                        paint.setTextSize(18);
+                        paint.setTextSize(22);
                         paint.setColor(Color.YELLOW);
                         paint.setTextAlign(Paint.Align.RIGHT);
                         canvas.drawText("x" + stack.getQuantity(),
@@ -644,7 +647,7 @@ public class ItemsPanel {
         paint.setStyle(Paint.Style.FILL);
 
         paint.setColor(Color.WHITE);
-        paint.setTextSize(20);
+        paint.setTextSize(22);
         paint.setTextAlign(Paint.Align.CENTER);
         String label = active ? "✓ 多选" : "☐ 多选";
         canvas.drawText(label, multiSelectButton.centerX(), multiSelectButton.centerY() + 6, paint);

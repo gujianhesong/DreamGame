@@ -333,7 +333,7 @@ public class SkillsPanel {
 
         // Tab text
         paint.setColor(Color.WHITE);
-        paint.setTextSize(22);
+        paint.setTextSize(26);
         paint.setTextAlign(Paint.Align.CENTER);
         float textY = tab.centerY() + 8;
         canvas.drawText(label, tab.centerX(), textY, paint);
@@ -406,20 +406,20 @@ public class SkillsPanel {
 
             // Skill name
             paint.setColor(Color.WHITE);
-            paint.setTextSize(24);
+            paint.setTextSize(28);
             paint.setTextAlign(Paint.Align.CENTER);
             canvas.drawText(skill.getName(), xPos + itemWidth / 2, yPos + 30, paint);
 
             // Skill level
             paint.setColor(Color.WHITE);
-            paint.setTextSize(20);
+            paint.setTextSize(24);
             paint.setTextAlign(Paint.Align.LEFT);
             canvas.drawText("Lv." + skill.getLevel() + "/" + skill.getMaxLevel(),
                     xPos + 10, yPos + 55, paint);
 
             // Description (truncated)
             paint.setColor(Color.WHITE);
-            paint.setTextSize(18);
+            paint.setTextSize(22);
             canvas.drawText(skill.getDesc(), xPos + 10, yPos + 85, paint);
 
             // Draw buttons if available
@@ -519,7 +519,7 @@ public class SkillsPanel {
         paint.setStyle(Paint.Style.FILL);
 
         paint.setColor(Color.WHITE);
-        paint.setTextSize(18);
+        paint.setTextSize(22);
         paint.setTextAlign(Paint.Align.CENTER);
         canvas.drawText(isEquipped ? "装配中 " + index : "未装配", button.centerX(), button.centerY() + 6, paint);
     }
@@ -539,7 +539,7 @@ public class SkillsPanel {
         paint.setStyle(Paint.Style.FILL);
 
         paint.setColor(Color.WHITE);
-        paint.setTextSize(18);
+        paint.setTextSize(22);
         paint.setTextAlign(Paint.Align.CENTER);
         canvas.drawText("使用", button.centerX(), button.centerY() + 6, paint);
     }

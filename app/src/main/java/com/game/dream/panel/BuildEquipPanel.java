@@ -182,13 +182,13 @@ public class BuildEquipPanel {
 
             // Recipe Name
             paint.setColor(Color.rgb(255, 200, 100));
-            paint.setTextSize(24);
+            paint.setTextSize(28);
             paint.setTextAlign(Paint.Align.LEFT);
             canvas.drawText(r.name, btn.left + 15, btn.top + 35, paint);
 
             // Materials needed
             paint.setColor(Color.rgb(200, 200, 200));
-            paint.setTextSize(18);
+            paint.setTextSize(22);
             canvas.drawText("需要: " + r.requireTxt, btn.left + 15, btn.top + 65, paint);
             canvas.drawText("金钱: " + r.costMoney, btn.left + 15, btn.top + 90, paint);
 
@@ -228,7 +228,7 @@ public class BuildEquipPanel {
             canvas.drawRoundRect(craftBtn.left, craftBtn.top, craftBtn.right, craftBtn.bottom, 5, 5, paint);
 
             paint.setColor(Color.WHITE);
-            paint.setTextSize(18);
+            paint.setTextSize(22);
             paint.setTextAlign(Paint.Align.CENTER);
             canvas.drawText("打造", craftBtn.centerX(), craftBtn.centerY() + 6, paint);
         }

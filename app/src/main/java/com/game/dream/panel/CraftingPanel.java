@@ -264,13 +264,13 @@ public class CraftingPanel {
 
             // Recipe Name
             paint.setColor(Color.rgb(255, 200, 100));
-            paint.setTextSize(24);
+            paint.setTextSize(28);
             paint.setTextAlign(Paint.Align.LEFT);
             canvas.drawText(recipe.name, btn.left + 15, btn.top + 35, paint);
 
             // Materials needed
             paint.setColor(Color.rgb(180, 180, 180));
-            paint.setTextSize(18);
+            paint.setTextSize(22);
             String needItemDesc = "";
             for (MaterialItem item : recipe.materialItems) {
                 needItemDesc += item.materialName + " x" + item.materialCount;
@@ -287,7 +287,7 @@ public class CraftingPanel {
             canvas.drawRoundRect(craftBtn.left, craftBtn.top, craftBtn.right, craftBtn.bottom, 5, 5, paint);
 
             paint.setColor(Color.WHITE);
-            paint.setTextSize(18);
+            paint.setTextSize(22);
             paint.setTextAlign(Paint.Align.CENTER);
             canvas.drawText("打造", craftBtn.centerX(), craftBtn.centerY() + 6, paint);
         }
@@ -360,7 +360,7 @@ public class CraftingPanel {
 
         // Tab text
         paint.setColor(Color.WHITE);
-        paint.setTextSize(22);
+        paint.setTextSize(26);
         paint.setTextAlign(Paint.Align.CENTER);
         float textY = tab.centerY() + 8;
         canvas.drawText(label, tab.centerX(), textY, paint);

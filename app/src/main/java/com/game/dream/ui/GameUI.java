@@ -245,7 +245,7 @@ public class GameUI {
 
         // Initialize equipment panel (center of screen)
         if (itemsPanel != null) {
-            int panelWidth = Math.min(1200, width - 40);
+            int panelWidth = Math.min(1320, width - 40);
             int panelHeight = Math.min(900, height - 100);
             int panelX = (width - panelWidth) / 2;
             int panelY = (height - panelHeight) / 2;

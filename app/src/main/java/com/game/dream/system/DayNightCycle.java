@@ -205,4 +205,11 @@ public class DayNightCycle {
     public int getCurrentAlpha() {
         return currentAlpha;
     }
+
+    /**
+     * 判断当前是否为夜晚（18:00 ~ 6:00）
+     */
+    public boolean isNight() {
+        return gameTime >= NIGHT_START || gameTime < DAY_START;
+    }
 }

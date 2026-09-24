@@ -30,18 +30,14 @@ public class FunctionNpcManager {
     public boolean handleNpcClick(Npc npc) {
         switch (npc.getId()) {
             case 100101: {
-                // 清溪村村长 - 迷宫入口 / 金陵入口 / 地府入口
-                List<String> options = Arrays.asList("探索迷宫", "前往金陵", "前往地府", "不了");
-                String message = "少侠想去哪里？村外有一处迷雾迷宫，另外南方有一座繁华的大城金陵，也可以去闯荡一番。若少侠胆量过人，北面乱葬岗下有一道陰门，直通地府……";
+                // 清溪村村长 - 迷宫入口
+                List<String> options = Arrays.asList("探索迷宫", "不了");
+                String message = "少侠，村外有一处迷雾迷宫，里面危机四伏，若少侠有胆量，可前去闯荡一番。";
                 GameEngine.getInstance().showDialog(npc.getName(), message, options, new DialogBox.DialogListener() {
                     @Override
                     public void onOptionSelected(int optionIndex) {
                         if (optionIndex == 0) {
                             GameEngine.getInstance().teleportToMap(MapSystem.MAP_ID_QING_XI_MAZE);
-                        } else if (optionIndex == 1) {
-                            GameEngine.getInstance().teleportToMap(MapSystem.MAP_ID_JIN_LING);
-                        } else if (optionIndex == 2) {
-                            GameEngine.getInstance().teleportToMap(MapSystem.MAP_ID_NETHERWORLD);
                         }
                     }
                 });
@@ -76,7 +72,7 @@ public class FunctionNpcManager {
             }
             case 100117: {
                 //清溪-驿站车夫
-                List<String> options = Arrays.asList("前往金陵", "不了");
+                List<String> options = Arrays.asList("前往金陵稻香屯", "不了");
                 String message = "客官想去哪里？我只收你100金钱";
                 GameEngine.getInstance().showDialog(npc.getName(), message, options, new DialogBox.DialogListener() {
                     @Override
@@ -89,7 +85,7 @@ public class FunctionNpcManager {
                             }
                             RoleSystem.getInstance().getRoleInfo().setMoney(
                                     RoleSystem.getInstance().getRoleInfo().getMoney() - cost);
-                            GameEngine.getInstance().teleportToMap(MapSystem.MAP_ID_JIN_LING);
+                            GameEngine.getInstance().teleportToMapWithPosition(MapSystem.MAP_ID_JIN_LING, 2880, 58470);
                         }
                     }
                 });
@@ -97,7 +93,7 @@ public class FunctionNpcManager {
             }
             case 100201: {
                 //金陵-驿站车夫（主城）
-                List<String> options = Arrays.asList("前往清溪村", "前往东海湾", "前往碧波渡", "前往云岩寨", "前往稻香屯", "前往翠微庄", "不了");
+                List<String> options = Arrays.asList("前往碧波渡(城东北)", "前往云岩寨(城东南)", "前往稻香屯(城西南)", "前往翠微庄(城西北)", "不了");
                 String message = "客官想去哪里？我只收你100金钱";
                 GameEngine.getInstance().showDialog(npc.getName(), message, options, new DialogBox.DialogListener() {
                     @Override
@@ -108,35 +104,25 @@ public class FunctionNpcManager {
                             return;
                         }
                         switch (optionIndex) {
-                            case 0: // 清溪村（跨地图）
-                                RoleSystem.getInstance().getRoleInfo().setMoney(
-                                        RoleSystem.getInstance().getRoleInfo().getMoney() - cost);
-                                GameEngine.getInstance().teleportToMap(MapSystem.MAP_ID_QING_XI);
-                                break;
-                            case 1: // 东海湾（跨地图）
-                                RoleSystem.getInstance().getRoleInfo().setMoney(
-                                        RoleSystem.getInstance().getRoleInfo().getMoney() - cost);
-                                GameEngine.getInstance().teleportToMap(MapSystem.MAP_ID_DONGHAI_BAY);
-                                break;
-                            case 2: // 碧波渡（东北）
+                            case 0: // 碧波渡（东北）
                                 RoleSystem.getInstance().getRoleInfo().setMoney(
                                         RoleSystem.getInstance().getRoleInfo().getMoney() - cost);
                                 GameEngine.getInstance().getPlayer().setX(58900);
                                 GameEngine.getInstance().getPlayer().setY(2470);
                                 break;
-                            case 3: // 云岩寨（东南）
+                            case 1: // 云岩寨（东南）
                                 RoleSystem.getInstance().getRoleInfo().setMoney(
                                         RoleSystem.getInstance().getRoleInfo().getMoney() - cost);
                                 GameEngine.getInstance().getPlayer().setX(57200);
                                 GameEngine.getInstance().getPlayer().setY(58080);
                                 break;
-                            case 4: // 稻香屯（西南）
+                            case 2: // 稻香屯（西南）
                                 RoleSystem.getInstance().getRoleInfo().setMoney(
                                         RoleSystem.getInstance().getRoleInfo().getMoney() - cost);
                                 GameEngine.getInstance().getPlayer().setX(2880);
                                 GameEngine.getInstance().getPlayer().setY(58470);
                                 break;
-                            case 5: // 翠微庄（西北）
+                            case 3: // 翠微庄（西北）
                                 RoleSystem.getInstance().getRoleInfo().setMoney(
                                         RoleSystem.getInstance().getRoleInfo().getMoney() - cost);
                                 GameEngine.getInstance().getPlayer().setX(2870);
@@ -173,39 +159,24 @@ public class FunctionNpcManager {
                 });
                 return true;
             }
-            case 100301: {
-                //东海湾-驿站车夫
-                List<String> options = Arrays.asList("前往金陵主城", "潜入东海海底", "前往海底迷宫", "不了");
-                String message = "客官想去哪里？我只收你100金钱";
+            case 100207: {
+                //金陵西侧-鬼差（仅夜间出现，传送地府）
+                List<String> options = Arrays.asList("前往地府", "不了");
+                String message = "嘘……阳人莫要张扬。小人奉命在此引导亡魂，若少侠有意前往地府，小人可代为开路……";
                 GameEngine.getInstance().showDialog(npc.getName(), message, options, new DialogBox.DialogListener() {
                     @Override
                     public void onOptionSelected(int optionIndex) {
-                        int cost = 100;
-                        if (RoleSystem.getInstance().getRoleInfo().getMoney() < cost) {
-                            GameEngine.getInstance().showCenterToast("金钱不足，需要100金钱");
-                            return;
-                        }
                         if (optionIndex == 0) {
-                            RoleSystem.getInstance().getRoleInfo().setMoney(
-                                    RoleSystem.getInstance().getRoleInfo().getMoney() - cost);
-                            GameEngine.getInstance().teleportToMap(MapSystem.MAP_ID_JIN_LING);
-                        } else if (optionIndex == 1) {
-                            RoleSystem.getInstance().getRoleInfo().setMoney(
-                                    RoleSystem.getInstance().getRoleInfo().getMoney() - cost);
-                            GameEngine.getInstance().teleportToMap(MapSystem.MAP_ID_DONGHAI_SEABED);
-                        } else if (optionIndex == 2) {
-                            RoleSystem.getInstance().getRoleInfo().setMoney(
-                                    RoleSystem.getInstance().getRoleInfo().getMoney() - cost);
-                            GameEngine.getInstance().teleportToMap(MapSystem.MAP_ID_UNDERWATER_MAZE);
+                            GameEngine.getInstance().teleportToMap(MapSystem.MAP_ID_NETHERWORLD);
                         }
                     }
                 });
                 return true;
             }
-            case 100401: {
-                //东海海底-驿站虾兵
-                List<String> options = Arrays.asList("返回东海湾", "不了");
-                String message = "少侠想回海面吗？我只收你100金钱";
+            case 100208: {
+                //金陵东侧-东城车夫（传送东海湾）
+                List<String> options = Arrays.asList("前往东海湾", "不了");
+                String message = "客官想去东海湾？我只收你100金钱";
                 GameEngine.getInstance().showDialog(npc.getName(), message, options, new DialogBox.DialogListener() {
                     @Override
                     public void onOptionSelected(int optionIndex) {
@@ -223,15 +194,87 @@ public class FunctionNpcManager {
                 });
                 return true;
             }
+            case 100301: {
+                //东海湾-驿站车夫
+                List<String> options = Arrays.asList("前往金陵主城", "不了");
+                String message = "客官想去哪里？我只收你100金钱";
+                GameEngine.getInstance().showDialog(npc.getName(), message, options, new DialogBox.DialogListener() {
+                    @Override
+                    public void onOptionSelected(int optionIndex) {
+                        int cost = 100;
+                        if (RoleSystem.getInstance().getRoleInfo().getMoney() < cost) {
+                            GameEngine.getInstance().showCenterToast("金钱不足，需要100金钱");
+                            return;
+                        }
+                        if (optionIndex == 0) {
+                            RoleSystem.getInstance().getRoleInfo().setMoney(
+                                    RoleSystem.getInstance().getRoleInfo().getMoney() - cost);
+                            GameEngine.getInstance().teleportToMapWithPosition(MapSystem.MAP_ID_JIN_LING, 35700, 30000);
+                        }
+                    }
+                });
+                return true;
+            }
+            case 100306: {
+                //东海湾-海边虾兵（潜入东海海底）
+                List<String> options = Arrays.asList("潜入东海海底", "不了");
+                String message = "少侠想潜入海底吗？我只收你100金钱";
+                GameEngine.getInstance().showDialog(npc.getName(), message, options, new DialogBox.DialogListener() {
+                    @Override
+                    public void onOptionSelected(int optionIndex) {
+                        if (optionIndex == 0) {
+                            int cost = 100;
+                            if (RoleSystem.getInstance().getRoleInfo().getMoney() < cost) {
+                                GameEngine.getInstance().showCenterToast("金钱不足，需要100金钱");
+                                return;
+                            }
+                            RoleSystem.getInstance().getRoleInfo().setMoney(
+                                    RoleSystem.getInstance().getRoleInfo().getMoney() - cost);
+                            GameEngine.getInstance().teleportToMap(MapSystem.MAP_ID_DONGHAI_SEABED);
+                        }
+                    }
+                });
+                return true;
+            }
+            case 100401: {
+                //东海海底-驿站虾兵
+                List<String> options = Arrays.asList("返回东海湾海边", "前往海底迷宫", "不了");
+                String message = "少侠想去哪里？我只收你100金钱";
+                GameEngine.getInstance().showDialog(npc.getName(), message, options, new DialogBox.DialogListener() {
+                    @Override
+                    public void onOptionSelected(int optionIndex) {
+                        if (optionIndex == 0) {
+                            int cost = 100;
+                            if (RoleSystem.getInstance().getRoleInfo().getMoney() < cost) {
+                                GameEngine.getInstance().showCenterToast("金钱不足，需要100金钱");
+                                return;
+                            }
+                            RoleSystem.getInstance().getRoleInfo().setMoney(
+                                    RoleSystem.getInstance().getRoleInfo().getMoney() - cost);
+                            GameEngine.getInstance().teleportToMapWithPosition(MapSystem.MAP_ID_DONGHAI_BAY, 7000, 5200);
+                        } else if (optionIndex == 1) {
+                            int cost = 100;
+                            if (RoleSystem.getInstance().getRoleInfo().getMoney() < cost) {
+                                GameEngine.getInstance().showCenterToast("金钱不足，需要100金钱");
+                                return;
+                            }
+                            RoleSystem.getInstance().getRoleInfo().setMoney(
+                                    RoleSystem.getInstance().getRoleInfo().getMoney() - cost);
+                            GameEngine.getInstance().teleportToMap(MapSystem.MAP_ID_UNDERWATER_MAZE);
+                        }
+                    }
+                });
+                return true;
+            }
             case 100501: {
-                //地府-引魂使者（返回人间）
-                List<String> options = Arrays.asList("返回清溪村", "不了");
+                //地府-引魂使者（返回金陵西侧）
+                List<String> options = Arrays.asList("返回金陵", "不了");
                 String message = "阴阳两隔，活人不宜久留于此。少侠若想回返人间，小吽可代为引魂……";
                 GameEngine.getInstance().showDialog(npc.getName(), message, options, new DialogBox.DialogListener() {
                     @Override
                     public void onOptionSelected(int optionIndex) {
                         if (optionIndex == 0) {
-                            GameEngine.getInstance().teleportToMap(MapSystem.MAP_ID_QING_XI);
+                            GameEngine.getInstance().teleportToMapWithPosition(MapSystem.MAP_ID_JIN_LING, 24700, 30000);
                         }
                     }
                 });

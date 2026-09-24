@@ -304,7 +304,7 @@ public class GameEngine {
                 // 不同迷宫出口目的地不同
                 int curMapId = MapSystem.getInstance().getCurrentMapId();
                 if (curMapId == MapSystem.MAP_ID_UNDERWATER_MAZE) {
-                    teleportToMap(MapSystem.MAP_ID_DONGHAI_BAY);
+                    teleportToMap(MapSystem.MAP_ID_DONGHAI_SEABED);
                 } else if (curMapId >= MapSystem.MAP_ID_HELL_MAZE_1 && curMapId <= MapSystem.MAP_ID_HELL_MAZE_4) {
                     // 地狱迷宫层间传送
                     handleHellMazeExit(curMapId);
@@ -1155,8 +1155,14 @@ public class GameEngine {
         // Draw npcs
         List<Npc> npcList = NpcSystem.getInstance().getMapNpcList(MapSystem.getInstance().getCurMapInfo().getMapId());
         npcList.sort((n1, n2) -> Float.compare(n1.getY(), n2.getY()));
+        boolean isNightNow = dayNightCycle != null && dayNightCycle.isNight();
         for (Npc npc : npcList) {
-            npc.draw(canvas, -cameraX, -cameraY);
+            if (npc.isNightOnly() && !isNightNow) {
+                // 白天绘制标记（提示玩家此处夜间有NPC出现）
+                drawNightNpcMarker(canvas, npc, -cameraX, -cameraY);
+            } else {
+                npc.draw(canvas, -cameraX, -cameraY);
+            }
         }
 
         // Draw treasure chests (in maze)
@@ -1239,8 +1245,11 @@ public class GameEngine {
         if (!handled && event.getAction() == MotionEvent.ACTION_DOWN) {
             float worldX = event.getX() + cameraX;
             float worldY = event.getY() + cameraY;
+            boolean isNightForNpc = dayNightCycle != null && dayNightCycle.isNight();
             List<Npc> npcList = NpcSystem.getInstance().getMapNpcList(MapSystem.getInstance().getCurMapInfo().getMapId());
             for (Npc npc : npcList) {
+                // 夜间专属 NPC 白天不可交互
+                if (npc.isNightOnly() && !isNightForNpc) continue;
                 if (npc.isTouched(worldX, worldY)) {
                     NpcSystem.getInstance().startConversation(npc);
                     return true;
@@ -1287,6 +1296,44 @@ public class GameEngine {
                 enemyX <= visibleRight &&
                 enemyY >= visibleTop &&
                 enemyY <= visibleBottom;
+    }
+
+    /**
+     * 绘制夜间专属 NPC 的白天标记（幽绿色鬼火标记 + 文字提示）
+     */
+    private void drawNightNpcMarker(Canvas canvas, Npc npc, float offsetX, float offsetY) {
+        float cx = npc.getX() + offsetX + npc.getSize() / 2f;
+        float cy = npc.getY() + offsetY + npc.getSize() / 2f;
+
+        // 视锥剪除
+        if (cx < -100 || cx > screenWidth + 100 || cy < -100 || cy > screenHeight + 100) return;
+
+        Paint markerPaint = new Paint();
+        markerPaint.setAntiAlias(true);
+
+        // 绘制幽绿色鬼火光球（半透明脉动效果）
+        float pulse = (float) (Math.sin(System.currentTimeMillis() / 500.0) * 0.3 + 0.7);
+        int alpha = (int) (120 * pulse);
+
+        // 外层光晕
+        markerPaint.setColor(Color.argb(alpha / 3, 80, 200, 120));
+        canvas.drawCircle(cx, cy, 35, markerPaint);
+
+        // 内层光球
+        markerPaint.setColor(Color.argb(alpha, 100, 255, 150));
+        canvas.drawCircle(cx, cy, 15, markerPaint);
+
+        // 中心亮点
+        markerPaint.setColor(Color.argb((int) (200 * pulse), 200, 255, 220));
+        canvas.drawCircle(cx, cy, 6, markerPaint);
+
+        // 文字提示
+        markerPaint.setColor(Color.argb(180, 150, 255, 180));
+        markerPaint.setTextSize(22);
+        markerPaint.setTextAlign(Paint.Align.CENTER);
+        markerPaint.setShadowLayer(3, 0, 0, Color.BLACK);
+        canvas.drawText("夜晚出现", cx, cy + 50, markerPaint);
+        markerPaint.clearShadowLayer();
     }
 
     /**

@@ -79,6 +79,14 @@ public class NpcSystem {
                 npcList.add(new Npc(100201, "驿站车夫", NpcType.COACHMAN, 30200, 35400));
                 npcList.add(new AnimalNpc(100202, "骏马", NpcType.HORSE, 30300, 35340));
 
+                // 金陵西侧鬼差（仅夜间出现，传送地府）
+                Npc ghostClerk = new Npc(100207, "鬼差", NpcType.GHOST_CLERK, 24500, 30000);
+                ghostClerk.setNightOnly(true);
+                npcList.add(ghostClerk);
+
+                // 金陵东侧车夫（传送东海湾）
+                npcList.add(new Npc(100208, "东城车夫", NpcType.COACHMAN, 35500, 30000));
+
                 // 四角村庄车夫
                 npcList.add(new Npc(100203, "碧波渡(城东北)车夫", NpcType.COACHMAN, 58860, 2200));
                 npcList.add(new Npc(100204, "云岩寨(城东南)车夫", NpcType.COACHMAN, 57150, 57800));
@@ -133,6 +141,7 @@ public class NpcSystem {
             case MapSystem.MAP_ID_DONGHAI_BAY: {
                 //东海湾
                 npcList.add(new Npc(100301, "驿站车夫", NpcType.COACHMAN, 3000, 4800));
+                npcList.add(new Npc(100306, "虾兵", NpcType.SOLDIER, 7000, 5000));
                 npcList.add(new AnimalNpc(100302, "大公鸡", NpcType.CHICKEN, 1200, 4200));
                 npcList.add(new AnimalNpc(100303, "旺财", NpcType.DOG, 800, 5500));
                 npcList.add(new AnimalNpc(100304, "小鸭子", NpcType.DUCK, 5000, 5200));

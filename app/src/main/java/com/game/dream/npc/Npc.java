@@ -20,6 +20,9 @@ public class Npc {
     protected boolean hasQuest;
     protected boolean isInteracting;
 
+    // 夜间专属 NPC（白天不显示，仅显示标记）
+    protected boolean nightOnly = false;
+
     // 待机动画
     protected float animTime = 0;
     protected float breathSpeed;    // 呼吸频率
@@ -94,6 +97,14 @@ public class Npc {
 
     public void setHasQuest(boolean hasQuest) {
         this.hasQuest = hasQuest;
+    }
+
+    public boolean isNightOnly() {
+        return nightOnly;
+    }
+
+    public void setNightOnly(boolean nightOnly) {
+        this.nightOnly = nightOnly;
     }
 
     /**

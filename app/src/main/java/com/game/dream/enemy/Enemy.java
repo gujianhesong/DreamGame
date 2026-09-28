@@ -968,9 +968,10 @@ public abstract class Enemy extends Character {
                 int gridY = (int) (newY / tileSize);
                 if (gridX >= 0 && gridX < map[0].length && gridY >= 0 && gridY < map.length) {
                     int terrain = map[gridY][gridX];
-                    // 检查是否可通行
+                    // 检查是否可通行（精英/BOSS不受迷宫围墙阻挡）
                     boolean blocked = (terrain == MapGenerator.LAKE || terrain == MapGenerator.LAVA
-                            || terrain == MapGenerator.VILLAGE_NO_PASS || terrain == MazeGenerator.MAZE_WALL
+                            || terrain == MapGenerator.VILLAGE_NO_PASS
+                            || (terrain == MazeGenerator.MAZE_WALL && !ignoresMazeWall())
                             || terrain == MapGenerator.RIVER || terrain == MapGenerator.MOUNTAIN
                             || terrain == MapGenerator.CITY_WALL);
                     if (!blocked) {
@@ -1278,6 +1279,13 @@ public abstract class Enemy extends Character {
      */
     public boolean canCastSpell() {
         return (enemyLevel == EnemyLevel.BOSS || enemyLevel == EnemyLevel.ELITE || enemyLevel == EnemyLevel.LEADER);
+    }
+
+    /**
+     * 精英/BOSS无视迷宫围墙阻挡
+     */
+    public boolean ignoresMazeWall() {
+        return (enemyLevel == EnemyLevel.BOSS || enemyLevel == EnemyLevel.ELITE);
     }
 
     /**

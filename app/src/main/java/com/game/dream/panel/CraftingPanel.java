@@ -250,10 +250,13 @@ public class CraftingPanel {
         canvas.save();
         canvas.clipRect(recipeListArea);
 
-        List<Recipe> recipes = getCurrentTabRecipeList();
-        int drawCount = Math.min(recipes.size(), recipeButtons.size());
+        List<Recipe> recipes = new ArrayList<>(getCurrentTabRecipeList());
+        // 快照按钮布局，避免绘制过程中其他线程（如切换标签触发 updateRecipeButtons）
+        // 清空并重建 recipeButtons 导致 size 变化而越界
+        List<Rect> buttons = new ArrayList<>(recipeButtons);
+        int drawCount = Math.min(recipes.size(), buttons.size());
         for (int i = 0; i < drawCount; i++) {
-            Rect btn = recipeButtons.get(i);
+            Rect btn = buttons.get(i);
             if (btn.bottom < recipeListArea.top || btn.top > recipeListArea.bottom) continue;
 
             Recipe recipe = recipes.get(i);
@@ -435,10 +438,12 @@ public class CraftingPanel {
         if (!isVisible || isDragging) return false;
 
         updateRecipeButtons();
-        List<Recipe> recipes = getCurrentTabRecipeList();
-        int touchCount = Math.min(recipes.size(), recipeButtons.size());
+        List<Recipe> recipes = new ArrayList<>(getCurrentTabRecipeList());
+        // 快照，避免绘制线程并发调用 updateRecipeButtons 重建列表导致越界
+        List<Rect> buttons = new ArrayList<>(recipeButtons);
+        int touchCount = Math.min(recipes.size(), buttons.size());
         for (int i = 0; i < touchCount; i++) {
-            Rect btn = recipeButtons.get(i);
+            Rect btn = buttons.get(i);
             Rect craftBtn = new Rect(btn.right - 100, btn.top + 25, btn.right - 10, btn.bottom - 25);
 
             if (craftBtn.contains((int) x, (int) y)) {

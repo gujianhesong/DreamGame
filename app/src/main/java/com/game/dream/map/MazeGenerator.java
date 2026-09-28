@@ -38,8 +38,15 @@ public class MazeGenerator {
         this.mapWidth = mapWidth;
         this.mapHeight = mapHeight;
         this.tileSize = tileSize;
-        this.random = new Random(54321);
+        // 随机种子：每次生成不同的迷宫布局
+        this.random = new Random();
     }
+
+    // 边方向常量: 0=上, 1=下, 2=左, 3=右
+    private static final int EDGE_TOP = 0;
+    private static final int EDGE_BOTTOM = 1;
+    private static final int EDGE_LEFT = 2;
+    private static final int EDGE_RIGHT = 3;
 
     /**
      * 生成迷宫地图
@@ -64,13 +71,60 @@ public class MazeGenerator {
         if (gridCols % 2 == 0) gridCols--;
         if (gridRows % 2 == 0) gridRows--;
 
+        // === 随机选择入口/出口所在的边（不同边，增加难度） ===
+        int entranceEdge = random.nextInt(4);
+        int exitEdge;
+        do {
+            exitEdge = random.nextInt(4);
+        } while (exitEdge == entranceEdge);
+
+        // 入口房间（贴着入口边的随机房间）
+        int startRow, startCol;
+        switch (entranceEdge) {
+            case EDGE_TOP:
+                startRow = 1;
+                startCol = randomOdd(1, gridCols - 2);
+                break;
+            case EDGE_BOTTOM:
+                startRow = gridRows - 2;
+                startCol = randomOdd(1, gridCols - 2);
+                break;
+            case EDGE_LEFT:
+                startRow = randomOdd(1, gridRows - 2);
+                startCol = 1;
+                break;
+            default: // EDGE_RIGHT
+                startRow = randomOdd(1, gridRows - 2);
+                startCol = gridCols - 2;
+                break;
+        }
+
+        // 出口房间（贴着出口边的随机房间）
+        int endRow, endCol;
+        switch (exitEdge) {
+            case EDGE_TOP:
+                endRow = 1;
+                endCol = randomOdd(1, gridCols - 2);
+                break;
+            case EDGE_BOTTOM:
+                endRow = gridRows - 2;
+                endCol = randomOdd(1, gridCols - 2);
+                break;
+            case EDGE_LEFT:
+                endRow = randomOdd(1, gridRows - 2);
+                endCol = 1;
+                break;
+            default: // EDGE_RIGHT
+                endRow = randomOdd(1, gridRows - 2);
+                endCol = gridCols - 2;
+                break;
+        }
+
         // DFS 递归回溯生成迷宫
         boolean[][] visited = new boolean[gridRows][gridCols];
         List<int[]> stack = new ArrayList<>();
 
-        // 从房间 (1,1) 开始
-        int startCol = 1;
-        int startRow = 1;
+        // 从入口房间开始
         visited[startRow][startCol] = true;
         carveArea(map, startRow, startCol, cellSize);
         stack.add(new int[]{startRow, startCol});
@@ -117,53 +171,125 @@ public class MazeGenerator {
         // 随机打通额外墙壁, 创造多条路径
         addExtraPassages(map, gridRows, gridCols);
 
-        // === 设置入口 (顶部, 与起始房间对齐) ===
-        // 起始房间 grid(1,1) -> tile col = cellSize
-        int entranceCol = startCol * cellSize;
-        entranceX = (entranceCol + cellSize / 2) * tileSize;
-        entranceY = tileSize;
-        // 从地图顶部到起始房间挖一条入口通道
-        for (int r = 0; r < startRow * cellSize; r++) {
-            for (int c = 0; c < cellSize; c++) {
-                int tx = entranceCol + c;
-                if (r >= 0 && r < rows && tx >= 0 && tx < cols) {
-                    map[r][tx] = MAZE_FLOOR;
-                }
-            }
-        }
-        // 标记入口
-        for (int c = 0; c < cellSize; c++) {
-            int tx = entranceCol + c;
-            if (tx < cols) {
-                map[0][tx] = MAZE_ENTRANCE;
-            }
-        }
+        // === 挖出入口通道并标记（根据随机边） ===
+        carveEdgePassage(map, entranceEdge, startRow, startCol, rows, cols, MAZE_ENTRANCE);
+        setEdgePortalCoords(entranceEdge, startRow, startCol, rows, cols, true);
 
-        // === 设置出口 (底部, 与最后可达房间对齐) ===
-        int lastGridCol = gridCols - 2; // 最后一个奇数grid列
-        int exitCol = lastGridCol * cellSize;
-        exitX = (exitCol + cellSize / 2) * tileSize;
-        exitY = (rows - 2) * tileSize;
-        // 从最后房间到底部挖一条出口通道
-        int lastRoomRow = (gridRows - 2); // 最后一个奇数grid行
-        int exitStartRow = (lastRoomRow + 1) * cellSize; // 房间下方的墙壁边界
-        for (int r = exitStartRow; r < rows; r++) {
-            for (int c = 0; c < cellSize; c++) {
-                int tx = exitCol + c;
-                if (r >= 0 && r < rows && tx >= 0 && tx < cols) {
-                    map[r][tx] = MAZE_FLOOR;
-                }
-            }
-        }
-        // 标记出口
-        for (int c = 0; c < cellSize; c++) {
-            int tx = exitCol + c;
-            if (tx < cols) {
-                map[rows - 1][tx] = MAZE_EXIT;
-            }
-        }
+        // === 挖出出口通道并标记 ===
+        carveEdgePassage(map, exitEdge, endRow, endCol, rows, cols, MAZE_EXIT);
+        setEdgePortalCoords(exitEdge, endRow, endCol, rows, cols, false);
 
         return map;
+    }
+
+    /**
+     * 返回 [min, max] 范围内的随机奇数
+     */
+    private int randomOdd(int min, int max) {
+        if (max < min) return min;
+        int v = min + random.nextInt(max - min + 1);
+        if (v % 2 == 0) {
+            v = (v + 1 <= max) ? v + 1 : v - 1;
+        }
+        return Math.max(min, v);
+    }
+
+    /**
+     * 从地图边缘到指定房间挖一条通道，并在边缘标记入口/出口地形
+     */
+    private void carveEdgePassage(int[][] map, int edge, int roomRow, int roomCol,
+                                  int rows, int cols, int markerTerrain) {
+        int roomTileR = roomRow * cellSize;
+        int roomTileC = roomCol * cellSize;
+        switch (edge) {
+            case EDGE_TOP: {
+                // 从顶部到房间
+                for (int r = 0; r <= roomTileR; r++) {
+                    for (int c = 0; c < cellSize; c++) {
+                        int tx = roomTileC + c;
+                        if (r < rows && tx < cols) map[r][tx] = MAZE_FLOOR;
+                    }
+                }
+                for (int c = 0; c < cellSize; c++) {
+                    int tx = roomTileC + c;
+                    if (tx < cols) map[0][tx] = markerTerrain;
+                }
+                break;
+            }
+            case EDGE_BOTTOM: {
+                // 从房间到底部
+                for (int r = roomTileR; r < rows; r++) {
+                    for (int c = 0; c < cellSize; c++) {
+                        int tx = roomTileC + c;
+                        if (r >= 0 && tx < cols) map[r][tx] = MAZE_FLOOR;
+                    }
+                }
+                for (int c = 0; c < cellSize; c++) {
+                    int tx = roomTileC + c;
+                    if (tx < cols) map[rows - 1][tx] = markerTerrain;
+                }
+                break;
+            }
+            case EDGE_LEFT: {
+                // 从左侧到房间
+                for (int c = 0; c <= roomTileC; c++) {
+                    for (int r = 0; r < cellSize; r++) {
+                        int ty = roomTileR + r;
+                        if (ty < rows && c < cols) map[ty][c] = MAZE_FLOOR;
+                    }
+                }
+                for (int r = 0; r < cellSize; r++) {
+                    int ty = roomTileR + r;
+                    if (ty < rows) map[ty][0] = markerTerrain;
+                }
+                break;
+            }
+            default: { // EDGE_RIGHT
+                // 从房间到右侧
+                for (int c = roomTileC; c < cols; c++) {
+                    for (int r = 0; r < cellSize; r++) {
+                        int ty = roomTileR + r;
+                        if (ty < rows && c >= 0) map[ty][c] = MAZE_FLOOR;
+                    }
+                }
+                for (int r = 0; r < cellSize; r++) {
+                    int ty = roomTileR + r;
+                    if (ty < rows) map[ty][cols - 1] = markerTerrain;
+                }
+                break;
+            }
+        }
+    }
+
+    /**
+     * 计算入口/出口的像素坐标（位于边缘通道中心）
+     */
+    private void setEdgePortalCoords(int edge, int roomRow, int roomCol,
+                                     int rows, int cols, boolean isEntrance) {
+        int centerX = (roomCol * cellSize + cellSize / 2) * tileSize;
+        int centerY = (roomRow * cellSize + cellSize / 2) * tileSize;
+        int px, py;
+        switch (edge) {
+            case EDGE_TOP:
+                px = centerX; py = tileSize * 2;
+                break;
+            case EDGE_BOTTOM:
+                px = centerX; py = (rows - 3) * tileSize;
+                break;
+            case EDGE_LEFT:
+                px = tileSize * 2; py = centerY;
+                break;
+            default: // EDGE_RIGHT
+                px = (cols - 3) * tileSize; py = centerY;
+                break;
+        }
+        if (isEntrance) {
+            entranceX = px;
+            entranceY = py;
+        } else {
+            exitX = px;
+            exitY = py;
+        }
     }
 
     /**

@@ -99,25 +99,55 @@ public class UnderwaterMazeRenderer {
     }
 
     private void findEntranceAndExit() {
-        for (int row = 0; row < map.length; row++) {
-            for (int col = 0; col < Math.min(10, map[0].length); col++) {
-                if (map[row][col] == MazeGenerator.MAZE_ENTRANCE) {
-                    entranceTileCol = col;
-                    entranceTileRow = row;
-                    return;
-                }
+        // 入口可能出现在任意边上，扫描四条边界
+        int rows = map.length;
+        int cols = map[0].length;
+
+        for (int col = 0; col < cols; col++) {
+            if (entranceTileCol < 0 && map[0][col] == MazeGenerator.MAZE_ENTRANCE) {
+                entranceTileCol = col;
+                entranceTileRow = 0;
+            }
+            if (entranceTileCol < 0 && map[rows - 1][col] == MazeGenerator.MAZE_ENTRANCE) {
+                entranceTileCol = col;
+                entranceTileRow = rows - 1;
+            }
+        }
+        for (int row = 0; row < rows; row++) {
+            if (entranceTileCol < 0 && map[row][0] == MazeGenerator.MAZE_ENTRANCE) {
+                entranceTileCol = 0;
+                entranceTileRow = row;
+            }
+            if (entranceTileCol < 0 && map[row][cols - 1] == MazeGenerator.MAZE_ENTRANCE) {
+                entranceTileCol = cols - 1;
+                entranceTileRow = row;
             }
         }
     }
 
     private void findExit() {
-        for (int row = 0; row < map.length; row++) {
-            for (int col = map[0].length - 1; col > map[0].length - 10; col--) {
-                if (map[row][col] == MazeGenerator.MAZE_EXIT) {
-                    exitTileCol = col;
-                    exitTileRow = row;
-                    return;
-                }
+        // 出口可能出现在任意边上，扫描四条边界
+        int rows = map.length;
+        int cols = map[0].length;
+
+        for (int col = 0; col < cols; col++) {
+            if (exitTileCol < 0 && map[0][col] == MazeGenerator.MAZE_EXIT) {
+                exitTileCol = col;
+                exitTileRow = 0;
+            }
+            if (exitTileCol < 0 && map[rows - 1][col] == MazeGenerator.MAZE_EXIT) {
+                exitTileCol = col;
+                exitTileRow = rows - 1;
+            }
+        }
+        for (int row = 0; row < rows; row++) {
+            if (exitTileCol < 0 && map[row][0] == MazeGenerator.MAZE_EXIT) {
+                exitTileCol = 0;
+                exitTileRow = row;
+            }
+            if (exitTileCol < 0 && map[row][cols - 1] == MazeGenerator.MAZE_EXIT) {
+                exitTileCol = cols - 1;
+                exitTileRow = row;
             }
         }
     }

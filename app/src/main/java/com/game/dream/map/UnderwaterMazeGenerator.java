@@ -5,9 +5,9 @@ import java.util.List;
 import java.util.Random;
 
 /**
- * 海底迷宫生成器 - 入口在左侧，出口在右侧
+ * 海底迷宫生成器 - 入口/出口随机分布在四条边上
  *
- * 基于 MazeGenerator 的 DFS 递归回溯算法，修改入口/出口方向为左右分布
+ * 基于 MazeGenerator 的 DFS 递归回溯算法，每次生成随机布局与随机出入口
  * 地图尺寸: 10000x10000
  *
  * 网格模型:
@@ -34,11 +34,18 @@ public class UnderwaterMazeGenerator {
     private int exitX;
     private int exitY;
 
+    // 边方向常量: 0=上, 1=下, 2=左, 3=右
+    private static final int EDGE_TOP = 0;
+    private static final int EDGE_BOTTOM = 1;
+    private static final int EDGE_LEFT = 2;
+    private static final int EDGE_RIGHT = 3;
+
     public UnderwaterMazeGenerator(int mapWidth, int mapHeight, int tileSize) {
         this.mapWidth = mapWidth;
         this.mapHeight = mapHeight;
         this.tileSize = tileSize;
-        this.random = new Random(12345);
+        // 随机种子：每次生成不同的迷宫布局
+        this.random = new Random();
     }
 
     /**
@@ -63,15 +70,60 @@ public class UnderwaterMazeGenerator {
         if (gridCols % 2 == 0) gridCols--;
         if (gridRows % 2 == 0) gridRows--;
 
+        // === 随机选择入口/出口所在的边（不同边） ===
+        int entranceEdge = random.nextInt(4);
+        int exitEdge;
+        do {
+            exitEdge = random.nextInt(4);
+        } while (exitEdge == entranceEdge);
+
+        // 入口房间（贴着入口边的随机房间）
+        int startRow, startCol;
+        switch (entranceEdge) {
+            case EDGE_TOP:
+                startRow = 1;
+                startCol = randomOdd(1, gridCols - 2);
+                break;
+            case EDGE_BOTTOM:
+                startRow = gridRows - 2;
+                startCol = randomOdd(1, gridCols - 2);
+                break;
+            case EDGE_LEFT:
+                startRow = randomOdd(1, gridRows - 2);
+                startCol = 1;
+                break;
+            default: // EDGE_RIGHT
+                startRow = randomOdd(1, gridRows - 2);
+                startCol = gridCols - 2;
+                break;
+        }
+
+        // 出口房间（贴着出口边的随机房间）
+        int endRow, endCol;
+        switch (exitEdge) {
+            case EDGE_TOP:
+                endRow = 1;
+                endCol = randomOdd(1, gridCols - 2);
+                break;
+            case EDGE_BOTTOM:
+                endRow = gridRows - 2;
+                endCol = randomOdd(1, gridCols - 2);
+                break;
+            case EDGE_LEFT:
+                endRow = randomOdd(1, gridRows - 2);
+                endCol = 1;
+                break;
+            default: // EDGE_RIGHT
+                endRow = randomOdd(1, gridRows - 2);
+                endCol = gridCols - 2;
+                break;
+        }
+
         // DFS 递归回溯生成迷宫
         boolean[][] visited = new boolean[gridRows][gridCols];
         List<int[]> stack = new ArrayList<>();
 
-        // 从左侧中间房间开始 (grid row = 中间奇数行, col = 1)
-        int startRow = (gridRows / 2);
-        if (startRow % 2 == 0) startRow++; // 确保是奇数(房间)
-        int startCol = 1;
-
+        // 从入口房间开始
         visited[startRow][startCol] = true;
         carveArea(map, startRow, startCol, cellSize, rows, cols);
         stack.add(new int[]{startRow, startCol});
@@ -118,60 +170,121 @@ public class UnderwaterMazeGenerator {
         // 随机打通额外墙壁, 创造多条路径
         addExtraPassages(map, gridRows, gridCols, rows, cols);
 
-        // === 设置入口 (左侧中间) ===
-        int entranceRow = startRow * cellSize; // 与起始房间对齐
-        entranceX = tileSize; // 左侧边缘
-        entranceY = (entranceRow + cellSize / 2) * tileSize;
+        // === 挖出入口通道并标记（根据随机边） ===
+        carveEdgePassage(map, entranceEdge, startRow, startCol, rows, cols, MazeGenerator.MAZE_ENTRANCE);
+        setEdgePortalCoords(entranceEdge, startRow, startCol, rows, cols, true);
 
-        // 从地图左边缘到起始房间挖一条入口通道
-        for (int c = 0; c < startCol * cellSize; c++) {
-            for (int r = 0; r < cellSize; r++) {
-                int ty = entranceRow + r;
-                int tx = c;
-                if (ty >= 0 && ty < rows && tx >= 0 && tx < cols) {
-                    map[ty][tx] = MazeGenerator.MAZE_FLOOR;
-                }
-            }
-        }
-        // 标记入口
-        for (int r = 0; r < cellSize; r++) {
-            int ty = entranceRow + r;
-            if (ty < rows) {
-                map[ty][0] = MazeGenerator.MAZE_ENTRANCE;
-            }
-        }
-
-        // === 设置出口 (右侧中间) ===
-        int lastGridCol = gridCols - 2; // 最后一个奇数grid列
-        int exitGridRow = startRow;     // 与入口同一行
-        // 确保出口行在有效范围内
-        if (exitGridRow >= gridRows - 1) exitGridRow = gridRows - 2;
-        if (exitGridRow % 2 == 0) exitGridRow--;
-
-        int exitTileRow = exitGridRow * cellSize;
-        exitX = (cols - 2) * tileSize; // 右侧边缘
-        exitY = (exitTileRow + cellSize / 2) * tileSize;
-
-        // 从最后房间到右边缘挖一条出口通道
-        int exitStartCol = (lastGridCol + 1) * cellSize;
-        for (int c = exitStartCol; c < cols; c++) {
-            for (int r = 0; r < cellSize; r++) {
-                int ty = exitTileRow + r;
-                int tx = c;
-                if (ty >= 0 && ty < rows && tx >= 0 && tx < cols) {
-                    map[ty][tx] = MazeGenerator.MAZE_FLOOR;
-                }
-            }
-        }
-        // 标记出口
-        for (int r = 0; r < cellSize; r++) {
-            int ty = exitTileRow + r;
-            if (ty < rows) {
-                map[ty][cols - 1] = MazeGenerator.MAZE_EXIT;
-            }
-        }
+        // === 挖出出口通道并标记 ===
+        carveEdgePassage(map, exitEdge, endRow, endCol, rows, cols, MazeGenerator.MAZE_EXIT);
+        setEdgePortalCoords(exitEdge, endRow, endCol, rows, cols, false);
 
         return map;
+    }
+
+    /**
+     * 返回 [min, max] 范围内的随机奇数
+     */
+    private int randomOdd(int min, int max) {
+        if (max < min) return min;
+        int v = min + random.nextInt(max - min + 1);
+        if (v % 2 == 0) {
+            v = (v + 1 <= max) ? v + 1 : v - 1;
+        }
+        return Math.max(min, v);
+    }
+
+    /**
+     * 从地图边缘到指定房间挖一条通道，并在边缘标记入口/出口地形
+     */
+    private void carveEdgePassage(int[][] map, int edge, int roomRow, int roomCol,
+                                  int rows, int cols, int markerTerrain) {
+        int roomTileR = roomRow * cellSize;
+        int roomTileC = roomCol * cellSize;
+        switch (edge) {
+            case EDGE_TOP: {
+                for (int r = 0; r <= roomTileR; r++) {
+                    for (int c = 0; c < cellSize; c++) {
+                        int tx = roomTileC + c;
+                        if (r < rows && tx < cols) map[r][tx] = MazeGenerator.MAZE_FLOOR;
+                    }
+                }
+                for (int c = 0; c < cellSize; c++) {
+                    int tx = roomTileC + c;
+                    if (tx < cols) map[0][tx] = markerTerrain;
+                }
+                break;
+            }
+            case EDGE_BOTTOM: {
+                for (int r = roomTileR; r < rows; r++) {
+                    for (int c = 0; c < cellSize; c++) {
+                        int tx = roomTileC + c;
+                        if (r >= 0 && tx < cols) map[r][tx] = MazeGenerator.MAZE_FLOOR;
+                    }
+                }
+                for (int c = 0; c < cellSize; c++) {
+                    int tx = roomTileC + c;
+                    if (tx < cols) map[rows - 1][tx] = markerTerrain;
+                }
+                break;
+            }
+            case EDGE_LEFT: {
+                for (int c = 0; c <= roomTileC; c++) {
+                    for (int r = 0; r < cellSize; r++) {
+                        int ty = roomTileR + r;
+                        if (ty < rows && c < cols) map[ty][c] = MazeGenerator.MAZE_FLOOR;
+                    }
+                }
+                for (int r = 0; r < cellSize; r++) {
+                    int ty = roomTileR + r;
+                    if (ty < rows) map[ty][0] = markerTerrain;
+                }
+                break;
+            }
+            default: { // EDGE_RIGHT
+                for (int c = roomTileC; c < cols; c++) {
+                    for (int r = 0; r < cellSize; r++) {
+                        int ty = roomTileR + r;
+                        if (ty < rows && c >= 0) map[ty][c] = MazeGenerator.MAZE_FLOOR;
+                    }
+                }
+                for (int r = 0; r < cellSize; r++) {
+                    int ty = roomTileR + r;
+                    if (ty < rows) map[ty][cols - 1] = markerTerrain;
+                }
+                break;
+            }
+        }
+    }
+
+    /**
+     * 计算入口/出口的像素坐标（位于边缘通道中心）
+     */
+    private void setEdgePortalCoords(int edge, int roomRow, int roomCol,
+                                     int rows, int cols, boolean isEntrance) {
+        int centerX = (roomCol * cellSize + cellSize / 2) * tileSize;
+        int centerY = (roomRow * cellSize + cellSize / 2) * tileSize;
+        int px, py;
+        switch (edge) {
+            case EDGE_TOP:
+                px = centerX; py = tileSize * 2;
+                break;
+            case EDGE_BOTTOM:
+                px = centerX; py = (rows - 3) * tileSize;
+                break;
+            case EDGE_LEFT:
+                px = tileSize * 2; py = centerY;
+                break;
+            default: // EDGE_RIGHT
+                px = (cols - 3) * tileSize; py = centerY;
+                break;
+        }
+        if (isEntrance) {
+            entranceX = px;
+            entranceY = py;
+        } else {
+            exitX = px;
+            exitY = py;
+        }
     }
 
     /**

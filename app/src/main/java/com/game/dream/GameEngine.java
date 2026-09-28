@@ -114,6 +114,9 @@ public class GameEngine {
     // Enemies
     private java.util.List<Enemy> enemies;
 
+    // 迷宫出口 BOSS 封印提示的节流时间戳（避免每帧刷屏）
+    private long lastBossGateToastTime = 0;
+
     // Pending melee attack (wait for lunge to complete before dealing damage)
     private boolean pendingMeleeAttack = false;
 
@@ -256,6 +259,25 @@ public class GameEngine {
         enemies.addAll(MapContentManager.getInstance().initializeEnemies());
     }
 
+    /**
+     * 查找当前地图中仍存活的 BOSS 级敌人。
+     * 用于迷宫出口封印判定：只要还有 BOSS 存活，玩家就无法从出口离开。
+     *
+     * @return 第一个存活的 BOSS，若无则返回 null
+     */
+    private Enemy findAliveBossInCurrentMap() {
+        if (enemies == null || enemies.isEmpty()) {
+            return null;
+        }
+        for (Enemy enemy : enemies) {
+            if (enemy != null && enemy.isAlive()
+                    && enemy.getEnemyLevel() == Enemy.EnemyLevel.BOSS) {
+                return enemy;
+            }
+        }
+        return null;
+    }
+
     public void cleanup() {
         instance = null;
 
@@ -301,6 +323,16 @@ public class GameEngine {
         // 检查迷宫出口传送
         if (MapSystem.getInstance().isCurrentMazaMap() && MazeSystem.getInstance().isInitialized()) {
             if (MazeSystem.getInstance().checkExitPortal(player.getX(), player.getY())) {
+                // 有存活 BOSS 时封锁出口：必须击杀 BOSS 才能离开迷宫
+                Enemy aliveBoss = findAliveBossInCurrentMap();
+                if (aliveBoss != null) {
+                    long now = System.currentTimeMillis();
+                    if (now - lastBossGateToastTime > 2000) {
+                        lastBossGateToastTime = now;
+                        showCenterToast("出口被封印，击败「" + aliveBoss.getName() + "」才能离开！", 2000);
+                    }
+                    return; // 封锁传送，停留在出口
+                }
                 // 不同迷宫出口目的地不同
                 int curMapId = MapSystem.getInstance().getCurrentMapId();
                 if (curMapId == MapSystem.MAP_ID_UNDERWATER_MAZE) {
@@ -1174,7 +1206,8 @@ public class GameEngine {
 
         // Draw ground items (below player, above map)
         if (groundItems != null) {
-            for (GroundItem groundItem : groundItems) {
+            List<GroundItem> copyGroundItems = new ArrayList<>(groundItems);
+            for (GroundItem groundItem : copyGroundItems) {
                 groundItem.draw(canvas, (int) -cameraX, (int) -cameraY);
             }
         }
@@ -1207,8 +1240,11 @@ public class GameEngine {
         }
 
         // Draw active skill effects (below UI but above map)
-        for (SkillEffect effect : activeSkillEffects) {
-            effect.draw(canvas, (int) -cameraX, (int) -cameraY);
+        if (activeSkillEffects != null) {
+            List<SkillEffect> copySkillEffects = new ArrayList<>(activeSkillEffects);
+            for (SkillEffect effect : copySkillEffects) {
+                effect.draw(canvas, (int) -cameraX, (int) -cameraY);
+            }
         }
 
         // Draw weather effects (海底地图、海底迷宫、地府不显示天气)
@@ -1460,24 +1496,24 @@ public class GameEngine {
             public void onLoadMapFinish(int mapId, int[][] mapData) {
                 // 设置玩家位置
                 if(MapSystem.getInstance().isCurrentHellMazeMap()){
-                    // 地狱迷宫：使用专属生成器的入口坐标
+                    // 地狱迷宫：使用专属生成器的入口坐标（入口可能在任意边，坐标已在通道内）
                     HellMazeGenerator hellGen = MapSystem.getInstance().getHellMazeGenerator();
                     if (hellGen != null) {
                         player.setX(hellGen.getEntranceX());
-                        player.setY(hellGen.getEntranceY() + 100);
+                        player.setY(hellGen.getEntranceY());
                     }
                 } else if(MapSystem.getInstance().isCurrentMazaMap()){
                     //迷宫地图
-                    //设置人物位置
+                    //设置人物位置（入口可能在任意边，坐标已在通道内）
                     MazeGenerator mazeGen = MapSystem.getInstance().getMazeGenerator();
                     if (mazeGen != null) {
                         player.setX(mazeGen.getEntranceX());
-                        player.setY(mazeGen.getEntranceY() + 100); // 入口下方一点
+                        player.setY(mazeGen.getEntranceY());
                     } else {
-                        // 海底迷宫入口在左侧，人物放在入口右侧
+                        // 海底迷宫：入口坐标已在通道内
                         UnderwaterMazeGenerator uwGen = MapSystem.getInstance().getUnderwaterMazeGenerator();
                         if (uwGen != null) {
-                            player.setX(uwGen.getEntranceX() + 100);
+                            player.setX(uwGen.getEntranceX());
                             player.setY(uwGen.getEntranceY());
                         }
                     }

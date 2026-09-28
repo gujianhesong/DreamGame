@@ -94,25 +94,47 @@ public class HellMazeRenderer {
     }
 
     private void findEntranceAndExit() {
-        for (int row = 0; row < Math.min(10, map.length); row++) {
-            for (int col = 0; col < map[0].length; col++) {
-                if (map[row][col] == HellMazeGenerator.HELL_ENTRANCE) {
-                    entranceTileCol = col;
-                    entranceTileRow = row;
-                    break;
-                }
+        // 第1-3层入口/出口可能在任意边上，扫描四条边界
+        int rows = map.length;
+        int cols = map[0].length;
+
+        // 上边界与下边界
+        for (int col = 0; col < cols; col++) {
+            if (entranceTileCol < 0 && map[0][col] == HellMazeGenerator.HELL_ENTRANCE) {
+                entranceTileCol = col;
+                entranceTileRow = 0;
             }
-            if (entranceTileCol >= 0) break;
+            if (exitTileCol < 0 && map[0][col] == HellMazeGenerator.HELL_EXIT) {
+                exitTileCol = col;
+                exitTileRow = 0;
+            }
+            if (entranceTileCol < 0 && map[rows - 1][col] == HellMazeGenerator.HELL_ENTRANCE) {
+                entranceTileCol = col;
+                entranceTileRow = rows - 1;
+            }
+            if (exitTileCol < 0 && map[rows - 1][col] == HellMazeGenerator.HELL_EXIT) {
+                exitTileCol = col;
+                exitTileRow = rows - 1;
+            }
         }
-        for (int row = map.length - 1; row > map.length - 10; row--) {
-            for (int col = 0; col < map[0].length; col++) {
-                if (map[row][col] == HellMazeGenerator.HELL_EXIT) {
-                    exitTileCol = col;
-                    exitTileRow = row;
-                    break;
-                }
+        // 左边界与右边界
+        for (int row = 0; row < rows; row++) {
+            if (entranceTileCol < 0 && map[row][0] == HellMazeGenerator.HELL_ENTRANCE) {
+                entranceTileCol = 0;
+                entranceTileRow = row;
             }
-            if (exitTileCol >= 0) break;
+            if (exitTileCol < 0 && map[row][0] == HellMazeGenerator.HELL_EXIT) {
+                exitTileCol = 0;
+                exitTileRow = row;
+            }
+            if (entranceTileCol < 0 && map[row][cols - 1] == HellMazeGenerator.HELL_ENTRANCE) {
+                entranceTileCol = cols - 1;
+                entranceTileRow = row;
+            }
+            if (exitTileCol < 0 && map[row][cols - 1] == HellMazeGenerator.HELL_EXIT) {
+                exitTileCol = cols - 1;
+                exitTileRow = row;
+            }
         }
     }
 

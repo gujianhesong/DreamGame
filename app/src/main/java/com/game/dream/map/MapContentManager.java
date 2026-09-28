@@ -199,9 +199,9 @@ public class MapContentManager {
             return;
         }
 
-        // 第1~3层：BOSS 守在出口前约 200px，防止一入层就碰到传送门
-        float bx = gen.getExitX();
-        float by = Math.max(200, gen.getExitY() - 200);
+        // 第1~3层：BOSS 守在出口房间（迷宫内部，出口边随机），防止一入层就碰到传送门
+        float bx = gen.getExitRoomX();
+        float by = gen.getExitRoomY();
         Enemy boss = null;
         switch (mapId) {
             case MapSystem.MAP_ID_HELL_MAZE_1:

@@ -102,13 +102,13 @@ public class ShopPanel {
 
         // Title
         paint.setColor(Color.WHITE);
-        paint.setTextSize(32);
+        paint.setTextSize(36);
         paint.setTextAlign(Paint.Align.CENTER);
         canvas.drawText("云游商人", panelBounds.centerX(), panelBounds.top + 50, paint);
 
         // Money display
         paint.setColor(Color.rgb(255, 215, 0));
-        paint.setTextSize(26);
+        paint.setTextSize(30);
         paint.setTextAlign(Paint.Align.LEFT);
         long money = RoleSystem.getInstance().getRoleInfo().getMoney();
         canvas.drawText("金钱: " + money, panelBounds.left + 30, panelBounds.top + 90, paint);
@@ -163,15 +163,15 @@ public class ShopPanel {
 
             // Item name
             paint.setColor(shopItem.item.getColor());
-            paint.setTextSize(26);
+            paint.setTextSize(30);
             paint.setTextAlign(Paint.Align.LEFT);
             paint.setFakeBoldText(true);
             canvas.drawText(shopItem.item.getName(), itemRect.left + 15, itemRect.top + 30, paint);
             paint.setFakeBoldText(false);
 
             // Item description (two lines max)
-            paint.setColor(Color.rgb(180, 180, 180));
-            paint.setTextSize(18);
+            paint.setColor(Color.rgb(220, 220, 220));
+            paint.setTextSize(22);
             String desc = shopItem.item.getDescription();
             float descMaxWidth = itemWidth - 130; // 留出购买按钮空间
             String[] descLines = splitTextIntoLines(desc, paint, descMaxWidth, 2);
@@ -182,7 +182,7 @@ public class ShopPanel {
 
             // Price
             paint.setColor(Color.rgb(255, 215, 0));
-            paint.setTextSize(24);
+            paint.setTextSize(28);
             canvas.drawText("💰 " + shopItem.price, itemRect.left + 15, itemRect.top + 105, paint);
 
             // Buy button
@@ -199,7 +199,7 @@ public class ShopPanel {
             paint.setStyle(Paint.Style.FILL);
 
             paint.setColor(Color.WHITE);
-            paint.setTextSize(24);
+            paint.setTextSize(28);
             paint.setTextAlign(Paint.Align.CENTER);
             canvas.drawText("购买", buyBtn.centerX(), buyBtn.centerY() + 8, paint);
         }

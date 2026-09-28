@@ -228,14 +228,14 @@ public class EquipSellDialog {
 
         // 信息栏
         paint.setColor(Color.rgb(200, 220, 255));
-        paint.setTextSize(22);
+        paint.setTextSize(26);
         String info = "金钱: " + RoleSystem.getInstance().getRoleInfo().getMoney()
                 + "  |  共" + equipList.size() + "件  第" + (currentPage + 1) + "/" + getTotalPages() + "页";
         canvas.drawText(info, bounds.centerX(), bounds.top + 80, paint);
 
         if (equipList.isEmpty()) {
             paint.setColor(Color.WHITE);
-            paint.setTextSize(28);
+            paint.setTextSize(32);
             canvas.drawText("背包里没有可出售的装备", bounds.centerX(), bounds.centerY(), paint);
             return;
         }
@@ -263,7 +263,7 @@ public class EquipSellDialog {
 
             // 装备名称（品质颜色）
             paint.setColor(equip.getColor());
-            paint.setTextSize(24);
+            paint.setTextSize(28);
             paint.setTextAlign(Paint.Align.LEFT);
             String rarityText = ItemsUtil.getRarityText(equip.getRarity());
             EquipItemInfo equipItemInfo = equip.getEquipItemInfo();
@@ -272,7 +272,7 @@ public class EquipSellDialog {
 
             // 品质 + 等级 + 价格
             paint.setColor(Color.rgb(250, 250, 0));
-            paint.setTextSize(18);
+            paint.setTextSize(22);
             canvas.drawText(rarityText + levelText + "  " + price + "金", bounds.left + 30, rowY + 55, paint);
 
             // 出售按钮
@@ -313,7 +313,7 @@ public class EquipSellDialog {
         paint.setStyle(Paint.Style.FILL);
 
         paint.setColor(Color.WHITE);
-        paint.setTextSize(20);
+        paint.setTextSize(24);
         paint.setTextAlign(Paint.Align.CENTER);
         canvas.drawText(text, rect.centerX(), rect.centerY() + 7, paint);
     }
@@ -328,7 +328,7 @@ public class EquipSellDialog {
         paint.setStyle(Paint.Style.FILL);
 
         paint.setColor(Color.WHITE);
-        paint.setTextSize(18);
+        paint.setTextSize(22);
         paint.setTextAlign(Paint.Align.CENTER);
         canvas.drawText(text, rect.centerX(), rect.centerY() + 6, paint);
     }

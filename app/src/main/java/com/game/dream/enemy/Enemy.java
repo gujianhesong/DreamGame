@@ -1502,18 +1502,18 @@ public abstract class Enemy extends Character {
 
         if (!possibleDrops.isEmpty()) {
             // Drop items count
-            int numDrops = (int) (Math.random() * 3);
+            int numDrops = (int) (Math.random() * 2);
             if (enemyLevel == EnemyLevel.BOSS) {
                 numDrops = 3 + (int) (Math.random() * 3);
             } else if (enemyLevel == EnemyLevel.ELITE) {
-                numDrops = 2 + (int) (Math.random() * 3);
-            } else if (enemyLevel == EnemyLevel.LEADER) {
                 numDrops = 1 + (int) (Math.random() * 3);
+            } else if (enemyLevel == EnemyLevel.LEADER) {
+                numDrops = (int) (Math.random() * 3);
             }
 
             for (int i = 0; i < numDrops && i < possibleDrops.size(); i++) {
                 Item item = possibleDrops.get((int) (Math.random() * possibleDrops.size()));
-                int quantity = 1 + (int) (Math.random() * 3); // 1-3 quantity
+                int quantity = 1 + (int) (Math.random() * 2); // 1-2 quantity
 
                 if (item instanceof EquipmentItem) {
                     quantity = 1;

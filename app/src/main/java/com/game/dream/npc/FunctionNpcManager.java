@@ -371,9 +371,9 @@ public class FunctionNpcManager {
      */
     private int calcSellPrice(EquipmentItem equip) {
         int baseValue = equip.getValue();
-        float levelFloat = equip.getEquipItemInfo().getLevel();
-        if (levelFloat == 0) {
-            levelFloat = 0.5f;
+        float levelValue = equip.getEquipItemInfo().getLevel() / 10f;
+        if (levelValue == 0) {
+            levelValue = 0.5f;
         }
         float rarityMultiplier;
         switch (equip.getRarity()) {
@@ -382,9 +382,9 @@ public class FunctionNpcManager {
             case Rarity_3: rarityMultiplier = 2.0f; break;
             case Rarity_4: rarityMultiplier = 3.0f; break;
             case Rarity_5: rarityMultiplier = 5.0f; break;
-            case Rarity_6: rarityMultiplier = 8.0f; break;
+            case Rarity_6: rarityMultiplier = 10.0f; break;
             default: rarityMultiplier = 0.5f; break;
         }
-        return (int) (baseValue * levelFloat * rarityMultiplier);
+        return (int) (baseValue * levelValue * rarityMultiplier);
     }
 }

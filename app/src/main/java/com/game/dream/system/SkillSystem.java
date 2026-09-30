@@ -203,6 +203,13 @@ public class SkillSystem {
 
         Player player = GameEngine.getInstance().getPlayer();
         long currentTime = System.currentTimeMillis();
+
+        // 引导锁: 持续型领域法术(如飞沙走石)释放过程中, 禁止施放任何法术
+        if (player.isChanneling()) {
+            GameEngine.getInstance().showCenterToast("施法中", 800);
+            return null;
+        }
+
         if (currentTime - player.getLastMagicTime(skill.getSkillType()) < skill.getCooldownSeconds() * 1000L) {
             return null; // Still on cooldown
         }
@@ -282,6 +289,15 @@ public class SkillSystem {
                 skillStartInfo = castSandstorm(skill.getLevel());
             }
             break;
+        }
+
+        // 持续型领域法术(飞沙走石/万剑归宗/毒雾阵): 冷却不在引导期间计时,
+        // 把 lastMagicTime 推迟到引导结束, 使冷却从法术释放完毕后才开始倒计时
+        if (skillStartInfo != null && skillStartInfo.getSkillEffect() != null) {
+            long channelDuration = skillStartInfo.getSkillEffect().getDuration();
+            long channelEnd = currentTime + channelDuration;
+            player.setLastMagicTime(skill.getSkillType(), channelEnd);
+            player.setChannelLockUntil(channelEnd); // 引导期间锁住施法, 结束后才可再施放
         }
 
         // 领悟判定: 3/10000 概率提升技能等级
@@ -569,11 +585,11 @@ public class SkillSystem {
     /**
      * 飞沙走石: 持续沙暴领域，伤害+减速，高等级概率眩晕
      * 等级成长:
-     *   奇数级(1,3,5,7,9): 扩大范围
-     *   偶数级(2,4,6,8): 提高伤害频率
+     *   伤害跳数: 1级2跳 → 10级5跳(每3级+1跳), 跳数=totalHits, 由 SkillEffect 精确停止
+     *   固定每 1 秒跳一次伤害; 持续时间 = 跳数 × 1秒(2跳2秒 → 5跳5秒), 低跳数不再空转到5秒
+     *   奇数级(1,3,5,7,9): 扩大范围(上限500)
      *   5级+: 减速效果增强(40%→60%)
      *   7级+: 15%概率眩晕
-     *   10级: 持续时间延长至7秒
      */
     private SkillStartInfo castSandstorm(int skillLevel) {
         SkillStartInfo skillStartInfo = new SkillStartInfo();
@@ -581,33 +597,23 @@ public class SkillSystem {
 
         // 基础参数
         float baseRadius = 300f;
-        long baseDuration = 5000; // 5秒
-        int baseDamageInterval = 1200; // 每1200ms一次伤害
 
-        // 等级成长: 奇数级扩大范围
+        // 等级成长: 奇数级扩大范围(上限500)
         float radiusBonus = ((skillLevel - 1) / 2) * 40f;
-        float radius = baseRadius + radiusBonus;
-        // 上限 500
-        radius = Math.min(500f, radius);
+        float radius = Math.min(500f, baseRadius + radiusBonus);
 
-        // 等级成长: 偶数级提高伤害频率(减少间隔)
-        int intervalReduction = (skillLevel / 2) * 50; // 每偶数级减少50ms
-        int damageInterval = Math.max(400, baseDamageInterval - intervalReduction);
-
-        // 等级成长: 10级延长持续时间
-        if (skillLevel >= 10) {
-            baseDuration = 7000; // 7秒
-        }
-
-        // 计算总伤害次数
-        int totalHits = (int) (baseDuration / damageInterval);
+        // 伤害跳数: 1级2跳 → 10级5跳(每3级+1跳)
+        int totalHits = Math.min(5, 2 + skillLevel / 3);
+        // 固定每 1 秒跳一次伤害; 持续时间 = 跳数 × 1秒, 避免低跳数时领域空转
+        int damageInterval = 1000;
+        long duration = (long) totalHits * damageInterval;
 
         SkillEffect skillEffect = new SkillEffect(
                 SkillEffect.Type.SANDSTORM,
                 player.getX(),
                 player.getY(),
                 radius,
-                baseDuration,
+                duration,
                 damageInterval,
                 totalHits
         );

@@ -52,20 +52,26 @@ public class SkillEffect {
         this.isActive = true;
     }
 
+    /** 领域持续时间(ms): 供引导型法术把冷却推迟到引导结束后再开始计时 */
+    public long getDuration() {
+        return duration;
+    }
+
     public void update(List<Enemy> enemies) {
         if (!isActive) return;
         long currentTime = System.currentTimeMillis();
 
-        // Check if duration expired or max hits reached
-        if (currentTime - startTime > duration/* || currentHits >= totalHits*/) {
+        // 持续时间结束 或 已达设计跳数(totalHits) 则停止
+        if (currentTime - startTime > duration || currentHits >= totalHits) {
             isActive = false;
             return;
         }
 
-        // Check damage interval
+        // 按伤害间隔跳一次; currentHits 统计“跳数”(而非受击敌人数)
         if (currentTime - lastDamageTime >= damageInterval) {
             applyDamage(enemies);
             lastDamageTime = currentTime;
+            currentHits++;
         }
     }
 
@@ -93,8 +99,6 @@ public class SkillEffect {
                         enemy.applyCC(com.game.dream.figure.Character.CrowdControlType.STUN, 800);
                     }
                 }
-
-                currentHits++;
             }
         }
     }

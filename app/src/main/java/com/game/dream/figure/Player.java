@@ -88,6 +88,9 @@ public class Player extends Character {
 
     private HashMap<SkillType, Long> lastCasterTimeHashMap = new HashMap<>();
 
+    // 引导锁: 持续型领域法术(飞沙走石/万剑归宗/毒雾阵)释放期间禁止施放任何法术, 到点自动解除
+    private long channelLockUntil = 0;
+
     // 敌人毒击（AttackType.POISON_STRIKE）施加的中毒 DoT：不叠加，已中毒时忽略新的尝试
     private static final long POISON_DURATION_MS = 16_000;
     private static final long POISON_TICK_MS = 2_000;
@@ -583,7 +586,7 @@ public class Player extends Character {
                 magicCooldown = (int) (magicCooldown * (1f - magicSpeedRatio));
             }
         }
-        long elapsed = currentTime - lastMagicTime;
+        long elapsed = Math.max(0, currentTime - lastMagicTime);
         return Math.min(1.0f, (float) elapsed / magicCooldown);
     }
 
@@ -859,6 +862,16 @@ public class Player extends Character {
 
     public void setLastMagicTime(SkillType skillType, long lastMagicTime) {
         lastCasterTimeHashMap.put(skillType, lastMagicTime);
+    }
+
+    /** 引导锁是否生效: 持续型领域法术释放过程中为 true, 期间禁止施放其它法术 */
+    public boolean isChanneling() {
+        return System.currentTimeMillis() < channelLockUntil;
+    }
+
+    /** 设置引导锁到指定绝对时间点(ms), 与冷却推迟到引导结束的口径一致 */
+    public void setChannelLockUntil(long absoluteTimeMs) {
+        channelLockUntil = absoluteTimeMs;
     }
 
     public void setFacingDirection(int facingDirection) {

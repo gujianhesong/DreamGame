@@ -380,6 +380,16 @@ public class BattleUtil {
      * 不使用 caculateEnemyAttackDamage(那是敌->玩家、按玩家防御与玩家buff计算)。
      */
     public static AttackResult calculatePetDamage(Enemy pet, Enemy target) {
+        return calculatePetDamage(pet, target, false);
+    }
+
+    /**
+     * 计算战宠相关伤害，并接入玩家的"宝宝修炼"乘区:
+     * - 攻击方为战宠时: 宝宝攻击修炼(物理)/宝宝法术修炼(法术) 提升输出，与玩家修炼同为每层 *1.02+5;
+     * - 受击方为战宠时: 宝宝防御修炼 减免所受伤害，每层 *0.98。
+     * @param attackerIsMagic true=该次伤害为战宠法术(火球)，否则为物理。
+     */
+    public static AttackResult calculatePetDamage(Enemy pet, Enemy target, boolean attackerIsMagic) {
         AttackResult result = new AttackResult();
         if (pet == null || target == null) {
             result.isHit = false;
@@ -390,11 +400,30 @@ public class BattleUtil {
         result.isHit = true;
         result.isCrit = false;
         int damageValue = calculateAttackDamage(pet.getAttackDamage(), target.getDefense());
+
+        RoleInfo roleInfo = RoleSystem.getInstance().getRoleInfo();
+        // 输出方宝宝修炼(仅当攻击者为战宠)
+        if (pet.isPet() && roleInfo != null) {
+            int lvl = attackerIsMagic ? roleInfo.getPracticeBBMagic() : roleInfo.getPracticeBBAttack();
+            for (int i = 0; i < lvl; i++) {
+                damageValue = (int) (damageValue * 1.02 + 5);
+            }
+        }
+
         damageValue = (int) (damageValue * (0.9 + Math.random() * 0.2));
         if (Math.random() < 0.05f) {
             result.isCrit = true;
             damageValue *= 2;
         }
+
+        // 受击方宝宝防御修炼(仅当受击者为战宠)
+        if (target.isPet() && roleInfo != null) {
+            int def = roleInfo.getPracticeBBDefense();
+            if (def > 0) {
+                damageValue = (int) (damageValue * Math.pow(0.98, def));
+            }
+        }
+
         result.damageValue = Math.max(1, damageValue);
         return result;
     }

@@ -1149,8 +1149,8 @@ public class GameEngine {
                         for (Enemy enemy : enemies) {
                             if (proj.checkCollision(enemy)) {
                                 if (proj.isFromPet()) {
-                                    // 战宠火球: 用战宠攻击力结算(不吃玩家法术加成), 只伤敌人
-                                    AttackResult petProjResult = BattleUtil.calculatePetDamage(proj.getFromEnemy(), enemy);
+                                    // 战宠火球: 用战宠攻击力结算(法术, 受宝宝法术修炼加成), 只伤敌人
+                                    AttackResult petProjResult = BattleUtil.calculatePetDamage(proj.getFromEnemy(), enemy, true);
                                     if (petProjResult != null && petProjResult.isHit && petProjResult.damageValue > 0) {
                                         enemy.takeDamage(petProjResult.damageValue);
                                         damageNumbers.add(new DamageNumber(
@@ -1493,13 +1493,14 @@ public class GameEngine {
         }
     }
 
-    /** 绘制战宠的友方绿血条与名字/等级。 */
+    /** 绘制战宠的友方绿血条(身体上方)与名字/等级(身体下方, 参照人物 Character.drawName 位置)。 */
     private void drawPetOverlay(Canvas canvas, Enemy body, Pet pet, int offX, int offY) {
         Paint p = new Paint();
         p.setAntiAlias(true);
         float sx = body.getX() + offX;
         float sy = body.getY() + offY;
         float size = body.getSize();
+        // 友方绿血条(身体上方)
         float barW = size * 1.1f;
         float barH = 5f;
         float barX = sx - barW / 2f;
@@ -1509,10 +1510,17 @@ public class GameEngine {
         float ratio = body.getMaxHealth() <= 0 ? 0f : body.getHealth() / (float) body.getMaxHealth();
         p.setColor(Color.argb(230, 80, 220, 110));
         canvas.drawRoundRect(barX, barY, barX + barW * ratio, barY + barH, 2, 2, p);
-        p.setColor(Color.argb(235, 130, 255, 160));
-        p.setTextSize(16);
+
+        // 名字/等级(身体下方, 与人物 Character.drawName 一致: cy + 45*scale, scale=2 → +90)
+        String label = pet.getName() + " Lv." + pet.getLevel() + " ★";
+        p.setTextSize(24);
         p.setTextAlign(Paint.Align.CENTER);
-        canvas.drawText(pet.getName() + " Lv." + pet.getLevel() + " ★", sx, barY - 4, p);
+        float nameY = sy + 90;
+        // 黑色描边提升可读性(参照 drawName 的阴影偏移)
+        p.setColor(Color.BLACK);
+        canvas.drawText(label, sx + 1, nameY + 1, p);
+        p.setColor(Color.argb(235, 130, 255, 160));
+        canvas.drawText(label, sx, nameY, p);
     }
 
     private void updateCamera() {

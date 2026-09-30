@@ -279,6 +279,29 @@ public abstract class Enemy extends Character {
         this.health = this.maxHealth;
     }
 
+    // ==================== 战宠属性(体魔力耐敏)派生支持 ====================
+
+    /** 物种原始基线属性访问器(供捕捉时反推战宠初始属性点)。 */
+    public int getBaseMaxHealth() { return baseMaxHealth; }
+    public int getBaseAttackDamage() { return baseAttackDamage; }
+    public int getBaseDefense() { return baseDefense; }
+    public int getBaseSpeed() { return baseSpeed; }
+    public int getBaseMana() { return baseMana; }
+
+    /**
+     * 战宠: 直接写入由 体魔力耐敏 派生的最终战斗属性(不经 setProperty, 不污染 base 缓存、不做波动)。
+     * @param fullHeal true=回满血(升级/疗伤); false=按当前血量比例保留(加点时不白送血)。
+     */
+    public void setPetCombatStats(int hp, int atk, int def, int spd, int mana, boolean fullHeal) {
+        float ratio = this.maxHealth > 0 ? this.health / (float) this.maxHealth : 1f;
+        this.maxHealth = Math.max(1, hp);
+        this.attackDamage = Math.max(0, atk);
+        this.defense = Math.max(0, def);
+        this.speed = Math.max(1, spd);
+        this.mana = Math.max(0, mana);
+        this.health = fullHeal ? this.maxHealth : Math.max(1, Math.round(this.maxHealth * ratio));
+    }
+
     public void setPet(boolean pet) {
         this.isPet = pet;
     }

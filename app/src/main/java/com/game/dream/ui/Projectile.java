@@ -37,6 +37,9 @@ public class Projectile {
 
     private Enemy fromEnemy;
 
+    // 战宠发射的投射物: 不伤玩家, 只伤敌对怪物
+    private boolean fromPet = false;
+
     private EffectType effectType = EffectType.NONE; // Default to no effect
 
     // 火云术等级相关
@@ -295,6 +298,19 @@ public class Projectile {
 
     public Enemy getFromEnemy() {
         return fromEnemy;
+    }
+
+    /**
+     * 标记为战宠发射: 记录发射者(战宠 body)，但不视为敌方投射物(不会伤玩家)。
+     */
+    public void setFromPet(Enemy petBody) {
+        this.fromEnemy = petBody;
+        this.fromPet = true;
+        this.isEnemyProjectile = false;
+    }
+
+    public boolean isFromPet() {
+        return fromPet;
     }
 
     /**

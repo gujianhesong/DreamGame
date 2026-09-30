@@ -20,6 +20,7 @@ import com.game.dream.panel.IllusionRealmPanel;
 import com.game.dream.system.IllusionRealmSystem;
 import com.game.dream.system.MapSystem;
 import com.game.dream.panel.ItemsPanel;
+import com.game.dream.panel.PetPanel;
 import com.game.dream.panel.QuestPanel;
 import com.game.dream.panel.RoleInfoPanel;
 import com.game.dream.panel.ShopPanel;
@@ -60,6 +61,8 @@ public class GameUI {
 
     private QuestPanel questPanel;
 
+    private PetPanel petPanel;
+
     private ShopPanel shopPanel;
 
     private DialogBox currentDialog;
@@ -88,7 +91,11 @@ public class GameUI {
     private Rect buildEquipButton;
     private Rect craftButton;
     private Rect questButton;
+    private Rect petButton;
     private Rect illusionRealmButton;
+
+    // 捕捉按钮(战斗 HUD, 靠近普攻按钮)
+    private Rect captureButton;
 
     private IllusionRealmPanel illusionRealmPanel;
 
@@ -96,9 +103,11 @@ public class GameUI {
     private float lastSkillsPanelTouchY = 0;
     private float lastItemsPanelTouchY = 0; // Add this line
     private float lastQuestPanelTouchY = 0;
+    private float lastPetPanelTouchY = 0;
 
     private boolean meleeAttackPressed;
     private boolean magicAttackPressed;
+    private boolean capturePressed;
     private boolean hpButtonPressed;
     private boolean mpButtonPressed;
 
@@ -160,6 +169,9 @@ public class GameUI {
 
         // Initialize Quest panel
         questPanel = new QuestPanel();
+
+        // Initialize Pet panel
+        petPanel = new PetPanel();
 
         illusionRealmPanel = new IllusionRealmPanel();
 
@@ -286,6 +298,15 @@ public class GameUI {
             int panelX = (width - panelWidth) / 2;
             int panelY = (height - panelHeight) / 2;
             questPanel.setBounds(panelX, panelY, panelWidth, panelHeight);
+        }
+
+        // Initialize pet panel (center of screen)
+        if (petPanel != null) {
+            int panelWidth = Math.min(1200, width - 40);
+            int panelHeight = Math.min(900, height - 100);
+            int panelX = (width - panelWidth) / 2;
+            int panelY = (height - panelHeight) / 2;
+            petPanel.setBounds(panelX, panelY, panelWidth, panelHeight);
         }
 
         if (illusionRealmPanel != null) {
@@ -425,6 +446,19 @@ public class GameUI {
             mpQuickButton = new Rect(quickBtnLeft, mpBtnTop, quickBtnRight, mpBtnBottom);
         }
 
+        // 捕捉按钮: 位于普攻按钮右侧, 与之垂直居中
+        {
+            int captureSize = (int) (buttonSize * 0.5);
+            int captureCenterX = meleeAttackButton.right + captureSize / 2 + 12;
+            int captureCenterY = meleeAttackButton.centerY();
+            captureButton = new Rect(
+                    captureCenterX - captureSize / 2,
+                    captureCenterY - captureSize / 2,
+                    captureCenterX + captureSize / 2,
+                    captureCenterY + captureSize / 2
+            );
+        }
+
         // role info button (top-right corner)
         int infoButtonSize = screenHeight / 10;
         int infoPadding = 20;
@@ -482,6 +516,15 @@ public class GameUI {
                 screenHeight - infoPadding
         );
 
+        // Pet button (next to Quest button) - 战宠花名册入口
+        startX += infoButtonSize + infoPadding;
+        petButton = new Rect(
+                startX,
+                screenHeight - infoPadding - infoButtonSize,
+                startX + infoButtonSize,
+                screenHeight - infoPadding
+        );
+
         // 幻境入口（左上角，避免与底栏过挤）
         illusionRealmButton = new Rect(
                 infoPadding,
@@ -531,6 +574,11 @@ public class GameUI {
         // Draw questPanel panel
         if (questPanel != null && questPanel.isVisible()) {
             questPanel.draw(canvas);
+        }
+
+        // Draw petPanel panel
+        if (petPanel != null && petPanel.isVisible()) {
+            petPanel.draw(canvas);
         }
 
         if (illusionRealmPanel != null && illusionRealmPanel.isVisible()) {
@@ -718,6 +766,24 @@ public class GameUI {
             return true; // Consume all events when quest panel is open
         }
 
+        // Handle Pet Panel (Priority if visible)
+        if (petPanel != null && petPanel.isVisible()) {
+            if (action == MotionEvent.ACTION_DOWN) {
+                lastPetPanelTouchY = y;
+                if (petPanel.handleTouch(x, y)) {
+                    return true;
+                }
+            } else if (action == MotionEvent.ACTION_MOVE) {
+                float deltaY = y - lastPetPanelTouchY;
+                if (Math.abs(deltaY) > 5) {
+                    petPanel.handleScroll(0, deltaY);
+                    lastPetPanelTouchY = y;
+                    return true;
+                }
+            }
+            return true; // Consume all events when pet panel is open
+        }
+
         // Handle D-pad with pointer tracking
         switch (action) {
             case MotionEvent.ACTION_DOWN:
@@ -848,6 +914,14 @@ public class GameUI {
                     GameEngine.getInstance().doAttackAction();
                 }
 
+                // 捕捉按钮: 请求捕捉战宠(实际判定在更新线程)
+                if (!handled && captureButton != null &&
+                        isPointInCircle(x, y, captureButton.centerX(), captureButton.centerY(), captureButton.width() / 2)) {
+                    capturePressed = true;
+                    handled = true;
+                    GameEngine.getInstance().requestCapture();
+                }
+
                 for (int index = 0; index < skillButtons.size(); index++) {
                     Rect skillBtn = skillButtons.get(index);
                     if (isPointInCircle(x, y, skillBtn.centerX(), skillBtn.centerY(), skillBtn.width() / 2)) {
@@ -869,6 +943,7 @@ public class GameUI {
             case MotionEvent.ACTION_POINTER_UP:
                 // Clear the state for the pointer that lifted
                 // Check which button this pointer was on
+                capturePressed = false; // 捕捉为点按动作, 抬手即复位
                 if (meleeAttackButton != null &&
                         isPointInCircle(x, y, meleeAttackButton.centerX(), meleeAttackButton.centerY(), meleeAttackButton.width() / 2)) {
                     meleeAttackPressed = false;
@@ -1117,6 +1192,11 @@ public class GameUI {
             drawCircularPhysicalAttackButton(canvas, meleeAttackButton, meleeAttackPressed);
         }
 
+        // Draw capture button (捕捉战宠)
+        if (captureButton != null) {
+            drawCaptureButton(canvas, captureButton, capturePressed);
+        }
+
         // Draw HP/MP quick-use buttons
         drawQuickPotionButton(canvas, hpQuickButton, hpButtonPressed, true);
         drawQuickPotionButton(canvas, mpQuickButton, mpButtonPressed, false);
@@ -1207,6 +1287,11 @@ public class GameUI {
         // Draw quest button
         if (questButton != null) {
             drawMenuButton("📜", canvas, questButton, questPanel != null && questPanel.isVisible());
+        }
+
+        // Draw pet button
+        if (petButton != null) {
+            drawMenuButton("🐾", canvas, petButton, petPanel != null && petPanel.isVisible());
         }
 
         if (illusionRealmButton != null
@@ -1444,6 +1529,42 @@ public class GameUI {
     }
 
     /**
+     * 绘制捕捉按钮(圆形)。附近有可捕捉目标时高亮，否则灰显。
+     */
+    private void drawCaptureButton(Canvas canvas, Rect button, boolean pressed) {
+        Paint paint = new Paint();
+        paint.setAntiAlias(true);
+        float cx = button.centerX();
+        float cy = button.centerY();
+        float radius = button.width() / 2f;
+
+        boolean ready = GameEngine.getInstance().hasCapturableTarget();
+
+        // 背景
+        if (!ready) {
+            paint.setColor(Color.argb(90, 90, 90, 90));
+        } else if (pressed) {
+            paint.setColor(Color.argb(225, 60, 200, 120));
+        } else {
+            paint.setColor(Color.argb(185, 50, 180, 110));
+        }
+        canvas.drawCircle(cx, cy, radius, paint);
+
+        // 边框
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(3);
+        paint.setColor(ready ? Color.rgb(150, 255, 190) : Color.rgb(130, 130, 130));
+        canvas.drawCircle(cx, cy, radius - 2, paint);
+        paint.setStyle(Paint.Style.FILL);
+
+        // 图标文字
+        paint.setColor(Color.WHITE);
+        paint.setTextSize(radius * 0.72f);
+        paint.setTextAlign(Paint.Align.CENTER);
+        canvas.drawText("捕", cx, cy + radius * 0.26f, paint);
+    }
+
+    /**
      * Show center toast
      */
     public void showCenterToast(String message, long durationMillis) {
@@ -1596,6 +1717,21 @@ public class GameUI {
             }
         }
 
+        // Check Pet button
+        if (petButton != null && TouchUtil.checkIsInTouchRectFloat(petButton, x, y)) {
+            if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_POINTER_DOWN) {
+                return true;
+            }
+            if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_POINTER_UP) {
+                if (petPanel != null) {
+                    boolean wasVisible = petPanel.isVisible();
+                    closeAllPanels();
+                    if (!wasVisible) petPanel.show();
+                }
+                return true;
+            }
+        }
+
         if (illusionRealmButton != null && TouchUtil.checkIsInTouchRectFloat(illusionRealmButton, x, y)) {
             if (IllusionRealmSystem.getInstance().isActive()) {
                 return true;
@@ -1626,6 +1762,7 @@ public class GameUI {
         if (buildEquipPanel != null) buildEquipPanel.hide();
         if (craftingPanel != null) craftingPanel.hide();
         if (questPanel != null) questPanel.hide();
+        if (petPanel != null) petPanel.hide();
         if (illusionRealmPanel != null) illusionRealmPanel.hide();
         if (shopPanel != null) shopPanel.hide();
     }

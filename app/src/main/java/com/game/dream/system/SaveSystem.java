@@ -54,6 +54,7 @@ public class SaveSystem {
             saveInfo.setQuestInfos(QuestSystem.getInstance().getAcceptedQuests());
             saveInfo.setDefaultHpPotionIds(ItemSystem.getInstance().getDefaultHpPotionIds());
             saveInfo.setDefaultMpPotionIds(ItemSystem.getInstance().getDefaultMpPotionIds());
+            saveInfo.setPetInfos(PetSystem.getInstance().toSaveInfos());
             if (this.saveInfo != null) {
                 saveInfo.setIllusionRealmInfo(this.saveInfo.getIllusionRealmInfo());
             }
@@ -106,6 +107,7 @@ public class SaveSystem {
         QuestSystem.getInstance().setAcceptedQuests(saveInfo.getQuestInfos());
         ItemSystem.getInstance().setDefaultHpPotionIds(saveInfo.getDefaultHpPotionIds());
         ItemSystem.getInstance().setDefaultMpPotionIds(saveInfo.getDefaultMpPotionIds());
+        PetSystem.getInstance().loadFrom(saveInfo.getPetInfos());
     }
 
     private SaveInfo getInitData() {

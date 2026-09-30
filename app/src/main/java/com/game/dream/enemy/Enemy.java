@@ -49,6 +49,17 @@ public abstract class Enemy extends Character {
     protected int mana;
     protected int speed;
 
+    // 战宠系统: 是否为玩家战宠 + 基础属性缓存(用于战宠等级缩放/归一化)
+    protected boolean isPet = false;
+    protected int baseSize;
+    protected int baseMaxHealth;
+    protected int baseAttackDamage;
+    protected int baseDefense;
+    protected int baseSpeed;
+    protected int baseMana;
+    // 仅在首次 setProperty(子类基础属性)时缓存 base*，避免 resetPropertyWithLevel 的等级倍率污染基线
+    private boolean baseStatsCached = false;
+
     public class EnemyPropertyExtra{
         // Detection and attack ranges
         protected float detectionRange;
@@ -183,6 +194,7 @@ public abstract class Enemy extends Character {
 
     public Enemy(float x, float y, int size) {
         super(x, y, size);
+        this.baseSize = size;
 
         this.currentState = State.IDLE;
         this.enemyLevel = EnemyLevel.NORMAL;
@@ -215,6 +227,16 @@ public abstract class Enemy extends Character {
         this.defense = Utils.getWaveValueInt(defense, 0.2f);
         this.speed = Utils.getWaveValueInt(speed, 0.2f);
         this.mana = Utils.getWaveValueInt(mana, 0.2f);
+
+        // 缓存基础属性(仅首次, 即子类构造器的原始属性)，供战宠归一化与等级缩放使用
+        if (!baseStatsCached) {
+            this.baseMaxHealth = this.maxHealth;
+            this.baseAttackDamage = this.attackDamage;
+            this.baseDefense = this.defense;
+            this.baseSpeed = this.speed;
+            this.baseMana = this.mana;
+            this.baseStatsCached = true;
+        }
     }
 
     public void resetPropertyWithLevel() {
@@ -232,6 +254,54 @@ public abstract class Enemy extends Character {
             size = (int) (size * 1.3f);
             setProperty(maxHealth * 3, (int) (attackDamage * 1.5), (int) (defense * 2), (int) (speed * 2), (int) (mana * 1.5));
         }
+    }
+
+    /**
+     * 战宠: 将实体归一化为 NORMAL 级基础形态并按战宠等级缩放属性。
+     * 反射重建的战宠可能随机到 LEADER/ELITE/BOSS，此方法确保战宠从统一基线成长。
+     */
+    public void resetAsPet(int level) {
+        this.enemyLevel = EnemyLevel.NORMAL;
+        this.size = baseSize;
+        applyPetLevelStats(level);
+    }
+
+    /**
+     * 战宠: 按等级从基础属性线性缩放(每级 +12%)，并回满血。
+     */
+    public void applyPetLevelStats(int level) {
+        float m = 1f + 0.12f * Math.max(0, level - 1);
+        this.maxHealth = Math.max(1, (int) (baseMaxHealth * m));
+        this.attackDamage = Math.max(1, (int) (baseAttackDamage * m));
+        this.defense = (int) (baseDefense * m);
+        this.speed = Math.max(1, (int) (baseSpeed * m));
+        this.mana = (int) (baseMana * m);
+        this.health = this.maxHealth;
+    }
+
+    public void setPet(boolean pet) {
+        this.isPet = pet;
+    }
+
+    public boolean isPet() {
+        return isPet;
+    }
+
+    /**
+     * 战宠跟随玩家移动(不进入攻击态，避免误伤玩家)。
+     */
+    public void petMoveTowards(float tx, float ty, float deltaSeconds) {
+        this.targetX = tx;
+        this.targetY = ty;
+        moveToTargetWithSpeed(deltaSeconds, speed);
+        updateAnimation(System.currentTimeMillis());
+    }
+
+    /**
+     * 战宠: 原地待命时推进动画帧(不移动), 避免静止时卡在某一帧。
+     */
+    public void petIdleTick() {
+        updateAnimation(System.currentTimeMillis());
     }
 
     public void setState(State state) {
@@ -1389,6 +1459,13 @@ public abstract class Enemy extends Character {
     @Override
     public int getMaxHealth() {
         return maxHealth;
+    }
+
+    /**
+     * 战宠: 直接设置当前血量(用于存档恢复/疗伤)。
+     */
+    public void setHealth(int hp) {
+        this.health = Math.max(0, Math.min(maxHealth, hp));
     }
 
     /**

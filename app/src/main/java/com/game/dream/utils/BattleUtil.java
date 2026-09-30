@@ -376,6 +376,30 @@ public class BattleUtil {
     }
 
     /**
+     * 计算战宠对敌方怪物的物理伤害(战宠攻击 vs 目标防御)。
+     * 不使用 caculateEnemyAttackDamage(那是敌->玩家、按玩家防御与玩家buff计算)。
+     */
+    public static AttackResult calculatePetDamage(Enemy pet, Enemy target) {
+        AttackResult result = new AttackResult();
+        if (pet == null || target == null) {
+            result.isHit = false;
+            result.isCrit = false;
+            result.damageValue = 0;
+            return result;
+        }
+        result.isHit = true;
+        result.isCrit = false;
+        int damageValue = calculateAttackDamage(pet.getAttackDamage(), target.getDefense());
+        damageValue = (int) (damageValue * (0.9 + Math.random() * 0.2));
+        if (Math.random() < 0.05f) {
+            result.isCrit = true;
+            damageValue *= 2;
+        }
+        result.damageValue = Math.max(1, damageValue);
+        return result;
+    }
+
+    /**
      * 计算怪物输出的法术伤害
      *
      * @param skillType

@@ -2,14 +2,21 @@ package com.game.dream;
 
 import static com.game.dream.common.Constants.TILE_SIZE;
 
+import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.os.Handler;
 import android.os.Looper;
+import android.text.InputFilter;
+import android.text.InputType;
 import android.util.Pair;
 import android.view.MotionEvent;
+import android.widget.EditText;
+import android.widget.FrameLayout;
 
 import com.game.dream.bean.AttackResult;
 import com.game.dream.bean.EnemyHitInfo;
@@ -60,6 +67,8 @@ import com.game.dream.system.DayNightCycle;
 import com.game.dream.system.IllusionRealmSystem;
 import com.game.dream.system.ItemSystem;
 import com.game.dream.system.MapSystem;
+import com.game.dream.system.Pet;
+import com.game.dream.system.PetSystem;
 import com.game.dream.system.MazeSystem;
 import com.game.dream.system.NpcSystem;
 import com.game.dream.system.RoleSystem;
@@ -80,6 +89,7 @@ import java.util.List;
 
 public class GameEngine {
     private Context context;
+    private Context activityContext;
     private static int screenWidth;
     private static int screenHeight;
 
@@ -116,6 +126,14 @@ public class GameEngine {
 
     // 迷宫出口 BOSS 封印提示的节流时间戳（避免每帧刷屏）
     private long lastBossGateToastTime = 0;
+
+    // 战宠系统: 当前出战的战宠(通常1只) + 捕捉请求(在更新线程处理)
+    private final java.util.List<Pet> activePets = new java.util.ArrayList<>();
+    private volatile boolean captureRequested = false;
+    private long lastCaptureTime = 0;
+    private static final long CAPTURE_COOLDOWN = 1500;
+    // 玩家附近是否有可捕捉目标(更新线程计算, 绘制线程读取用于捕捉按钮高亮)
+    private volatile boolean capturableTargetNearby = false;
 
     // Pending melee attack (wait for lunge to complete before dealing damage)
     private boolean pendingMeleeAttack = false;
@@ -171,6 +189,7 @@ public class GameEngine {
 
     public GameEngine(Context context) {
         instance = this;
+        this.activityContext = context;
         this.context = context.getApplicationContext();
         this.accumulatedRecoveryTime = 0; // Initialize recovery timer
         IllusionRealmSystem.getInstance().init(this.context);
@@ -257,6 +276,7 @@ public class GameEngine {
     private void initializeEnemies() {
         enemies = new java.util.ArrayList<>();
         enemies.addAll(MapContentManager.getInstance().initializeEnemies());
+        syncActivePetToWorld();
     }
 
     /**
@@ -398,6 +418,16 @@ public class GameEngine {
 
         // Check enemy attacks on player
         checkEnemyAttacksOnPlayer();
+
+        // 战宠系统: 处理捕捉请求 → 更新战宠AI → 战宠攻击敌人 → 敌人攻击战宠
+        if (captureRequested) {
+            captureRequested = false;
+            processCaptureRequest();
+        }
+        updatePets(deltaTime);
+        checkPetAttacksOnEnemies();
+        checkEnemyAttacksOnPets();
+        updateCapturableFlag();
 
         // Update GameUI
         if (gameUI != null) {
@@ -917,6 +947,32 @@ public class GameEngine {
                     int newLevel = RoleSystem.getInstance().getRoleInfo().getLevel();
                     RoleSystem.getInstance().addMoney(enemy.getMoneyReward());
 
+                    // 战宠参战经验: 出战且未重伤的战宠在附近时, 获得该怪一半经验
+                    Pet expPet = PetSystem.getInstance().getActivePet();
+                    if (expPet != null && !expPet.isDowned()) {
+                        Enemy expPetBody = expPet.getEntity();
+                        if (expPetBody != null) {
+                            float petDx = expPetBody.getX() - enemy.getX();
+                            float petDy = expPetBody.getY() - enemy.getY();
+                            if (petDx * petDx + petDy * petDy <= 800f * 800f) {
+                                int petExp = Math.max(1, expReward / 2);
+                                boolean petLeveled = PetSystem.getInstance().addExp(expPet, petExp);
+                                floatingTexts.add(new FloatingText(
+                                        expPetBody.getX(), expPetBody.getY() - 140,
+                                        "战宠+" + petExp + " 经验",
+                                        FloatingText.Type.EXPERIENCE
+                                ));
+                                if (petLeveled) {
+                                    floatingTexts.add(new FloatingText(
+                                            expPetBody.getX(), expPetBody.getY() - 190,
+                                            "战宠升级! Lv." + expPet.getLevel(),
+                                            FloatingText.Type.LEVEL_UP
+                                    ));
+                                }
+                            }
+                        }
+                    }
+
                     // Add messages to message log
                     addMessage("+" + expReward + " 经验", com.game.dream.panel.MessagePanel.MessageType.EXPERIENCE);
                     if (moneyReward > 0) {
@@ -1092,11 +1148,27 @@ public class GameEngine {
                     } else {
                         for (Enemy enemy : enemies) {
                             if (proj.checkCollision(enemy)) {
-                                // Handle caster damage (with projectile info for fireball level effects)
-                                handlePlayerCasterDamageToEnemy(enemy, proj);
+                                if (proj.isFromPet()) {
+                                    // 战宠火球: 用战宠攻击力结算(不吃玩家法术加成), 只伤敌人
+                                    AttackResult petProjResult = BattleUtil.calculatePetDamage(proj.getFromEnemy(), enemy);
+                                    if (petProjResult != null && petProjResult.isHit && petProjResult.damageValue > 0) {
+                                        enemy.takeDamage(petProjResult.damageValue);
+                                        damageNumbers.add(new DamageNumber(
+                                                enemy.getX(), enemy.getY() - 30,
+                                                petProjResult.damageValue, petProjResult.isCrit
+                                        ));
+                                    } else {
+                                        damageNumbers.add(new DamageNumber(
+                                                enemy.getX(), enemy.getY() - 30, -1
+                                        ));
+                                    }
+                                } else {
+                                    // Handle caster damage (with projectile info for fireball level effects)
+                                    handlePlayerCasterDamageToEnemy(enemy, proj);
 
-                                // Handle Special Effects
-                                handlePlayerCasterEffectToEnemy(enemy, proj);
+                                    // Handle Special Effects
+                                    handlePlayerCasterEffectToEnemy(enemy, proj);
+                                }
 
                                 proj.deactivate();
                                 break;
@@ -1112,6 +1184,335 @@ public class GameEngine {
                 }
             }
         }
+    }
+
+    // ==================== 战宠系统 ====================
+
+    /** 把 PetSystem 中出战的战宠放入世界(置于玩家身边)。仅在更新/加载线程调用。 */
+    private void syncActivePetToWorld() {
+        activePets.clear();
+        if (player == null) return;
+        Pet active = PetSystem.getInstance().getActivePet();
+        if (active == null || active.isDowned()) return;
+        Enemy body = active.getEntity();
+        if (body == null) return;
+        body.setPet(true);
+        body.setX(player.getX() + 40);
+        body.setY(player.getY() + 40);
+        activePets.add(active);
+    }
+
+    /** 供 UI 调用：请求捕捉(实际在更新线程执行)。 */
+    public void requestCapture() {
+        captureRequested = true;
+    }
+
+    /** 弹出输入框为战宠改名(需在 UI 线程调用；触摸事件本身即在 UI 线程)。 */
+    public void promptRenamePet(final Pet pet) {
+        if (pet == null || !(activityContext instanceof Activity)) {
+            return;
+        }
+        final Activity activity = (Activity) activityContext;
+        activity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                final EditText input = new EditText(activity);
+                String cur = pet.getName() != null ? pet.getName() : "";
+                input.setText(cur);
+                input.setSelection(input.getText().length());
+                input.setSingleLine(true);
+                input.setInputType(InputType.TYPE_CLASS_TEXT);
+                input.setFilters(new InputFilter[]{new InputFilter.LengthFilter(8)});
+
+                FrameLayout container = new FrameLayout(activity);
+                int pad = (int) (20 * activity.getResources().getDisplayMetrics().density);
+                FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(
+                        FrameLayout.LayoutParams.MATCH_PARENT,
+                        FrameLayout.LayoutParams.WRAP_CONTENT);
+                lp.setMargins(pad, pad / 2, pad, 0);
+                container.addView(input, lp);
+
+                new AlertDialog.Builder(activity)
+                        .setTitle("战宠改名")
+                        .setView(container)
+                        .setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                String nm = input.getText().toString().trim();
+                                if (nm.isEmpty()) {
+                                    showCenterToast("名字不能为空", 1200);
+                                    return;
+                                }
+                                pet.setName(nm);
+                                showCenterToast("已改名为「" + nm + "」", 1200);
+                            }
+                        })
+                        .setNegativeButton("取消", null)
+                        .show();
+            }
+        });
+    }
+
+    /** 供 UI 查询：玩家附近是否有可捕捉目标(用于捕捉按钮高亮)。 */
+    public boolean hasCapturableTarget() {
+        return capturableTargetNearby;
+    }
+
+    /** 每帧在更新线程计算“附近是否有可捕捉目标”，供绘制线程读取(volatile, 避免跨线程遍历 enemies)。 */
+    private void updateCapturableFlag() {
+        boolean found = false;
+        if (player != null && enemies != null) {
+            final float range = 220f;
+            for (Enemy e : enemies) {
+                if (e == null || !e.isAlive() || e.isPet()) continue;
+                if (e.getEnemyLevel() == Enemy.EnemyLevel.BOSS) continue;
+                if (e.getMaxHealth() > 0
+                        && e.getHealth() / (float) e.getMaxHealth() > PetSystem.CAPTURE_HP_THRESHOLD) continue;
+                float dx = e.getX() - player.getX();
+                float dy = e.getY() - player.getY();
+                if (dx * dx + dy * dy <= range * range) {
+                    found = true;
+                    break;
+                }
+            }
+        }
+        capturableTargetNearby = found;
+    }
+
+    /** 处理捕捉请求(更新线程)：找最近可捕捉目标 → 判定 → 成功则移除该怪并出战。 */
+    private void processCaptureRequest() {
+        if (player == null || enemies == null) return;
+        long now = System.currentTimeMillis();
+        if (now - lastCaptureTime < CAPTURE_COOLDOWN) return;
+
+        Enemy target = null;
+        float best = Float.MAX_VALUE;
+        float captureRange = 220f;
+        for (Enemy e : enemies) {
+            if (e == null || !e.isAlive() || e.isPet()) continue;
+            if (e.getEnemyLevel() == Enemy.EnemyLevel.BOSS) continue;
+            float dx = e.getX() - player.getX();
+            float dy = e.getY() - player.getY();
+            float d = dx * dx + dy * dy;
+            if (d < best && d <= captureRange * captureRange) {
+                best = d;
+                target = e;
+            }
+        }
+        if (target == null) {
+            showCenterToast("附近没有可捕捉的怪物", 1200);
+            return;
+        }
+        lastCaptureTime = now;
+        PetSystem.CaptureOutcome outcome = PetSystem.getInstance().tryCapture(target);
+        switch (outcome) {
+            case SUCCESS:
+                enemies.remove(target);
+                showCenterToast("成功收服「" + target.getName() + "」！", 1800);
+                syncActivePetToWorld();
+                break;
+            case FAIL_NOT_WEAK:
+                showCenterToast("「" + target.getName() + "」血量太高，先削弱它！", 1500);
+                break;
+            case FAIL_BOSS:
+                showCenterToast("首领级怪物无法被捕捉！", 1500);
+                break;
+            case FAIL_FULL:
+                showCenterToast("战宠已满(上限 " + PetSystem.getInstance().getMaxRoster() + " 只)，请先放生或提升等级！", 1500);
+                break;
+            case FAIL_ROLL:
+                showCenterToast("「" + target.getName() + "」挣脱了捕捉！", 1500);
+                break;
+            default:
+                showCenterToast("无法捕捉该怪物", 1500);
+                break;
+        }
+    }
+
+    /** 更新出战战宠：有敌人则复用 Enemy AI 追击攻击，否则跟随玩家。 */
+    private void updatePets(long deltaTime) {
+        Pet sysActive = PetSystem.getInstance().getActivePet();
+        if (sysActive == null || sysActive.isDowned()) {
+            activePets.clear();
+        } else if (activePets.isEmpty() || activePets.get(0) != sysActive) {
+            syncActivePetToWorld();
+        }
+        if (activePets.isEmpty() || player == null) return;
+
+        int[][] map = null;
+        try {
+            map = MapSystem.getInstance().getCurMapInfo().getMapData();
+        } catch (Exception ignored) {
+        }
+        int mapW = getCurrentMapWidth();
+        int mapH = getCurrentMapHeight();
+        float deltaSeconds = deltaTime / 1000f;
+        final float petDetectRange = 520f;
+
+        for (Pet pet : new java.util.ArrayList<>(activePets)) {
+            Enemy body = pet.getEntity();
+            if (body == null || !body.isAlive()) continue;
+
+            Enemy nearest = null;
+            float nearestDistSq = Float.MAX_VALUE;
+            if (enemies != null) {
+                for (Enemy e : enemies) {
+                    if (e == null || !e.isAlive() || e.isPet()) continue;
+                    float dx = e.getX() - body.getX();
+                    float dy = e.getY() - body.getY();
+                    float d = dx * dx + dy * dy;
+                    if (d < nearestDistSq) {
+                        nearestDistSq = d;
+                        nearest = e;
+                    }
+                }
+            }
+            boolean hasTarget = nearest != null && nearestDistSq <= petDetectRange * petDetectRange;
+
+            if (hasTarget) {
+                if (body.getState() == Enemy.State.IDLE) {
+                    body.setState(Enemy.State.CHASING);
+                }
+                body.update(deltaTime, nearest.getX(), nearest.getY(), map, mapW, mapH);
+                if (body.isCastingSpell()) {
+                    if (body.getState() == Enemy.State.CHASING) {
+                        spawnPetGenericFireballs(body, nearest.getX(), nearest.getY());
+                    }
+                    body.resetCastingState();
+                }
+            } else {
+                if (body.getState() == Enemy.State.ATTACKING) {
+                    // 目标已不在范围内: 让战宠自身攻击状态机安全收尾(处理前摇/猛扑等子状态),
+                    // 传入自身坐标不产生位移, 避免卡在攻击动画
+                    body.update(deltaTime, body.getX(), body.getY(), map, mapW, mapH);
+                } else {
+                    float pdx = player.getX() - body.getX();
+                    float pdy = player.getY() - body.getY();
+                    float pDist = (float) Math.sqrt(pdx * pdx + pdy * pdy);
+                    if (pDist > 600f) {
+                        body.setX(player.getX() + 40);
+                        body.setY(player.getY() + 40);
+                        body.petIdleTick();
+                    } else if (pDist > 110f) {
+                        body.petMoveTowards(player.getX(), player.getY(), deltaSeconds);
+                    } else {
+                        body.petIdleTick();
+                    }
+                }
+            }
+        }
+    }
+
+    /** 战宠近战命中判定：对攻击范围内的敌对怪造成伤害。 */
+    private void checkPetAttacksOnEnemies() {
+        if (activePets.isEmpty() || enemies == null || enemies.isEmpty()) return;
+        for (Pet pet : new java.util.ArrayList<>(activePets)) {
+            Enemy body = pet.getEntity();
+            if (body == null || !body.isAlive()) continue;
+            if (body.getState() != Enemy.State.ATTACKING) continue;
+            if (!body.consumeAttackFired()) continue;
+
+            Enemy target = null;
+            float range = body.getAttackRange();
+            for (Enemy e : enemies) {
+                if (e == null || !e.isAlive() || e.isPet()) continue;
+                float dx = e.getX() - body.getX();
+                float dy = e.getY() - body.getY();
+                float reach = range + e.getSize() * 0.5f;
+                if (dx * dx + dy * dy <= reach * reach) {
+                    target = e;
+                    break;
+                }
+            }
+            if (target == null) continue;
+
+            AttackResult r = BattleUtil.calculatePetDamage(body, target);
+            if (r != null && r.isHit) {
+                target.takeDamage(r.damageValue);
+                damageNumbers.add(new DamageNumber(target.getX(), target.getY() - 40, r.damageValue, r.isCrit));
+                int drain = body.consumeDrainHeal();
+                if (drain > 0) {
+                    body.heal(drain);
+                    damageNumbers.add(DamageNumber.heal(body.getX(), body.getY() - 30, drain));
+                }
+            }
+        }
+    }
+
+    /** 敌对怪攻击状态且范围内有战宠时，对战宠造成伤害；战宠血量归零则重伤收回。 */
+    private void checkEnemyAttacksOnPets() {
+        if (activePets.isEmpty() || enemies == null || enemies.isEmpty()) return;
+        for (Pet pet : new java.util.ArrayList<>(activePets)) {
+            Enemy body = pet.getEntity();
+            if (body == null || !body.isAlive()) continue;
+            for (Enemy e : enemies) {
+                if (e == null || !e.isAlive() || e.isPet()) continue;
+                if (e.getState() != Enemy.State.ATTACKING) continue;
+                float dx = e.getX() - body.getX();
+                float dy = e.getY() - body.getY();
+                float reach = e.getAttackRange() + body.getSize() * 0.3f;
+                if (dx * dx + dy * dy > reach * reach) continue;
+                if (!e.consumeAttackFired()) continue;
+
+                AttackResult r = BattleUtil.calculatePetDamage(e, body);
+                if (r != null && r.isHit) {
+                    boolean died = body.takeDamage(r.damageValue);
+                    damageNumbers.add(new DamageNumber(body.getX(), body.getY() - 40, r.damageValue, r.isCrit));
+                    if (died || !body.isAlive()) {
+                        pet.setDowned(true);
+                        PetSystem.getInstance().recallActive();
+                        activePets.clear();
+                        showCenterToast("战宠「" + pet.getName() + "」重伤，已收回！", 1800);
+                    }
+                }
+                break;
+            }
+        }
+    }
+
+    /** 施法型战宠朝目标发射火球(归属战宠，不伤玩家)。 */
+    private void spawnPetGenericFireballs(Enemy pet, float targetX, float targetY) {
+        int count = pet.getGenericFireballCount();
+        if (count <= 0) return;
+        float ex = pet.getX();
+        float ey = pet.getY();
+        float dx = targetX - ex;
+        float dy = targetY - ey;
+        float distance = (float) Math.sqrt(dx * dx + dy * dy);
+        float baseAngle = (float) Math.atan2(dy, dx);
+        float flyDistance = Math.max(distance, 250f);
+        float spreadStep = (count == 1) ? 0f : (count == 2 ? 0.18f : 0.22f);
+        float startAngle = baseAngle - spreadStep * (count - 1) / 2f;
+        for (int i = 0; i < count; i++) {
+            float angle = startAngle + spreadStep * i;
+            float tx = ex + (float) Math.cos(angle) * flyDistance;
+            float ty = ey + (float) Math.sin(angle) * flyDistance;
+            Projectile magicProj = new Projectile(ex, ey, tx, ty, SkillType.MAIN_FIREBALL);
+            magicProj.setFromPet(pet);
+            projectiles.add(magicProj);
+        }
+    }
+
+    /** 绘制战宠的友方绿血条与名字/等级。 */
+    private void drawPetOverlay(Canvas canvas, Enemy body, Pet pet, int offX, int offY) {
+        Paint p = new Paint();
+        p.setAntiAlias(true);
+        float sx = body.getX() + offX;
+        float sy = body.getY() + offY;
+        float size = body.getSize();
+        float barW = size * 1.1f;
+        float barH = 5f;
+        float barX = sx - barW / 2f;
+        float barY = sy - size * 0.95f;
+        p.setColor(Color.argb(180, 30, 30, 30));
+        canvas.drawRoundRect(barX, barY, barX + barW, barY + barH, 2, 2, p);
+        float ratio = body.getMaxHealth() <= 0 ? 0f : body.getHealth() / (float) body.getMaxHealth();
+        p.setColor(Color.argb(230, 80, 220, 110));
+        canvas.drawRoundRect(barX, barY, barX + barW * ratio, barY + barH, 2, 2, p);
+        p.setColor(Color.argb(235, 130, 255, 160));
+        p.setTextSize(16);
+        p.setTextAlign(Paint.Align.CENTER);
+        canvas.drawText(pet.getName() + " Lv." + pet.getLevel() + " ★", sx, barY - 4, p);
     }
 
     private void updateCamera() {
@@ -1181,6 +1582,18 @@ public class GameEngine {
                 if (isEnemyVisible(enemy, padding)) {
                     enemy.draw(canvas, (int) -cameraX, (int) -cameraY);
                 }
+            }
+        }
+
+        // Draw active pets (友方: 精灵图 + 绿血条 + 名字/等级)
+        if (!activePets.isEmpty()) {
+            int petOffX = (int) -cameraX;
+            int petOffY = (int) -cameraY;
+            for (Pet pet : new ArrayList<>(activePets)) {
+                Enemy body = pet.getEntity();
+                if (body == null || !body.isAlive()) continue;
+                body.onDraw(canvas, petOffX, petOffY);
+                drawPetOverlay(canvas, body, pet, petOffX, petOffY);
             }
         }
 

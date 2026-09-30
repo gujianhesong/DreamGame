@@ -14,6 +14,8 @@ public class SaveInfo {
     private List<Integer> defaultHpPotionIds;
     private List<Integer> defaultMpPotionIds;
 
+    private List<PetInfo> petInfos;
+
     private IllusionRealmInfo illusionRealmInfo;
 
     public RoleInfo getRoleInfo() {
@@ -102,5 +104,13 @@ public class SaveInfo {
 
     public void setIllusionRealmInfo(IllusionRealmInfo illusionRealmInfo) {
         this.illusionRealmInfo = illusionRealmInfo;
+    }
+
+    public List<PetInfo> getPetInfos() {
+        return petInfos;
+    }
+
+    public void setPetInfos(List<PetInfo> petInfos) {
+        this.petInfos = petInfos;
     }
 }

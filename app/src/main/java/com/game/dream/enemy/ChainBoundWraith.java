@@ -55,7 +55,7 @@ public class ChainBoundWraith extends Enemy {
         setPropertyExtra(prop);
 
         // HP低、物理攻击低、物理防御极低、速度中、法力高(魔抗高)
-        setProperty(1200, 260, 140, 170, 700);
+        setProperty(1700, 260, 250, 250, 700);
 
         // 等级分布
         resetPropertyWithLevel();

@@ -57,6 +57,8 @@ public abstract class Enemy extends Character {
     protected int baseDefense;
     protected int baseSpeed;
     protected int baseMana;
+    // 战宠捕捉起始等级: 作为等级成长基准。捕捉时 steps=0 → 属性=野生基线(不放大); 之后每升一级从该基准成长
+    protected int petBaseLevel = 1;
     // 仅在首次 setProperty(子类基础属性)时缓存 base*，避免 resetPropertyWithLevel 的等级倍率污染基线
     private boolean baseStatsCached = false;
 
@@ -257,49 +259,32 @@ public abstract class Enemy extends Character {
     }
 
     /**
-     * 战宠: 将实体归一化为 NORMAL 级基础形态并按战宠等级缩放属性。
-     * 反射重建的战宠可能随机到 LEADER/ELITE/BOSS，此方法确保战宠从统一基线成长。
+     * 战宠: 将实体归一化为 NORMAL 级基础形态, 并把 level 记为成长基准(petBaseLevel)。
+     * 反射重建的战宠可能随机到 LEADER/ELITE/BOSS，此方法确保战宠从统一野生基线起步:
+     * 捕捉时属性即野生基线(steps=0, 不按等级放大), 之后每升一级才从该基准成长。
      */
     public void resetAsPet(int level) {
         this.enemyLevel = EnemyLevel.NORMAL;
         this.size = baseSize;
+        this.petBaseLevel = Math.max(1, level);
         applyPetLevelStats(level);
     }
 
     /**
-     * 战宠: 按等级从基础属性线性缩放(每级 +12%)，并回满血。
+     * 战宠: 按“相对捕捉等级”的步数从野生基线线性缩放并回满血。
+     * steps = level - petBaseLevel; 捕捉时 steps=0 → 属性=野生基线(不放大)。
+     * 主属性(气血/攻击/防御/灵力)每级 +6%; 速度单独每级 +1.2%(低成长, 避免高速宠物后期速度失控)。
      */
     public void applyPetLevelStats(int level) {
-        float m = 1f + 0.12f * Math.max(0, level - 1);
+        int steps = Math.max(0, level - petBaseLevel);
+        float m = 1f + 0.06f * steps;    // 主属性倍率
+        float ms = 1f + 0.012f * steps;  // 速度倍率(单独低成长)
         this.maxHealth = Math.max(1, (int) (baseMaxHealth * m));
         this.attackDamage = Math.max(1, (int) (baseAttackDamage * m));
         this.defense = (int) (baseDefense * m);
-        this.speed = Math.max(1, (int) (baseSpeed * m));
+        this.speed = Math.max(1, (int) (baseSpeed * ms));
         this.mana = (int) (baseMana * m);
         this.health = this.maxHealth;
-    }
-
-    // ==================== 战宠属性(体魔力耐敏)派生支持 ====================
-
-    /** 物种原始基线属性访问器(供捕捉时反推战宠初始属性点)。 */
-    public int getBaseMaxHealth() { return baseMaxHealth; }
-    public int getBaseAttackDamage() { return baseAttackDamage; }
-    public int getBaseDefense() { return baseDefense; }
-    public int getBaseSpeed() { return baseSpeed; }
-    public int getBaseMana() { return baseMana; }
-
-    /**
-     * 战宠: 直接写入由 体魔力耐敏 派生的最终战斗属性(不经 setProperty, 不污染 base 缓存、不做波动)。
-     * @param fullHeal true=回满血(升级/疗伤); false=按当前血量比例保留(加点时不白送血)。
-     */
-    public void setPetCombatStats(int hp, int atk, int def, int spd, int mana, boolean fullHeal) {
-        float ratio = this.maxHealth > 0 ? this.health / (float) this.maxHealth : 1f;
-        this.maxHealth = Math.max(1, hp);
-        this.attackDamage = Math.max(0, atk);
-        this.defense = Math.max(0, def);
-        this.speed = Math.max(1, spd);
-        this.mana = Math.max(0, mana);
-        this.health = fullHeal ? this.maxHealth : Math.max(1, Math.round(this.maxHealth * ratio));
     }
 
     public void setPet(boolean pet) {
@@ -1450,11 +1435,11 @@ public abstract class Enemy extends Character {
     public int getExperienceReward() {
         float factor = 1f;
         if (enemyLevel == EnemyLevel.BOSS) {
-            factor = 50f;
+            factor = 30f;
         } else if (enemyLevel == EnemyLevel.ELITE) {
-            factor = 10f;
+            factor = 8f;
         } else if (enemyLevel == EnemyLevel.LEADER) {
-            factor = 3f;
+            factor = 2f;
         }
         return (int) (Utils.getWaveValueInt(propertyExtra.rewardExp, 0.1f) * factor);
     }
@@ -1465,11 +1450,11 @@ public abstract class Enemy extends Character {
     public int getMoneyReward() {
         float factor = 1f;
         if (enemyLevel == EnemyLevel.BOSS) {
-            factor = 50f;
+            factor = 30f;
         } if (enemyLevel == EnemyLevel.ELITE) {
-            factor = 10f;
+            factor = 8f;
         } else if (enemyLevel == EnemyLevel.LEADER) {
-            factor = 3f;
+            factor = 2f;
         }
         return (int) (Utils.getWaveValueInt(propertyExtra.rewardMoney, 0.1f) * factor);
     }

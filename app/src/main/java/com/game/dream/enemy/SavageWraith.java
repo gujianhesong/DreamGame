@@ -67,7 +67,7 @@ public class SavageWraith extends Enemy {
         setPropertyExtra(prop);
 
         // HP高、攻击高、防御中等、速度中等、法力低(魔抗低)
-        setProperty(2000, 700, 400, 200, 300);
+        setProperty(2000, 700, 400, 250, 300);
 
         // 等级分布
         resetPropertyWithLevel();

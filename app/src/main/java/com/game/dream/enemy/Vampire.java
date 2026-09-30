@@ -65,7 +65,7 @@ public class Vampire extends Enemy {
         setPropertyExtra(prop);
 
         // HP中偏高、攻击高、防御中、速度快、法力低(魔抗低)
-        setProperty(1700, 480, 300, 240, 200);
+        setProperty(2300, 850, 600, 300, 300);
 
         // 等级分布
         resetPropertyWithLevel();

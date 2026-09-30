@@ -44,8 +44,8 @@ public class KingYanluo extends Enemy {
         EnemyPropertyExtra prop = new EnemyPropertyExtra();
         prop.detectionRange = 620;
         prop.attackRange = 300;
-        prop.rewardExp = 20000;
-        prop.rewardMoney = 10000;
+        prop.rewardExp = 10000;
+        prop.rewardMoney = 8000;
         setPropertyExtra(prop);
 
         // 基础属性：全面压制

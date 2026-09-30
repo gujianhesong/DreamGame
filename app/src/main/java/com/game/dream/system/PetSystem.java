@@ -40,6 +40,30 @@ public class PetSystem {
     public static final int ROSTER_LEVEL_STEP = 10;
     public static final float CAPTURE_HP_THRESHOLD = 0.40f;
 
+    /**
+     * 各物种的捕捉起始等级: 越强力的物种起始等级越高, 使其被捕捉时即处于对应强度 tier,
+     * 避免所有战宠都从 1 级开始。未列出的物种默认 1 级。按简单类名索引。
+     */
+    private static final java.util.Map<String, Integer> CAPTURE_LEVELS = new java.util.HashMap<>();
+    static {
+        CAPTURE_LEVELS.put("Viper", 3);              // 毒蛇
+        CAPTURE_LEVELS.put("Wolf", 5);               // 野狼
+        CAPTURE_LEVELS.put("WildBoar", 8);           // 野猪
+        CAPTURE_LEVELS.put("Tiger", 10);             // 猛虎
+        CAPTURE_LEVELS.put("Bandit", 15);            // 强盗
+        CAPTURE_LEVELS.put("FoxSpirit", 20);         // 狐狸精
+        CAPTURE_LEVELS.put("GiantSeaTurtle", 25);    // 大海龟
+        CAPTURE_LEVELS.put("ShrimpSoldier", 30);     // 虾兵
+        CAPTURE_LEVELS.put("CrabGeneral", 30);       // 蟹将
+        CAPTURE_LEVELS.put("Yaksha", 35);            // 夜叉
+        CAPTURE_LEVELS.put("LittleGreenDragon", 35); // 小青龙
+        CAPTURE_LEVELS.put("LonelySpirit", 38);      // 孤魂
+        CAPTURE_LEVELS.put("SavageWraith", 38);      // 野鬼
+        CAPTURE_LEVELS.put("ChainBoundWraith", 40);  // 幽灵
+        CAPTURE_LEVELS.put("Vampire", 40);           // 吸血鬼
+        CAPTURE_LEVELS.put("GhostGeneral", 45);      // 鬼将
+    }
+
     private final List<Pet> roster = new java.util.concurrent.CopyOnWriteArrayList<>();
     private volatile Pet activePet = null;
 
@@ -110,66 +134,6 @@ public class PetSystem {
     }
 
     /**
-     * 按怪物基线属性反推战宠初始属性模板(体/魔/力/耐/敏)，
-     * 使 1 级战宠的派生属性近似还原其物种强度(龟耐高、狼力敏高等)。
-     */
-    private int[] deriveStartAttrs(Enemy body) {
-        int ti = Math.max(1, Math.round((body.getBaseMaxHealth() - Pet.BASE_HP) / 8f));
-        int li = Math.max(1, Math.round((body.getBaseAttackDamage() - Pet.BASE_ATK) / 1.5f));
-        int nai = Math.max(1, Math.round((body.getBaseDefense() - Pet.BASE_DEF) / 1.5f));
-        int min = Math.max(1, Math.round((body.getBaseSpeed() - Pet.BASE_SPD) / 1.1f));
-        float moRaw = (body.getBaseMana() - Pet.BASE_MANA - ti * 0.3f - li * 0.4f - nai * 0.2f) / 0.8f;
-        int mo = Math.max(1, Math.round(moRaw));
-        return new int[]{ti, mo, li, nai, min};
-    }
-
-    /** 捕捉时: 用物种初始模板初始化战宠属性并重算战斗属性。 */
-    private void initPetAttrsFromSpecies(Pet pet) {
-        int[] a = deriveStartAttrs(pet.getEntity());
-        pet.setStartAttrs(a[0], a[1], a[2], a[3], a[4]);
-        pet.setAttrs(a[0], a[1], a[2], a[3], a[4]);
-        pet.setRemainPoints(0);
-        pet.recomputeStats(true);
-    }
-
-    /** 手动加点: 消耗 1 点剩余点数加到指定属性(索引见 {@link Pet#ATTR_TI} 等)。 */
-    public boolean allocatePoint(Pet pet, int attrIndex) {
-        if (pet == null) {
-            return false;
-        }
-        if (pet.allocatePoint(attrIndex)) {
-            pet.recomputeStats(false);
-            return true;
-        }
-        return false;
-    }
-
-    /** 退点: 从指定属性退回 1 点为未分配点数(不得低于初始模板)。 */
-    public boolean deallocatePoint(Pet pet, int attrIndex) {
-        if (pet == null) {
-            return false;
-        }
-        if (pet.deallocatePoint(attrIndex)) {
-            pet.recomputeStats(false);
-            return true;
-        }
-        return false;
-    }
-
-    /** 洗点: 自由加点全部退回(属性回到"初始模板 + 升级固定成长"下限), 已获得的自由点数全部退回为未分配。 */
-    public void resetPoints(Pet pet) {
-        if (pet == null) {
-            return;
-        }
-        int level = Math.max(1, pet.getLevel());
-        for (int i = 0; i < Pet.ATTR_COUNT; i++) {
-            pet.setAttr(i, pet.getStartAttr(i) + (level - 1) * Pet.FIXED_POINTS_PER_ATTR_PER_LEVEL);
-        }
-        pet.setRemainPoints((level - 1) * Pet.POINTS_PER_LEVEL);
-        pet.recomputeStats(false);
-    }
-
-    /**
      * 削弱后概率捕捉。
      * 规则: BOSS 不可捕捉; 目标血量需低于 {@link #CAPTURE_HP_THRESHOLD};
      * 成功率 = 0.15 + (1 - 血量比例) * 0.55，上限 0.90; ELITE 结果再乘 0.4。
@@ -205,18 +169,25 @@ public class PetSystem {
         if (body == null) {
             return CaptureOutcome.FAIL_NO_SPECIES;
         }
+        int captureLevel = getCaptureLevel(target.getClass().getSimpleName());
         body.setPet(true);
-        body.resetAsPet(1);
+        body.resetAsPet(captureLevel);
         body.setName(target.getName());
 
         Pet pet = new Pet(body, target.getClass().getName(), target.getName());
-        initPetAttrsFromSpecies(pet);
+        pet.setLevel(captureLevel); // 同步等级(resetAsPet 已置为野生基线属性并回满血; 此等级作为后续成长基准)
         roster.add(pet);
         if (activePet == null) {
             activePet = pet;
         }
         LogUtil.i("PetSystem 捕捉成功: " + pet.getName());
         return CaptureOutcome.SUCCESS;
+    }
+
+    /** 查询物种的捕捉起始等级(按简单类名); 未配置则返回 1。 */
+    public int getCaptureLevel(String simpleClassName) {
+        Integer lv = CAPTURE_LEVELS.get(simpleClassName);
+        return lv == null ? 1 : Math.max(1, lv);
     }
 
     /** 升级到下一级所需经验。 */
@@ -236,16 +207,10 @@ public class PetSystem {
         while (pet.getExp() >= expToNext(pet.getLevel())) {
             pet.setExp(pet.getExp() - expToNext(pet.getLevel()));
             pet.setLevel(pet.getLevel() + 1);
-            // 固定成长: 体/魔/力/耐/敏 各 +1
-            for (int i = 0; i < Pet.ATTR_COUNT; i++) {
-                pet.setAttr(i, pet.getAttr(i) + Pet.FIXED_POINTS_PER_ATTR_PER_LEVEL);
-            }
-            // 自由点数: 等待玩家分配
-            pet.setRemainPoints(pet.getRemainPoints() + Pet.POINTS_PER_LEVEL);
             leveled = true;
         }
         if (leveled) {
-            pet.recomputeStats(true); // 升级回满血; 新点数等待玩家分配
+            pet.recomputeStats(true); // 按新等级缩放属性并回满血
         }
         return leveled;
     }
@@ -263,17 +228,6 @@ public class PetSystem {
                     pet.getHpRatio(),
                     pet == activePet
             );
-            info.setPropTi(pet.getAttr(Pet.ATTR_TI));
-            info.setPropMo(pet.getAttr(Pet.ATTR_MO));
-            info.setPropLi(pet.getAttr(Pet.ATTR_LI));
-            info.setPropNai(pet.getAttr(Pet.ATTR_NAI));
-            info.setPropMin(pet.getAttr(Pet.ATTR_MIN));
-            info.setStartTi(pet.getStartAttr(Pet.ATTR_TI));
-            info.setStartMo(pet.getStartAttr(Pet.ATTR_MO));
-            info.setStartLi(pet.getStartAttr(Pet.ATTR_LI));
-            info.setStartNai(pet.getStartAttr(Pet.ATTR_NAI));
-            info.setStartMin(pet.getStartAttr(Pet.ATTR_MIN));
-            info.setRemainPoints(pet.getRemainPoints());
             list.add(info);
         }
         return list;
@@ -302,33 +256,15 @@ public class PetSystem {
             }
             body.setPet(true);
             int level = Math.max(1, info.getLevel());
-            body.resetAsPet(level);
+            // 成长基准=该物种捕捉等级(非存档等级), 使读档属性口径与捕捉时一致(捕捉即野生基线)
+            body.resetAsPet(getCaptureLevel(clazz.getSimpleName()));
             body.setName(info.getName());
 
             Pet pet = new Pet(body, info.getSpeciesClass(), info.getName());
             pet.setLevel(level);
             pet.setExp(Math.max(0, info.getExp()));
 
-            boolean hasAttrs = (info.getPropTi() + info.getPropMo() + info.getPropLi()
-                    + info.getPropNai() + info.getPropMin()
-                    + info.getStartTi() + info.getStartMo() + info.getStartLi()
-                    + info.getStartNai() + info.getStartMin()) > 0;
-            if (hasAttrs) {
-                pet.setStartAttrs(info.getStartTi(), info.getStartMo(), info.getStartLi(),
-                        info.getStartNai(), info.getStartMin());
-                pet.setAttrs(info.getPropTi(), info.getPropMo(), info.getPropLi(),
-                        info.getPropNai(), info.getPropMin());
-                pet.setRemainPoints(Math.max(0, info.getRemainPoints()));
-            } else {
-                // 旧存档迁移: 按物种基线反推初始属性, 补上已升级的固定成长, 已获得的自由点数补发为未分配
-                int[] a = deriveStartAttrs(body);
-                pet.setStartAttrs(a[0], a[1], a[2], a[3], a[4]);
-                int fixed = (level - 1) * Pet.FIXED_POINTS_PER_ATTR_PER_LEVEL;
-                pet.setAttrs(a[0] + fixed, a[1] + fixed, a[2] + fixed, a[3] + fixed, a[4] + fixed);
-                pet.setRemainPoints((level - 1) * Pet.POINTS_PER_LEVEL);
-            }
-
-            // 先按属性重算战斗属性(满血), 再按存档血量比例回设
+            // 按当前等级相对捕捉基准缩放属性(满血), 再按存档血量比例回设
             pet.recomputeStats(true);
             float ratio = Math.max(0.05f, Math.min(1f, info.getHpRatio()));
             body.setHealth((int) (body.getMaxHealth() * ratio));

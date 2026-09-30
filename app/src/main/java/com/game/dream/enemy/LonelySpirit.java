@@ -58,7 +58,7 @@ public class LonelySpirit extends Enemy {
         setPropertyExtra(prop);
 
         // HP中低、攻击(物理)低、防御极低、速度慢、法力高(魔抗高)
-        setProperty(1500, 200, 200, 120, 600);
+        setProperty(1500, 200, 200, 220, 600);
 
         // 等级分布
         resetPropertyWithLevel();

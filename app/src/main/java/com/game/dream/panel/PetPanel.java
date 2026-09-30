@@ -20,8 +20,8 @@ import java.util.Map;
  * 战宠花名册面板(左列表 + 右详情)。
  * 左侧: 已收服战宠的可滚动列表, 点击某项即选中。
  * 右侧: 选中战宠的详细信息 —— 名称 / 类型 / 等级 / 经验 / 气血，
- *       体魔力耐敏属性加点(+/-、剩余点数、洗点)，
- *       以及 出战-收回 / 疗伤 / 改名 / 洗点 / 放生(二次确认) 操作。
+ *       战斗属性(气血/灵力/攻击/防御/速度, 随等级自动成长, 只读)，
+ *       以及 出战-收回 / 疗伤 / 改名 / 放生(二次确认) 操作。
  * 直接操作 {@link PetSystem} 单例；出战/收回由 GameEngine 每帧自动同步到世界。
  *
  * 线程安全: 绘制线程与触摸线程都会访问本面板，故不缓存共享的条目矩形列表，
@@ -39,20 +39,10 @@ public class PetPanel {
     private Rect detailDeployButton;   // 出战 / 收回
     private Rect detailHealButton;     // 疗伤
     private Rect detailRenameButton;   // 改名
-    private Rect detailResetButton;    // 洗点
     private Rect detailReleaseButton;  // 放生
 
-    // 属性加点行(体/魔/力/耐/敏)的 +/- 按钮与几何
-    private final Rect[] attrMinus = new Rect[Pet.ATTR_COUNT];
-    private final Rect[] attrPlus = new Rect[Pet.ATTR_COUNT];
-    private float attrRowsTop;
-    private float attrRowH;
-    private int attrContentLeft;
-    private int attrContentRight;
-
-    private static final String[] ATTR_LABELS = {"体质", "魔力", "力量", "耐力", "敏捷"};
-    /** 每项基础属性同行展示的派生战斗属性(参照人物属性面板摆放): 体质→气血, 魔力→灵力, 力量→攻击, 耐力→防御, 敏捷→速度。 */
-    private static final String[] DERIVED_LABELS = {"气血", "灵力", "攻击", "防御", "速度"};
+    /** 只读战斗属性展示标签(方案A: 随等级自动成长, 无手动加点)。 */
+    private static final String[] STAT_LABELS = {"气血", "灵力", "攻击", "防御", "速度"};
 
     // 当前选中的战宠(volatile: 绘制线程与触摸线程共享)
     private volatile Pet selectedPet = null;
@@ -115,12 +105,7 @@ public class PetPanel {
         this.detailDeployButton = new Rect();
         this.detailHealButton = new Rect();
         this.detailRenameButton = new Rect();
-        this.detailResetButton = new Rect();
         this.detailReleaseButton = new Rect();
-        for (int i = 0; i < Pet.ATTR_COUNT; i++) {
-            attrMinus[i] = new Rect();
-            attrPlus[i] = new Rect();
-        }
     }
 
     public void toggleVisibility() {
@@ -170,36 +155,19 @@ public class PetPanel {
         detailArea = new Rect(detailLeft, areaTop, panelBounds.right - pad, contentBottom);
 
         int p = 28;
-        attrContentLeft = detailArea.left + p;
-        attrContentRight = detailArea.right - p;
-        int contentW = attrContentRight - attrContentLeft;
+        int contentLeft = detailArea.left + p;
+        int contentW = (detailArea.right - p) - contentLeft;
 
-        // 详情区底部五个操作按钮
+        // 详情区底部四个操作按钮
         int btnH = 76;
         int btnGap = 14;
         int btnY = detailArea.bottom - 30 - btnH;
-        int bw = (contentW - 4 * btnGap) / 5;
-        int bx = attrContentLeft;
+        int bw = (contentW - 3 * btnGap) / 4;
+        int bx = contentLeft;
         detailDeployButton.set(bx, btnY, bx + bw, btnY + btnH);
         detailHealButton.set(bx + (bw + btnGap), btnY, bx + 2 * bw + btnGap, btnY + btnH);
         detailRenameButton.set(bx + 2 * (bw + btnGap), btnY, bx + 3 * bw + 2 * btnGap, btnY + btnH);
-        detailResetButton.set(bx + 3 * (bw + btnGap), btnY, bx + 4 * bw + 3 * btnGap, btnY + btnH);
-        detailReleaseButton.set(bx + 4 * (bw + btnGap), btnY, bx + 5 * bw + 4 * btnGap, btnY + btnH);
-
-        // 属性加点行几何(位于血条与底部按钮之间)
-        int pmBtn = 44;
-        attrRowsTop = detailArea.top + 246;
-        float attrRowsBottom = btnY - 74;
-        attrRowH = (attrRowsBottom - attrRowsTop) / Pet.ATTR_COUNT;
-        if (attrRowH < 40) {
-            attrRowH = 40;
-        }
-        for (int i = 0; i < Pet.ATTR_COUNT; i++) {
-            int cy = (int) (attrRowsTop + attrRowH * i + attrRowH / 2);
-            int half = pmBtn / 2;
-            attrPlus[i].set(attrContentRight - pmBtn, cy - half, attrContentRight, cy + half);
-            attrMinus[i].set(attrPlus[i].left - 10 - pmBtn, cy - half, attrPlus[i].left - 10, cy + half);
-        }
+        detailReleaseButton.set(bx + 3 * (bw + btnGap), btnY, bx + 4 * bw + 3 * btnGap, btnY + btnH);
 
         // 放生确认框(面板居中)
         int boxW = Math.min(520, width - 60);
@@ -349,7 +317,7 @@ public class PetPanel {
         paint.setColor(selected ? Color.argb(140, 55, 80, 62) : Color.argb(90, 40, 50, 44));
         canvas.drawRoundRect(x, y, x + w, y + ROW_HEIGHT, 10, 10, paint);
 
-        // 边框(选中=金, 出战=绿, 重伤=红, 待机=灰)
+        // 边框(选中=金, 出战=绿, 重伤=红, 休息中=灰)
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(selected ? 3 : 2);
         if (selected) {
@@ -387,7 +355,7 @@ public class PetPanel {
             statusText = "重伤";
             paint.setColor(Color.rgb(255, 120, 120));
         } else {
-            statusText = "待机";
+            statusText = "休息中";
             paint.setColor(Color.rgb(180, 180, 190));
         }
         canvas.drawText(statusText, x + 16, y + 58, paint);
@@ -467,7 +435,7 @@ public class PetPanel {
             statusText = "[重伤]";
             paint.setColor(Color.rgb(255, 120, 120));
         } else {
-            statusText = "[待机]";
+            statusText = "[休息中]";
             paint.setColor(Color.rgb(180, 180, 190));
         }
         canvas.drawText(statusText, x + nameW + 22, nameY - 4, paint);
@@ -497,7 +465,7 @@ public class PetPanel {
         int expToNext = Math.max(1, PetSystem.getInstance().expToNext(pet.getLevel()));
         float expY = detailArea.top + 136;
         float expRatio = Math.max(0f, Math.min(1f, pet.getExp() / (float) expToNext));
-        drawBar(canvas, paint, x, expY, contentW, 20, expRatio,
+        drawBar(canvas, paint, x, expY, contentW, 26, expRatio,
                 Color.rgb(110, 180, 255), "经验 " + pet.getExp() + " / " + expToNext);
 
         // 气血条
@@ -506,106 +474,52 @@ public class PetPanel {
         int maxHp = body != null ? body.getMaxHealth() : 1;
         float hpRatio = maxHp <= 0 ? 0f : Math.max(0f, Math.min(1f, curHp / (float) maxHp));
         float hpY = detailArea.top + 172;
-        drawBar(canvas, paint, x, hpY, contentW, 20, hpRatio,
+        drawBar(canvas, paint, x, hpY, contentW, 26, hpRatio,
                 downed ? Color.rgb(180, 90, 90) : Color.rgb(90, 220, 120), "气血 " + curHp + " / " + maxHp);
 
-        // 属性加点区(每行同行展示派生战斗属性)
-        drawAttributeSection(canvas, paint, pet, x, contentW);
+        // 战斗属性(只读, 随等级自动成长)
+        drawCombatStats(canvas, paint, pet, x, contentW);
 
         // 操作按钮
         drawItemButton(canvas, paint, detailDeployButton, isActive ? "收回" : "出战",
                 isActive ? Color.argb(200, 90, 120, 200) : Color.argb(200, 60, 160, 90));
         drawItemButton(canvas, paint, detailHealButton, "疗伤", Color.argb(200, 70, 150, 160));
         drawItemButton(canvas, paint, detailRenameButton, "改名", Color.argb(200, 150, 120, 200));
-        drawItemButton(canvas, paint, detailResetButton, "洗点", Color.argb(200, 190, 150, 70));
         drawItemButton(canvas, paint, detailReleaseButton, "放生", Color.argb(200, 170, 80, 80));
     }
 
-    private void drawAttributeSection(Canvas canvas, Paint paint, Pet pet, float x, float contentW) {
-        // 小标题 + 剩余点数
-        float headerY = attrRowsTop - 16;
+    /** 只读展示战宠战斗属性(方案A: 随等级自动成长, 无加点)。 */
+    private void drawCombatStats(Canvas canvas, Paint paint, Pet pet, float x, float contentW) {
+        float headerY = detailArea.top + 254;
         paint.setTextAlign(Paint.Align.LEFT);
         paint.setTextSize(26);
         paint.setColor(Color.rgb(150, 220, 165));
-        canvas.drawText("属性加点", x, headerY, paint);
-        paint.setTextAlign(Paint.Align.RIGHT);
-        int remain = pet.getRemainPoints();
-        paint.setColor(remain > 0 ? Color.rgb(255, 220, 120) : Color.rgb(150, 155, 150));
-        canvas.drawText("剩余点数: " + remain, x + contentW, headerY, paint);
+        canvas.drawText("战斗属性", x, headerY, paint);
 
-        boolean canPlus = remain > 0;
-        for (int i = 0; i < Pet.ATTR_COUNT; i++) {
-            float cy = attrRowsTop + attrRowH * i + attrRowH / 2;
-            int val = pet.getAttr(i);
-            int floor = pet.getAttrFloor(i);
-
-            // 行底色(隔行)
+        int[] values = {
+                pet.getDerivedMaxHealth(),
+                pet.getDerivedMana(),
+                pet.getDerivedAttack(),
+                pet.getDerivedDefense(),
+                pet.getDerivedSpeed()
+        };
+        float rowH = 46;
+        float startY = headerY + 34;
+        for (int i = 0; i < STAT_LABELS.length; i++) {
+            float cy = startY + rowH * i;
             if (i % 2 == 0) {
                 paint.setStyle(Paint.Style.FILL);
                 paint.setColor(Color.argb(40, 255, 255, 255));
-                canvas.drawRoundRect(x, cy - attrRowH / 2 + 3, x + contentW, cy + attrRowH / 2 - 3, 6, 6, paint);
+                canvas.drawRoundRect(x, cy - 16, x + contentW, cy + 16, 6, 6, paint);
             }
-
-            // 属性名
             paint.setTextAlign(Paint.Align.LEFT);
             paint.setTextSize(26);
             paint.setColor(Color.rgb(210, 220, 210));
-            canvas.drawText(ATTR_LABELS[i], x + 10, cy + 9, paint);
-
-            // 属性值
+            canvas.drawText(STAT_LABELS[i], x + 12, cy + 9, paint);
             paint.setTextSize(28);
-            paint.setColor(val > floor ? Color.rgb(130, 255, 160) : Color.WHITE);
-            String vs = String.valueOf(val);
-            float vx = x + 120;
-            canvas.drawText(vs, vx, cy + 9, paint);
-            // 自由加点标注(不含升级固定成长)
-            if (val > floor) {
-                paint.setTextSize(20);
-                paint.setColor(Color.rgb(130, 220, 150));
-                canvas.drawText("(+" + (val - floor) + ")", vx + paint.measureText(vs) + 34, cy + 9, paint);
-            }
-
-            // 派生战斗属性(与基础属性同行, 名称与数值分别按固定列左对齐, 保证各行对齐)
-            paint.setTextAlign(Paint.Align.LEFT);
-            paint.setTextSize(24);
             paint.setColor(Color.rgb(255, 225, 150));
-            float derivedLabelX = x + contentW - 330;
-            float derivedValueX = x + contentW - 260;
-            canvas.drawText(DERIVED_LABELS[i], derivedLabelX, cy + 9, paint);
-            canvas.drawText(String.valueOf(derivedValue(pet, i)), derivedValueX, cy + 9, paint);
-
-            // -/+ 按钮
-            boolean canMinus = val > floor;
-            drawPmButton(canvas, paint, attrMinus[i], "-", canMinus);
-            drawPmButton(canvas, paint, attrPlus[i], "+", canPlus);
+            canvas.drawText(String.valueOf(values[i]), x + 130, cy + 9, paint);
         }
-    }
-
-    /** 按属性行索引取对应派生战斗属性值: 0气血 1灵力 2攻击 3防御 4速度。 */
-    private int derivedValue(Pet pet, int index) {
-        switch (index) {
-            case 0: return pet.getDerivedMaxHealth();
-            case 1: return pet.getDerivedMana();
-            case 2: return pet.getDerivedAttack();
-            case 3: return pet.getDerivedDefense();
-            case 4: return pet.getDerivedSpeed();
-            default: return 0;
-        }
-    }
-
-    private void drawPmButton(Canvas canvas, Paint paint, Rect btn, String symbol, boolean enabled) {
-        paint.setStyle(Paint.Style.FILL);
-        paint.setColor(enabled ? Color.argb(210, 60, 130, 80) : Color.argb(120, 70, 74, 72));
-        canvas.drawRoundRect(btn.left, btn.top, btn.right, btn.bottom, 8, 8, paint);
-        paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(2);
-        paint.setColor(enabled ? Color.rgb(190, 255, 205) : Color.rgb(120, 124, 122));
-        canvas.drawRoundRect(btn.left, btn.top, btn.right, btn.bottom, 8, 8, paint);
-        paint.setStyle(Paint.Style.FILL);
-        paint.setTextSize(30);
-        paint.setTextAlign(Paint.Align.CENTER);
-        paint.setColor(enabled ? Color.WHITE : Color.rgb(140, 144, 142));
-        canvas.drawText(symbol, btn.centerX(), btn.centerY() + 11, paint);
     }
 
     private void drawBar(Canvas canvas, Paint paint, float bx, float by, float bw, float bh,
@@ -621,7 +535,7 @@ public class PetPanel {
         canvas.drawRoundRect(bx, by, bx + bw, by + bh, 6, 6, paint);
         paint.setStyle(Paint.Style.FILL);
         paint.setColor(Color.WHITE);
-        paint.setTextSize(15);
+        paint.setTextSize(21);
         paint.setTextAlign(Paint.Align.CENTER);
         canvas.drawText(text, bx + bw / 2, by + bh - 5, paint);
     }
@@ -734,23 +648,9 @@ public class PetPanel {
             return true;
         }
 
-        // 详情区操作(属性加点 + 功能按钮)
+        // 详情区操作(功能按钮)
         Pet sel = resolveSelected();
         if (sel != null) {
-            for (int i = 0; i < Pet.ATTR_COUNT; i++) {
-                if (TouchUtil.checkIsInTouchRectFloat(attrPlus[i], x, y)) {
-                    if (!PetSystem.getInstance().allocatePoint(sel, i)) {
-                        GameEngine.getInstance().showCenterToast("没有可分配的属性点", 1000);
-                    }
-                    return true;
-                }
-                if (TouchUtil.checkIsInTouchRectFloat(attrMinus[i], x, y)) {
-                    if (!PetSystem.getInstance().deallocatePoint(sel, i)) {
-                        GameEngine.getInstance().showCenterToast("该属性已是初始值", 1000);
-                    }
-                    return true;
-                }
-            }
             if (TouchUtil.checkIsInTouchRectFloat(detailDeployButton, x, y)) {
                 boolean wasActive = sel == PetSystem.getInstance().getActivePet();
                 if (wasActive) {
@@ -769,11 +669,6 @@ public class PetPanel {
             }
             if (TouchUtil.checkIsInTouchRectFloat(detailRenameButton, x, y)) {
                 GameEngine.getInstance().promptRenamePet(sel);
-                return true;
-            }
-            if (TouchUtil.checkIsInTouchRectFloat(detailResetButton, x, y)) {
-                PetSystem.getInstance().resetPoints(sel);
-                GameEngine.getInstance().showCenterToast("已洗点，自由属性点已全部退回", 1200);
                 return true;
             }
             if (TouchUtil.checkIsInTouchRectFloat(detailReleaseButton, x, y)) {

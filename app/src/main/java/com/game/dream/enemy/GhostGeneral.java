@@ -68,8 +68,8 @@ public class GhostGeneral extends Enemy {
         prop.rewardMoney = 500;
         setPropertyExtra(prop);
 
-        // 全属性极高: HP2600, ATK720, DEF520, SPD280, MANA650
-        setProperty(2600, 720, 520, 280, 650);
+        // 全属性极高
+        setProperty(3000, 1000, 800, 350, 700);
 
         // 强制等级分布（不出NORMAL）
         forcedLevelReset();

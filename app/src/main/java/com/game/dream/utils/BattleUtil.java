@@ -168,7 +168,7 @@ public class BattleUtil {
 
         if (castBaseValue > 0) {
             int roleMana = roleInfo.getMana();
-            int enemyMana = roleInfo.getMana();
+            int enemyMana = enemy.getMana();
 
             //装备法术伤害增加(计算伤害结果前的加成)
             float magicValueRatio = ItemSystem.getInstance().getTotalXiLianPropWithAllEquiped(XiLianType.XL_magicValueRatio);

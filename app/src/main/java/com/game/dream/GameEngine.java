@@ -283,17 +283,25 @@ public class GameEngine {
 
     /**
      * 查找当前地图中仍存活的 BOSS 级敌人。
-     * 用于迷宫出口封印判定：只要还有 BOSS 存活，玩家就无法从出口离开。
-     *
-     * @return 第一个存活的 BOSS，若无则返回 null
+     * 用于普通迷宫出口封印：只要还有 BOSS 存活，玩家就无法从出口离开。
      */
     private Enemy findAliveBossInCurrentMap() {
+        return findAliveEnemyOfLevel(Enemy.EnemyLevel.BOSS);
+    }
+
+    /**
+     * 地狱迷宫只由关卡 BOSS 守关。该层关卡 BOSS 全部击败后，才能从出口进入下一关。
+     */
+    private Enemy findAliveStageBossInCurrentMap() {
+        return findAliveEnemyOfLevel(Enemy.EnemyLevel.STAGE_BOSS);
+    }
+
+    private Enemy findAliveEnemyOfLevel(Enemy.EnemyLevel level) {
         if (enemies == null || enemies.isEmpty()) {
             return null;
         }
         for (Enemy enemy : enemies) {
-            if (enemy != null && enemy.isAlive()
-                    && enemy.getEnemyLevel() == Enemy.EnemyLevel.BOSS) {
+            if (enemy != null && enemy.isAlive() && enemy.getEnemyLevel() == level) {
                 return enemy;
             }
         }
@@ -345,8 +353,10 @@ public class GameEngine {
         // 检查迷宫出口传送
         if (MapSystem.getInstance().isCurrentMazaMap() && MazeSystem.getInstance().isInitialized()) {
             if (MazeSystem.getInstance().checkExitPortal(player.getX(), player.getY())) {
-                // 有存活 BOSS 时封锁出口：必须击杀 BOSS 才能离开迷宫
-                Enemy aliveBoss = findAliveBossInCurrentMap();
+                // 普通迷宫由 BOSS 守关；地狱迷宫只由关卡 BOSS 守关
+                Enemy aliveBoss = MapSystem.getInstance().isCurrentHellMazeMap()
+                        ? findAliveStageBossInCurrentMap()
+                        : findAliveBossInCurrentMap();
                 if (aliveBoss != null) {
                     long now = System.currentTimeMillis();
                     if (now - lastBossGateToastTime > 2000) {
@@ -636,7 +646,7 @@ public class GameEngine {
                                 player.applyKnockback(enemy.getX(), enemy.getY(), knockbackForce, knockbackDuration);
 
                                 // BOSS跳跃砸击: 命中后眩晕1秒
-                                if (enemy.getEnemyLevel() == Enemy.EnemyLevel.BOSS
+                                if (enemy.isBossTier()
                                         && enemy.getCurrentAttackType() == Enemy.AttackType.LEAP_SLAM) {
                                     player.applyCC(Character.CrowdControlType.STUN, 1000);
                                     showCenterToast("你被泰山压顶眩晕了!", 1000);
@@ -1081,6 +1091,7 @@ public class GameEngine {
                             Enemy enemy = proj.getFromEnemy();
                             switch (enemy.getEnemyLevel()){
                                 case BOSS:
+                                case STAGE_BOSS:
                                     skillLevel = 10;
                                     break;
                                 case ELITE:
@@ -1261,7 +1272,7 @@ public class GameEngine {
             final float range = 220f;
             for (Enemy e : enemies) {
                 if (e == null || !e.isAlive() || e.isPet()) continue;
-                if (e.getEnemyLevel() == Enemy.EnemyLevel.BOSS) continue;
+                if (e.isBossTier()) continue;
                 if (e.getMaxHealth() > 0
                         && e.getHealth() / (float) e.getMaxHealth() > PetSystem.CAPTURE_HP_THRESHOLD) continue;
                 float dx = e.getX() - player.getX();
@@ -1286,7 +1297,7 @@ public class GameEngine {
         float captureRange = 220f;
         for (Enemy e : enemies) {
             if (e == null || !e.isAlive() || e.isPet()) continue;
-            if (e.getEnemyLevel() == Enemy.EnemyLevel.BOSS) continue;
+            if (e.isBossTier()) continue;
             float dx = e.getX() - player.getX();
             float dy = e.getY() - player.getY();
             float d = dx * dx + dy * dy;
@@ -1500,7 +1511,7 @@ public class GameEngine {
         if (!isPlayerInPrison() && player != null
                 && DragonLightningZone.contains(zone.getX(), zone.getY(), player.getX(), player.getY())) {
             int skillLevel = 1;
-            if (caster.getEnemyLevel() == Enemy.EnemyLevel.BOSS) {
+            if (caster.isBossTier()) {
                 skillLevel = 10;
             } else if (caster.getEnemyLevel() == Enemy.EnemyLevel.ELITE) {
                 skillLevel = 5;

@@ -14,7 +14,7 @@ public class ProssibleDropsUtil {
         if(enemy == null) return;
 
         Enemy.EnemyLevel enemyLevel = enemy.getEnemyLevel();
-        if (enemyLevel == Enemy.EnemyLevel.BOSS) {
+        if (enemy.isBossTier()) {
             //药品
             enemy.addPossibleDrop(ItemCreator.createHp2_1_Zishiying());
             enemy.addPossibleDrop(ItemCreator.createHp2_2_Liuhuangcao());
@@ -90,7 +90,7 @@ public class ProssibleDropsUtil {
         if(enemy == null) return;
         
         Enemy.EnemyLevel enemyLevel = enemy.getEnemyLevel();
-        if (enemyLevel == Enemy.EnemyLevel.BOSS) {
+        if (enemy.isBossTier()) {
             //药品
             enemy.addPossibleDrop(ItemCreator.createHp2_1_Zishiying());
             enemy.addPossibleDrop(ItemCreator.createHp2_2_Liuhuangcao());
@@ -168,7 +168,7 @@ public class ProssibleDropsUtil {
         if(enemy == null) return;
 
         Enemy.EnemyLevel enemyLevel = enemy.getEnemyLevel();
-        if (enemyLevel == Enemy.EnemyLevel.BOSS) {
+        if (enemy.isBossTier()) {
             //药品
             enemy.addPossibleDrop(ItemCreator.createHp2_1_Zishiying());
             enemy.addPossibleDrop(ItemCreator.createHp2_2_Liuhuangcao());
@@ -246,7 +246,7 @@ public class ProssibleDropsUtil {
         if(enemy == null) return;
 
         Enemy.EnemyLevel enemyLevel = enemy.getEnemyLevel();
-        if (enemyLevel == Enemy.EnemyLevel.BOSS) {
+        if (enemy.isBossTier()) {
             //药品
             enemy.addPossibleDrop(ItemCreator.createHp2_3_Fengweicao());
             enemy.addPossibleDrop(ItemCreator.createHp2_4_Longzhixinxie());
@@ -324,7 +324,7 @@ public class ProssibleDropsUtil {
         if(enemy == null) return;
 
         Enemy.EnemyLevel enemyLevel = enemy.getEnemyLevel();
-        if (enemyLevel == Enemy.EnemyLevel.BOSS) {
+        if (enemy.isBossTier()) {
             //药品
             enemy.addPossibleDrop(ItemCreator.createHp2_3_Fengweicao());
             enemy.addPossibleDrop(ItemCreator.createHp2_4_Longzhixinxie());

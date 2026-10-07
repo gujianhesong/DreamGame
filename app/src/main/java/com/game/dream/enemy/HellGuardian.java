@@ -20,7 +20,7 @@ import java.util.List;
  * 黑无常(BLACK):     锁链法术，投掷通用火球 + 幽绿鬼火光环
  * 白无常(WHITE):     哭丧棒法术，投掷通用火球 + 白雾飘散
  *
- * 属性: 各类型均强制 BOSS 等级，HP高、攻击高、防御中偏高、魔抗分化
+ * 属性: 牛头、马面、黑无常、白无常均为关卡BOSS，必须击败才能离开本层。HP高、攻击高、防御中偏高、魔抗分化
  */
 public class HellGuardian extends Enemy {
 
@@ -89,8 +89,8 @@ public class HellGuardian extends Enemy {
         }
         setPropertyExtra(prop);
 
-        // 强制 BOSS
-        enemyLevel = EnemyLevel.BOSS;
+        // 四名守卫都是关卡BOSS，和第4层阎罗王一样必须击败才能离开关卡
+        enemyLevel = EnemyLevel.STAGE_BOSS;
         size = size * 3;
         setProperty(maxHealth * 28, attackDamage * 4, defense * 5, speed * 4, mana * 4);
     }

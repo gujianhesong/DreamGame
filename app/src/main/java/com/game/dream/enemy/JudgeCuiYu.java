@@ -50,8 +50,8 @@ public class JudgeCuiYu extends Enemy {
         // 基础属性：HP高、攻击高、防御中偏高、速度慢、法力高(魔抗高)
         setProperty(3200, 720, 460, 130, 620);
 
-        // 强制 BOSS
-        enemyLevel = EnemyLevel.BOSS;
+        // 地狱迷宫第3层关卡BOSS
+        enemyLevel = EnemyLevel.STAGE_BOSS;
         size = size * 3;
         setProperty(maxHealth * 30, attackDamage * 4, defense * 5, speed * 4, mana * 4);
     }

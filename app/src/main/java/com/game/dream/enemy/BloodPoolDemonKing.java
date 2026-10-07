@@ -65,8 +65,8 @@ public class BloodPoolDemonKing extends Enemy {
         // 基础属性：HP极高、攻击高、防御中、速度中、法力低(魔抗低)
         setProperty(2800, 800, 420, 180, 260);
 
-        // 强制 BOSS 等级
-        enemyLevel = EnemyLevel.BOSS;
+        // 地狱迷宫第2层关卡BOSS
+        enemyLevel = EnemyLevel.STAGE_BOSS;
         size = size * 3;
         setProperty(maxHealth * 30, attackDamage * 4, defense * 5, speed * 4, mana * 4);
     }

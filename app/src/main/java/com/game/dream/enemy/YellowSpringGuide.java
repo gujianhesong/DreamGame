@@ -48,8 +48,8 @@ public class YellowSpringGuide extends Enemy {
         // 基础属性（BOSS 加成前）：HP高、攻击高、防御高、速度慢、法力中
         setProperty(2200, 550, 380, 110, 500);
 
-        // 强制 BOSS 等级（跳过随机）
-        enemyLevel = EnemyLevel.BOSS;
+        // 地狱迷宫第1层关卡BOSS（跳过随机等级）
+        enemyLevel = EnemyLevel.STAGE_BOSS;
         size = size * 3;
         setProperty(maxHealth * 30, attackDamage * 4, defense * 5, speed * 4, mana * 4);
     }

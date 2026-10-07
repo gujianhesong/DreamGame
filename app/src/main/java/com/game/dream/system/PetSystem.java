@@ -142,7 +142,7 @@ public class PetSystem {
         if (target == null || !target.isAlive() || target.isPet()) {
             return CaptureOutcome.FAIL_INVALID;
         }
-        if (target.getEnemyLevel() == Enemy.EnemyLevel.BOSS) {
+        if (target.isBossTier()) {
             return CaptureOutcome.FAIL_BOSS;
         }
         if (isRosterFull()) {

@@ -39,6 +39,8 @@ public abstract class Enemy extends Character {
         LEADER,
         ELITE,
         BOSS,
+        /** 关卡守关者。击败后才能离开当前关卡。 */
+        STAGE_BOSS,
     }
 
     protected int health;
@@ -293,6 +295,11 @@ public abstract class Enemy extends Character {
 
     public boolean isPet() {
         return isPet;
+    }
+
+    /** 野生 BOSS 与关卡 BOSS 共用首领级战斗规则（火球、召唤、掉落、经验）。 */
+    public boolean isBossTier() {
+        return enemyLevel == EnemyLevel.BOSS || enemyLevel == EnemyLevel.STAGE_BOSS;
     }
 
     /**
@@ -842,7 +849,7 @@ public abstract class Enemy extends Character {
      * 通用火球数量：首领1颗、精英2颗、BOSS3颗
      */
     public int getGenericFireballCount() {
-        if (enemyLevel == EnemyLevel.BOSS) {
+        if (isBossTier()) {
             return 3;
         } else if (enemyLevel == EnemyLevel.ELITE) {
             return 2;
@@ -869,7 +876,7 @@ public abstract class Enemy extends Character {
             chance = 0.07f;
         }
 
-        if (enemyLevel == EnemyLevel.BOSS) {
+        if (isBossTier()) {
             chance *= 1.25f;
         } else if (enemyLevel == EnemyLevel.ELITE) {
             chance *= 1.1f;
@@ -1127,7 +1134,7 @@ public abstract class Enemy extends Character {
             }
 
             // BOSS 低血量：优先使用高威胁招式
-            if (enemyLevel == EnemyLevel.BOSS && hpRatio <= 0.5f) {
+            if (isBossTier() && hpRatio <= 0.5f) {
                 List<AttackType> finisherTypes = filterFinisherAttacks(candidates);
                 if (!finisherTypes.isEmpty()) {
                     candidates = finisherTypes;
@@ -1282,7 +1289,7 @@ public abstract class Enemy extends Character {
                 if (hpRatio <= 0.5f) {
                     weight *= 2.2f;
                 }
-                if (enemyLevel == EnemyLevel.BOSS) {
+                if (isBossTier()) {
                     weight *= 1.4f;
                 }
                 break;
@@ -1356,14 +1363,14 @@ public abstract class Enemy extends Character {
      * Check if enemy can cast magic spell
      */
     public boolean canCastSpell() {
-        return (enemyLevel == EnemyLevel.BOSS || enemyLevel == EnemyLevel.ELITE || enemyLevel == EnemyLevel.LEADER);
+        return (isBossTier() || enemyLevel == EnemyLevel.ELITE || enemyLevel == EnemyLevel.LEADER);
     }
 
     /**
      * 精英/BOSS无视迷宫围墙阻挡
      */
     public boolean ignoresMazeWall() {
-        return (enemyLevel == EnemyLevel.BOSS || enemyLevel == EnemyLevel.ELITE);
+        return (isBossTier() || enemyLevel == EnemyLevel.ELITE);
     }
 
     /**
@@ -1434,7 +1441,7 @@ public abstract class Enemy extends Character {
      */
     public int getExperienceReward() {
         float factor = 1f;
-        if (enemyLevel == EnemyLevel.BOSS) {
+        if (isBossTier()) {
             factor = 30f;
         } else if (enemyLevel == EnemyLevel.ELITE) {
             factor = 8f;
@@ -1449,9 +1456,9 @@ public abstract class Enemy extends Character {
      */
     public int getMoneyReward() {
         float factor = 1f;
-        if (enemyLevel == EnemyLevel.BOSS) {
+        if (isBossTier()) {
             factor = 30f;
-        } if (enemyLevel == EnemyLevel.ELITE) {
+        } else if (enemyLevel == EnemyLevel.ELITE) {
             factor = 8f;
         } else if (enemyLevel == EnemyLevel.LEADER) {
             factor = 2f;
@@ -1529,7 +1536,7 @@ public abstract class Enemy extends Character {
             LogUtil.d("Enemy", getName() + " was damaged! Aggroed for 10 seconds");
 
             // BOSS血量低于50%时触发召唤(每只BOSS只能召唤一次)
-            if (enemyLevel == EnemyLevel.BOSS && !hasSummonedMinions && health <= maxHealth * 0.5) {
+            if (isBossTier() && !hasSummonedMinions && health <= maxHealth * 0.5) {
                 pendingSummon = true;
             }
         }
@@ -1561,9 +1568,11 @@ public abstract class Enemy extends Character {
     @Override
     public void setName(String name) {
         this.name = name;
-        if (enemyLevel == EnemyLevel.BOSS) {
+        if (enemyLevel == EnemyLevel.STAGE_BOSS) {
+            this.name = name;
+        } else if (enemyLevel == EnemyLevel.BOSS) {
             this.name = name + "BOSS";
-        } if (enemyLevel == EnemyLevel.ELITE) {
+        } else if (enemyLevel == EnemyLevel.ELITE) {
             this.name = name + "精英";
         } else if (enemyLevel == EnemyLevel.LEADER) {
             this.name = name + "首领";
@@ -1588,7 +1597,7 @@ public abstract class Enemy extends Character {
         if (!possibleDrops.isEmpty()) {
             // Drop items count
             int numDrops = (int) (Math.random() * 2);
-            if (enemyLevel == EnemyLevel.BOSS) {
+            if (isBossTier()) {
                 numDrops = 3 + (int) (Math.random() * 3);
             } else if (enemyLevel == EnemyLevel.ELITE) {
                 numDrops = 1 + (int) (Math.random() * 3);
@@ -1610,7 +1619,7 @@ public abstract class Enemy extends Character {
 
         // 技能书掉落: 精英 2% 概率, BOSS 20% 概率
         double skillBookChance = 0;
-        if (enemyLevel == EnemyLevel.BOSS) {
+        if (isBossTier()) {
             skillBookChance = 0.20;
         } else if (enemyLevel == EnemyLevel.ELITE) {
             skillBookChance = 0.02;

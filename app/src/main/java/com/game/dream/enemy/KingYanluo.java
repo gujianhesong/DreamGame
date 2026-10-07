@@ -51,8 +51,8 @@ public class KingYanluo extends Enemy {
         // 基础属性：全面压制
         setProperty(4000, 900, 520, 160, 800);
 
-        // 强制 BOSS（最终形态）
-        enemyLevel = EnemyLevel.BOSS;
+        // 地狱迷宫第4层关卡BOSS
+        enemyLevel = EnemyLevel.STAGE_BOSS;
         size = size * 3;
         setProperty(maxHealth * 35, attackDamage * 4, defense * 6, speed * 4, mana * 5);
     }

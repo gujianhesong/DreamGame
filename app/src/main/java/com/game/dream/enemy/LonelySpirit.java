@@ -91,7 +91,7 @@ public class LonelySpirit extends Enemy {
     }
 
     /**
-     * 幽蓝泪珠: 向玩家发射一颗缓慢飞行的蓝色光球
+     * 幽蓝泪珠: 向目标方向发射 4 颗缓慢飞行的蓝色光球，相邻夹角 30 度
      */
     private void tryCastSoulTear(float playerX, float playerY, long now) {
         if (isSpellWindingUp || pendingSoulTear) return;

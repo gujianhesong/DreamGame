@@ -963,7 +963,7 @@ public abstract class Enemy extends Character {
         // 子类覆盖
     }
 
-    protected void cancelSpellCasting() {
+    public void cancelSpellCasting() {
         isSpellWindingUp = false;
         isCastingSpell = false;
         pendingSpellAfterWindUp = SPELL_NONE;

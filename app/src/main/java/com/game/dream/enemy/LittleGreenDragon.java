@@ -82,7 +82,10 @@ public class LittleGreenDragon extends Enemy {
         }
 
         // === 远程法术攻击（追击/待机时尝试施法） ===
-        if (currentState == State.CHASING || currentState == State.IDLE) {
+        // 战宠攻击距离大于理想输出距离，进战后会长期停在 ATTACKING。
+        // 普通等级也要能放水龙弹，因此出战中同样尝试施法。
+        if (currentState == State.CHASING || currentState == State.IDLE
+                || (isPet && currentState == State.ATTACKING)) {
             tryCastDragonSpells(dist, now);
         }
     }

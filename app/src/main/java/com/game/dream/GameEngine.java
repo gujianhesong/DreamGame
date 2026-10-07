@@ -61,6 +61,7 @@ import com.game.dream.npc.AnimalNpc;
 import com.game.dream.npc.Npc;
 import com.game.dream.npc.TreasureChest;
 import com.game.dream.panel.ShopPanel;
+import com.game.dream.skill.DragonLightningZone;
 import com.game.dream.skill.SkillEffect;
 import com.game.dream.skill.LightningChainEffect;
 import com.game.dream.system.DayNightCycle;
@@ -167,6 +168,7 @@ public class GameEngine {
 
     // Active skill effects on the map
     private List<SkillEffect> activeSkillEffects = new ArrayList<>();
+    private final List<DragonLightningZone> dragonLightningZones = new ArrayList<>();
 
     // Ground items (dropped by enemies)
     private List<GroundItem> groundItems = new ArrayList<>();
@@ -486,6 +488,16 @@ public class GameEngine {
             effect.update(enemies);
             if (!effect.isActive()) {
                 activeSkillEffects.remove(i);
+            }
+        }
+
+        for (int i = dragonLightningZones.size() - 1; i >= 0; i--) {
+            DragonLightningZone zone = dragonLightningZones.get(i);
+            while (zone.consumePulse()) {
+                applyDragonLightningPulse(zone);
+            }
+            if (!zone.isActive()) {
+                dragonLightningZones.remove(i);
             }
         }
     }
@@ -841,45 +853,25 @@ public class GameEngine {
 
                     // 狐狸精狐媚法术: 向四周发射6道花瓣
                     if (enemy instanceof FoxSpirit && ((FoxSpirit) enemy).isPendingFoxCharm()) {
-                        spawnFoxCharmPetals((FoxSpirit) enemy);
+                        spawnFoxCharmPetals((FoxSpirit) enemy, false);
                         ((FoxSpirit) enemy).consumeFoxCharm();
                     }
 
                     // 孤魂幽蓝泪珠: 向玩家发射缓慢飞行的蓝色光球
                     if (enemy instanceof LonelySpirit && ((LonelySpirit) enemy).isPendingSoulTear()) {
-                        Projectile soulTear = new Projectile(
-                                enemy.getX(), enemy.getY(),
-                                player.getX(), player.getY(),
-                                SkillType.ENEMY_SoulTear
-                        );
-                        soulTear.setFromEnemy(enemy);
-                        projectiles.add(soulTear);
+                        spawnAimedSpell(enemy, player.getX(), player.getY(), SkillType.ENEMY_SoulTear, false, 4, 30f);
                         ((LonelySpirit) enemy).consumeSoulTear();
                     }
 
-                    // 小青龙水龙弹
+                    // 小青龙水龙弹: 3 颗窄扇，相邻夹角 12 度
                     if (enemy instanceof LittleGreenDragon && ((LittleGreenDragon) enemy).isPendingWaterBolt()) {
-                        float[] targetPos = {player.getX(), player.getY()};
-                        Projectile waterBolt = new Projectile(
-                                enemy.getX(), enemy.getY(),
-                                targetPos[0], targetPos[1],
-                                com.game.dream.enums.SkillType.ENEMY_WaterBolt
-                        );
-                        waterBolt.setFromEnemy(enemy);
-                        projectiles.add(waterBolt);
+                        spawnAimedSpell(enemy, player.getX(), player.getY(), SkillType.ENEMY_WaterBolt, false, 3, 12f);
                         ((LittleGreenDragon) enemy).consumeWaterBolt();
                     }
 
-                    // 小青龙闪电
+                    // 小青龙龙雷: 锁在玩家脚下的雷区，两段范围伤害
                     if (enemy instanceof LittleGreenDragon && ((LittleGreenDragon) enemy).isPendingLightning()) {
-                        float[] targetPos = {player.getX(), player.getY()};
-                        Projectile lightning = new Projectile(
-                                enemy.getX(), enemy.getY(),
-                                targetPos[0], targetPos[1],
-                                com.game.dream.enums.SkillType.ENEMY_DragonLightning
-                        );
-                        lightning.setFromEnemy(enemy);
-                        projectiles.add(lightning);
+                        spawnDragonLightning(enemy, player.getX(), player.getY(), false);
                         ((LittleGreenDragon) enemy).consumeLightning();
                     }
 
@@ -1162,6 +1154,10 @@ public class GameEngine {
                                                 enemy.getX(), enemy.getY() - 30, -1
                                         ));
                                     }
+                                    // 战宠狐媚: 命中后同样有概率眩晕敌人
+                                    if (proj.getStunChance() > 0 && Math.random() < proj.getStunChance()) {
+                                        enemy.applyCC(Character.CrowdControlType.STUN, proj.getStunDuration());
+                                    }
                                 } else {
                                     // Handle caster damage (with projectile info for fireball level effects)
                                     handlePlayerCasterDamageToEnemy(enemy, proj);
@@ -1380,12 +1376,21 @@ public class GameEngine {
                     }
                     body.resetCastingState();
                 }
+                spawnPetSpeciesSpells(body, nearest.getX(), nearest.getY());
             } else {
+                float aimX = nearest != null ? nearest.getX() : body.getX();
+                float aimY = nearest != null ? nearest.getY() : body.getY();
                 if (body.getState() == Enemy.State.ATTACKING) {
                     // 目标已不在范围内: 让战宠自身攻击状态机安全收尾(处理前摇/猛扑等子状态),
                     // 传入自身坐标不产生位移, 避免卡在攻击动画
                     body.update(deltaTime, body.getX(), body.getY(), map, mapW, mapH);
+                    spawnPetSpeciesSpells(body, aimX, aimY);
                 } else {
+                    // 脱离战斗时打断未完成的吟唱，避免 pending/前摇卡住后续施法
+                    if (body.isSpellWindingUp()) {
+                        body.cancelSpellCasting();
+                    }
+                    spawnPetSpeciesSpells(body, aimX, aimY);
                     float pdx = player.getX() - body.getX();
                     float pdy = player.getY() - body.getY();
                     float pDist = (float) Math.sqrt(pdx * pdx + pdy * pdy);
@@ -1400,6 +1405,158 @@ public class GameEngine {
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * 法术型战宠的专属技能弹道。不看怪物等级：普通（NORMAL）小青龙/狐狸精/孤魂出战后同样施放。
+     * 弹道归属战宠，只伤敌人。
+     */
+    private void spawnPetSpeciesSpells(Enemy body, float targetX, float targetY) {
+        if (body instanceof FoxSpirit && ((FoxSpirit) body).isPendingFoxCharm()) {
+            spawnFoxCharmPetals((FoxSpirit) body, true);
+            ((FoxSpirit) body).consumeFoxCharm();
+        }
+        if (body instanceof LonelySpirit && ((LonelySpirit) body).isPendingSoulTear()) {
+            spawnAimedSpell(body, targetX, targetY, SkillType.ENEMY_SoulTear, true, 4, 30f);
+            ((LonelySpirit) body).consumeSoulTear();
+        }
+        if (body instanceof LittleGreenDragon) {
+            LittleGreenDragon dragon = (LittleGreenDragon) body;
+            if (dragon.isPendingWaterBolt()) {
+                spawnAimedSpell(dragon, targetX, targetY, SkillType.ENEMY_WaterBolt, true, 3, 12f);
+                dragon.consumeWaterBolt();
+            }
+            if (dragon.isPendingLightning()) {
+                spawnDragonLightning(dragon, targetX, targetY, true);
+                dragon.consumeLightning();
+            }
+        }
+    }
+
+    /** 朝目标发射一颗法术弹。fromPet 为 true 时只伤敌人。 */
+    private void spawnAimedSpell(Enemy caster, float targetX, float targetY, SkillType skillType, boolean fromPet) {
+        spawnAimedSpell(caster, targetX, targetY, skillType, fromPet, 1, 0f);
+    }
+
+    /**
+     * 朝目标方向发射若干法术弹。spreadDegrees 为相邻两颗的夹角，整组以瞄准方向为中心对称展开。
+     */
+    private void spawnAimedSpell(Enemy caster, float targetX, float targetY, SkillType skillType,
+                                 boolean fromPet, int count, float spreadDegrees) {
+        float ex = caster.getX();
+        float ey = caster.getY();
+        float dx = targetX - ex;
+        float dy = targetY - ey;
+        float distance = (float) Math.sqrt(dx * dx + dy * dy);
+        float baseAngle = (float) Math.atan2(dy, dx);
+        float flyDistance = Math.max(distance, 250f);
+        float spreadStep = (float) Math.toRadians(spreadDegrees);
+        float startAngle = baseAngle - spreadStep * (count - 1) / 2f;
+        for (int i = 0; i < count; i++) {
+            float angle = startAngle + spreadStep * i;
+            float tx = ex + (float) Math.cos(angle) * flyDistance;
+            float ty = ey + (float) Math.sin(angle) * flyDistance;
+            Projectile projectile = new Projectile(ex, ey, tx, ty, skillType);
+            if (fromPet) {
+                projectile.setFromPet(caster);
+            } else {
+                projectile.setFromEnemy(caster);
+            }
+            projectiles.add(projectile);
+        }
+    }
+
+    /** 在目标当前位置落下龙雷。圈不再跟随。fromPet 时只伤敌人。 */
+    private void spawnDragonLightning(Enemy caster, float targetX, float targetY, boolean fromPet) {
+        dragonLightningZones.add(new DragonLightningZone(targetX, targetY, caster, fromPet));
+    }
+
+    private void applyDragonLightningPulse(DragonLightningZone zone) {
+        Enemy caster = zone.getCaster();
+        if (caster == null) {
+            return;
+        }
+        if (zone.isFromPet()) {
+            if (enemies == null) {
+                return;
+            }
+            for (Enemy enemy : new ArrayList<>(enemies)) {
+                if (enemy == null || !enemy.isAlive() || enemy.isPet()) {
+                    continue;
+                }
+                if (!DragonLightningZone.contains(zone.getX(), zone.getY(), enemy.getX(), enemy.getY())) {
+                    continue;
+                }
+                AttackResult result = BattleUtil.calculatePetDamage(caster, enemy, true);
+                applyScaledHit(result, enemy.getX(), enemy.getY() - 30);
+                if (result != null && result.isHit && result.damageValue > 0) {
+                    enemy.takeDamage(result.damageValue);
+                }
+            }
+            return;
+        }
+
+        if (!isPlayerInPrison() && player != null
+                && DragonLightningZone.contains(zone.getX(), zone.getY(), player.getX(), player.getY())) {
+            int skillLevel = 1;
+            if (caster.getEnemyLevel() == Enemy.EnemyLevel.BOSS) {
+                skillLevel = 10;
+            } else if (caster.getEnemyLevel() == Enemy.EnemyLevel.ELITE) {
+                skillLevel = 5;
+            }
+            AttackResult result = BattleUtil.caculateEnemyCasterDamage(caster, SkillType.ENEMY_DragonLightning, skillLevel);
+            scaleLightningDamage(result);
+            if (result != null && result.isHit && result.damageValue > 0) {
+                boolean died = player.takeDamage(result.damageValue);
+                damageNumbers.add(new DamageNumber(player.getX(), player.getY() - 30, result.damageValue, result.isCrit));
+                if (died) {
+                    handlePlayerDeath();
+                }
+            } else if (result != null) {
+                damageNumbers.add(new DamageNumber(player.getX(), player.getY() - 30, -1));
+            }
+        }
+
+        for (Pet pet : new ArrayList<>(activePets)) {
+            Enemy body = pet.getEntity();
+            if (body == null || !body.isAlive() || pet.isDowned()) {
+                continue;
+            }
+            if (!DragonLightningZone.contains(zone.getX(), zone.getY(), body.getX(), body.getY())) {
+                continue;
+            }
+            AttackResult result = BattleUtil.calculatePetDamage(caster, body, true);
+            scaleLightningDamage(result);
+            if (result != null && result.isHit && result.damageValue > 0) {
+                boolean died = body.takeDamage(result.damageValue);
+                damageNumbers.add(new DamageNumber(body.getX(), body.getY() - 40, result.damageValue, result.isCrit));
+                if (died || !body.isAlive()) {
+                    pet.setDowned(true);
+                    PetSystem.getInstance().recallActive();
+                    activePets.clear();
+                    showCenterToast("战宠「" + pet.getName() + "」重伤，已收回！", 1800);
+                    break;
+                }
+            } else if (result != null) {
+                damageNumbers.add(new DamageNumber(body.getX(), body.getY() - 40, -1));
+            }
+        }
+    }
+
+    /** 战宠龙雷打敌人：先按八成改伤害数字，再由调用方扣血。 */
+    private void applyScaledHit(AttackResult result, float numberX, float numberY) {
+        scaleLightningDamage(result);
+        if (result != null && result.isHit && result.damageValue > 0) {
+            damageNumbers.add(new DamageNumber(numberX, numberY, result.damageValue, result.isCrit));
+        } else if (result != null) {
+            damageNumbers.add(new DamageNumber(numberX, numberY, -1));
+        }
+    }
+
+    private void scaleLightningDamage(AttackResult result) {
+        if (result != null && result.isHit && result.damageValue > 0) {
+            result.damageValue = Math.max(1, Math.round(result.damageValue * DragonLightningZone.DAMAGE_RATIO));
         }
     }
 
@@ -1665,6 +1822,12 @@ public class GameEngine {
             List<SkillEffect> copySkillEffects = new ArrayList<>(activeSkillEffects);
             for (SkillEffect effect : copySkillEffects) {
                 effect.draw(canvas, (int) -cameraX, (int) -cameraY);
+            }
+        }
+        if (!dragonLightningZones.isEmpty()) {
+            List<DragonLightningZone> copyZones = new ArrayList<>(dragonLightningZones);
+            for (DragonLightningZone zone : copyZones) {
+                zone.draw(canvas, (int) -cameraX, (int) -cameraY);
             }
         }
 
@@ -2405,7 +2568,7 @@ public class GameEngine {
     /**
      * 狐狸精狐媚法术: 向四周发射6道花瓣，被击中后受到法术伤害，30%概率眩晕1秒
      */
-    private void spawnFoxCharmPetals(FoxSpirit fox) {
+    private void spawnFoxCharmPetals(FoxSpirit fox, boolean fromPet) {
         float foxX = fox.getX();
         float foxY = fox.getY();
         float petalDistance = 300f; // 花瓣飞行目标距离
@@ -2416,7 +2579,11 @@ public class GameEngine {
             float targetY = foxY + (float) Math.sin(angle) * petalDistance;
 
             Projectile petal = new Projectile(foxX, foxY, targetX, targetY, SkillType.ENEMY_FoxCharm);
-            petal.setFromEnemy(fox);
+            if (fromPet) {
+                petal.setFromPet(fox);
+            } else {
+                petal.setFromEnemy(fox);
+            }
             petal.setStunChance(0.3f);      // 30%概率眩晕
             petal.setStunDuration(1000);     // 眩晕1秒
             projectiles.add(petal);

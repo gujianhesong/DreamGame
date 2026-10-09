@@ -58,6 +58,15 @@ public class SkillInfo {
         return cooldownSeconds;
     }
 
+    /** 实际冷却毫秒。剑气随等级从 1 秒降到不低于 0.6 秒。 */
+    public long getCooldownMillis() {
+        if (skillType == SkillType.MAIN_SwordQi) {
+            int lv = Math.max(1, level);
+            return Math.max(600L, 1000L - (lv - 1) * 400L / 9L);
+        }
+        return Math.max(0, cooldownSeconds) * 1000L;
+    }
+
     public void setCooldownSeconds(int cooldownSeconds) {
         this.cooldownSeconds = cooldownSeconds;
     }

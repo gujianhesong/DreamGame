@@ -6,6 +6,7 @@ public enum SkillType {
 
     //主技能
     MAIN_DunXing, //遁形
+    MAIN_SwordQi, //剑气
     MAIN_FIREBALL, //火云术
     MAIN_ICE_BOLT, //寒冰术
     MAIN_LIGHTNING, //雷击术

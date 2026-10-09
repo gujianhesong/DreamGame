@@ -152,6 +152,9 @@ public class BattleUtil {
             case MAIN_FIREBALL:
                 castBaseValue = 20f;
                 break;
+            case MAIN_SwordQi:
+                castBaseValue = 13f;
+                break;
             case MAIN_ICE_BOLT:
                 castBaseValue = 15f;
                 break;

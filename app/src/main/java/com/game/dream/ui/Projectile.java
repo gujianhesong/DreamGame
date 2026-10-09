@@ -7,6 +7,9 @@ import android.graphics.Paint;
 import com.game.dream.enemy.Enemy;
 import com.game.dream.enums.SkillType;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * Projectile for magic attacks (fireballs, ice bolts, etc.)
  */
@@ -42,11 +45,13 @@ public class Projectile {
 
     private EffectType effectType = EffectType.NONE; // Default to no effect
 
-    // 火云术等级相关
+    // 技能等级相关
     private int skillLevel = 1;             // 技能等级
     private float damageMultiplier = 1.0f;  // 伤害倍率
     private long burnDuration = 0;          // 灼烧持续时长(ms)
     private float freezeProbability = 0f;   // 冰冻概率(0-1)
+    private int pierceRemaining = 0;
+    private final Set<Enemy> piercedTargets = new HashSet<>();
 
     // 狐媚花瓣眩晕相关
     private float stunChance = 0f;           // 眩晕概率(0-1)
@@ -73,6 +78,12 @@ public class Projectile {
                     this.size = 20;
                     this.color = Color.rgb(255, 100, 50);
                     this.lifetime = 1500;
+                    break;
+                case MAIN_SwordQi:
+                    speed = 300;
+                    this.size = 10;
+                    this.color = Color.rgb(210, 235, 255);
+                    this.lifetime = 1200;
                     break;
                 case MAIN_ICE_BOLT:
                     speed = 400;
@@ -176,6 +187,9 @@ public class Projectile {
             case MAIN_FIREBALL:
                 drawFireball(canvas, paint, screenX, screenY);
                 break;
+            case MAIN_SwordQi:
+                drawSwordQi(canvas, paint, screenX, screenY);
+                break;
             case MAIN_ICE_BOLT:
                 drawIceBolt(canvas, paint, screenX, screenY);
                 break;
@@ -195,6 +209,37 @@ public class Projectile {
                 drawSoulTear(canvas, paint, screenX, screenY);
                 break;
         }
+    }
+
+    private void drawSwordQi(Canvas canvas, Paint paint, float cx, float cy) {
+        float angle = (float) Math.toDegrees(Math.atan2(vy, vx));
+        canvas.save();
+        canvas.rotate(angle, cx, cy);
+        paint.setAntiAlias(true);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeCap(Paint.Cap.ROUND);
+
+        paint.setStrokeWidth(size * 1.6f);
+        paint.setColor(Color.argb(55, 160, 210, 255));
+        canvas.drawArc(cx - size * 2.6f, cy - size * 3.6f, cx + size * 1.4f, cy + size * 3.6f,
+                -75, 150, false, paint);
+
+        paint.setStrokeWidth(size * 0.85f);
+        paint.setColor(Color.argb(200, 210, 235, 255));
+        canvas.drawArc(cx - size * 2.1f, cy - size * 3.1f, cx + size * 1.0f, cy + size * 3.1f,
+                -68, 136, false, paint);
+
+        paint.setStrokeWidth(size * 0.32f);
+        paint.setColor(Color.argb(240, 255, 255, 255));
+        canvas.drawArc(cx - size * 1.7f, cy - size * 2.6f, cx + size * 0.6f, cy + size * 2.6f,
+                -62, 124, false, paint);
+
+        paint.setStyle(Paint.Style.FILL);
+        paint.setColor(Color.argb(70, 200, 230, 255));
+        canvas.drawOval(cx - size * 2.8f, cy - size * 0.35f, cx + size * 0.4f, cy + size * 0.35f, paint);
+        canvas.restore();
+        paint.setStrokeWidth(1);
+        paint.setStrokeCap(Paint.Cap.BUTT);
     }
 
     /**
@@ -329,6 +374,26 @@ public class Projectile {
 
     public float getDamageMultiplier() { return damageMultiplier; }
     public void setDamageMultiplier(float multiplier) { this.damageMultiplier = multiplier; }
+
+    public void setPierceCount(int extraHits) {
+        this.pierceRemaining = Math.max(0, extraHits);
+    }
+
+    public boolean hasAlreadyHit(Enemy enemy) {
+        return piercedTargets.contains(enemy);
+    }
+
+    /** 记录命中。没有剩余穿透时弹丸消失。 */
+    public void registerHit(Enemy enemy) {
+        if (enemy != null) {
+            piercedTargets.add(enemy);
+        }
+        if (pierceRemaining > 0) {
+            pierceRemaining--;
+        } else {
+            isActive = false;
+        }
+    }
 
     public long getBurnDuration() { return burnDuration; }
     public void setBurnDuration(long duration) {

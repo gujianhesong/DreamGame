@@ -1767,6 +1767,7 @@ public abstract class Enemy extends Character {
             // 随机选择一个主技能书
             com.game.dream.enums.SkillType[] mainSkills = {
                     com.game.dream.enums.SkillType.MAIN_FIREBALL,
+                    com.game.dream.enums.SkillType.MAIN_SwordQi,
                     com.game.dream.enums.SkillType.MAIN_ICE_BOLT,
                     com.game.dream.enums.SkillType.MAIN_LIGHTNING,
                     com.game.dream.enums.SkillType.MAIN_FeiShaZouShi,

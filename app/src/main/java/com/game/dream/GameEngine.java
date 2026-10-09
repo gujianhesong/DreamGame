@@ -143,6 +143,9 @@ public class GameEngine {
 
     // Pending melee attack (wait for lunge to complete before dealing damage)
     private boolean pendingMeleeAttack = false;
+    private List<Projectile> pendingSwordQi = null;
+    private long pendingSwordQiReleaseTime = 0;
+    private static final long SWORD_QI_RELEASE_DELAY = 90;
 
     // 异步加载标志
     private volatile boolean isLoading = false;
@@ -419,6 +422,8 @@ public class GameEngine {
 
         // Check attack lunge-enemy collision (前冲撞退敌人)
         checkAttackLungeEnemyCollision();
+
+        releasePendingSwordQi();
 
         // Update projectiles
         checkProjectileUpdate(deltaTime);
@@ -1245,6 +1250,9 @@ public class GameEngine {
                         }
                     } else {
                         for (Enemy enemy : enemies) {
+                            if (proj.hasAlreadyHit(enemy)) {
+                                continue;
+                            }
                             if (proj.checkCollision(enemy)) {
                                 if (proj.isFromPet()) {
                                     // 战宠火球: 用战宠攻击力结算(法术, 受宝宝法术修炼加成), 只伤敌人
@@ -1272,8 +1280,10 @@ public class GameEngine {
                                     handlePlayerCasterEffectToEnemy(enemy, proj);
                                 }
 
-                                proj.deactivate();
-                                break;
+                                proj.registerHit(enemy);
+                                if (!proj.isActive()) {
+                                    break;
+                                }
                             }
                         }
                     }
@@ -2297,6 +2307,8 @@ public class GameEngine {
         dragonLightningZones.clear();
         seaSealZones.clear();
         tidePools.clear();
+        pendingSwordQi = null;
+        pendingSwordQiReleaseTime = 0;
         String mapName = MapSystem.getInstance().getMapName(mapId);
         showCenterToast("正在前往" + mapName + "...");
 
@@ -2365,6 +2377,8 @@ public class GameEngine {
         dragonLightningZones.clear();
         seaSealZones.clear();
         tidePools.clear();
+        pendingSwordQi = null;
+        pendingSwordQiReleaseTime = 0;
         MapSystem.getInstance().loadMapAsync(mapId, new MapSystem.OnLoadMapCallback() {
             @Override
             public void onLoadMapFinish(int mapId, int[][] mapData) {
@@ -2608,14 +2622,17 @@ public class GameEngine {
             if (attackResult.isHit) {
                 int damage = attackResult.damageValue;
 
-                // 伤害倍率(火云术/寒冰术9级+: 伤害+20%)
+                // 伤害倍率(寒冰术9级+: 伤害+20%)
                 float damageMultiplier = (proj != null) ? proj.getDamageMultiplier() : 1.0f;
                 damage = (int) (damage * damageMultiplier);
 
-                // 20%概率暴击(火云术/寒冰术10级)
                 boolean isCrit = attackResult.isCrit;
                 if (proj != null && proj.getSkillLevel() >= 10) {
-                    if (Math.random() < 0.2f) {
+                    float critChance = 0.2f;
+                    if (proj.getSkillType() == SkillType.MAIN_SwordQi) {
+                        critChance = 0.15f;
+                    }
+                    if (Math.random() < critChance) {
                         isCrit = true;
                         damage *= 2;
                     }
@@ -2642,7 +2659,6 @@ public class GameEngine {
                         enemy.applyCC(Character.CrowdControlType.STUN, 200);
                     }
 
-                    // 火云术9级+: 灼烧效果 (3秒, 每秒伤害=基础伤害的30%)
                     if (proj != null && proj.getBurnDuration() > 0) {
                         int burnDps = Math.max(1, (int) (damage * 0.3f));
                         enemy.applyBurn(burnDps, proj.getBurnDuration());
@@ -2766,12 +2782,36 @@ public class GameEngine {
         }
     }
 
+    private void releasePendingSwordQi() {
+        if (pendingSwordQi == null || pendingSwordQi.isEmpty()) {
+            return;
+        }
+        if (System.currentTimeMillis() < pendingSwordQiReleaseTime) {
+            return;
+        }
+        flushPendingSwordQi();
+    }
+
+    private void flushPendingSwordQi() {
+        if (pendingSwordQi != null && !pendingSwordQi.isEmpty() && projectiles != null) {
+            projectiles.addAll(pendingSwordQi);
+        }
+        pendingSwordQi = null;
+        pendingSwordQiReleaseTime = 0;
+    }
+
     public void doCasterAction(SkillInfo skillInfo) {
         if (skillInfo != null) {
             LogUtil.d("Casting skill: " + skillInfo.getName());
             SkillStartInfo info = SkillSystem.getInstance().castSkill(skillInfo);
             if (info != null) {
-                if (info.getProjectiles() != null) {
+                if (info.getProjectiles() != null && !info.getProjectiles().isEmpty()
+                        && skillInfo.getSkillType() == SkillType.MAIN_SwordQi) {
+                    player.triggerSwordSwingAnimation();
+                    flushPendingSwordQi();
+                    pendingSwordQi = new ArrayList<>(info.getProjectiles());
+                    pendingSwordQiReleaseTime = System.currentTimeMillis() + SWORD_QI_RELEASE_DELAY;
+                } else if (info.getProjectiles() != null) {
                     projectiles.addAll(info.getProjectiles());
                 }
                 if (info.getSkillEffect() != null) {

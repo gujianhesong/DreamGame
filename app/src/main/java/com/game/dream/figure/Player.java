@@ -578,12 +578,15 @@ public class Player extends Character {
         long magicCooldown = 2000;
         SkillInfo skillInfo = SkillSystem.getInstance().getPlayerSkill(skillType);
         if (skillInfo != null) {
-            magicCooldown = skillInfo.getCooldownSeconds() * 1000L;
+            magicCooldown = skillInfo.getCooldownMillis();
 
             //装备法术速度加成
             float magicSpeedRatio = ItemSystem.getInstance().getTotalXiLianPropWithAllEquiped(XiLianType.XL_magicSpeedRatio);
             if (magicSpeedRatio > 0) {
                 magicCooldown = (int) (magicCooldown * (1f - magicSpeedRatio));
+            }
+            if (skillType == SkillType.MAIN_SwordQi && magicCooldown < 600L) {
+                magicCooldown = 600L;
             }
         }
         long elapsed = Math.max(0, currentTime - lastMagicTime);
@@ -640,6 +643,15 @@ public class Player extends Character {
             case 2: attackLungeDirX = -1; attackLungeDirY = 0;  break; // left
             case 3: attackLungeDirX = 1;  attackLungeDirY = 0;  break; // right
         }
+    }
+
+    /** 只播挥剑动作，不前冲。用于剑气。 */
+    public void triggerSwordSwingAnimation() {
+        isAttacking = true;
+        attackStartTime = System.currentTimeMillis();
+        attackAnimationFrame = 0;
+        attackLungeRemaining = 0;
+        lungeHitEnemies.clear();
     }
 
     /**

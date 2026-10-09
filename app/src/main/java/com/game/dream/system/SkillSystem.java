@@ -43,6 +43,7 @@ public class SkillSystem {
 
     private void initMainSkills() {
         playerMainSkills.add(new SkillInfo(SkillType.MAIN_DunXing, 1, 1, 30, "遁形", "施展遁形之术，瞬间返回清溪村"));
+        playerMainSkills.add(new SkillInfo(SkillType.MAIN_SwordQi, 1, 10, 1, "剑气", "挥剑发出一道剑气。冷却短、耗蓝少，适合中距离点射。升级加快飞行速度并略微缩短冷却，高等级可少量穿透。"));
         playerMainSkills.add(new SkillInfo(SkillType.MAIN_FIREBALL, 1, 10, 3, "火云术", "发射火焰对敌人造成伤害"));
         playerMainSkills.add(new SkillInfo(SkillType.MAIN_ICE_BOLT, 1, 10, 4, "寒冰术", "发射寒冰对敌人造成伤害"));
         playerMainSkills.add(new SkillInfo(SkillType.MAIN_LIGHTNING, 1, 10, 5, "雷击术", "发射几道闪电对敌人造成伤害"));
@@ -210,7 +211,7 @@ public class SkillSystem {
             return null;
         }
 
-        if (currentTime - player.getLastMagicTime(skill.getSkillType()) < skill.getCooldownSeconds() * 1000L) {
+        if (currentTime - player.getLastMagicTime(skill.getSkillType()) < skill.getCooldownMillis()) {
             return null; // Still on cooldown
         }
 
@@ -224,7 +225,9 @@ public class SkillSystem {
             roleInfo.setHp(roleInfo.getHp() - costBlood);
         } else {
             int costMagic = 20;
-            if (skill.getSkillType() == SkillType.MAIN_WanJianGuiZong) {
+            if (skill.getSkillType() == SkillType.MAIN_SwordQi) {
+                costMagic = 8;
+            } else if (skill.getSkillType() == SkillType.MAIN_WanJianGuiZong) {
                 costMagic = 40;
             } else if (skill.getSkillType() == SkillType.MAIN_MiaoShouHuiChun) {
                 costMagic = 30;
@@ -250,6 +253,10 @@ public class SkillSystem {
 
         SkillStartInfo skillStartInfo = null;
         switch (skill.getSkillType()) {
+            case MAIN_SwordQi: {
+                skillStartInfo = castSwordQi();
+            }
+            break;
             case MAIN_FIREBALL:
             case MAIN_ICE_BOLT:
             case MAIN_LIGHTNING:
@@ -326,6 +333,84 @@ public class SkillSystem {
         }
     }
 
+    /** 剑气：单发、飞行快。面朝锥形内优先锁最近的敌人。 */
+    private SkillStartInfo castSwordQi() {
+        SkillStartInfo skillStartInfo = new SkillStartInfo();
+        List<Projectile> spells = new ArrayList<>();
+        skillStartInfo.setProjectiles(spells);
+
+        Player player = GameEngine.getInstance().getPlayer();
+        int fireLevel = 1;
+        SkillInfo swordQi = getPlayerSkill(SkillType.MAIN_SwordQi);
+        if (swordQi != null) {
+            fireLevel = swordQi.getLevel();
+        }
+
+        float range = 520f;
+        float[] aim = aimSwordQi(player, range);
+        Projectile proj = new Projectile(player.getX(), player.getY(), aim[0], aim[1], SkillType.MAIN_SwordQi);
+        proj.setSkillLevel(fireLevel);
+        proj.setSize(10f);
+        proj.scaleSpeed(2.0f + (fireLevel - 1) * 0.08f);
+        if (fireLevel >= 10) {
+            proj.setPierceCount(2);
+        } else if (fireLevel >= 9) {
+            proj.setPierceCount(1);
+        }
+        spells.add(proj);
+        return skillStartInfo;
+    }
+
+    private float[] aimSwordQi(Player player, float range) {
+        float baseAngle;
+        switch (player.getFacingDirection()) {
+            case 1:
+                baseAngle = (float) -Math.PI / 2f;
+                break;
+            case 2:
+                baseAngle = (float) Math.PI;
+                break;
+            case 3:
+                baseAngle = 0f;
+                break;
+            default:
+                baseAngle = (float) Math.PI / 2f;
+                break;
+        }
+        float fx = (float) Math.cos(baseAngle);
+        float fy = (float) Math.sin(baseAngle);
+        float coneCos = (float) Math.cos(Math.toRadians(40));
+
+        Enemy best = null;
+        float bestDist = range;
+        List<Enemy> enemies = GameEngine.getInstance().getEnemies();
+        if (enemies != null) {
+            for (Enemy enemy : enemies) {
+                if (enemy == null || !enemy.isAlive() || enemy.isPet()) {
+                    continue;
+                }
+                float dx = enemy.getX() - player.getX();
+                float dy = enemy.getY() - player.getY();
+                float dist = (float) Math.sqrt(dx * dx + dy * dy);
+                if (dist < 1f || dist > range) {
+                    continue;
+                }
+                float dot = (dx * fx + dy * fy) / dist;
+                if (dot >= coneCos && dist < bestDist) {
+                    best = enemy;
+                    bestDist = dist;
+                }
+            }
+        }
+        if (best != null) {
+            return new float[]{best.getX(), best.getY()};
+        }
+        return new float[]{
+                player.getX() + fx * range,
+                player.getY() + fy * range
+        };
+    }
+
     /**
      * Cast triple spell
      */
@@ -361,7 +446,6 @@ public class SkillSystem {
             float range = 300;
             switch (skillType) {
                 case MAIN_FIREBALL: {
-                    // 获取火云术等级
                     int fireLevel = 1;
                     List<SkillInfo> playerSkills = getPlayerSkills();
                     for (SkillInfo si : playerSkills) {
@@ -371,18 +455,13 @@ public class SkillSystem {
                         }
                     }
 
-                    // 火球数量: 3,3,4,4,5,5,6,6,6,6
-                    int fireCount = Math.min(6, 3 + (fireLevel-1) / 2);
-                    // 火球大小: 奇数级(1,3,5,7)逐级变大
+                    int fireCount = Math.min(6, 3 + (fireLevel - 1) / 2);
                     float fireSize = 15 + ((fireLevel - 1) / 2) * 3f;
 
-                    // 生成扇形角度分布
-                    float spreadAngle;
                     if (fireCount == 1) {
                         angles = new float[]{baseAngle};
                     } else {
-                        // 根据火球数量动态调整扇形张角
-                        spreadAngle = Math.min(120f, fireCount * 20f);
+                        float spreadAngle = Math.min(120f, fireCount * 20f);
                         angles = new float[fireCount];
                         for (int i = 0; i < fireCount; i++) {
                             angles[i] = baseAngle - spreadAngle / 2 + spreadAngle * i / (fireCount - 1);
@@ -390,7 +469,6 @@ public class SkillSystem {
                     }
                     range = 400;
 
-                    // 创建火球并设置等级属性
                     for (float angle : angles) {
                         double rad = Math.toRadians(angle);
                         float spellTargetX = player.getX() + (float) (Math.cos(rad) * range);
@@ -398,24 +476,20 @@ public class SkillSystem {
 
                         Projectile proj = new Projectile(player.getX(), player.getY(), spellTargetX, spellTargetY, skillType);
                         proj.setSkillLevel(fireLevel);
-                        // 设置火球大小
                         proj.setSize(fireSize);
-                        // 每级增加火球移动速度(每级+6%)
                         float speedMultiplier = 1.0f + (fireLevel - 1) * 0.06f;
                         proj.scaleSpeed(speedMultiplier);
 
-                        // 8级: 灼烧效果 3秒
                         if (fireLevel >= 8) {
                             proj.setBurnDuration(3000);
                         }
-                        // 9级: 伤害+20%
                         if (fireLevel >= 9) {
                             proj.setDamageMultiplier(1.2f);
                         }
 
                         spells.add(proj);
                     }
-                    angles = new float[0]; // 火球已在上方创建，跳过公共循环
+                    angles = new float[0];
                 }
                 break;
                 case MAIN_ICE_BOLT: {

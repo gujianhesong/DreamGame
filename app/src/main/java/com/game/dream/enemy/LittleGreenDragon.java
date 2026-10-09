@@ -90,13 +90,25 @@ public class LittleGreenDragon extends Enemy {
         }
     }
 
-    private long getWaterBoltCooldown() {
-        if (enemyLevel == EnemyLevel.BOSS) {
+    protected long getWaterBoltCooldown() {
+        if (isBossTier()) {
             return 2000;
         } else if (enemyLevel == EnemyLevel.ELITE) {
             return 2500;
         }
         return 3500;
+    }
+
+    public int getWaterBoltCount() {
+        return 3;
+    }
+
+    public float getWaterBoltSpread() {
+        return 12f;
+    }
+
+    protected boolean canCastDragonLightning() {
+        return enemyLevel == EnemyLevel.ELITE || enemyLevel == EnemyLevel.BOSS;
     }
 
     private float calculateWaterBoltCastChance(float distanceToPlayer) {
@@ -130,7 +142,7 @@ public class LittleGreenDragon extends Enemy {
             return;
         }
 
-        boolean canLightning = enemyLevel == EnemyLevel.ELITE || enemyLevel == EnemyLevel.BOSS;
+        boolean canLightning = canCastDragonLightning();
         boolean waterReady = now - lastWaterBoltTime >= getWaterBoltCooldown();
         boolean lightningReady = canLightning && now - lastLightningTime >= 4000;
 
@@ -141,13 +153,20 @@ public class LittleGreenDragon extends Enemy {
         lastSpellCastRollTime = now;
 
         // 近身优先龙雷，中远距优先水龙弹
+        float lightningChance = calculateLightningCastChance(dist);
+        float waterChance = calculateWaterBoltCastChance(dist);
+        if (isBossPhaseTwo()) {
+            lightningChance = Math.min(0.70f, lightningChance * 1.6f);
+            waterChance = Math.min(0.70f, waterChance * 1.6f);
+        }
+
         if (lightningReady && dist <= propertyExtra.detectionRange * 0.85f
-                && Math.random() < calculateLightningCastChance(dist)) {
+                && Math.random() < lightningChance) {
             beginSpellWindUp(SPELL_DRAGON_LIGHTNING);
             return;
         }
 
-        if (waterReady && Math.random() < calculateWaterBoltCastChance(dist)) {
+        if (waterReady && Math.random() < waterChance) {
             beginSpellWindUp(SPELL_WATER_BOLT);
         }
     }

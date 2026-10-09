@@ -32,7 +32,10 @@ import com.game.dream.enemy.GiantSeaTurtle;
 import com.game.dream.enemy.LittleGreenDragon;
 import com.game.dream.enemy.LonelySpirit;
 import com.game.dream.enemy.SavageWraith;
+import com.game.dream.enemy.SeaDragonKing;
+import com.game.dream.enemy.SeaDragonPrince;
 import com.game.dream.enemy.ShrimpSoldier;
+import com.game.dream.enemy.TurtleChancellor;
 import com.game.dream.enemy.Tiger;
 import com.game.dream.enemy.Viper;
 import com.game.dream.enemy.WildBoar;
@@ -62,6 +65,8 @@ import com.game.dream.npc.Npc;
 import com.game.dream.npc.TreasureChest;
 import com.game.dream.panel.ShopPanel;
 import com.game.dream.skill.DragonLightningZone;
+import com.game.dream.skill.SeaSealZone;
+import com.game.dream.skill.TidePool;
 import com.game.dream.skill.SkillEffect;
 import com.game.dream.skill.LightningChainEffect;
 import com.game.dream.system.DayNightCycle;
@@ -169,6 +174,8 @@ public class GameEngine {
     // Active skill effects on the map
     private List<SkillEffect> activeSkillEffects = new ArrayList<>();
     private final List<DragonLightningZone> dragonLightningZones = new ArrayList<>();
+    private final List<SeaSealZone> seaSealZones = new ArrayList<>();
+    private final List<TidePool> tidePools = new ArrayList<>();
 
     // Ground items (dropped by enemies)
     private List<GroundItem> groundItems = new ArrayList<>();
@@ -353,8 +360,10 @@ public class GameEngine {
         // 检查迷宫出口传送
         if (MapSystem.getInstance().isCurrentMazaMap() && MazeSystem.getInstance().isInitialized()) {
             if (MazeSystem.getInstance().checkExitPortal(player.getX(), player.getY())) {
-                // 普通迷宫由 BOSS 守关；地狱迷宫只由关卡 BOSS 守关
-                Enemy aliveBoss = MapSystem.getInstance().isCurrentHellMazeMap()
+                // 普通迷宫由 BOSS 守关；地狱和海底迷宫只由关卡 BOSS 守关
+                boolean stageBossGate = MapSystem.getInstance().isCurrentHellMazeMap()
+                        || MapSystem.getInstance().isCurrentUnderwaterMazeMap();
+                Enemy aliveBoss = stageBossGate
                         ? findAliveStageBossInCurrentMap()
                         : findAliveBossInCurrentMap();
                 if (aliveBoss != null) {
@@ -367,8 +376,8 @@ public class GameEngine {
                 }
                 // 不同迷宫出口目的地不同
                 int curMapId = MapSystem.getInstance().getCurrentMapId();
-                if (curMapId == MapSystem.MAP_ID_UNDERWATER_MAZE) {
-                    teleportToMap(MapSystem.MAP_ID_DONGHAI_SEABED);
+                if (MapSystem.isUnderwaterMazeId(curMapId)) {
+                    handleUnderwaterMazeExit(curMapId);
                 } else if (curMapId >= MapSystem.MAP_ID_HELL_MAZE_1 && curMapId <= MapSystem.MAP_ID_HELL_MAZE_4) {
                     // 地狱迷宫层间传送
                     handleHellMazeExit(curMapId);
@@ -385,7 +394,7 @@ public class GameEngine {
         // Update day-night cycle (海底地图、海底迷宫、地府、地狱迷宫、幻境关闭昼夜系统)
         int curId = MapSystem.getInstance().getCurrentMapId();
         if (dayNightCycle != null && curId != MapSystem.MAP_ID_DONGHAI_SEABED
-                && curId != MapSystem.MAP_ID_UNDERWATER_MAZE
+                && !MapSystem.isUnderwaterMazeId(curId)
                 && curId != MapSystem.MAP_ID_NETHERWORLD
                 && curId != MapSystem.MAP_ID_ILLUSION_REALM
                 && !MapSystem.getInstance().isCurrentHellMazeMap()) {
@@ -510,6 +519,26 @@ public class GameEngine {
                 dragonLightningZones.remove(i);
             }
         }
+
+        for (int i = seaSealZones.size() - 1; i >= 0; i--) {
+            SeaSealZone seal = seaSealZones.get(i);
+            if (seal.consumeDrop()) {
+                applySeaSealDrop(seal);
+            }
+            if (!seal.isActive()) {
+                seaSealZones.remove(i);
+            }
+        }
+
+        for (int i = tidePools.size() - 1; i >= 0; i--) {
+            TidePool pool = tidePools.get(i);
+            if (pool.consumeTick()) {
+                applyTidePoolTick(pool);
+            }
+            if (!pool.isActive()) {
+                tidePools.remove(i);
+            }
+        }
     }
 
     /**
@@ -583,8 +612,8 @@ public class GameEngine {
                 if (distance < enemy.getAttackRange()) { // Attack range
                     // 检测敌人前摇结束刚刚攻击
                     if (enemy.consumeAttackFired()) {
-                        // 攻击对抗: 玩家正面攻击时免疫敌人物理攻击
-                        if (player.isAttacking() && isEnemyInFrontOfPlayer(enemy)) {
+                        // 攻击对抗: 玩家正面攻击时免疫普通敌人的物理攻击。BOSS 打穿这层防御。
+                        if (!enemy.isBossTier() && player.isAttacking() && isEnemyInFrontOfPlayer(enemy)) {
                             // 玩家正面攻击中，免疫该次物理伤害
                             damageNumbers.add(new DamageNumber(
                                     player.getX(),
@@ -592,6 +621,10 @@ public class GameEngine {
                                     -3 // 特殊值: 招架
                             ));
                             continue;
+                        }
+
+                        if (enemy.isBossTier()) {
+                            enemy.requestBossRetreat();
                         }
 
                         // 首领/精英/BOSS 近战时有概率改用火球（距离加权，专属法术怪物除外）
@@ -642,6 +675,14 @@ public class GameEngine {
                                 if (enemy instanceof com.game.dream.enemy.Tiger) {
                                     knockbackForce = 280f;
                                     knockbackDuration = 250;
+                                } else if (enemy instanceof TurtleChancellor
+                                        && enemy.getCurrentAttackType() == Enemy.AttackType.POUNCE) {
+                                    knockbackForce = 260f;
+                                    knockbackDuration = 220;
+                                } else if (enemy instanceof SeaDragonKing
+                                        && enemy.getCurrentAttackType() == Enemy.AttackType.SPIN_ATTACK) {
+                                    knockbackForce = 320f;
+                                    knockbackDuration = 240;
                                 }
                                 player.applyKnockback(enemy.getX(), enemy.getY(), knockbackForce, knockbackDuration);
 
@@ -731,17 +772,16 @@ public class GameEngine {
                 // Mark as hit
                 hitSet.add(enemy);
 
-                // Knockback enemy away from player
-                float knockbackForce = 400f;
-                long knockbackDuration = 350;
-                enemy.applyKnockback(playerX, playerY, knockbackForce, knockbackDuration);
-
-                // Brief stagger (stun) so enemy doesn't immediately act
-                enemy.applyCC(Character.CrowdControlType.STUN, 250);
-
-                // Cancel enemy's wind-up if active
-                if (enemy.isWindingUp()) {
-                    enemy.setWindingUpFalse();
+                if (enemy.isBossTier()) {
+                    if (!enemy.isCommittedAction()) {
+                        enemy.applyKnockback(playerX, playerY, 120f, 80);
+                    }
+                } else {
+                    enemy.applyKnockback(playerX, playerY, 400f, 350);
+                    enemy.applyCC(Character.CrowdControlType.STUN, 250);
+                    if (enemy.isWindingUp()) {
+                        enemy.setWindingUpFalse();
+                    }
                 }
 
                 LogUtil.d("Attack lunge hit enemy: " + enemy.getName());
@@ -805,18 +845,16 @@ public class GameEngine {
                 // Mark as hit
                 hitSet.add(enemy);
 
-                // Knockback enemy in dash direction
-                float knockbackForce = 500f;
-                long knockbackDuration = 300;
-                // Apply knockback from player position
-                enemy.applyKnockback(playerX, playerY, knockbackForce, knockbackDuration);
-
-                // Stun enemy (cannot move or attack)
-                enemy.applyCC(Character.CrowdControlType.STUN, 500);
-
-                // Cancel enemy's wind-up if active
-                if (enemy.isWindingUp()) {
-                    enemy.setWindingUpFalse();
+                if (enemy.isBossTier()) {
+                    if (!enemy.isCommittedAction()) {
+                        enemy.applyKnockback(playerX, playerY, 140f, 90);
+                    }
+                } else {
+                    enemy.applyKnockback(playerX, playerY, 500f, 300);
+                    enemy.applyCC(Character.CrowdControlType.STUN, 500);
+                    if (enemy.isWindingUp()) {
+                        enemy.setWindingUpFalse();
+                    }
                 }
 
                 // Show visual feedback (no damage number, just a text indicator)
@@ -828,6 +866,20 @@ public class GameEngine {
 
                 LogUtil.d("Dash hit enemy: " + enemy.getName());
             }
+        }
+    }
+
+    private void applySeaDragonAura(float originX, float originY, float range, long duration) {
+        if (player == null || isPlayerInPrison()) {
+            return;
+        }
+        if (MapSystem.getInstance().isLocationSafe(player.getX(), player.getY())) {
+            return;
+        }
+        float dx = player.getX() - originX;
+        float dy = player.getY() - originY;
+        if (dx * dx + dy * dy < range * range) {
+            player.applyCC(Character.CrowdControlType.SLOW, duration);
         }
     }
 
@@ -853,12 +905,18 @@ public class GameEngine {
                             spawnEnemyGenericFireballs(enemy, player.getX(), player.getY());
                         }
                         enemy.resetCastingState();
+                        enemy.requestBossRetreat();
                     }
 
                     // BOSS召唤小弟: 血量低于50%时触发，每只BOSS只能召唤一次
                     if (enemy.isPendingSummon()) {
                         spawnBossMinions(enemy);
                         enemy.markSummoned();
+                    }
+
+                    if (enemy.isPendingPhaseTwoMechanic()) {
+                        enemy.consumePhaseTwoMechanic();
+                        triggerStageBossPhaseTwo(enemy);
                     }
 
                     // 狐狸精狐媚法术: 向四周发射6道花瓣
@@ -875,14 +933,51 @@ public class GameEngine {
 
                     // 小青龙水龙弹: 3 颗窄扇，相邻夹角 12 度
                     if (enemy instanceof LittleGreenDragon && ((LittleGreenDragon) enemy).isPendingWaterBolt()) {
-                        spawnAimedSpell(enemy, player.getX(), player.getY(), SkillType.ENEMY_WaterBolt, false, 3, 12f);
-                        ((LittleGreenDragon) enemy).consumeWaterBolt();
+                        LittleGreenDragon dragon = (LittleGreenDragon) enemy;
+                        spawnAimedSpell(enemy, player.getX(), player.getY(), SkillType.ENEMY_WaterBolt, false,
+                                dragon.getWaterBoltCount(), dragon.getWaterBoltSpread());
+                        dragon.consumeWaterBolt();
+                        enemy.requestBossRetreat();
                     }
 
                     // 小青龙龙雷: 锁在玩家脚下的雷区，两段范围伤害
                     if (enemy instanceof LittleGreenDragon && ((LittleGreenDragon) enemy).isPendingLightning()) {
                         spawnDragonLightning(enemy, player.getX(), player.getY(), false);
                         ((LittleGreenDragon) enemy).consumeLightning();
+                        enemy.requestBossRetreat();
+                    }
+
+                    if (enemy instanceof TurtleChancellor && ((TurtleChancellor) enemy).isPendingSeal()) {
+                        seaSealZones.add(new SeaSealZone(player.getX(), player.getY(), enemy));
+                        ((TurtleChancellor) enemy).consumeSeal();
+                        enemy.requestBossRetreat();
+                    }
+
+                    if (enemy instanceof SeaDragonPrince) {
+                        SeaDragonPrince prince = (SeaDragonPrince) enemy;
+                        if (prince.isPendingWaterBolt()) {
+                            spawnAimedSpell(enemy, player.getX(), player.getY(), SkillType.ENEMY_WaterBolt, false,
+                                    prince.getWaterBoltCount(), prince.getWaterBoltSpread());
+                            prince.consumeWaterBolt();
+                            enemy.requestBossRetreat();
+                        }
+                        applySeaDragonAura(prince.getX(), prince.getY(), prince.getAuraRange(), prince.getAuraSlowDuration());
+                    }
+
+                    if (enemy instanceof SeaDragonKing) {
+                        SeaDragonKing king = (SeaDragonKing) enemy;
+                        if (king.isPendingWaterBolt()) {
+                            spawnAimedSpell(enemy, player.getX(), player.getY(), SkillType.ENEMY_WaterBolt, false,
+                                    king.getWaterBoltCount(), king.getWaterBoltSpread());
+                            king.consumeWaterBolt();
+                            enemy.requestBossRetreat();
+                        }
+                        if (king.isPendingLightning()) {
+                            spawnDragonLightning(enemy, player.getX(), player.getY(), false);
+                            king.consumeLightning();
+                            enemy.requestBossRetreat();
+                        }
+                        applySeaDragonAura(king.getX(), king.getY(), king.getAuraRange(), king.getAuraSlowDuration());
                     }
 
                     // 小青龙龙威光环：减速玩家
@@ -1434,10 +1529,11 @@ public class GameEngine {
         }
         if (body instanceof LittleGreenDragon) {
             LittleGreenDragon dragon = (LittleGreenDragon) body;
-            if (dragon.isPendingWaterBolt()) {
-                spawnAimedSpell(dragon, targetX, targetY, SkillType.ENEMY_WaterBolt, true, 3, 12f);
-                dragon.consumeWaterBolt();
-            }
+                if (dragon.isPendingWaterBolt()) {
+                    spawnAimedSpell(dragon, targetX, targetY, SkillType.ENEMY_WaterBolt, true,
+                            dragon.getWaterBoltCount(), dragon.getWaterBoltSpread());
+                    dragon.consumeWaterBolt();
+                }
             if (dragon.isPendingLightning()) {
                 spawnDragonLightning(dragon, targetX, targetY, true);
                 dragon.consumeLightning();
@@ -1475,6 +1571,110 @@ public class GameEngine {
                 projectile.setFromEnemy(caster);
             }
             projectiles.add(projectile);
+        }
+    }
+
+    /** 关卡 BOSS 半血时的本层技能，每只只触发一次。 */
+    private void triggerStageBossPhaseTwo(Enemy boss) {
+        if (player == null || boss == null) {
+            return;
+        }
+        if (boss instanceof TurtleChancellor) {
+            ((TurtleChancellor) boss).beginPhaseShell();
+            seaSealZones.add(new SeaSealZone(player.getX(), player.getY(), boss));
+            showCenterToast("丞相令！镇海印落下了！", 1600);
+        } else if (boss instanceof SeaDragonPrince) {
+            dragonLightningZones.add(new DragonLightningZone(player.getX(), player.getY(), boss, false, true, 0));
+            ((SeaDragonPrince) boss).beginRagePounce();
+            showCenterToast("敖丙召来了怒涛！", 1600);
+        } else if (boss instanceof SeaDragonKing) {
+            float px = player.getX();
+            float py = player.getY();
+            for (int i = 0; i < 3; i++) {
+                dragonLightningZones.add(new DragonLightningZone(px, py, boss, false, true, i * 600L));
+            }
+            tidePools.add(new TidePool(boss.getX(), boss.getY(), boss));
+            showCenterToast("敖广掀起了龙王潮！", 1600);
+        }
+    }
+
+    private void applySeaSealDrop(SeaSealZone seal) {
+        Enemy caster = seal.getCaster();
+        if (caster == null) {
+            return;
+        }
+        if (!isPlayerInPrison() && player != null
+                && SeaSealZone.contains(seal.getX(), seal.getY(), player.getX(), player.getY())) {
+            int skillLevel = caster.isBossTier() ? 10 : 1;
+            AttackResult result = BattleUtil.caculateEnemyCasterDamage(caster, SkillType.ENEMY_WaterBolt, skillLevel);
+            if (result != null && result.isHit && result.damageValue > 0) {
+                boolean died = player.takeDamage(result.damageValue);
+                damageNumbers.add(new DamageNumber(player.getX(), player.getY() - 30, result.damageValue, result.isCrit));
+                if (died) {
+                    handlePlayerDeath();
+                }
+            }
+            player.applyCC(Character.CrowdControlType.ROOT, 1000);
+        }
+        for (Pet pet : new ArrayList<>(activePets)) {
+            Enemy body = pet.getEntity();
+            if (body == null || !body.isAlive() || pet.isDowned()) {
+                continue;
+            }
+            if (!SeaSealZone.contains(seal.getX(), seal.getY(), body.getX(), body.getY())) {
+                continue;
+            }
+            AttackResult result = BattleUtil.calculatePetDamage(caster, body, true);
+            if (result != null && result.isHit && result.damageValue > 0) {
+                boolean died = body.takeDamage(result.damageValue);
+                damageNumbers.add(new DamageNumber(body.getX(), body.getY() - 40, result.damageValue, result.isCrit));
+                if (died || !body.isAlive()) {
+                    pet.setDowned(true);
+                    PetSystem.getInstance().recallActive();
+                    activePets.clear();
+                    showCenterToast("战宠「" + pet.getName() + "」重伤，已收回！", 1800);
+                    break;
+                }
+            }
+        }
+    }
+
+    private void applyTidePoolTick(TidePool pool) {
+        if (player != null && !isPlayerInPrison()
+                && TidePool.contains(pool.getX(), pool.getY(), player.getX(), player.getY())) {
+            RoleInfo roleInfo = RoleSystem.getInstance().getRoleInfo();
+            int dmg = Math.max(1, (int) (roleInfo.getBloodCap() * 0.03f));
+            boolean died = player.takeDamage(dmg);
+            damageNumbers.add(new DamageNumber(player.getX(), player.getY() - 40, dmg));
+            if (died) {
+                handlePlayerDeath();
+            }
+        }
+        for (Pet pet : new ArrayList<>(activePets)) {
+            Enemy body = pet.getEntity();
+            if (body == null || !body.isAlive() || pet.isDowned()) {
+                continue;
+            }
+            if (!TidePool.contains(pool.getX(), pool.getY(), body.getX(), body.getY())) {
+                continue;
+            }
+            int dmg = Math.max(1, (int) (body.getMaxHealth() * 0.03f));
+            boolean died = body.takeDamage(dmg);
+            damageNumbers.add(new DamageNumber(body.getX(), body.getY() - 40, dmg, false));
+            if (died || !body.isAlive()) {
+                pet.setDowned(true);
+                PetSystem.getInstance().recallActive();
+                activePets.clear();
+                showCenterToast("战宠「" + pet.getName() + "」重伤，已收回！", 1800);
+                break;
+            }
+        }
+        Enemy caster = pool.getCaster();
+        if (caster != null && caster.isAlive()
+                && TidePool.contains(pool.getX(), pool.getY(), caster.getX(), caster.getY())) {
+            int heal = Math.max(1, (int) (caster.getMaxHealth() * 0.02f));
+            caster.heal(heal);
+            damageNumbers.add(DamageNumber.heal(caster.getX(), caster.getY() - 30, heal));
         }
     }
 
@@ -1516,7 +1716,8 @@ public class GameEngine {
             } else if (caster.getEnemyLevel() == Enemy.EnemyLevel.ELITE) {
                 skillLevel = 5;
             }
-            AttackResult result = BattleUtil.caculateEnemyCasterDamage(caster, SkillType.ENEMY_DragonLightning, skillLevel);
+            SkillType spell = zone.isWater() ? SkillType.ENEMY_WaterBolt : SkillType.ENEMY_DragonLightning;
+            AttackResult result = BattleUtil.caculateEnemyCasterDamage(caster, spell, skillLevel);
             scaleLightningDamage(result);
             if (result != null && result.isHit && result.damageValue > 0) {
                 boolean died = player.takeDamage(result.damageValue);
@@ -1743,7 +1944,7 @@ public class GameEngine {
         // Draw day-night overlay (after map, before player, 与 update() 保持一致：海底/海底迷宫/地府/幻境关闭)
         int curMapIdForDraw = MapSystem.getInstance().getCurrentMapId();
         if (dayNightCycle != null && curMapIdForDraw != MapSystem.MAP_ID_DONGHAI_SEABED
-                && curMapIdForDraw != MapSystem.MAP_ID_UNDERWATER_MAZE
+                && !MapSystem.isUnderwaterMazeId(curMapIdForDraw)
                 && curMapIdForDraw != MapSystem.MAP_ID_NETHERWORLD
                 && curMapIdForDraw != MapSystem.MAP_ID_ILLUSION_REALM) {
             dayNightCycle.draw(canvas, screenWidth, screenHeight);
@@ -1841,11 +2042,21 @@ public class GameEngine {
                 zone.draw(canvas, (int) -cameraX, (int) -cameraY);
             }
         }
+        if (!seaSealZones.isEmpty()) {
+            for (SeaSealZone seal : new ArrayList<>(seaSealZones)) {
+                seal.draw(canvas, (int) -cameraX, (int) -cameraY);
+            }
+        }
+        if (!tidePools.isEmpty()) {
+            for (TidePool pool : new ArrayList<>(tidePools)) {
+                pool.draw(canvas, (int) -cameraX, (int) -cameraY);
+            }
+        }
 
         // Draw weather effects (海底地图、海底迷宫、地府不显示天气)
         int drawMapId = MapSystem.getInstance().getCurrentMapId();
         if (weatherSystem != null && drawMapId != MapSystem.MAP_ID_DONGHAI_SEABED
-                && drawMapId != MapSystem.MAP_ID_UNDERWATER_MAZE
+                && !MapSystem.isUnderwaterMazeId(drawMapId)
                 && drawMapId != MapSystem.MAP_ID_NETHERWORLD) {
             weatherSystem.draw(canvas);
         }
@@ -2083,6 +2294,9 @@ public class GameEngine {
      */
     public void teleportToMap(int mapId) {
         isLoading = true;
+        dragonLightningZones.clear();
+        seaSealZones.clear();
+        tidePools.clear();
         String mapName = MapSystem.getInstance().getMapName(mapId);
         showCenterToast("正在前往" + mapName + "...");
 
@@ -2148,6 +2362,9 @@ public class GameEngine {
 
     public void teleportToMapWithPosition(int mapId, float x, float y) {
         isLoading = true;
+        dragonLightningZones.clear();
+        seaSealZones.clear();
+        tidePools.clear();
         MapSystem.getInstance().loadMapAsync(mapId, new MapSystem.OnLoadMapCallback() {
             @Override
             public void onLoadMapFinish(int mapId, int[][] mapData) {
@@ -2283,6 +2500,28 @@ public class GameEngine {
     }
 
     /**
+     * 海底迷宫层间传送。第三层通关后回到东海海底。
+     */
+    private void handleUnderwaterMazeExit(int curMapId) {
+        if (curMapId == MapSystem.MAP_ID_UNDERWATER_MAZE) {
+            showCenterToast("你潜入了沉船铁闸……");
+            teleportToMap(MapSystem.MAP_ID_UNDERWATER_MAZE_2);
+        } else if (curMapId == MapSystem.MAP_ID_UNDERWATER_MAZE_2) {
+            showCenterToast("龙宫内海就在前方……");
+            teleportToMap(MapSystem.MAP_ID_UNDERWATER_MAZE_3);
+        } else if (curMapId == MapSystem.MAP_ID_UNDERWATER_MAZE_3) {
+            RoleInfo roleInfo = RoleSystem.getInstance().getRoleInfo();
+            long expReward = 25000;
+            long moneyReward = 10000;
+            roleInfo.setExp(roleInfo.getExp() + expReward);
+            roleInfo.setMoney(roleInfo.getMoney() + moneyReward);
+            addMessage("海底迷宫通关！获得 " + expReward + " 经验、" + moneyReward + " 金钱", Color.YELLOW);
+            showCenterToast("海底迷宫通关！获得 " + expReward + " 经验、" + moneyReward + " 金钱");
+            teleportToMap(MapSystem.MAP_ID_DONGHAI_SEABED);
+        }
+    }
+
+    /**
      * 地狱迷宫层间传送逻辑
      */
     private void handleHellMazeExit(int curMapId) {
@@ -2393,10 +2632,15 @@ public class GameEngine {
                             isCrit
                     ));
 
-                    // 法术击退效果: 从玩家位置推开敌人
-                    enemy.applyKnockback(player.getX(), player.getY(), 200f, 200);
-                    // 法术受击硬直
-                    enemy.applyCC(Character.CrowdControlType.STUN, 200);
+                    // 法术击退。BOSS 硬直中的招式不被法术打断。
+                    if (enemy.isBossTier()) {
+                        if (!enemy.isCommittedAction()) {
+                            enemy.applyKnockback(player.getX(), player.getY(), 80f, 80);
+                        }
+                    } else {
+                        enemy.applyKnockback(player.getX(), player.getY(), 200f, 200);
+                        enemy.applyCC(Character.CrowdControlType.STUN, 200);
+                    }
 
                     // 火云术9级+: 灼烧效果 (3秒, 每秒伤害=基础伤害的30%)
                     if (proj != null && proj.getBurnDuration() > 0) {
@@ -2485,23 +2729,29 @@ public class GameEngine {
                             hit.isCrit
                     ));
 
-                    // 击退效果: 从玩家位置推开敌人
-                    hit.enemy.applyKnockback(player.getX(), player.getY(), 300f, 200);
-                    // 受击硬直: 短暂停顿
-                    hit.enemy.applyCC(Character.CrowdControlType.STUN, 150);
+                    // 击退。BOSS 出招途中不受近战硬直打断。
+                    if (!hit.enemy.isBossTier()) {
+                        hit.enemy.applyKnockback(player.getX(), player.getY(), 300f, 200);
+                        hit.enemy.applyCC(Character.CrowdControlType.STUN, 150);
+                    } else if (!hit.enemy.isCommittedAction()) {
+                        hit.enemy.applyKnockback(player.getX(), player.getY(), 120f, 80);
+                    }
 
                     // 大海龟反伤: 反弹 20% 伤害给玩家
+                    int reflectDmg = 0;
                     if (hit.enemy instanceof GiantSeaTurtle) {
-                        int reflectDmg = ((GiantSeaTurtle) hit.enemy).consumeReflectDamage();
-                        if (reflectDmg > 0) {
-                            player.takeDamage(reflectDmg);
-                            damageNumbers.add(new DamageNumber(
-                                    player.getX(),
-                                    player.getY() - 40,
-                                    reflectDmg,
-                                    false
-                            ));
-                        }
+                        reflectDmg = ((GiantSeaTurtle) hit.enemy).consumeReflectDamage();
+                    } else if (hit.enemy instanceof TurtleChancellor) {
+                        reflectDmg = ((TurtleChancellor) hit.enemy).consumeReflectDamage();
+                    }
+                    if (reflectDmg > 0) {
+                        player.takeDamage(reflectDmg);
+                        damageNumbers.add(new DamageNumber(
+                                player.getX(),
+                                player.getY() - 40,
+                                reflectDmg,
+                                false
+                        ));
                     }
                 } else {
                     // 未命中也显示
@@ -2607,6 +2857,14 @@ public class GameEngine {
      * BOSS召唤小弟: 根据BOSS类型生成同类型小弟(1精英 + 2-3首领 + 5-8普通)
      */
     private void spawnBossMinions(Enemy boss) {
+        if (boss instanceof TurtleChancellor) {
+            spawnThemedMinions(boss, 1 + (int) (Math.random() * 2), true);
+            return;
+        }
+        if (boss instanceof SeaDragonPrince || boss instanceof SeaDragonKing) {
+            spawnThemedMinions(boss, 2, false);
+            return;
+        }
         float bossX = boss.getX();
         float bossY = boss.getY();
         java.util.List<Enemy> minions = new java.util.ArrayList<>();
@@ -2632,6 +2890,21 @@ public class GameEngine {
         // 显示召唤通知
         showCenterToast(boss.getName() + " 召唤了一群小弟!");
         LogUtil.d("BossSummon", boss.getName() + " summoned " + minions.size() + " minions");
+    }
+
+    /** 海底关卡 BOSS 的半血召唤：龟丞相召虾兵，龙族召小青龙。 */
+    private void spawnThemedMinions(Enemy boss, int count, boolean shrimp) {
+        for (int i = 0; i < count; i++) {
+            float angle = (float) (Math.random() * Math.PI * 2);
+            float distance = 100 + (float) (Math.random() * 150);
+            float spawnX = boss.getX() + (float) Math.cos(angle) * distance;
+            float spawnY = boss.getY() + (float) Math.sin(angle) * distance;
+            Enemy minion = shrimp ? new ShrimpSoldier(spawnX, spawnY) : new LittleGreenDragon(spawnX, spawnY);
+            minion.setName(shrimp ? "虾兵" : "小青龙");
+            minion.setAggro(60000);
+            enemies.add(minion);
+        }
+        showCenterToast(shrimp ? "龟丞相召来了虾兵！" : boss.getName() + " 召来了小青龙！", 1600);
     }
 
     /**

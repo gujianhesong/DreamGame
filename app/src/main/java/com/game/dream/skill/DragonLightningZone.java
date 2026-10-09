@@ -25,16 +25,25 @@ public class DragonLightningZone {
     private final float y;
     private final com.game.dream.enemy.Enemy caster;
     private final boolean fromPet;
+    private final boolean water;
+    private final long startDelay;
     private final long startTime;
 
     private int pulsesDone;
     private long lastPulseTime;
 
     public DragonLightningZone(float x, float y, com.game.dream.enemy.Enemy caster, boolean fromPet) {
+        this(x, y, caster, fromPet, false, 0);
+    }
+
+    public DragonLightningZone(float x, float y, com.game.dream.enemy.Enemy caster, boolean fromPet,
+                               boolean water, long startDelay) {
         this.x = x;
         this.y = y;
         this.caster = caster;
         this.fromPet = fromPet;
+        this.water = water;
+        this.startDelay = Math.max(0, startDelay);
         this.startTime = System.currentTimeMillis();
         this.pulsesDone = 0;
         this.lastPulseTime = 0;
@@ -56,8 +65,12 @@ public class DragonLightningZone {
         return fromPet;
     }
 
+    public boolean isWater() {
+        return water;
+    }
+
     public boolean isActive() {
-        long life = (PULSE_COUNT - 1) * PULSE_INTERVAL + LINGER_MS;
+        long life = startDelay + (PULSE_COUNT - 1) * PULSE_INTERVAL + LINGER_MS;
         return System.currentTimeMillis() - startTime < life;
     }
 
@@ -67,7 +80,7 @@ public class DragonLightningZone {
             return false;
         }
         long elapsed = System.currentTimeMillis() - startTime;
-        if (elapsed < pulsesDone * PULSE_INTERVAL) {
+        if (elapsed < startDelay + pulsesDone * PULSE_INTERVAL) {
             return false;
         }
         pulsesDone++;
@@ -92,12 +105,16 @@ public class DragonLightningZone {
 
         int fillAlpha = flashing ? 90 : 36;
         paint.setStyle(Paint.Style.FILL);
-        paint.setColor(Color.argb(fillAlpha, 190, 255, 80));
+        paint.setColor(water
+                ? Color.argb(fillAlpha, 70, 170, 255)
+                : Color.argb(fillAlpha, 190, 255, 80));
         canvas.drawCircle(sx, sy, RADIUS, paint);
 
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(flashing ? 5f : 3f);
-        paint.setColor(Color.argb(flashing ? 230 : 150, 220, 255, 120));
+        paint.setColor(water
+                ? Color.argb(flashing ? 230 : 150, 170, 230, 255)
+                : Color.argb(flashing ? 230 : 150, 220, 255, 120));
         canvas.drawCircle(sx, sy, RADIUS, paint);
 
         if (!flashing) {
@@ -106,7 +123,16 @@ public class DragonLightningZone {
 
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(3f);
-        paint.setColor(Color.argb(230, 255, 255, 210));
+        paint.setColor(water ? Color.argb(220, 210, 245, 255) : Color.argb(230, 255, 255, 210));
+        if (water) {
+            for (int i = 0; i < 3; i++) {
+                canvas.drawCircle(sx, sy, RADIUS * (0.35f + i * 0.22f), paint);
+            }
+            paint.setStyle(Paint.Style.FILL);
+            paint.setColor(Color.argb(210, 230, 250, 255));
+            canvas.drawCircle(sx, sy, 12f, paint);
+            return;
+        }
         float flicker = (now / 30f);
         for (int i = 0; i < 6; i++) {
             float angle = flicker * 0.15f + i * (float) (Math.PI * 2 / 6);

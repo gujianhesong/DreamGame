@@ -11,7 +11,10 @@ import com.game.dream.enemy.GiantSeaTurtle;
 import com.game.dream.enemy.LittleGreenDragon;
 import com.game.dream.enemy.LonelySpirit;
 import com.game.dream.enemy.SavageWraith;
+import com.game.dream.enemy.SeaDragonKing;
+import com.game.dream.enemy.SeaDragonPrince;
 import com.game.dream.enemy.ShrimpSoldier;
+import com.game.dream.enemy.TurtleChancellor;
 import com.game.dream.enemy.Tiger;
 import com.game.dream.enemy.Viper;
 import com.game.dream.enemy.WildBoar;
@@ -161,6 +164,9 @@ public class MapContentManager {
         if (mapId >= MapSystem.MAP_ID_HELL_MAZE_1 && mapId <= MapSystem.MAP_ID_HELL_MAZE_4) {
             spawnHellMazeBoss(mapId, enemies);
         }
+        if (MapSystem.isUnderwaterMazeId(mapId)) {
+            spawnUnderwaterMazeBoss(mapId, enemies);
+        }
         return enemies;
     }
 
@@ -219,6 +225,31 @@ public class MapContentManager {
         }
         if (boss != null) {
             boss.setAggro(0); // 不主动仇恨，靠近时才反应
+            enemies.add(boss);
+        }
+    }
+
+    /** 海底迷宫关卡 BOSS 守在出口房间里，不站在传送门上。 */
+    private void spawnUnderwaterMazeBoss(int mapId, List<Enemy> enemies) {
+        UnderwaterMazeGenerator gen = MapSystem.getInstance().getUnderwaterMazeGenerator();
+        if (gen == null) {
+            return;
+        }
+        float bx = gen.getExitRoomX();
+        float by = gen.getExitRoomY();
+        Enemy boss = null;
+        if (mapId == MapSystem.MAP_ID_UNDERWATER_MAZE) {
+            boss = new TurtleChancellor(bx, by);
+            boss.setName("龟丞相");
+        } else if (mapId == MapSystem.MAP_ID_UNDERWATER_MAZE_2) {
+            boss = new SeaDragonPrince(bx, by);
+            boss.setName("东海龙太子敖丙");
+        } else if (mapId == MapSystem.MAP_ID_UNDERWATER_MAZE_3) {
+            boss = new SeaDragonKing(bx, by);
+            boss.setName("东海龙王敖广");
+        }
+        if (boss != null) {
+            boss.setAggro(0);
             enemies.add(boss);
         }
     }
@@ -296,19 +327,38 @@ public class MapContentManager {
                 break;
             }
             case MapSystem.MAP_ID_UNDERWATER_MAZE: {
-                // 海底迷宫
-                if (rand < 0.30) {
-                    enemy = new Yaksha(spawnX, spawnY);
-                    enemy.setName("夜叉");
-                } else if (rand < 0.55) {
-                    enemy = new LittleGreenDragon(spawnX, spawnY);
-                    enemy.setName("小青龙");
-                } else if (rand < 0.80) {
+                // 珊瑚浅礁：虾兵为主，夹少量蟹将
+                if (rand < 0.70) {
                     enemy = new ShrimpSoldier(spawnX, spawnY);
                     enemy.setName("虾兵");
                 } else {
                     enemy = new CrabGeneral(spawnX, spawnY);
                     enemy.setName("蟹将");
+                }
+                break;
+            }
+            case MapSystem.MAP_ID_UNDERWATER_MAZE_2: {
+                // 沉船铁闸：蟹将、夜叉，少量虾兵
+                if (rand < 0.50) {
+                    enemy = new CrabGeneral(spawnX, spawnY);
+                    enemy.setName("蟹将");
+                } else if (rand < 0.90) {
+                    enemy = new Yaksha(spawnX, spawnY);
+                    enemy.setName("夜叉");
+                } else {
+                    enemy = new ShrimpSoldier(spawnX, spawnY);
+                    enemy.setName("虾兵");
+                }
+                break;
+            }
+            case MapSystem.MAP_ID_UNDERWATER_MAZE_3: {
+                // 龙宫内海：小青龙与夜叉
+                if (rand < 0.55) {
+                    enemy = new LittleGreenDragon(spawnX, spawnY);
+                    enemy.setName("小青龙");
+                } else {
+                    enemy = new Yaksha(spawnX, spawnY);
+                    enemy.setName("夜叉");
                 }
                 break;
             }

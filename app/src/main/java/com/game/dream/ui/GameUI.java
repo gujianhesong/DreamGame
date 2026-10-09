@@ -1141,7 +1141,7 @@ public class GameUI {
         // Draw time info (海底/海底迷宫/地府/幻境 无昼夜概念，不显示)
         int curMapId = MapSystem.getInstance().getCurrentMapId();
         boolean hasDayNight = curMapId != MapSystem.MAP_ID_DONGHAI_SEABED
-                && curMapId != MapSystem.MAP_ID_UNDERWATER_MAZE
+                && !MapSystem.isUnderwaterMazeId(curMapId)
                 && curMapId != MapSystem.MAP_ID_NETHERWORLD
                 && curMapId != MapSystem.MAP_ID_ILLUSION_REALM;
         if (hasDayNight && GameEngine.getInstance().getDayNightCycle() != null) {
@@ -1151,7 +1151,7 @@ public class GameUI {
 
         // Draw weather info (海底/海底迷宫/地府 不显示天气)
         boolean hasWeather = curMapId != MapSystem.MAP_ID_DONGHAI_SEABED
-                && curMapId != MapSystem.MAP_ID_UNDERWATER_MAZE
+                && !MapSystem.isUnderwaterMazeId(curMapId)
                 && curMapId != MapSystem.MAP_ID_NETHERWORLD;
         if (hasWeather && GameEngine.getInstance().getWeatherSystem() != null) {
             paint.setColor(Color.rgb(200, 220, 255)); // Light blue

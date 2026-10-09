@@ -64,7 +64,9 @@ public class MapSystem {
     public static final int MAP_ID_NETHERWORLD = 1005; //地府
 
     public static final int MAP_ID_QING_XI_MAZE = 2001; //清溪迷宫
-    public static final int MAP_ID_UNDERWATER_MAZE = 2002; //海底迷宫
+    public static final int MAP_ID_UNDERWATER_MAZE = 2002; //海底迷宫一层 珊瑚浅礁
+    public static final int MAP_ID_UNDERWATER_MAZE_2 = 2007; //海底迷宫二层 沉船铁闸
+    public static final int MAP_ID_UNDERWATER_MAZE_3 = 2008; //海底迷宫三层 龙宫内海
     public static final int MAP_ID_HELL_MAZE_1 = 2003; //地狱迷宫第1层-黄泉迷径
     public static final int MAP_ID_HELL_MAZE_2 = 2004; //地狱迷宫第2层-血池炼狱
     public static final int MAP_ID_HELL_MAZE_3 = 2005; //地狱迷宫第3层-枉死城
@@ -193,8 +195,8 @@ public class MapSystem {
                 additionalVillageRenderers.clear();
                 // 初始化迷宫对象
                 MazeSystem.getInstance().initMazeObjects(mapData, mazeGenerator);
-            } else if (mapId == MAP_ID_UNDERWATER_MAZE) {
-                // 海底迷宫
+            } else if (isUnderwaterMazeId(mapId)) {
+                // 海底迷宫（三层，每次进入重新生成）
                 underwaterMazeGenerator = new UnderwaterMazeGenerator(findMap.getMapWidth(), findMap.getMapHeight(), TILE_SIZE);
                 mapData = underwaterMazeGenerator.generateMap();
                 curMapInfo.setMapData(mapData);
@@ -501,7 +503,9 @@ public class MapSystem {
                 new Pair<>(10000, NetherworldMapGenerator.PALACE_Y2 + 300)));
 
         mapInfoList.add(new MapInfo(MAP_ID_QING_XI_MAZE, "清溪地下迷宫", 10000, 10000, null));
-        mapInfoList.add(new MapInfo(MAP_ID_UNDERWATER_MAZE, "海底迷宫", UNDERWATER_MAZE_WIDTH, UNDERWATER_MAZE_HEIGHT, null));
+        mapInfoList.add(new MapInfo(MAP_ID_UNDERWATER_MAZE, "珊瑚浅礁", UNDERWATER_MAZE_WIDTH, UNDERWATER_MAZE_HEIGHT, null));
+        mapInfoList.add(new MapInfo(MAP_ID_UNDERWATER_MAZE_2, "沉船铁闸", UNDERWATER_MAZE_WIDTH, UNDERWATER_MAZE_HEIGHT, null));
+        mapInfoList.add(new MapInfo(MAP_ID_UNDERWATER_MAZE_3, "龙宫内海", UNDERWATER_MAZE_WIDTH, UNDERWATER_MAZE_HEIGHT, null));
         mapInfoList.add(new MapInfo(MAP_ID_HELL_MAZE_1, "黄泉迷径", HELL_MAZE_WIDTH, HELL_MAZE_HEIGHT, null));
         mapInfoList.add(new MapInfo(MAP_ID_HELL_MAZE_2, "血池炼狱", HELL_MAZE_WIDTH, HELL_MAZE_HEIGHT, null));
         mapInfoList.add(new MapInfo(MAP_ID_HELL_MAZE_3, "枉死城", HELL_MAZE_WIDTH, HELL_MAZE_HEIGHT, null));
@@ -592,7 +596,7 @@ public class MapSystem {
             if (mazeRenderer != null) {
                 mazeRenderer.draw(canvas, cameraX, cameraY, screenWidth, screenHeight);
             }
-        } else if (currentMapId == MAP_ID_UNDERWATER_MAZE) {
+        } else if (isCurrentUnderwaterMazeMap()) {
             // 海底迷宫渲染
             if (underwaterMazeRenderer != null) {
                 underwaterMazeRenderer.draw(canvas, cameraX, cameraY, screenWidth, screenHeight);
@@ -717,6 +721,16 @@ public class MapSystem {
      */
     public boolean isCurrentHellMazeMap() {
         return currentMapId >= MAP_ID_HELL_MAZE_1 && currentMapId <= MAP_ID_HELL_MAZE_4;
+    }
+
+    public static boolean isUnderwaterMazeId(int mapId) {
+        return mapId == MAP_ID_UNDERWATER_MAZE
+                || mapId == MAP_ID_UNDERWATER_MAZE_2
+                || mapId == MAP_ID_UNDERWATER_MAZE_3;
+    }
+
+    public boolean isCurrentUnderwaterMazeMap() {
+        return isUnderwaterMazeId(currentMapId);
     }
 
     /**

@@ -98,6 +98,7 @@ public abstract class Enemy extends Character {
     protected static final int SPELL_FOX_CHARM = 2;
     protected static final int SPELL_WATER_BOLT = 3;
     protected static final int SPELL_DRAGON_LIGHTNING = 4;
+    protected static final int SPELL_SEA_SEAL = 5;
 
     protected boolean isSpellWindingUp = false;
     protected long spellWindUpStartTime = 0;
@@ -107,6 +108,17 @@ public abstract class Enemy extends Character {
     protected long genericSpellCooldown = 3500;
     protected long lastSpellCastRollTime = 0;
     protected static final long SPELL_CAST_CHECK_INTERVAL = 800;
+
+    // 关卡 BOSS / 野生 BOSS：受击攒够就后撤，半血进入二阶段
+    private int bossHitCount = 0;
+    private long bossHitWindowStart = 0;
+    private boolean pendingBossRetreat = false;
+    private boolean bossRetreating = false;
+    private long bossRetreatEndTime = 0;
+    private float bossRetreatDx = 0f;
+    private float bossRetreatDy = 1f;
+    private boolean bossPhaseTwo = false;
+    private boolean pendingPhaseTwoMechanic = false;
 
     // Attack wind-up (攻击前摇)
     protected boolean isWindingUp = false;
@@ -388,6 +400,10 @@ public abstract class Enemy extends Character {
 
         long currentTime = System.currentTimeMillis();
         float deltaSeconds = deltaTime / 1000f;
+
+        if (advanceBossRetreat(deltaSeconds, mapWidth, mapHeight, currentTime)) {
+            return;
+        }
 
         // Calculate distance to player
         float dx = playerX - x;
@@ -749,6 +765,11 @@ public abstract class Enemy extends Character {
                 break;
         }
 
+        if (pendingBossRetreat && isBossTier() && !isCastingSpell && !isSpellWindingUp && !isPounceRetreating
+                && !(currentAttackType == AttackType.POUNCE && isWindingUp)) {
+            beginBossRetreat(playerX, playerY, currentTime);
+        }
+
         // Update animation
         updateAnimation(currentTime);
     }
@@ -880,6 +901,10 @@ public abstract class Enemy extends Character {
             chance *= 1.25f;
         } else if (enemyLevel == EnemyLevel.ELITE) {
             chance *= 1.1f;
+        }
+        if (bossPhaseTwo) {
+            chance *= 1.6f;
+            return Math.min(chance, 0.70f);
         }
         if (hpRatio <= 0.5f) {
             chance *= 1.15f;
@@ -1516,18 +1541,22 @@ public abstract class Enemy extends Character {
             health = Math.max(1, health);
         }
 
-        // When damaged, automatically enter CHASING state and set aggro
+        // When damaged, automatically enter CHASING state and set aggro.
+        // BOSS 已经进入前摇、冲锋或施法时，受击只扣血，不打断这招。
         if (isAlive()) {
-            currentState = State.CHASING;
-            stateTimer = currentTime;
-            isWindingUp = false;
-            isCharging = false;
-            isPounceRetreating = false;
-            comboCurrentHit = 0;
-            isSpinning = false;
-            isBlinkDashing = false;
-            isSlamLeaping = false;
-            cancelSpellCasting();
+            boolean holdAction = isBossTier() && isCommittedAction();
+            if (!holdAction) {
+                currentState = State.CHASING;
+                stateTimer = currentTime;
+                isWindingUp = false;
+                isCharging = false;
+                isPounceRetreating = false;
+                comboCurrentHit = 0;
+                isSpinning = false;
+                isBlinkDashing = false;
+                isSlamLeaping = false;
+                cancelSpellCasting();
+            }
 
             // Set aggro timer - enemy will chase for 10 seconds after being hit
             isAggroed = true;
@@ -1535,10 +1564,18 @@ public abstract class Enemy extends Character {
 
             LogUtil.d("Enemy", getName() + " was damaged! Aggroed for 10 seconds");
 
-            // BOSS血量低于50%时触发召唤(每只BOSS只能召唤一次)
-            if (isBossTier() && !hasSummonedMinions && health <= maxHealth * 0.5) {
-                pendingSummon = true;
+            if (isBossTier() && health <= maxHealth * 0.5f) {
+                if (!hasSummonedMinions) {
+                    pendingSummon = true;
+                }
+                if (!bossPhaseTwo) {
+                    bossPhaseTwo = true;
+                    windUpDuration = Math.max(180L, (long) (windUpDuration * 0.65f));
+                    spellWindUpDuration = Math.max(220L, (long) (spellWindUpDuration * 0.65f));
+                    pendingPhaseTwoMechanic = true;
+                }
             }
+            registerBossHit();
         }
 
         // Check if dead
@@ -1565,11 +1602,108 @@ public abstract class Enemy extends Character {
         hasSummonedMinions = true;
     }
 
+    public boolean isBossPhaseTwo() {
+        return bossPhaseTwo;
+    }
+
+    public boolean isPendingPhaseTwoMechanic() {
+        return pendingPhaseTwoMechanic;
+    }
+
+    public void consumePhaseTwoMechanic() {
+        pendingPhaseTwoMechanic = false;
+    }
+
+    /** 前摇、冲锋、连击、施法、猛扑撤退进行中。 */
+    public boolean isCommittedAction() {
+        return isWindingUp || isCharging || isSpinning || isBlinkDashing || isSlamLeaping
+                || isSpellWindingUp || isCastingSpell || isPounceRetreating
+                || (currentState == State.ATTACKING && currentAttackType == AttackType.COMBO && comboCurrentHit > 0);
+    }
+
+    /** 一套攻击或短时间连吃三下之后后撤。猛扑自带撤退，不再叠一次。 */
+    public void requestBossRetreat() {
+        if (!isBossTier() || bossRetreating) {
+            return;
+        }
+        if (currentAttackType == AttackType.POUNCE) {
+            return;
+        }
+        pendingBossRetreat = true;
+    }
+
+    protected void interruptBossRetreat() {
+        bossRetreating = false;
+        pendingBossRetreat = false;
+    }
+
+    private void registerBossHit() {
+        if (!isBossTier()) {
+            return;
+        }
+        long now = System.currentTimeMillis();
+        if (now - bossHitWindowStart > 1600) {
+            bossHitWindowStart = now;
+            bossHitCount = 1;
+        } else {
+            bossHitCount++;
+        }
+        if (bossHitCount >= 3) {
+            bossHitCount = 0;
+            bossHitWindowStart = now;
+            requestBossRetreat();
+        }
+    }
+
+    private boolean advanceBossRetreat(float deltaSeconds, int mapWidth, int mapHeight, long currentTime) {
+        if (!bossRetreating) {
+            return false;
+        }
+        if (currentTime >= bossRetreatEndTime) {
+            bossRetreating = false;
+            return false;
+        }
+        targetX = x + bossRetreatDx * 240f;
+        targetY = y + bossRetreatDy * 240f;
+        moveToTargetWithSpeed(deltaSeconds, Math.max(speed, 80) * 1.4f);
+        x = Math.max(size, Math.min(x, mapWidth - size));
+        y = Math.max(size, Math.min(y, mapHeight - size));
+        updateAnimation(currentTime);
+        return true;
+    }
+
+    private void beginBossRetreat(float playerX, float playerY, long currentTime) {
+        pendingBossRetreat = false;
+        bossRetreating = true;
+        bossRetreatEndTime = currentTime + 500;
+        float dx = x - playerX;
+        float dy = y - playerY;
+        float len = (float) Math.sqrt(dx * dx + dy * dy);
+        if (len < 1f) {
+            dx = 0f;
+            dy = 1f;
+            len = 1f;
+        }
+        dx /= len;
+        dy /= len;
+        if (Math.random() < 0.5) {
+            float side = Math.random() < 0.5 ? 1f : -1f;
+            float px = -dy * side;
+            float py = dx * side;
+            dx = dx * 0.35f + px * 0.85f;
+            dy = dy * 0.35f + py * 0.85f;
+        }
+        bossRetreatDx = dx;
+        bossRetreatDy = dy;
+        isWindingUp = false;
+        currentState = State.CHASING;
+    }
+
     @Override
     public void setName(String name) {
         this.name = name;
         if (enemyLevel == EnemyLevel.STAGE_BOSS) {
-            this.name = name;
+            this.name = name + "关卡BOSS";
         } else if (enemyLevel == EnemyLevel.BOSS) {
             this.name = name + "BOSS";
         } else if (enemyLevel == EnemyLevel.ELITE) {

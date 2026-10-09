@@ -33,6 +33,8 @@ public class UnderwaterMazeGenerator {
     private int entranceY;
     private int exitX;
     private int exitY;
+    private int exitRoomX;
+    private int exitRoomY;
 
     // 边方向常量: 0=上, 1=下, 2=左, 3=右
     private static final int EDGE_TOP = 0;
@@ -284,6 +286,8 @@ public class UnderwaterMazeGenerator {
         } else {
             exitX = px;
             exitY = py;
+            exitRoomX = centerX;
+            exitRoomY = centerY;
         }
     }
 
@@ -330,4 +334,6 @@ public class UnderwaterMazeGenerator {
     public int getEntranceY() { return entranceY; }
     public int getExitX() { return exitX; }
     public int getExitY() { return exitY; }
+    public int getExitRoomX() { return exitRoomX; }
+    public int getExitRoomY() { return exitRoomY; }
 }

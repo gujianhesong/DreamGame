@@ -15,7 +15,7 @@ import com.game.dream.map.MapGenerator;
 import com.game.dream.map.MazeGenerator;
 import com.game.dream.system.MapSystem;
 import com.game.dream.utils.LogUtil;
-import com.game.dream.item.EquipmentItem;
+import com.game.dream.utils.ProssibleDropsUtil;
 import com.game.dream.item.Item;
 import com.game.dream.item.ItemStack;
 import com.game.dream.utils.Utils;
@@ -1729,7 +1729,6 @@ public abstract class Enemy extends Character {
         getPossibleDropList();
 
         if (!possibleDrops.isEmpty()) {
-            // Drop items count
             int numDrops = (int) (Math.random() * 2);
             if (isBossTier()) {
                 numDrops = 3 + (int) (Math.random() * 3);
@@ -1738,17 +1737,7 @@ public abstract class Enemy extends Character {
             } else if (enemyLevel == EnemyLevel.LEADER) {
                 numDrops = (int) (Math.random() * 3);
             }
-
-            for (int i = 0; i < numDrops && i < possibleDrops.size(); i++) {
-                Item item = possibleDrops.get((int) (Math.random() * possibleDrops.size()));
-                int quantity = 1 + (int) (Math.random() * 2); // 1-2 quantity
-
-                if (item instanceof EquipmentItem) {
-                    quantity = 1;
-                }
-
-                drops.add(new ItemStack(item, quantity));
-            }
+            drops.addAll(ProssibleDropsUtil.rollDrops(possibleDrops, this, numDrops));
         }
 
         // 技能书掉落: 精英 2% 概率, BOSS 20% 概率

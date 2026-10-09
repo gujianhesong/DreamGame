@@ -1,10 +1,151 @@
 package com.game.dream.utils;
 
 import com.game.dream.enemy.Enemy;
+import com.game.dream.item.ConsumableItem;
 import com.game.dream.item.EquipCreator;
+import com.game.dream.item.EquipmentItem;
+import com.game.dream.item.Item;
 import com.game.dream.item.ItemCreator;
+import com.game.dream.item.ItemStack;
+
+import java.util.ArrayList;
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Map;
 
 public class ProssibleDropsUtil {
+
+    public enum DropCategory {
+        POTION,
+        GAIN,
+        EQUIP,
+        CRAFT,
+        GEM,
+        STONE,
+        OTHER
+    }
+
+    /** 普通 / 首领 / 精英 / BOSS：药、增益、装备、制造书铁、宝石、洗练石 */
+    private static final int[] WEIGHT_NORMAL = {55, 5, 12, 12, 8, 8};
+    private static final int[] WEIGHT_LEADER = {45, 10, 15, 14, 8, 8};
+    private static final int[] WEIGHT_ELITE = {35, 15, 18, 15, 10, 7};
+    private static final int[] WEIGHT_BOSS = {20, 15, 25, 18, 12, 10};
+
+    public static DropCategory classify(Item item) {
+        if (item == null) {
+            return DropCategory.OTHER;
+        }
+        if (item instanceof EquipmentItem) {
+            return DropCategory.EQUIP;
+        }
+        if (item instanceof ConsumableItem) {
+            ConsumableItem.EffectType effect = ((ConsumableItem) item).getEffectType();
+            if (effect == ConsumableItem.EffectType.HEAL_HP
+                    || effect == ConsumableItem.EffectType.HEAL_MP) {
+                return DropCategory.POTION;
+            }
+            return DropCategory.GAIN;
+        }
+        int id = item.getId();
+        if (id >= 210000 && id < 230000) {
+            return DropCategory.CRAFT;
+        }
+        if (id >= 230000 && id < 240000) {
+            return DropCategory.GEM;
+        }
+        if (id >= 240000 && id < 250000) {
+            return DropCategory.STONE;
+        }
+        return DropCategory.OTHER;
+    }
+
+    public static List<ItemStack> rollDrops(List<Item> possibleDrops, Enemy enemy, int numDrops) {
+        List<ItemStack> drops = new ArrayList<>();
+        if (possibleDrops == null || possibleDrops.isEmpty() || numDrops <= 0) {
+            return drops;
+        }
+
+        Map<DropCategory, List<Item>> buckets = new EnumMap<>(DropCategory.class);
+        for (Item item : possibleDrops) {
+            DropCategory category = classify(item);
+            List<Item> bucket = buckets.get(category);
+            if (bucket == null) {
+                bucket = new ArrayList<>();
+                buckets.put(category, bucket);
+            }
+            bucket.add(item);
+        }
+
+        int[] weights = categoryWeights(enemy);
+        for (int i = 0; i < numDrops; i++) {
+            DropCategory category = pickCategory(buckets, weights);
+            if (category == null) {
+                break;
+            }
+            List<Item> bucket = buckets.get(category);
+            Item item = bucket.get((int) (Math.random() * bucket.size()));
+            int quantity = 1 + (int) (Math.random() * 2);
+            if (item instanceof EquipmentItem) {
+                quantity = 1;
+                bucket.remove(item);
+                if (bucket.isEmpty()) {
+                    buckets.remove(category);
+                }
+            }
+            drops.add(new ItemStack(item, quantity));
+        }
+        return drops;
+    }
+
+    private static int[] categoryWeights(Enemy enemy) {
+        if (enemy != null && enemy.isBossTier()) {
+            return WEIGHT_BOSS;
+        }
+        Enemy.EnemyLevel level = enemy == null ? Enemy.EnemyLevel.NORMAL : enemy.getEnemyLevel();
+        if (level == Enemy.EnemyLevel.ELITE) {
+            return WEIGHT_ELITE;
+        }
+        if (level == Enemy.EnemyLevel.LEADER) {
+            return WEIGHT_LEADER;
+        }
+        return WEIGHT_NORMAL;
+    }
+
+    private static DropCategory pickCategory(Map<DropCategory, List<Item>> buckets, int[] weights) {
+        DropCategory[] ordered = {
+                DropCategory.POTION, DropCategory.GAIN, DropCategory.EQUIP,
+                DropCategory.CRAFT, DropCategory.GEM, DropCategory.STONE
+        };
+        int total = 0;
+        int otherWeight = 0;
+        for (int i = 0; i < ordered.length; i++) {
+            List<Item> bucket = buckets.get(ordered[i]);
+            if (bucket != null && !bucket.isEmpty()) {
+                total += weights[i];
+            }
+        }
+        List<Item> other = buckets.get(DropCategory.OTHER);
+        if (other != null && !other.isEmpty()) {
+            otherWeight = 1;
+            total += otherWeight;
+        }
+        if (total <= 0) {
+            return null;
+        }
+        int roll = (int) (Math.random() * total);
+        int cursor = 0;
+        for (int i = 0; i < ordered.length; i++) {
+            List<Item> bucket = buckets.get(ordered[i]);
+            if (bucket == null || bucket.isEmpty()) {
+                continue;
+            }
+            cursor += weights[i];
+            if (roll < cursor) {
+                return ordered[i];
+            }
+        }
+        return DropCategory.OTHER;
+    }
 
     /**
      * 场景怪物物品掉落

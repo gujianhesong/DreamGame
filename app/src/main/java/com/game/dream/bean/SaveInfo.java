@@ -18,6 +18,25 @@ public class SaveInfo {
 
     private IllusionRealmInfo illusionRealmInfo;
 
+    private String saveId;
+    private long updatedAt;
+
+    public String getSaveId() {
+        return saveId;
+    }
+
+    public void setSaveId(String saveId) {
+        this.saveId = saveId;
+    }
+
+    public long getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(long updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
     public RoleInfo getRoleInfo() {
         return roleInfo;
     }

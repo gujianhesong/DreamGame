@@ -318,6 +318,22 @@ public class GameEngine {
         return null;
     }
 
+    public void prepareForSave() {
+        if (player == null) {
+            return;
+        }
+        RoleInfo roleInfo = RoleSystem.getInstance().getRoleInfo();
+        if (roleInfo == null) {
+            return;
+        }
+        int mapId = MapSystem.getInstance().getCurrentMapId();
+        if (mapId > 0 && mapId != MapSystem.MAP_ID_ILLUSION_REALM) {
+            roleInfo.setMapId(mapId);
+            roleInfo.setMapX((int) player.getX());
+            roleInfo.setMapY((int) player.getY());
+        }
+    }
+
     public void cleanup() {
         instance = null;
 

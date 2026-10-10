@@ -29,6 +29,7 @@ public class MainActivity extends AppCompatActivity {
         super.onPause();
         if (gameView != null) {
             gameView.pause();
+            gameView.prepareForSave();
 
             new Thread(new Runnable() {
                 @Override

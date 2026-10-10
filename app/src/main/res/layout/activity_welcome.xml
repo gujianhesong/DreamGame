@@ -18,10 +18,20 @@
 
     <Button
         android:id="@+id/startButton"
-        android:layout_width="200dp"
-        android:layout_height="60dp"
+        android:layout_width="220dp"
+        android:layout_height="56dp"
         android:backgroundTint="#3498db"
-        android:text="START GAME"
+        android:text="开始游戏"
+        android:textColor="#ffffff"
+        android:textSize="20sp" />
+
+    <Button
+        android:id="@+id/saveListButton"
+        android:layout_width="220dp"
+        android:layout_height="56dp"
+        android:layout_marginTop="16dp"
+        android:backgroundTint="#1abc9c"
+        android:text="存档"
         android:textColor="#ffffff"
         android:textSize="20sp" />
 

@@ -23,6 +23,13 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".SaveListActivity"
+            android:exported="false"
+            android:screenOrientation="landscape"
+            android:configChanges="orientation|screenSize"
+            android:theme="@style/Theme.DreamGame.Game"/>
+
         <!-- Main Game Screen -->
         <activity
             android:name=".MainActivity"

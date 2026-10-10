@@ -69,6 +69,12 @@ public class GameView extends SurfaceView implements Runnable {
         }
     }
 
+    public void prepareForSave() {
+        if (gameEngine != null) {
+            gameEngine.prepareForSave();
+        }
+    }
+
     /**
      * Clean up resources
      */

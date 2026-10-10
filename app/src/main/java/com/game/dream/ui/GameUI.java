@@ -1138,6 +1138,7 @@ public class GameUI {
 
         // Experience bar fill
         float expProgress = RoleSystem.getInstance().getRoleInfo().getExp() * 1f / RoleSystem.getInstance().getExpForNextLevel();
+        expProgress = Math.max(0f, Math.min(1f, expProgress));
         paint.setColor(Color.rgb(100, 181, 246)); // Blue
         canvas.drawRect(expBarX + 70, expBarY - 12,
                 expBarX + 70 + expBarWidth * expProgress,

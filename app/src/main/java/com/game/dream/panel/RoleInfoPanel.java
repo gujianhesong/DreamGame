@@ -5,6 +5,7 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
 
+import com.game.dream.GameEngine;
 import com.game.dream.figure.Player;
 import com.game.dream.bean.AddPointResult;
 import com.game.dream.bean.RoleInfo;
@@ -27,6 +28,7 @@ public class RoleInfoPanel {
     private List<Rect> plusButtons;
     private List<Rect> minusButtons;
     private Rect confirmButton;
+    private Rect levelUpButton;
 
     // Attribute names mapping
     private static final String[] ATTR_NAMES = {
@@ -51,6 +53,7 @@ public class RoleInfoPanel {
         this.plusButtons = new ArrayList<>();
         this.minusButtons = new ArrayList<>();
         this.confirmButton = new Rect();
+        this.levelUpButton = new Rect();
     }
 
     /**
@@ -263,8 +266,28 @@ public class RoleInfoPanel {
 
         // Experience bar
         startY = 880;
+        boolean manualLevel = RoleSystem.getInstance().isManualLevelMode();
+        layoutLevelUpButton(startY, manualLevel);
         drawExpBar(canvas, paint, "经验", roleInfo.getExp(),
-                RoleSystem.getInstance().getExpForNextLevel(), startY);
+                RoleSystem.getInstance().getExpForNextLevel(), startY, manualLevel);
+        if (manualLevel) {
+            drawLevelUpButton(canvas, paint, roleInfo);
+        }
+    }
+
+    private void layoutLevelUpButton(int expRowY, boolean visible) {
+        if (!visible) {
+            levelUpButton.setEmpty();
+            return;
+        }
+        int btnWidth = 90;
+        int btnHeight = 40;
+        levelUpButton.set(
+                panelBounds.right - 20 - btnWidth,
+                expRowY - 6,
+                panelBounds.right - 20,
+                expRowY - 6 + btnHeight
+        );
     }
 
     /**
@@ -549,6 +572,11 @@ public class RoleInfoPanel {
             return true;
         }
 
+        if (!levelUpButton.isEmpty() && TouchUtil.checkIsInTouchRectFloat(levelUpButton, x, y)) {
+            handleLevelUpClick();
+            return true;
+        }
+
         // Check if touched confirm button
         if (TouchUtil.checkIsInTouchRectFloat(confirmButton, x, y)) {
             // Save changes here
@@ -664,36 +692,75 @@ public class RoleInfoPanel {
         }
     }
 
-    /**
-     * Draw experience bar with current/max values
-     */
-    private void drawExpBar(Canvas canvas, Paint paint, String label, long current, long max, int y) {
-        int leftMargin = 20;
-        int rightMargin = 20;
-        int barWidth = 150;
-        int barHeight = 16;
+    private void handleLevelUpClick() {
+        RoleSystem roleSystem = RoleSystem.getInstance();
+        int need = roleSystem.getExpForNextLevel();
+        if (roleSystem.tryManualLevelUp()) {
+            tempRemainPoints += 5;
+            GameEngine.getInstance().showCenterToast(
+                    "升级! Lv." + roleSystem.getRoleInfo().getLevel(), 1800);
+        } else {
+            GameEngine.getInstance().showCenterToast("经验不足，需要 " + need, 2000);
+        }
+    }
 
-        // Label
+    private void drawLevelUpButton(Canvas canvas, Paint paint, RoleInfo roleInfo) {
+        boolean canLevel = roleInfo.getExp() >= RoleSystem.getInstance().getExpForNextLevel();
+        if (canLevel) {
+            paint.setColor(Color.argb(220, 220, 160, 40));
+        } else {
+            paint.setColor(Color.argb(80, 100, 100, 100));
+        }
+        canvas.drawRoundRect(levelUpButton.left, levelUpButton.top,
+                levelUpButton.right, levelUpButton.bottom, 8, 8, paint);
+
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(2);
+        paint.setColor(canLevel ? Color.WHITE : Color.rgb(150, 150, 150));
+        canvas.drawRoundRect(levelUpButton.left, levelUpButton.top,
+                levelUpButton.right, levelUpButton.bottom, 8, 8, paint);
+
+        paint.setStyle(Paint.Style.FILL);
+        paint.setColor(canLevel ? Color.WHITE : Color.rgb(150, 150, 150));
+        paint.setTextSize(24);
+        paint.setTextAlign(Paint.Align.CENTER);
+        float centerX = (levelUpButton.left + levelUpButton.right) / 2f;
+        float centerY = (levelUpButton.top + levelUpButton.bottom) / 2f + 8;
+        canvas.drawText("升级", centerX, centerY, paint);
+    }
+
+    /**
+     * 上一行：经验数值（及升级按钮预留）；下一行：整宽进度条。
+     */
+    private void drawExpBar(Canvas canvas, Paint paint, String label, long current, long max, int y,
+                            boolean reserveLevelUpButton) {
+        int leftMargin = 20;
+        int rightMargin = reserveLevelUpButton ? 120 : 20;
+
+        paint.setStyle(Paint.Style.FILL);
         paint.setColor(Color.WHITE);
         paint.setTextSize(26);
         paint.setTextAlign(Paint.Align.LEFT);
         canvas.drawText(label, panelBounds.left + leftMargin, y + 20, paint);
 
-        // Value text
         paint.setTextAlign(Paint.Align.RIGHT);
         canvas.drawText(current + " / " + max, panelBounds.right - rightMargin, y + 20, paint);
 
-        // Bar background
-        int barX = panelBounds.centerX() - barWidth / 2;
-        int barY = y + 8;
-        paint.setColor(Color.GRAY);
-        canvas.drawRect(barX, barY, barX + barWidth, barY + barHeight, paint);
+        int barLeft = panelBounds.left + leftMargin;
+        int barRight = panelBounds.right - 20;
+        int barY = y + 50;
+        int barHeight = 14;
 
-        // Experience bar fill (blue color)
+        paint.setColor(Color.GRAY);
+        canvas.drawRoundRect(barLeft, barY, barRight, barY + barHeight, 4, 4, paint);
+
         float percent = max > 0 ? (float) current / max : 0;
         percent = Math.max(0, Math.min(1, percent));
-        paint.setColor(Color.rgb(255, 200, 50));
-        canvas.drawRect(barX, barY, barX + barWidth * percent, barY + barHeight, paint);
+        int fillRight = barLeft + (int) ((barRight - barLeft) * percent);
+        if (fillRight > barLeft) {
+            paint.setColor(Color.rgb(255, 200, 50));
+            canvas.drawRoundRect(barLeft, barY, fillRight, barY + barHeight, 4, 4, paint);
+        }
     }
 
 

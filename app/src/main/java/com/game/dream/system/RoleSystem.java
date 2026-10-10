@@ -8,6 +8,9 @@ import com.game.dream.utils.EquipUtil;
 
 public class RoleSystem {
 
+    /** 达到该等级后不再自动升级，需在人物页手动升级以保留经验 */
+    public static final int AUTO_LEVEL_CAP = 10;
+
     private static RoleSystem instance = new RoleSystem();
 
     public static RoleSystem getInstance() {
@@ -79,15 +82,31 @@ public class RoleSystem {
         return 500 * level * level;
     }
 
+    public boolean isManualLevelMode() {
+        return roleInfo != null && roleInfo.getLevel() >= AUTO_LEVEL_CAP;
+    }
+
     /**
-     * Add experience points
+     * Add experience points. Auto-levels until {@link #AUTO_LEVEL_CAP}, then banks leftover exp.
      */
     public void addExperience(int exp) {
         roleInfo.setExp(roleInfo.getExp() + exp);
-        // Check for level up
-        while (roleInfo.getExp() >= calculateExpForLevel(roleInfo.getLevel() + 1)) {
+        while (roleInfo.getLevel() < AUTO_LEVEL_CAP
+                && roleInfo.getExp() >= calculateExpForLevel(roleInfo.getLevel() + 1)) {
             levelUp();
         }
+    }
+
+    /** 10 级后手动升一级。经验不足或仍在自动升级阶段时返回 false。 */
+    public boolean tryManualLevelUp() {
+        if (!isManualLevelMode()) {
+            return false;
+        }
+        if (roleInfo.getExp() < getExpForNextLevel()) {
+            return false;
+        }
+        levelUp();
+        return true;
     }
 
     /**

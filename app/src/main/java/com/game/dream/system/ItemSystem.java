@@ -333,10 +333,10 @@ public class ItemSystem {
             }
         }
 
-        // 计算需要的技能书数量: 学习=1本, 升级=当前等级+1本
+        // 学会=1本(1级)，升到 N 级需要 N 本，即 1→2 需 2 本，升 10 级需 10 本
         int requiredBooks;
         boolean isLearning;
-        if (existingSkill == null) {
+        if (existingSkill == null || existingSkill.getLevel() <= 0) {
             requiredBooks = 1;
             isLearning = true;
         } else if (existingSkill.canUpgrade()) {
@@ -362,11 +362,15 @@ public class ItemSystem {
 
         // 执行学习/升级
         if (isLearning) {
-            com.game.dream.bean.SkillInfo newSkill = new com.game.dream.bean.SkillInfo(
-                    skillType, 1, 10, getSkillCooldown(skillType),
-                    getSkillName(skillType), getSkillDesc(skillType)
-            );
-            playerSkills.add(newSkill);
+            if (existingSkill != null) {
+                existingSkill.setLevel(1);
+            } else {
+                com.game.dream.bean.SkillInfo newSkill = new com.game.dream.bean.SkillInfo(
+                        skillType, 1, 10, getSkillCooldown(skillType),
+                        getSkillName(skillType), getSkillDesc(skillType)
+                );
+                playerSkills.add(newSkill);
+            }
             GameEngine.getInstance().showCenterToast("学会了 " + getSkillName(skillType) + "！", 3000);
             GameEngine.getInstance().showFloatText("★ 新技能 ★", FloatingText.Type.LEVEL_UP);
             GameEngine.getInstance().addMessage("学会了 " + getSkillName(skillType), com.game.dream.panel.MessagePanel.MessageType.SKILL_UP);

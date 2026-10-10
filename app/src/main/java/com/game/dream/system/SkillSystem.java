@@ -43,17 +43,17 @@ public class SkillSystem {
 
     private void initMainSkills() {
         playerMainSkills.add(new SkillInfo(SkillType.MAIN_DunXing, 1, 1, 30, "遁形", "施展遁形之术，瞬间返回清溪村"));
-        playerMainSkills.add(new SkillInfo(SkillType.MAIN_SwordQi, 1, 10, 1, "剑气", "挥剑发出一道剑气。冷却短、耗蓝少，适合中距离点射。升级加快飞行速度并略微缩短冷却，高等级可少量穿透。"));
-        playerMainSkills.add(new SkillInfo(SkillType.MAIN_FIREBALL, 1, 10, 3, "火云术", "发射火焰对敌人造成伤害"));
-        playerMainSkills.add(new SkillInfo(SkillType.MAIN_ICE_BOLT, 1, 10, 4, "寒冰术", "发射寒冰对敌人造成伤害"));
-        playerMainSkills.add(new SkillInfo(SkillType.MAIN_LIGHTNING, 1, 10, 5, "雷击术", "发射几道闪电对敌人造成伤害"));
-        playerMainSkills.add(new SkillInfo(SkillType.MAIN_FeiShaZouShi, 1, 10, 5, "飞沙走石", "召唤沙暴席卷周围，对范围内敌人造成持续伤害并减速"));
-        playerMainSkills.add(new SkillInfo(SkillType.MAIN_ROOT, 1, 10, 8, "定身术", "发射符咒定住敌人，使其无法移动"));
-        playerMainSkills.add(new SkillInfo(SkillType.MAIN_WanJianGuiZong, 1, 10, 10, "万剑归宗", "发动剑阵对范围内的敌人造成多次伤害"));
-        playerMainSkills.add(new SkillInfo(SkillType.MAIN_JinGangHuTi, 1, 10, 10, "金刚护体", "获得金刚护体效果后大幅降低受到的伤害，期间不会死亡，持续5秒"));
-        playerMainSkills.add(new SkillInfo(SkillType.MAIN_MiaoShouHuiChun, 1, 10, 15, "妙手回春", "消耗法力值恢复大量气血"));
-        playerMainSkills.add(new SkillInfo(SkillType.MAIN_LianQiHuaShen, 1, 10, 20, "炼气化神", "消耗气血值恢复大量魔法"));
-        playerMainSkills.add(new SkillInfo(SkillType.MAIN_DuWuZhen, 1, 10, 15, "毒雾阵", "释放一片剧毒雾气，对范围内敌人造成持续伤害"));
+        playerMainSkills.add(new SkillInfo(SkillType.MAIN_SwordQi, 0, 10, 1, "剑气", "挥剑发出一道剑气。冷却短、耗蓝少，适合中距离点射。升级加快飞行速度并略微缩短冷却，高等级可少量穿透。"));
+        playerMainSkills.add(new SkillInfo(SkillType.MAIN_FIREBALL, 0, 10, 3, "火云术", "发射火焰对敌人造成伤害"));
+        playerMainSkills.add(new SkillInfo(SkillType.MAIN_ICE_BOLT, 0, 10, 4, "寒冰术", "发射寒冰对敌人造成伤害"));
+        playerMainSkills.add(new SkillInfo(SkillType.MAIN_LIGHTNING, 0, 10, 5, "雷击术", "发射几道闪电对敌人造成伤害"));
+        playerMainSkills.add(new SkillInfo(SkillType.MAIN_FeiShaZouShi, 0, 10, 5, "飞沙走石", "召唤沙暴席卷周围，对范围内敌人造成持续伤害并减速"));
+        playerMainSkills.add(new SkillInfo(SkillType.MAIN_ROOT, 0, 10, 8, "定身术", "发射符咒定住敌人，使其无法移动"));
+        playerMainSkills.add(new SkillInfo(SkillType.MAIN_WanJianGuiZong, 0, 10, 10, "万剑归宗", "发动剑阵对范围内的敌人造成多次伤害"));
+        playerMainSkills.add(new SkillInfo(SkillType.MAIN_JinGangHuTi, 0, 10, 10, "金刚护体", "获得金刚护体效果后大幅降低受到的伤害，期间不会死亡，持续5秒"));
+        playerMainSkills.add(new SkillInfo(SkillType.MAIN_MiaoShouHuiChun, 0, 10, 15, "妙手回春", "消耗法力值恢复大量气血"));
+        playerMainSkills.add(new SkillInfo(SkillType.MAIN_LianQiHuaShen, 0, 10, 20, "炼气化神", "消耗气血值恢复大量魔法"));
+        playerMainSkills.add(new SkillInfo(SkillType.MAIN_DuWuZhen, 0, 10, 15, "毒雾阵", "释放一片剧毒雾气，对范围内敌人造成持续伤害"));
     }
 
     private void initAssistSkills() {
@@ -159,6 +159,7 @@ public class SkillSystem {
     public boolean equipSkill(SkillInfo skill) {
         // Only main skills for now, and not use-type skills
         if (!skill.isMainSkill()) return false;
+        if (skill.getLevel() < 1) return false;
         if (skill.isUseSkill()) return false;
         if (equippedActiveSkills.contains(skill)) return false;
         if (equippedActiveSkills.size() >= MAX_EQUIPED_ACTIVE_SKILLS) return false;
@@ -201,6 +202,11 @@ public class SkillSystem {
 
     public SkillStartInfo castSkill(SkillInfo skill) {
         LogUtil.d("Casting skill: " + skill.getName());
+
+        if (skill == null || skill.getLevel() < 1) {
+            GameEngine.getInstance().showCenterToast("尚未学会该技能", 1200);
+            return null;
+        }
 
         Player player = GameEngine.getInstance().getPlayer();
         long currentTime = System.currentTimeMillis();
@@ -307,30 +313,7 @@ public class SkillSystem {
             player.setChannelLockUntil(channelEnd); // 引导期间锁住施法, 结束后才可再施放
         }
 
-        // 领悟判定: 3/10000 概率提升技能等级
-        tryEnlightenSkill(skill);
-
         return skillStartInfo;
-    }
-
-    /**
-     * 尝试领悟技能: 每次使用技能有 3/10000 的概率领悟，提升该技能等级
-     */
-    private void tryEnlightenSkill(SkillInfo skill) {
-        if (skill == null || !skill.canUpgrade()) return;
-
-        // 3/10000 概率
-        if (Math.random() < 3.0 / 10000) {
-            int oldLevel = skill.getLevel();
-            int newLevel = oldLevel + 1;
-            skill.setLevel(newLevel);
-
-            // 显示领悟提示
-            String msg = "顿悟！" + skill.getName() + " " + oldLevel + "级 → " + newLevel + "级";
-            GameEngine.getInstance().showCenterToast(msg, 3000);
-            GameEngine.getInstance().showFloatText("★ 顿悟 ★", com.game.dream.ui.FloatingText.Type.LEVEL_UP);
-            GameEngine.getInstance().addMessage(msg, com.game.dream.panel.MessagePanel.MessageType.SKILL_UP);
-        }
     }
 
     /** 剑气：单发、飞行快。面朝锥形内优先锁最近的敌人。 */

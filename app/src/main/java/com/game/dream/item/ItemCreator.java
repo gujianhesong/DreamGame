@@ -961,7 +961,7 @@ public class ItemCreator {
     public static SkillBookItem createSkillBook(SkillType skillType) {
         int id = 400000 + skillType.ordinal();
         String name = getSkillBookName(skillType);
-        String desc = "使用后学习或升级技能，学习需要1本，每升一级多消耗1本";
+        String desc = "使用后学习或升级该技能。学会需1本，升到2级需2本，升到10级需10本";
 
         return new SkillBookItem(
                 id, name, desc,

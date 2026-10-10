@@ -414,7 +414,9 @@ public class SkillsPanel {
             paint.setColor(Color.WHITE);
             paint.setTextSize(24);
             paint.setTextAlign(Paint.Align.LEFT);
-            canvas.drawText("Lv." + skill.getLevel() + "/" + skill.getMaxLevel(),
+            canvas.drawText(skill.getLevel() < 1
+                            ? "未学习"
+                            : ("Lv." + skill.getLevel() + "/" + skill.getMaxLevel()),
                     xPos + 10, yPos + 55, paint);
 
             // Description (truncated)
@@ -425,10 +427,12 @@ public class SkillsPanel {
             // Draw buttons if available
             if (i < skillButtons.size()) {
                 SkillButtonPair pair = skillButtons.get(i);
-                drawUpgradeButton(canvas, paint, pair.upgradeButton, skill.canUpgrade());
-                drawDowngradeButton(canvas, paint, pair.downgradeButton, skill.canDowngrade());
+                if (!skill.isMainSkill()) {
+                    drawUpgradeButton(canvas, paint, pair.upgradeButton, skill.canUpgrade());
+                    drawDowngradeButton(canvas, paint, pair.downgradeButton, skill.canDowngrade());
+                }
 
-                if (skill.isMainSkill()) {
+                if (skill.isMainSkill() && skill.getLevel() >= 1) {
                     if (skill.isUseSkill()) {
                         drawUseButton(canvas, paint, pair.equipButton, skill);
                     } else {
@@ -613,7 +617,7 @@ public class SkillsPanel {
             if (!isDragging) {
                 for (SkillButtonPair pair : skillButtons) {
                     // Handle Equip/Unequip for Main Skills
-                    if (pair.skill.isMainSkill() && !pair.skill.isUseSkill() && TouchUtil.checkIsInTouchRectFloat(pair.equipButton, x, y)) {
+                    if (pair.skill.isMainSkill() && pair.skill.getLevel() >= 1 && !pair.skill.isUseSkill() && TouchUtil.checkIsInTouchRectFloat(pair.equipButton, x, y)) {
                         boolean isEquipped = SkillSystem.getInstance().getEquippedActiveSkills().contains(pair.skill);
                         if (isEquipped) {
                             if (listener != null) listener.onUnequipSkill(pair.skill);
@@ -629,14 +633,14 @@ public class SkillsPanel {
                         return true;
                     }
 
-                    if (TouchUtil.checkIsInTouchRectFloat(pair.upgradeButton, x, y)) {
+                    if (!pair.skill.isMainSkill() && TouchUtil.checkIsInTouchRectFloat(pair.upgradeButton, x, y)) {
                         if (pair.skill.canUpgrade() && listener != null) {
                             listener.onUpgradeSkill(pair.skill);
                             updateSkillButtons();
                         }
                         return true;
                     }
-                    if (TouchUtil.checkIsInTouchRectFloat(pair.downgradeButton, x, y)) {
+                    if (!pair.skill.isMainSkill() && TouchUtil.checkIsInTouchRectFloat(pair.downgradeButton, x, y)) {
                         if (pair.skill.canDowngrade() && listener != null) {
                             listener.onDowngradeSkill(pair.skill);
                             updateSkillButtons();

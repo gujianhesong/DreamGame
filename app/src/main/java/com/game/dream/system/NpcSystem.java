@@ -79,6 +79,7 @@ public class NpcSystem {
                 npcList.add(new Npc(100201, "驿站车夫", NpcType.COACHMAN, 30200, 35400));
                 npcList.add(new AnimalNpc(100202, "骏马", NpcType.HORSE, 30300, 35340));
                 npcList.add(new Npc(100209, "玄机真人", NpcType.TAOIST, 29920, 35400));
+                npcList.add(new Npc(100210, "培元先生", NpcType.SCHOLAR, 30500, 35400));
 
                 // 金陵西侧鬼差（仅夜间出现，传送地府）
                 Npc ghostClerk = new Npc(100207, "鬼差", NpcType.GHOST_CLERK, 24500, 30000);

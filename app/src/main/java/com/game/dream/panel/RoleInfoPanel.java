@@ -271,7 +271,7 @@ public class RoleInfoPanel {
      * Calculate exp needed for next level
      */
     private long getExpToNextLevel(int level) {
-        return (long) (100 * Math.pow(level, 1.5));
+        return 500L * level * level;
     }
 
     /**

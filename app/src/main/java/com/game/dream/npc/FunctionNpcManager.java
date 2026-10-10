@@ -91,6 +91,19 @@ public class FunctionNpcManager {
                 });
                 return true;
             }
+            case 100210: {
+                List<String> options = Arrays.asList("学习辅助技能", "不了");
+                String message = "强身、冥想、神速、健身、养生与装备制造，皆可在此研习。需同时消耗金币与经验，花费随等级递增，技能等级不得超过人物等级。";
+                GameEngine.getInstance().showDialog(npc.getName(), message, options, new DialogBox.DialogListener() {
+                    @Override
+                    public void onOptionSelected(int optionIndex) {
+                        if (optionIndex == 0) {
+                            GameEngine.getInstance().showAssistPanel();
+                        }
+                    }
+                });
+                return true;
+            }
             case 100209: {
                 List<String> options = Arrays.asList("开始修炼", "不了");
                 String message = "天地灵气可炼入筋骨。攻防、法术、乃至灵兽，皆可在此修习。花费随等级递增，修炼等级不得超过人物等级的四分之一。";

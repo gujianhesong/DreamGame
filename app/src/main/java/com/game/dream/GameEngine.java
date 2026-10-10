@@ -2269,6 +2269,12 @@ public class GameEngine {
         }
     }
 
+    public void showAssistPanel() {
+        if (gameUI != null) {
+            gameUI.showAssistPanel();
+        }
+    }
+
     /**
      * Show float text
      */

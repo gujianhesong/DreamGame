@@ -23,6 +23,7 @@ import com.game.dream.panel.ItemsPanel;
 import com.game.dream.panel.PetPanel;
 import com.game.dream.panel.QuestPanel;
 import com.game.dream.panel.RoleInfoPanel;
+import com.game.dream.panel.AssistPanel;
 import com.game.dream.panel.PracticePanel;
 import com.game.dream.panel.ShopPanel;
 import com.game.dream.panel.SkillsPanel;
@@ -66,6 +67,7 @@ public class GameUI {
 
     private ShopPanel shopPanel;
     private PracticePanel practicePanel;
+    private AssistPanel assistPanel;
 
     private DialogBox currentDialog;
 
@@ -180,6 +182,7 @@ public class GameUI {
         // Initialize Shop panel
         shopPanel = new ShopPanel();
         practicePanel = new PracticePanel();
+        assistPanel = new AssistPanel();
 
         // Initialize DialogBox
         currentDialog = new DialogBox();
@@ -335,6 +338,14 @@ public class GameUI {
             int panelX = (width - panelWidth) / 2;
             int panelY = (height - panelHeight) / 2;
             practicePanel.setBounds(panelX, panelY, panelWidth, panelHeight);
+        }
+
+        if (assistPanel != null) {
+            int panelWidth = Math.min(1000, width - 40);
+            int panelHeight = Math.min(900, height - 100);
+            int panelX = (width - panelWidth) / 2;
+            int panelY = (height - panelHeight) / 2;
+            assistPanel.setBounds(panelX, panelY, panelWidth, panelHeight);
         }
 
         if (currentDialog != null) {
@@ -605,6 +616,10 @@ public class GameUI {
             practicePanel.draw(canvas);
         }
 
+        if (assistPanel != null && assistPanel.isVisible()) {
+            assistPanel.draw(canvas);
+        }
+
         // Draw DialogBox
         if (currentDialog != null && currentDialog.isVisible()) {
             currentDialog.draw(canvas);
@@ -693,6 +708,18 @@ public class GameUI {
                     return practicePanel.handleTouchMove(x, y);
                 case MotionEvent.ACTION_UP:
                     return practicePanel.handleTouchUp(x, y);
+            }
+            return true;
+        }
+
+        if (assistPanel != null && assistPanel.isVisible()) {
+            switch (action) {
+                case MotionEvent.ACTION_DOWN:
+                    return assistPanel.handleTouchDown(x, y);
+                case MotionEvent.ACTION_MOVE:
+                    return assistPanel.handleTouchMove(x, y);
+                case MotionEvent.ACTION_UP:
+                    return assistPanel.handleTouchUp(x, y);
             }
             return true;
         }
@@ -1615,6 +1642,12 @@ public class GameUI {
     public void showPracticePanel() {
         if (practicePanel != null) {
             practicePanel.show();
+        }
+    }
+
+    public void showAssistPanel() {
+        if (assistPanel != null) {
+            assistPanel.show();
         }
     }
 

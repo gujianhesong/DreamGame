@@ -190,9 +190,10 @@ public class PetSystem {
         return lv == null ? 1 : Math.max(1, lv);
     }
 
-    /** 升级到下一级所需经验。 */
+    /** 升级到下一级所需经验：200 × N²（N 为当前等级） */
     public int expToNext(int level) {
-        return (int) (100 * Math.pow(Math.max(1, level), 1.5));
+        int n = Math.max(1, level);
+        return 200 * n * n;
     }
 
     /**

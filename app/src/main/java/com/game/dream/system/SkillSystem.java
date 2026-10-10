@@ -112,6 +112,7 @@ public class SkillSystem {
                 }
             }
         }
+        clampAssistLevelsToCap();
     }
 
     public void setPractiseSkillInfos(List<SkillInfo> skillInfos) {
@@ -173,6 +174,68 @@ public class SkillSystem {
             return false;
         }
         roleInfo.setMoney(roleInfo.getMoney() - cost);
+        skill.setLevel(nextLevel);
+        String action = nextLevel == 1 ? "学会了" : ("升至 " + nextLevel + " 级");
+        GameEngine.getInstance().showCenterToast(skill.getName() + " " + action, 2000);
+        return true;
+    }
+
+    /** 升到 N 级的金币：60 × N × N */
+    public static int getAssistUpgradeCost(int nextLevel) {
+        if (nextLevel <= 0) {
+            return 0;
+        }
+        return 60 * nextLevel * nextLevel;
+    }
+
+    /** 升到 N 级的经验：与金币相同，60 × N² */
+    public static int getAssistUpgradeExpCost(int nextLevel) {
+        return getAssistUpgradeCost(nextLevel);
+    }
+
+    /** 辅助上限 = min(100, 人物等级) */
+    public int getAssistLevelCap() {
+        int playerLevel = Math.max(1, RoleSystem.getInstance().getRoleInfo().getLevel());
+        return Math.min(100, playerLevel);
+    }
+
+    public void clampAssistLevelsToCap() {
+        int cap = getAssistLevelCap();
+        for (SkillInfo skill : playerAssistSkills) {
+            if (skill.getLevel() > cap) {
+                skill.setLevel(cap);
+            }
+        }
+    }
+
+    public boolean tryUpgradeAssist(SkillInfo skill) {
+        if (skill == null || !skill.isAssistSkill()) {
+            return false;
+        }
+        int nextLevel = skill.getLevel() + 1;
+        if (nextLevel > skill.getMaxLevel()) {
+            GameEngine.getInstance().showCenterToast(skill.getName() + " 已达满级", 1800);
+            return false;
+        }
+        int cap = getAssistLevelCap();
+        if (nextLevel > cap) {
+            GameEngine.getInstance().showCenterToast(
+                    "人物需达到 " + nextLevel + " 级才能学习到 " + nextLevel + " 级（当前上限 " + cap + "）", 2500);
+            return false;
+        }
+        int moneyCost = getAssistUpgradeCost(nextLevel);
+        int expCost = getAssistUpgradeExpCost(nextLevel);
+        RoleInfo roleInfo = RoleSystem.getInstance().getRoleInfo();
+        if (roleInfo.getMoney() < moneyCost) {
+            GameEngine.getInstance().showCenterToast("金钱不足，需要 " + moneyCost, 2000);
+            return false;
+        }
+        if (roleInfo.getExp() < expCost) {
+            GameEngine.getInstance().showCenterToast("经验不足，需要 " + expCost, 2000);
+            return false;
+        }
+        roleInfo.setMoney(roleInfo.getMoney() - moneyCost);
+        roleInfo.setExp(roleInfo.getExp() - expCost);
         skill.setLevel(nextLevel);
         String action = nextLevel == 1 ? "学会了" : ("升至 " + nextLevel + " 级");
         GameEngine.getInstance().showCenterToast(skill.getName() + " " + action, 2000);

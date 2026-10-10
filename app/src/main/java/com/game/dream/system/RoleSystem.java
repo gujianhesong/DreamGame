@@ -70,10 +70,13 @@ public class RoleSystem {
 
     /**
      * Calculate experience needed for a given level
-     * Formula: base * level^1.5 (increasing difficulty)
+     * Formula: 500 × N²
      */
-    private int calculateExpForLevel(int level) {
-        return (int) (100 * Math.pow(level, 1.5));
+    public int calculateExpForLevel(int level) {
+        if (level <= 0) {
+            return 0;
+        }
+        return 500 * level * level;
     }
 
     /**

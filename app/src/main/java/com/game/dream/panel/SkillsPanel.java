@@ -86,7 +86,7 @@ public class SkillsPanel {
         setSkillActionListener(new SkillsPanel.SkillActionListener() {
             @Override
             public void onUpgradeSkill(SkillInfo skill) {
-                if (skill.isPractiseSkill()) {
+                if (skill.isPractiseSkill() || skill.isAssistSkill()) {
                     return;
                 }
                 if (skill.getLevel() < skill.getMaxLevel()) {
@@ -104,6 +104,9 @@ public class SkillsPanel {
 
             @Override
             public void onDowngradeSkill(SkillInfo skill) {
+                if (skill.isPractiseSkill() || skill.isAssistSkill()) {
+                    return;
+                }
                 if (skill.getLevel() > 1) {
                     skill.setLevel(skill.getLevel() - 1);
                 }
@@ -295,7 +298,13 @@ public class SkillsPanel {
         // Draw tabs
         drawTabs(canvas, paint);
 
-        if (currentTab == 2) {
+        if (currentTab == 1) {
+            paint.setColor(Color.rgb(160, 220, 180));
+            paint.setTextSize(20);
+            paint.setTextAlign(Paint.Align.CENTER);
+            canvas.drawText("前往金陵主城找培元先生花费金币学习",
+                    panelBounds.centerX(), skillListArea.top - 4, paint);
+        } else if (currentTab == 2) {
             paint.setColor(Color.rgb(200, 180, 255));
             paint.setTextSize(20);
             paint.setTextAlign(Paint.Align.CENTER);
@@ -438,11 +447,6 @@ public class SkillsPanel {
             // Draw buttons if available
             if (i < skillButtons.size()) {
                 SkillButtonPair pair = skillButtons.get(i);
-                if (skill.isAssistSkill()) {
-                    drawUpgradeButton(canvas, paint, pair.upgradeButton, skill.canUpgrade());
-                    drawDowngradeButton(canvas, paint, pair.downgradeButton, skill.canDowngrade());
-                }
-
                 if (skill.isMainSkill() && skill.getLevel() >= 1) {
                     if (skill.isUseSkill()) {
                         drawUseButton(canvas, paint, pair.equipButton, skill);
@@ -641,21 +645,6 @@ public class SkillsPanel {
                     // Handle Use button (遁形 etc.)
                     if (pair.skill.isUseSkill() && TouchUtil.checkIsInTouchRectFloat(pair.equipButton, x, y)) {
                         if (listener != null) listener.onUseSkill(pair.skill);
-                        return true;
-                    }
-
-                    if (pair.skill.isAssistSkill() && TouchUtil.checkIsInTouchRectFloat(pair.upgradeButton, x, y)) {
-                        if (pair.skill.canUpgrade() && listener != null) {
-                            listener.onUpgradeSkill(pair.skill);
-                            updateSkillButtons();
-                        }
-                        return true;
-                    }
-                    if (pair.skill.isAssistSkill() && TouchUtil.checkIsInTouchRectFloat(pair.downgradeButton, x, y)) {
-                        if (pair.skill.canDowngrade() && listener != null) {
-                            listener.onDowngradeSkill(pair.skill);
-                            updateSkillButtons();
-                        }
                         return true;
                     }
                 }

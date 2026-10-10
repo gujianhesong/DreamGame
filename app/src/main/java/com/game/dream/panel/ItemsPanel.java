@@ -1014,7 +1014,11 @@ public class ItemsPanel {
 
                         @Override
                         public void onDropItem(ItemStack item) {
-                            ItemSystem.getInstance().removeItem(item.getItem().getId(), 1);
+                            if (item.getItem() instanceof com.game.dream.item.TreasureMapItem) {
+                                ItemSystem.getInstance().removeItems(java.util.Collections.singletonList(item));
+                            } else {
+                                ItemSystem.getInstance().removeItem(item.getItem().getId(), 1);
+                            }
                         }
 
                         @Override

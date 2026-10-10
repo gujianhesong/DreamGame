@@ -18,6 +18,8 @@ import com.game.dream.item.Item;
 import com.game.dream.item.ItemCreator;
 import com.game.dream.item.ItemStack;
 import com.game.dream.item.SkillBookItem;
+import com.game.dream.item.TreasureMapItem;
+import com.game.dream.utils.TreasureMapUtil;
 import com.game.dream.utils.Utils;
 
 import java.util.ArrayList;
@@ -60,6 +62,8 @@ public class ItemSystem {
             if (item instanceof EquipmentItem) {
                 EquipmentItem equipmentItem = (EquipmentItem) item;
                 itemInfos.add(equipmentItem.getEquipItemInfo());
+            } else if (item instanceof TreasureMapItem) {
+                itemInfos.add(((TreasureMapItem) item).toItemInfo());
             } else {
                 itemInfos.add(new ItemInfo(item.getId(), item.getName(), item.getType().name(), itemStack.getQuantity()));
             }
@@ -153,14 +157,17 @@ public class ItemSystem {
      * @return true if item was added successfully
      */
     public boolean addItem(Item item, int quantity) {
-        // Try to stack with existing items first
-        for (ItemStack stack : items) {
-            if (stack.getItem().getId() == item.getId() && !stack.isFull()) {
-                int remaining = stack.add(quantity);
-                if (remaining == 0) {
-                    return true; // Fully added
+        // 藏宝图每张坐标不同，不能按 id 叠在一起
+        boolean canStack = !(item instanceof TreasureMapItem);
+        if (canStack) {
+            for (ItemStack stack : items) {
+                if (stack.getItem().getId() == item.getId() && !stack.isFull()) {
+                    int remaining = stack.add(quantity);
+                    if (remaining == 0) {
+                        return true; // Fully added
+                    }
+                    quantity = remaining;
                 }
-                quantity = remaining;
             }
         }
 
@@ -252,6 +259,17 @@ public class ItemSystem {
         // 处理技能书
         if (item.getType() == Item.Type.SKILL_BOOK && item instanceof SkillBookItem) {
             return useSkillBook(index, (SkillBookItem) item);
+        }
+
+        if (item instanceof TreasureMapItem) {
+            boolean dug = TreasureMapUtil.tryUse((TreasureMapItem) item);
+            if (dug) {
+                stack.remove(1);
+                if (stack.isEmpty()) {
+                    items.remove(index);
+                }
+            }
+            return dug;
         }
 
         if (item.getType() != Item.Type.CONSUMABLE) return false;

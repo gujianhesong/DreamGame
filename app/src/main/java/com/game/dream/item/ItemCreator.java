@@ -3,6 +3,8 @@ package com.game.dream.item;
 import com.game.dream.bean.EquipItemInfo;
 import com.game.dream.bean.ItemInfo;
 import com.game.dream.bean.SkillInfo;
+import com.game.dream.bean.TreasureMapItemInfo;
+import com.game.dream.utils.TreasureMapUtil;
 import com.game.dream.enums.FoodType;
 import com.game.dream.enums.GemtoneType;
 import com.game.dream.enums.SkillType;
@@ -136,6 +138,15 @@ public class ItemCreator {
                 SkillType skillType = getSkillTypeByOrdinal(ordinal);
                 if (skillType != null) {
                     item = createSkillBook(skillType);
+                }
+            }
+            break;
+            case 260: {
+                if (itemInfo instanceof TreasureMapItemInfo) {
+                    TreasureMapItemInfo treasure = (TreasureMapItemInfo) itemInfo;
+                    item = new TreasureMapItem(treasure.getTargetMapId(), treasure.getTargetX(), treasure.getTargetY());
+                } else {
+                    item = createTreasureMap();
                 }
             }
             break;
@@ -936,6 +947,10 @@ public class ItemCreator {
                 Item.Rarity.Rarity_5,
                 999, 50000
         );
+    }
+
+    public static TreasureMapItem createTreasureMap() {
+        return TreasureMapUtil.createRandomMap();
     }
 
     //------------------ 技能书 ----------------------

@@ -2012,6 +2012,8 @@ public class GameEngine {
             }
         }
 
+        com.game.dream.utils.TreasureMapUtil.drawMarkers(canvas, cameraX, cameraY);
+
         // Draw projectiles
         if (projectiles != null) {
             List<Projectile> projectilesCopy = new ArrayList<>(projectiles);

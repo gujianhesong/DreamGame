@@ -5,6 +5,7 @@ import android.content.Context;
 import com.game.dream.utils.LogUtil;
 import com.game.dream.bean.EquipItemInfo;
 import com.game.dream.bean.ItemInfo;
+import com.game.dream.bean.TreasureMapItemInfo;
 import com.game.dream.bean.QuestInfo;
 import com.game.dream.bean.SaveInfo;
 import com.game.dream.utils.StorageHelper;
@@ -134,6 +135,8 @@ public class SaveSystem {
 
             if ("EQUIPMENT".equals(type)) {
                 return context.deserialize(jsonObject, EquipItemInfo.class);
+            } else if ("SPECIAL".equals(type) && jsonObject.has("targetMapId")) {
+                return context.deserialize(jsonObject, TreasureMapItemInfo.class);
             } else {
                 // For other items (CONSUMABLE, MATERIAL, etc.), parse directly to avoid infinite recursion
                 int id = jsonObject.get("id").getAsInt();

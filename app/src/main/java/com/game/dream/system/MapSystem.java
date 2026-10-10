@@ -569,6 +569,15 @@ public class MapSystem {
         return curMapInfo;
     }
 
+    public MapInfo getMapInfo(int mapId) {
+        for (MapInfo mapInfo : mapInfoList) {
+            if (mapInfo.getMapId() == mapId) {
+                return mapInfo;
+            }
+        }
+        return null;
+    }
+
     public void cleanup() {
         if (mapRenderer != null) {
             mapRenderer.cleanup();

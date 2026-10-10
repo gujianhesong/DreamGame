@@ -22,14 +22,15 @@ public class ProssibleDropsUtil {
         CRAFT,
         GEM,
         STONE,
+        TREASURE_MAP,
         OTHER
     }
 
-    /** 普通 / 首领 / 精英 / BOSS：药、增益、装备、制造书铁、宝石、洗练石 */
-    private static final int[] WEIGHT_NORMAL = {55, 5, 12, 12, 8, 8};
-    private static final int[] WEIGHT_LEADER = {45, 10, 15, 14, 8, 8};
-    private static final int[] WEIGHT_ELITE = {35, 15, 18, 15, 10, 7};
-    private static final int[] WEIGHT_BOSS = {20, 15, 25, 18, 12, 10};
+    /** 普通 / 首领 / 精英 / BOSS：药、增益、装备、制造书铁、宝石、洗练石、藏宝图 */
+    private static final int[] WEIGHT_NORMAL = {55, 5, 12, 12, 8, 8, 3};
+    private static final int[] WEIGHT_LEADER = {45, 10, 15, 14, 8, 8, 4};
+    private static final int[] WEIGHT_ELITE = {35, 15, 18, 15, 10, 7, 7};
+    private static final int[] WEIGHT_BOSS = {20, 15, 25, 18, 12, 10, 15};
 
     public static DropCategory classify(Item item) {
         if (item == null) {
@@ -37,6 +38,9 @@ public class ProssibleDropsUtil {
         }
         if (item instanceof EquipmentItem) {
             return DropCategory.EQUIP;
+        }
+        if (item instanceof com.game.dream.item.TreasureMapItem) {
+            return DropCategory.TREASURE_MAP;
         }
         if (item instanceof ConsumableItem) {
             ConsumableItem.EffectType effect = ((ConsumableItem) item).getEffectType();
@@ -76,6 +80,15 @@ public class ProssibleDropsUtil {
             bucket.add(item);
         }
 
+        if (!buckets.containsKey(DropCategory.TREASURE_MAP)) {
+            Item treasureMap = ItemCreator.createTreasureMap();
+            if (treasureMap != null) {
+                List<Item> maps = new ArrayList<>();
+                maps.add(treasureMap);
+                buckets.put(DropCategory.TREASURE_MAP, maps);
+            }
+        }
+
         int[] weights = categoryWeights(enemy);
         for (int i = 0; i < numDrops; i++) {
             DropCategory category = pickCategory(buckets, weights);
@@ -85,7 +98,7 @@ public class ProssibleDropsUtil {
             List<Item> bucket = buckets.get(category);
             Item item = bucket.get((int) (Math.random() * bucket.size()));
             int quantity = 1 + (int) (Math.random() * 2);
-            if (item instanceof EquipmentItem) {
+            if (item instanceof EquipmentItem || category == DropCategory.TREASURE_MAP) {
                 quantity = 1;
                 bucket.remove(item);
                 if (bucket.isEmpty()) {
@@ -114,7 +127,8 @@ public class ProssibleDropsUtil {
     private static DropCategory pickCategory(Map<DropCategory, List<Item>> buckets, int[] weights) {
         DropCategory[] ordered = {
                 DropCategory.POTION, DropCategory.GAIN, DropCategory.EQUIP,
-                DropCategory.CRAFT, DropCategory.GEM, DropCategory.STONE
+                DropCategory.CRAFT, DropCategory.GEM, DropCategory.STONE,
+                DropCategory.TREASURE_MAP
         };
         int total = 0;
         int otherWeight = 0;

@@ -8,6 +8,7 @@ import android.graphics.Rect;
 import com.game.dream.item.ConsumableItem;
 import com.game.dream.item.Item;
 import com.game.dream.item.ItemStack;
+import com.game.dream.item.TreasureMapItem;
 import com.game.dream.system.ItemSystem;
 import com.game.dream.utils.ItemsUtil;
 import com.game.dream.utils.TouchUtil;
@@ -79,7 +80,8 @@ public class ItemInfoPanel {
 
         // Calculate panel size
         int panelWidth = 420;
-        int panelHeight = isHealPotion ? 480 : 420; // Extra space for default potion button
+        boolean isTreasureMap = item.getItem() instanceof TreasureMapItem;
+        int panelHeight = isHealPotion ? 480 : (isTreasureMap ? 500 : 420);
 
         // Position panel to the right of the click position
         int offsetX = 70;

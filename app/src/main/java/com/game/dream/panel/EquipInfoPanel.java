@@ -5,6 +5,7 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
 
+import com.game.dream.GameEngine;
 import com.game.dream.bean.EquipItemInfo;
 import com.game.dream.item.EquipmentItem;
 import com.game.dream.item.ItemStack;
@@ -72,7 +73,8 @@ public class EquipInfoPanel {
         int panelHeight = 600;
         int panelX = centerX - panelWidth / 2;
         int panelY = centerY - panelHeight / 2;
-        panelBounds.set(panelX, panelY, panelX + panelWidth, panelY + panelHeight);
+        int[] pos = clampToScreen(panelX, panelY, panelWidth, panelHeight, centerX, 0);
+        panelBounds.set(pos[0], pos[1], pos[0] + panelWidth, pos[1] + panelHeight);
 
         // Hide all action buttons
         actionButton.set(0, 0, 0, 0);
@@ -96,10 +98,12 @@ public class EquipInfoPanel {
         int panelWidth = 420;
         int panelHeight = 600;
 
-        // Position panel to the right of the click position
         int offsetX = 70;
         int panelX = centerX + offsetX;
-        int panelY = centerY - panelHeight / 2; // Center vertically relative to click
+        int panelY = centerY - panelHeight / 2;
+        int[] pos = clampToScreen(panelX, panelY, panelWidth, panelHeight, centerX, offsetX);
+        panelX = pos[0];
+        panelY = pos[1];
 
         panelBounds.set(
                 panelX,
@@ -155,6 +159,23 @@ public class EquipInfoPanel {
         }
     }
 
+    private int[] clampToScreen(int panelX, int panelY, int panelWidth, int panelHeight,
+                                int centerX, int offsetX) {
+        int margin = 16;
+        int screenW = GameEngine.getScreenWidth();
+        int screenH = GameEngine.getScreenHeight();
+        if (screenW > 0 && offsetX > 0 && panelX + panelWidth > screenW - margin) {
+            panelX = centerX - offsetX - panelWidth;
+        }
+        if (screenW > 0) {
+            panelX = Math.max(margin, Math.min(panelX, screenW - margin - panelWidth));
+        }
+        if (screenH > 0) {
+            panelY = Math.max(margin, Math.min(panelY, screenH - margin - panelHeight));
+        }
+        return new int[]{panelX, panelY};
+    }
+
     /**
      * Hide panel
      */
@@ -165,6 +186,10 @@ public class EquipInfoPanel {
 
     public boolean isVisible() {
         return isVisible;
+    }
+
+    public boolean contains(float x, float y) {
+        return isVisible && TouchUtil.checkIsInTouchRectFloat(panelBounds, x, y);
     }
 
     /**

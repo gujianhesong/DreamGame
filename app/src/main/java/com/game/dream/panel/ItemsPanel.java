@@ -128,6 +128,16 @@ public class ItemsPanel {
         return isVisible;
     }
 
+    public boolean isInfoPopupVisible() {
+        return (itemInfoPanel != null && itemInfoPanel.isVisible())
+                || (equipInfoPanel != null && equipInfoPanel.isVisible());
+    }
+
+    public boolean hitInfoPopup(float x, float y) {
+        return (itemInfoPanel != null && itemInfoPanel.contains(x, y))
+                || (equipInfoPanel != null && equipInfoPanel.contains(x, y));
+    }
+
     /**
      * Set panel bounds and calculate slot positions
      */

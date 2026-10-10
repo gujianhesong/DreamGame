@@ -108,6 +108,8 @@ public class GameUI {
     private float lastItemsPanelTouchY = 0; // Add this line
     private float lastQuestPanelTouchY = 0;
     private float lastPetPanelTouchY = 0;
+    /** 物品信息框盖住底栏时，这一轮按下/抬起都不要交给菜单 */
+    private boolean blockMenuUntilTouchUp;
 
     private boolean meleeAttackPressed;
     private boolean magicAttackPressed;
@@ -722,6 +724,39 @@ public class GameUI {
                     return assistPanel.handleTouchUp(x, y);
             }
             return true;
+        }
+
+        // 物品/装备信息框画在底栏之上时，点击必须先给信息框（否则穿戴等按钮会被菜单拦掉）
+        if (itemsPanel != null && itemsPanel.isVisible()) {
+            boolean hitInfoPopup = itemsPanel.hitInfoPopup(x, y);
+            if (hitInfoPopup && (action == MotionEvent.ACTION_DOWN
+                    || action == MotionEvent.ACTION_POINTER_DOWN)) {
+                blockMenuUntilTouchUp = true;
+            }
+            if (hitInfoPopup || blockMenuUntilTouchUp) {
+                boolean popupHandled;
+                switch (action) {
+                    case MotionEvent.ACTION_DOWN:
+                    case MotionEvent.ACTION_POINTER_DOWN:
+                        popupHandled = itemsPanel.handleTouchDown(x, y);
+                        break;
+                    case MotionEvent.ACTION_MOVE:
+                        popupHandled = itemsPanel.handleTouchMove(x, y);
+                        break;
+                    case MotionEvent.ACTION_UP:
+                    case MotionEvent.ACTION_POINTER_UP:
+                    case MotionEvent.ACTION_CANCEL:
+                        popupHandled = itemsPanel.handleTouchUp(x, y);
+                        blockMenuUntilTouchUp = false;
+                        break;
+                    default:
+                        popupHandled = true;
+                        break;
+                }
+                if (popupHandled || hitInfoPopup || action != MotionEvent.ACTION_MOVE) {
+                    return true;
+                }
+            }
         }
 
         // Check menu button clicks BEFORE any panel consumes the event

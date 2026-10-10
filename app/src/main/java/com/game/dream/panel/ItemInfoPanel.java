@@ -5,6 +5,7 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
 
+import com.game.dream.GameEngine;
 import com.game.dream.item.ConsumableItem;
 import com.game.dream.item.Item;
 import com.game.dream.item.ItemStack;
@@ -83,10 +84,12 @@ public class ItemInfoPanel {
         boolean isTreasureMap = item.getItem() instanceof TreasureMapItem;
         int panelHeight = isHealPotion ? 480 : (isTreasureMap ? 500 : 420);
 
-        // Position panel to the right of the click position
         int offsetX = 70;
         int panelX = centerX + offsetX;
         int panelY = centerY - panelHeight / 2;
+        int[] pos = clampToScreen(panelX, panelY, panelWidth, panelHeight, centerX, offsetX);
+        panelX = pos[0];
+        panelY = pos[1];
 
         panelBounds.set(
                 panelX,
@@ -130,6 +133,23 @@ public class ItemInfoPanel {
         }
     }
 
+    private int[] clampToScreen(int panelX, int panelY, int panelWidth, int panelHeight,
+                                int centerX, int offsetX) {
+        int margin = 16;
+        int screenW = GameEngine.getScreenWidth();
+        int screenH = GameEngine.getScreenHeight();
+        if (screenW > 0 && panelX + panelWidth > screenW - margin) {
+            panelX = centerX - offsetX - panelWidth;
+        }
+        if (screenW > 0) {
+            panelX = Math.max(margin, Math.min(panelX, screenW - margin - panelWidth));
+        }
+        if (screenH > 0) {
+            panelY = Math.max(margin, Math.min(panelY, screenH - margin - panelHeight));
+        }
+        return new int[]{panelX, panelY};
+    }
+
     /**
      * Hide panel
      */
@@ -140,6 +160,10 @@ public class ItemInfoPanel {
 
     public boolean isVisible() {
         return isVisible;
+    }
+
+    public boolean contains(float x, float y) {
+        return isVisible && TouchUtil.checkIsInTouchRectFloat(panelBounds, x, y);
     }
 
     /**

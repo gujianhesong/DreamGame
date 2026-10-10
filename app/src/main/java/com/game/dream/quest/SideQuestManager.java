@@ -24,6 +24,8 @@ public class SideQuestManager {
         // 直接注册所有支线任务
         registe(new SideQuest001());
         registe(new SideQuest002());
+        registe(new SideQuest003());
+        registe(new SideQuest004());
     }
 
     public void registe(ISideQuest sideQuest) {

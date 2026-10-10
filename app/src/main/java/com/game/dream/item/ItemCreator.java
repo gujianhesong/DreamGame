@@ -978,7 +978,7 @@ public class ItemCreator {
         List<SkillInfo> skillInfos = SkillSystem.getInstance().getMainSkillInfos();
         for(SkillInfo skillInfo : skillInfos){
             if(skillInfo.getSkillType() == skillType){
-                return skillInfo.getName();
+                return skillInfo.getName() + "技能书";
             }
         }
         return "";

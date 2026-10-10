@@ -83,6 +83,24 @@ public class QuestSystem {
                 Arrays.asList("给旺财吃点芋子排骨", "算了，我自己还想吃呢")
         );
         questTemplates.add(quest5);
+
+        QuestInfo quest6 = new QuestInfo(
+                6,
+                "清风赠书",
+                "清溪村清风道长愿传授剑气心法",
+                1,
+                Arrays.asList("向清风道长领取剑气技能书")
+        );
+        questTemplates.add(quest6);
+
+        QuestInfo quest7 = new QuestInfo(
+                7,
+                "慧能化缘",
+                "慧能大师化缘五千金，可从金刚护体与妙手回春技能书中择一",
+                1,
+                Arrays.asList("向慧能大师布施并领取技能书")
+        );
+        questTemplates.add(quest7);
     }
 
     /**

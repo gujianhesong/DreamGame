@@ -86,6 +86,9 @@ public class SkillsPanel {
         setSkillActionListener(new SkillsPanel.SkillActionListener() {
             @Override
             public void onUpgradeSkill(SkillInfo skill) {
+                if (skill.isPractiseSkill()) {
+                    return;
+                }
                 if (skill.getLevel() < skill.getMaxLevel()) {
                     skill.setLevel(skill.getLevel() + 1);
                 }
@@ -292,6 +295,14 @@ public class SkillsPanel {
         // Draw tabs
         drawTabs(canvas, paint);
 
+        if (currentTab == 2) {
+            paint.setColor(Color.rgb(200, 180, 255));
+            paint.setTextSize(20);
+            paint.setTextAlign(Paint.Align.CENTER);
+            canvas.drawText("前往金陵主城找玄机真人花费金币修炼",
+                    panelBounds.centerX(), skillListArea.top - 4, paint);
+        }
+
         // Draw skill list
         drawSkillList(canvas, paint);
     }
@@ -427,7 +438,7 @@ public class SkillsPanel {
             // Draw buttons if available
             if (i < skillButtons.size()) {
                 SkillButtonPair pair = skillButtons.get(i);
-                if (!skill.isMainSkill()) {
+                if (skill.isAssistSkill()) {
                     drawUpgradeButton(canvas, paint, pair.upgradeButton, skill.canUpgrade());
                     drawDowngradeButton(canvas, paint, pair.downgradeButton, skill.canDowngrade());
                 }
@@ -633,14 +644,14 @@ public class SkillsPanel {
                         return true;
                     }
 
-                    if (!pair.skill.isMainSkill() && TouchUtil.checkIsInTouchRectFloat(pair.upgradeButton, x, y)) {
+                    if (pair.skill.isAssistSkill() && TouchUtil.checkIsInTouchRectFloat(pair.upgradeButton, x, y)) {
                         if (pair.skill.canUpgrade() && listener != null) {
                             listener.onUpgradeSkill(pair.skill);
                             updateSkillButtons();
                         }
                         return true;
                     }
-                    if (!pair.skill.isMainSkill() && TouchUtil.checkIsInTouchRectFloat(pair.downgradeButton, x, y)) {
+                    if (pair.skill.isAssistSkill() && TouchUtil.checkIsInTouchRectFloat(pair.downgradeButton, x, y)) {
                         if (pair.skill.canDowngrade() && listener != null) {
                             listener.onDowngradeSkill(pair.skill);
                             updateSkillButtons();

@@ -124,6 +124,59 @@ public class SkillSystem {
                 }
             }
         }
+        clampPracticeLevelsToCap();
+    }
+
+    /** 升到 N 级的金币：1000 × N × N */
+    public static int getPracticeUpgradeCost(int nextLevel) {
+        if (nextLevel <= 0) {
+            return 0;
+        }
+        return 1000 * nextLevel * nextLevel;
+    }
+
+    /** 修炼上限 = min(25, 人物等级 / 4) */
+    public int getPracticeLevelCap() {
+        int playerLevel = Math.max(1, RoleSystem.getInstance().getRoleInfo().getLevel());
+        return Math.min(25, playerLevel / 4);
+    }
+
+    public void clampPracticeLevelsToCap() {
+        int cap = getPracticeLevelCap();
+        for (SkillInfo skill : playerPractiseSkills) {
+            if (skill.getLevel() > cap) {
+                skill.setLevel(cap);
+            }
+        }
+    }
+
+    public boolean tryUpgradePractice(SkillInfo skill) {
+        if (skill == null || !skill.isPractiseSkill()) {
+            return false;
+        }
+        int nextLevel = skill.getLevel() + 1;
+        if (nextLevel > skill.getMaxLevel()) {
+            GameEngine.getInstance().showCenterToast(skill.getName() + " 已达满级", 1800);
+            return false;
+        }
+        int cap = getPracticeLevelCap();
+        if (nextLevel > cap) {
+            int needRoleLevel = nextLevel * 4;
+            GameEngine.getInstance().showCenterToast(
+                    "人物需达到 " + needRoleLevel + " 级才能修炼到 " + nextLevel + " 级（当前上限 " + cap + "）", 2500);
+            return false;
+        }
+        int cost = getPracticeUpgradeCost(nextLevel);
+        RoleInfo roleInfo = RoleSystem.getInstance().getRoleInfo();
+        if (roleInfo.getMoney() < cost) {
+            GameEngine.getInstance().showCenterToast("金钱不足，需要 " + cost, 2000);
+            return false;
+        }
+        roleInfo.setMoney(roleInfo.getMoney() - cost);
+        skill.setLevel(nextLevel);
+        String action = nextLevel == 1 ? "学会了" : ("升至 " + nextLevel + " 级");
+        GameEngine.getInstance().showCenterToast(skill.getName() + " " + action, 2000);
+        return true;
     }
 
     public List<SkillInfo> getMainSkillInfos() {

@@ -91,6 +91,19 @@ public class FunctionNpcManager {
                 });
                 return true;
             }
+            case 100209: {
+                List<String> options = Arrays.asList("开始修炼", "不了");
+                String message = "天地灵气可炼入筋骨。攻防、法术、乃至灵兽，皆可在此修习。花费随等级递增，修炼等级不得超过人物等级的四分之一。";
+                GameEngine.getInstance().showDialog(npc.getName(), message, options, new DialogBox.DialogListener() {
+                    @Override
+                    public void onOptionSelected(int optionIndex) {
+                        if (optionIndex == 0) {
+                            GameEngine.getInstance().showPracticePanel();
+                        }
+                    }
+                });
+                return true;
+            }
             case 100201: {
                 //金陵-驿站车夫（主城）
                 List<String> options = Arrays.asList("前往碧波渡(城东北)", "前往云岩寨(城东南)", "前往稻香屯(城西南)", "前往翠微庄(城西北)", "不了");

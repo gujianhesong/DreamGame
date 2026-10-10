@@ -23,6 +23,7 @@ import com.game.dream.panel.ItemsPanel;
 import com.game.dream.panel.PetPanel;
 import com.game.dream.panel.QuestPanel;
 import com.game.dream.panel.RoleInfoPanel;
+import com.game.dream.panel.PracticePanel;
 import com.game.dream.panel.ShopPanel;
 import com.game.dream.panel.SkillsPanel;
 import com.game.dream.system.ItemSystem;
@@ -64,6 +65,7 @@ public class GameUI {
     private PetPanel petPanel;
 
     private ShopPanel shopPanel;
+    private PracticePanel practicePanel;
 
     private DialogBox currentDialog;
 
@@ -177,6 +179,7 @@ public class GameUI {
 
         // Initialize Shop panel
         shopPanel = new ShopPanel();
+        practicePanel = new PracticePanel();
 
         // Initialize DialogBox
         currentDialog = new DialogBox();
@@ -324,6 +327,14 @@ public class GameUI {
             int panelX = (width - panelWidth) / 2;
             int panelY = (height - panelHeight) / 2;
             shopPanel.setBounds(panelX, panelY, panelWidth, panelHeight);
+        }
+
+        if (practicePanel != null) {
+            int panelWidth = Math.min(1000, width - 40);
+            int panelHeight = Math.min(900, height - 100);
+            int panelX = (width - panelWidth) / 2;
+            int panelY = (height - panelHeight) / 2;
+            practicePanel.setBounds(panelX, panelY, panelWidth, panelHeight);
         }
 
         if (currentDialog != null) {
@@ -590,6 +601,10 @@ public class GameUI {
             shopPanel.draw(canvas);
         }
 
+        if (practicePanel != null && practicePanel.isVisible()) {
+            practicePanel.draw(canvas);
+        }
+
         // Draw DialogBox
         if (currentDialog != null && currentDialog.isVisible()) {
             currentDialog.draw(canvas);
@@ -666,6 +681,18 @@ public class GameUI {
                     return shopPanel.handleTouchMove(x, y);
                 case MotionEvent.ACTION_UP:
                     return shopPanel.handleTouchUp(x, y);
+            }
+            return true;
+        }
+
+        if (practicePanel != null && practicePanel.isVisible()) {
+            switch (action) {
+                case MotionEvent.ACTION_DOWN:
+                    return practicePanel.handleTouchDown(x, y);
+                case MotionEvent.ACTION_MOVE:
+                    return practicePanel.handleTouchMove(x, y);
+                case MotionEvent.ACTION_UP:
+                    return practicePanel.handleTouchUp(x, y);
             }
             return true;
         }
@@ -1582,6 +1609,12 @@ public class GameUI {
     public void showShopPanel(List<ShopPanel.ShopItem> shopItems) {
         if (shopPanel != null) {
             shopPanel.showShopItems(shopItems);
+        }
+    }
+
+    public void showPracticePanel() {
+        if (practicePanel != null) {
+            practicePanel.show();
         }
     }
 

@@ -2263,6 +2263,12 @@ public class GameEngine {
         }
     }
 
+    public void showPracticePanel() {
+        if (gameUI != null) {
+            gameUI.showPracticePanel();
+        }
+    }
+
     /**
      * Show float text
      */

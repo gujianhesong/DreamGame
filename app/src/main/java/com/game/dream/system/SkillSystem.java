@@ -11,6 +11,7 @@ import com.game.dream.bean.SkillStartInfo;
 import com.game.dream.enemy.Enemy;
 import com.game.dream.enums.SkillType;
 import com.game.dream.enums.SpecialEffect;
+import com.game.dream.item.EquipmentItem;
 import com.game.dream.skill.SkillEffect;
 
 import java.util.ArrayList;
@@ -337,6 +338,12 @@ public class SkillSystem {
             return null; // Still on cooldown
         }
 
+        if (skill.getSkillType() == SkillType.MAIN_SwordQi
+                && ItemSystem.getInstance().getEquippedItem(EquipmentItem.Slot.WEAPON) == null) {
+            GameEngine.getInstance().showCenterToast("未装备武器，无法使用剑气", 1500);
+            return null;
+        }
+
         if (skill.getSkillType() == SkillType.MAIN_LianQiHuaShen) {
             int costBlood = 50;
             RoleInfo roleInfo = RoleSystem.getInstance().getRoleInfo();
@@ -448,8 +455,8 @@ public class SkillSystem {
         float range = 520f;
         float[] aim = aimSwordQi(player, range);
         Projectile proj = new Projectile(player.getX(), player.getY(), aim[0], aim[1], SkillType.MAIN_SwordQi);
+        proj.applySwordQiLook(ItemSystem.getInstance().getEquippedItem(EquipmentItem.Slot.WEAPON));
         proj.setSkillLevel(fireLevel);
-        proj.setSize(10f);
         proj.scaleSpeed(2.0f + (fireLevel - 1) * 0.08f);
         if (fireLevel >= 10) {
             proj.setPierceCount(2);

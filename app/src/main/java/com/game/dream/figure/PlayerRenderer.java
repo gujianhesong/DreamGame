@@ -918,10 +918,12 @@ public class PlayerRenderer {
      */
     private void drawSwordInHand(Canvas canvas, Paint paint, float handX, float handY,
                                  float scale, float attackProgress) {
-        // Get equipped weapon
         EquipmentItem weapon = ItemSystem.getInstance().getEquippedItem(EquipmentItem.Slot.WEAPON);
+        if (weapon == null) {
+            return;
+        }
         int weaponLevel = 1;
-        if (weapon != null && weapon.getEquipItemInfo() != null) {
+        if (weapon.getEquipItemInfo() != null) {
             weaponLevel = Math.max(1, weapon.getEquipItemInfo().getLevel());
         }
 
@@ -1064,10 +1066,12 @@ public class PlayerRenderer {
      * @param isBackView true for back/up view, false for front/down view
      */
     private void drawSwordOnBack(Canvas canvas, Paint paint, float cx, float cy, float scale, float bobOffset, boolean isBackView) {
-        // Get equipped weapon
         EquipmentItem weapon = ItemSystem.getInstance().getEquippedItem(EquipmentItem.Slot.WEAPON);
+        if (weapon == null) {
+            return;
+        }
         int weaponLevel = 1;
-        if (weapon != null && weapon.getEquipItemInfo() != null) {
+        if (weapon.getEquipItemInfo() != null) {
             weaponLevel = Math.max(1, weapon.getEquipItemInfo().getLevel());
         }
 

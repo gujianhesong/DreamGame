@@ -6,6 +6,8 @@ import android.graphics.Paint;
 
 import com.game.dream.enemy.Enemy;
 import com.game.dream.enums.SkillType;
+import com.game.dream.item.EquipmentItem;
+import com.game.dream.utils.SwordLook;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -211,6 +213,11 @@ public class Projectile {
         }
     }
 
+    public void applySwordQiLook(EquipmentItem weapon) {
+        this.color = SwordLook.qiColor(weapon);
+        this.size = 10f;
+    }
+
     private void drawSwordQi(Canvas canvas, Paint paint, float cx, float cy) {
         float angle = (float) Math.toDegrees(Math.atan2(vy, vx));
         canvas.save();
@@ -219,13 +226,17 @@ public class Projectile {
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeCap(Paint.Cap.ROUND);
 
+        int r = Color.red(color);
+        int g = Color.green(color);
+        int b = Color.blue(color);
+
         paint.setStrokeWidth(size * 1.6f);
-        paint.setColor(Color.argb(55, 160, 210, 255));
+        paint.setColor(Color.argb(55, mix(r, 160), mix(g, 210), mix(b, 255)));
         canvas.drawArc(cx - size * 2.6f, cy - size * 3.6f, cx + size * 1.4f, cy + size * 3.6f,
                 -75, 150, false, paint);
 
         paint.setStrokeWidth(size * 0.85f);
-        paint.setColor(Color.argb(200, 210, 235, 255));
+        paint.setColor(Color.argb(200, mix(r, 210), mix(g, 235), mix(b, 255)));
         canvas.drawArc(cx - size * 2.1f, cy - size * 3.1f, cx + size * 1.0f, cy + size * 3.1f,
                 -68, 136, false, paint);
 
@@ -235,11 +246,15 @@ public class Projectile {
                 -62, 124, false, paint);
 
         paint.setStyle(Paint.Style.FILL);
-        paint.setColor(Color.argb(70, 200, 230, 255));
+        paint.setColor(Color.argb(70, mix(r, 200), mix(g, 230), mix(b, 255)));
         canvas.drawOval(cx - size * 2.8f, cy - size * 0.35f, cx + size * 0.4f, cy + size * 0.35f, paint);
         canvas.restore();
         paint.setStrokeWidth(1);
         paint.setStrokeCap(Paint.Cap.BUTT);
+    }
+
+    private int mix(int weapon, int original) {
+        return (weapon + original * 2) / 3;
     }
 
     /**

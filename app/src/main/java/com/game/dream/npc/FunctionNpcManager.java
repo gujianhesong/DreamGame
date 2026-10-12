@@ -514,7 +514,7 @@ public class FunctionNpcManager {
 
     private void handleYamenGuide(Npc npc) {
         GameEngine.getInstance().showDialog(npc.getName(),
-                "金陵城大，少侠可问贫吏。北有酒楼客栈，西有药铺铁匠钱庄，东有兵器防具宝石，南广场可卖装备、买捕捉符、医战宠、问幻境。修炼找南门外玄机真人，辅助找培元先生。东门车夫去东海湾，西门夜里有鬼差通地府。",
+                "金陵城大，少侠可问贫吏。北有酒楼客栈，西有药铺铁匠钱庄，东有兵器防具宝石藏经。南广场可卖装备、买捕捉符、医战宠、问幻境。修炼找南门外玄机真人，辅助找培元先生。东门车夫去东海湾，西门夜里有鬼差通地府。",
                 Arrays.asList("知道了"), null);
     }
 

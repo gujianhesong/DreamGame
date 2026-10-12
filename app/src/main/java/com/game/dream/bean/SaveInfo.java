@@ -1,6 +1,8 @@
 package com.game.dream.bean;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class SaveInfo {
     private RoleInfo roleInfo;
@@ -21,6 +23,8 @@ public class SaveInfo {
     private String saveId;
     private long updatedAt;
     private int bagMaxSize;
+    /** 商店技能书已购数量，key 为 SkillType.name()，每种上限 6 本。 */
+    private Map<String, Integer> skillBookShopBought;
 
     public String getSaveId() {
         return saveId;
@@ -140,5 +144,16 @@ public class SaveInfo {
 
     public void setBagMaxSize(int bagMaxSize) {
         this.bagMaxSize = bagMaxSize;
+    }
+
+    public Map<String, Integer> getSkillBookShopBought() {
+        if (skillBookShopBought == null) {
+            skillBookShopBought = new HashMap<>();
+        }
+        return skillBookShopBought;
+    }
+
+    public void setSkillBookShopBought(Map<String, Integer> skillBookShopBought) {
+        this.skillBookShopBought = skillBookShopBought;
     }
 }

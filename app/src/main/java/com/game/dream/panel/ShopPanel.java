@@ -9,8 +9,10 @@ import com.game.dream.GameEngine;
 import com.game.dream.enums.FoodType;
 import com.game.dream.item.Item;
 import com.game.dream.item.ItemCreator;
+import com.game.dream.item.SkillBookItem;
 import com.game.dream.system.ItemSystem;
 import com.game.dream.system.RoleSystem;
+import com.game.dream.system.ShopSystem;
 import com.game.dream.utils.TouchUtil;
 
 import java.util.ArrayList;
@@ -183,25 +185,30 @@ public class ShopPanel {
             // Price
             paint.setColor(Color.rgb(255, 215, 0));
             paint.setTextSize(28);
-            canvas.drawText("💰 " + shopItem.price, itemRect.left + 15, itemRect.top + 105, paint);
+            String priceText = "💰 " + shopItem.price;
+            if (shopItem.stockRemaining >= 0) {
+                priceText += "  库存 " + shopItem.stockRemaining + "/" + ShopSystem.SKILL_BOOK_SHOP_LIMIT;
+            }
+            canvas.drawText(priceText, itemRect.left + 15, itemRect.top + 105, paint);
 
             // Buy button
             Rect buyBtn = new Rect(itemRect.right - 100, itemRect.top + 35, itemRect.right - 15, itemRect.top + 85);
             shopItem.buyBtnRect = buyBtn;
 
-            paint.setColor(Color.argb(180, 50, 130, 80));
+            boolean soldOut = shopItem.stockRemaining == 0;
+            paint.setColor(soldOut ? Color.argb(180, 80, 80, 80) : Color.argb(180, 50, 130, 80));
             canvas.drawRoundRect(buyBtn.left, buyBtn.top, buyBtn.right, buyBtn.bottom, 8, 8, paint);
 
             paint.setStyle(Paint.Style.STROKE);
             paint.setStrokeWidth(2);
-            paint.setColor(Color.rgb(100, 255, 100));
+            paint.setColor(soldOut ? Color.rgb(160, 160, 160) : Color.rgb(100, 255, 100));
             canvas.drawRoundRect(buyBtn.left, buyBtn.top, buyBtn.right, buyBtn.bottom, 8, 8, paint);
             paint.setStyle(Paint.Style.FILL);
 
             paint.setColor(Color.WHITE);
             paint.setTextSize(28);
             paint.setTextAlign(Paint.Align.CENTER);
-            canvas.drawText("购买", buyBtn.centerX(), buyBtn.centerY() + 8, paint);
+            canvas.drawText(soldOut ? "售罄" : "购买", buyBtn.centerX(), buyBtn.centerY() + 8, paint);
         }
 
         canvas.restore();
@@ -291,6 +298,11 @@ public class ShopPanel {
     }
 
     private void buyItem(ShopItem shopItem) {
+        if (shopItem.stockRemaining == 0) {
+            GameEngine.getInstance().showCenterToast("该技能书已售罄（每种限购6本）");
+            return;
+        }
+
         long money = RoleSystem.getInstance().getRoleInfo().getMoney();
         if (money < shopItem.price) {
             GameEngine.getInstance().showCenterToast("金钱不足!");
@@ -302,9 +314,21 @@ public class ShopPanel {
             return;
         }
 
+        Item itemToAdd = shopItem.item;
+        if (itemToAdd instanceof SkillBookItem) {
+            SkillBookItem book = (SkillBookItem) itemToAdd;
+            if (!ShopSystem.getInstance().tryBuySkillBook(book.getSkillType())) {
+                GameEngine.getInstance().showCenterToast("该技能书已售罄（每种限购6本）");
+                shopItem.stockRemaining = 0;
+                return;
+            }
+            itemToAdd = ItemCreator.createSkillBook(book.getSkillType());
+            shopItem.stockRemaining = ShopSystem.getInstance().getSkillBookRemaining(book.getSkillType());
+        }
+
         RoleSystem.getInstance().removeMoney(shopItem.price);
-        ItemSystem.getInstance().addItem(shopItem.item, 1);
-        GameEngine.getInstance().showCenterToast("购买了 " + shopItem.item.getName());
+        ItemSystem.getInstance().addItem(itemToAdd, 1);
+        GameEngine.getInstance().showCenterToast("购买了 " + itemToAdd.getName());
     }
 
     /**
@@ -352,6 +376,8 @@ public class ShopPanel {
     public static class ShopItem {
         Item item;
         int price;
+        /** 技能书库存；普通商品为 -1 表示不限购。 */
+        public int stockRemaining = -1;
         Rect itemRect;
         Rect buyBtnRect;
 

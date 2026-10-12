@@ -80,6 +80,7 @@ public class SaveSystem {
             saveInfo.setDefaultMpPotionIds(ItemSystem.getInstance().getDefaultMpPotionIds());
             saveInfo.setPetInfos(PetSystem.getInstance().toSaveInfos());
             saveInfo.setBagMaxSize(ItemSystem.getInstance().getMaxSize());
+            saveInfo.setSkillBookShopBought(ShopSystem.getInstance().getSkillBookShopBought());
             if (this.saveInfo != null) {
                 saveInfo.setIllusionRealmInfo(this.saveInfo.getIllusionRealmInfo());
             }
@@ -197,6 +198,7 @@ public class SaveSystem {
         if (saveInfo.getBagMaxSize() > 0) {
             ItemSystem.getInstance().setMaxSize(saveInfo.getBagMaxSize());
         }
+        ShopSystem.getInstance().setSkillBookShopBought(saveInfo.getSkillBookShopBought());
     }
 
     private SaveInfo getInitData() {

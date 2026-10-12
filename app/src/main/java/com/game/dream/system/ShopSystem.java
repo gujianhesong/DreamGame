@@ -14,7 +14,9 @@ import com.game.dream.ui.DialogBox;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class ShopSystem {
 
@@ -24,13 +26,53 @@ public class ShopSystem {
         return instance;
     }
 
+    /** 每种技能书商店累计限购。6 本刚好能升到 3 级。 */
+    public static final int SKILL_BOOK_SHOP_LIMIT = 6;
+
+    private Map<String, Integer> skillBookShopBought = new HashMap<>();
+
     private ShopSystem() {
+    }
+
+    public Map<String, Integer> getSkillBookShopBought() {
+        return new HashMap<>(skillBookShopBought);
+    }
+
+    public void setSkillBookShopBought(Map<String, Integer> bought) {
+        skillBookShopBought = new HashMap<>();
+        if (bought != null) {
+            skillBookShopBought.putAll(bought);
+        }
+    }
+
+    public int getSkillBookBought(SkillType skillType) {
+        if (skillType == null) {
+            return 0;
+        }
+        Integer count = skillBookShopBought.get(skillType.name());
+        return count == null ? 0 : count;
+    }
+
+    public int getSkillBookRemaining(SkillType skillType) {
+        return Math.max(0, SKILL_BOOK_SHOP_LIMIT - getSkillBookBought(skillType));
+    }
+
+    public boolean tryBuySkillBook(SkillType skillType) {
+        if (skillType == null || getSkillBookRemaining(skillType) <= 0) {
+            return false;
+        }
+        skillBookShopBought.put(skillType.name(), getSkillBookBought(skillType) + 1);
+        return true;
     }
 
     public boolean handleNpcClick(Npc npc) {
         switch (npc.getId()) {
             case 100151:
                 openShop(npc, "客官，你要点什么药", buildQingxiMedicine());
+                return true;
+            case 100102:
+                openShop(npc, "山野之间也能淘到两本入门心法，每种限购六本。",
+                        buildSkillBooks(SkillType.MAIN_ChongCi, SkillType.MAIN_FIREBALL));
                 return true;
             case 100155:
             case 100265:
@@ -56,7 +98,19 @@ public class ShopSystem {
                 openShop(npc, "璀璨珠宝，镶嵌用的宝石这里有售。", buildGemShop());
                 return true;
             case 100263:
-                openShop(npc, "贫僧贩卖诸门心法，择一部带回去研习便可。", buildSkillBooks());
+                openShop(npc, "贫僧贩卖城中心法，每种限购六本，过了这个村便没有这店。",
+                        buildSkillBooks(SkillType.MAIN_ICE_BOLT, SkillType.MAIN_ROOT,
+                                SkillType.MAIN_MiaoShouHuiChun, SkillType.MAIN_LianQiHuaShen));
+                return true;
+            case 100307:
+                openShop(npc, "海里淘来的残卷，每种限购六本。",
+                        buildSkillBooks(SkillType.MAIN_LIGHTNING, SkillType.MAIN_FeiShaZouShi,
+                                SkillType.MAIN_JinGangHuTi));
+                return true;
+            case 100509:
+                openShop(npc, "阴司典籍外传，每种限购六本，阳寿未尽也可买。",
+                        buildSkillBooks(SkillType.MAIN_DuWuZhen, SkillType.MAIN_WanJianGuiZong,
+                                SkillType.MAIN_SwordQi));
                 return true;
             default:
                 return false;
@@ -149,18 +203,17 @@ public class ShopSystem {
         return shopItems;
     }
 
-    private List<ShopPanel.ShopItem> buildSkillBooks() {
+    private List<ShopPanel.ShopItem> buildSkillBooks(SkillType... types) {
         List<ShopPanel.ShopItem> shopItems = new ArrayList<>();
-        SkillType[] types = {
-                SkillType.MAIN_FIREBALL, SkillType.MAIN_ICE_BOLT, SkillType.MAIN_LIGHTNING,
-                SkillType.MAIN_ChongCi,
-                SkillType.MAIN_FeiShaZouShi, SkillType.MAIN_ROOT, SkillType.MAIN_WanJianGuiZong,
-                SkillType.MAIN_LianQiHuaShen, SkillType.MAIN_DuWuZhen
-        };
         for (SkillType type : types) {
             Item book = ItemCreator.createSkillBook(type);
-            int price = type == SkillType.MAIN_ChongCi ? 18000 : Math.max(12000, book.getValue() * 3);
-            shopItems.add(new ShopPanel.ShopItem(book, price));
+            if (book == null) {
+                continue;
+            }
+            int price = 30000;
+            ShopPanel.ShopItem shopItem = new ShopPanel.ShopItem(book, price);
+            shopItem.stockRemaining = getSkillBookRemaining(type);
+            shopItems.add(shopItem);
         }
         return shopItems;
     }

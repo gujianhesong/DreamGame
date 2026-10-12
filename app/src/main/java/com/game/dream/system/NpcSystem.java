@@ -182,6 +182,7 @@ public class NpcSystem {
                 npcList.add(new Npc(100401, "驿站虾兵", NpcType.SOLDIER, 10000, 13300));
                 npcList.add(new Npc(100402, "龟丞相", NpcType.OLD_MAN, 10500, 10500));
                 npcList.add(new Npc(100403, "龙女", NpcType.BEAUTY, 9500, 10500));
+                npcList.add(new Npc(100307, "海藏商人", NpcType.MERCHANT, 10000, 10800));
             }
             break;
             case MapSystem.MAP_ID_NETHERWORLD: {
@@ -192,6 +193,7 @@ public class NpcSystem {
                 // 森罗殿主殿
                 npcList.add(new Npc(100502, "阎罗王", NpcType.JUDGE_YANLUO, 10000, 9500));
                 npcList.add(new Npc(100503, "崔判官", NpcType.JUDGE_CUI, 10350, 9800));
+                npcList.add(new Npc(100509, "冥府书吏", NpcType.SCHOLAR, 9650, 9800));
 
                 // 鬼门关内两侧（黑白无常）
                 npcList.add(new Npc(100504, "黑无常", NpcType.GHOST_OFFICER_BLACK, 9750, 12600));

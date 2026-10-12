@@ -280,14 +280,18 @@ public class ItemSystem {
             ConsumableItem consumableItem = (ConsumableItem) item;
             switch (consumableItem.getEffectType()) {
                 case HEAL_HP: {
-                    RoleInfo roleInfo = RoleSystem.getInstance().getRoleInfo();
                     int effectValue = consumableItem.getEffectValue();
                     if (ItemSystem.getInstance().isEquipedSpecialEffect(SpecialEffect.SE_ShenNong)) {
                         //神农
                         effectValue = (int) (effectValue * 1.2);
                     }
-                    roleInfo.setHp(Math.min(roleInfo.getBloodCap(), roleInfo.getHp() + effectValue));
-                    GameEngine.getInstance().showFloatText("气血+" + effectValue, FloatingText.Type.HEAL);
+                    com.game.dream.figure.Player player = GameEngine.getInstance().getPlayer();
+                    int before = player != null ? player.getHealth() : 0;
+                    if (player != null) {
+                        player.healBlood(effectValue);
+                    }
+                    int healed = player != null ? Math.max(0, player.getHealth() - before) : effectValue;
+                    GameEngine.getInstance().showFloatText("气血+" + healed, FloatingText.Type.HEAL);
                     isUsed = true;
                 }
                 break;

@@ -582,8 +582,14 @@ public class GameEngine {
             if (accumulatedRecoveryTime_ZaiSheng >= limitTime) {
                 RoleInfo roleInfo = RoleSystem.getInstance().getRoleInfo();
                 int recoveryValue = (int) (roleInfo.getBloodCap() * 0.03);
-                roleInfo.setHp(Math.min(roleInfo.getBloodCap(), roleInfo.getHp() + recoveryValue));
-                GameEngine.getInstance().showFloatText("气血+" + recoveryValue, FloatingText.Type.HEAL);
+                int before = player != null ? player.getHealth() : roleInfo.getHp();
+                if (player != null) {
+                    player.healBlood(recoveryValue);
+                } else {
+                    roleInfo.setHp(Math.min(roleInfo.getBloodCap(), roleInfo.getHp() + recoveryValue));
+                }
+                int healed = player != null ? Math.max(0, player.getHealth() - before) : recoveryValue;
+                GameEngine.getInstance().showFloatText("气血+" + healed, FloatingText.Type.HEAL);
 
                 // Reset accumulated time (keep remainder for accuracy)
                 accumulatedRecoveryTime_ZaiSheng -= limitTime;
@@ -914,6 +920,7 @@ public class GameEngine {
 
     private void checkEnemiesUpdate(long deltaTime) {
         if (enemies != null) {
+            boolean bossWound = false;
             for (int i = enemies.size() - 1; i >= 0; i--) {
                 Enemy enemy = enemies.get(i);
 
@@ -925,8 +932,20 @@ public class GameEngine {
                 // 只对距离玩家 2000 像素内的怪物更新 AI
                 float updateThreshold = 2000 * 2000; // 2000^2 to avoid sqrt
                 if (distanceSquared < updateThreshold) {
+                    if (enemy.isBossTier() && enemy.isAlive() && enemy.isBossPhaseTwo()) {
+                        bossWound = true;
+                    }
+                    if (enemy.isPhaseTwoMinion() && enemy.isAlive() && distanceSquared < 180f * 180f) {
+                        player.applyCC(Character.CrowdControlType.SLOW, 500);
+                    }
                     int[][] map = MapSystem.getInstance().getCurMapInfo().getMapData();
                     enemy.update(deltaTime, player.getX(), player.getY(), map, getCurrentMapWidth(), getCurrentMapHeight());
+
+                    if (enemy.consumePostRetreatFireball()) {
+                        float[] predicted = player.getPredictedPosition(0.4f);
+                        spawnEnemyGenericFireballs(enemy, predicted[0], predicted[1]);
+                        enemy.requestGapClose();
+                    }
 
                     // Check if elite/leader enemy is casting spell while chasing
                     if (enemy.isCastingSpell()) {
@@ -934,7 +953,11 @@ public class GameEngine {
                             spawnEnemyGenericFireballs(enemy, player.getX(), player.getY());
                         }
                         enemy.resetCastingState();
-                        enemy.requestBossRetreat();
+                        if (enemy.isBossTier()) {
+                            enemy.requestGapClose();
+                        } else {
+                            enemy.requestBossRetreat();
+                        }
                     }
 
                     // BOSS召唤小弟: 血量低于50%时触发，每只BOSS只能召唤一次
@@ -1142,6 +1165,9 @@ public class GameEngine {
                     enemies.remove(i);
                 }
             }
+            player.setBossCombatWound(bossWound);
+        } else {
+            player.setBossCombatWound(false);
         }
     }
 
@@ -1646,6 +1672,8 @@ public class GameEngine {
             }
             tidePools.add(new TidePool(boss.getX(), boss.getY(), boss));
             showCenterToast("敖广掀起了龙王潮！", 1600);
+        } else {
+            showCenterToast("首领陷入狂暴，疗伤效果减弱！", 1600);
         }
     }
 
@@ -2908,6 +2936,12 @@ public class GameEngine {
             return;
         }
 
+        if (enemy.isBossTier() && player != null) {
+            float[] predicted = player.getPredictedPosition(0.4f);
+            targetX = predicted[0];
+            targetY = predicted[1];
+        }
+
         float ex = enemy.getX();
         float ey = enemy.getY();
         float dx = targetX - ex;
@@ -2990,6 +3024,13 @@ public class GameEngine {
             minions.add(createMinionOfType(boss, Enemy.EnemyLevel.NORMAL));
         }
 
+        if (boss.isBossPhaseTwo()) {
+            for (Enemy minion : minions) {
+                if (minion != null) {
+                    minion.markPhaseTwoMinion();
+                }
+            }
+        }
         // 将小弟添加到敌人列表
         enemies.addAll(minions);
 
@@ -3008,6 +3049,9 @@ public class GameEngine {
             Enemy minion = shrimp ? new ShrimpSoldier(spawnX, spawnY) : new LittleGreenDragon(spawnX, spawnY);
             minion.setName(shrimp ? "虾兵" : "小青龙");
             minion.setAggro(60000);
+            if (boss.isBossPhaseTwo()) {
+                minion.markPhaseTwoMinion();
+            }
             enemies.add(minion);
         }
         showCenterToast(shrimp ? "龟丞相召来了虾兵！" : boss.getName() + " 召来了小青龙！", 1600);

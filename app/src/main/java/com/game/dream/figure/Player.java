@@ -97,6 +97,8 @@ public class Player extends Character {
     private float poisonPercentPerTick;
     /** 本帧毒伤，供 GameEngine 生成飘字后清零 */
     private int pendingPoisonTickDamage;
+    /** 附近有二阶段 BOSS 时，回血减半 */
+    private boolean bossCombatWound;
     /** 毒伤致死标记，供 GameEngine 触发死亡流程 */
     private boolean poisonCausedDeath;
 
@@ -884,6 +886,9 @@ public class Player extends Character {
      */
     public void healBlood(int amount) {
         if (amount <= 0) return;
+        if (bossCombatWound) {
+            amount = Math.max(1, amount / 2);
+        }
 
         int oldHealth = this.getHealth();
         int newHealth = Math.min(oldHealth + amount, getMaxHealth());
@@ -892,6 +897,45 @@ public class Player extends Character {
         if (newHealth > oldHealth) {
             lastHealBloodTime = System.currentTimeMillis(); // Trigger visual effect
         }
+    }
+
+    public void setBossCombatWound(boolean wounded) {
+        this.bossCombatWound = wounded;
+    }
+
+    public boolean isRecentlyHealing() {
+        return System.currentTimeMillis() - lastHealBloodTime < 1000L;
+    }
+
+    /** 按当前移动/冲刺方向预判位置，供 BOSS 火球提前量使用。 */
+    public float[] getPredictedPosition(float leadSeconds) {
+        float dirX = 0f;
+        float dirY = 0f;
+        float speedPx = 150f + RoleSystem.getInstance().getRoleInfo().getSpeed() * 0.5f;
+        if (isDashing()) {
+            speedPx = 1000f;
+            switch (dashDirection) {
+                case 0: dirY = 1f; break;
+                case 1: dirY = -1f; break;
+                case 2: dirX = -1f; break;
+                case 3: dirX = 1f; break;
+            }
+        } else {
+            if (movingLeft) dirX -= 1f;
+            if (movingRight) dirX += 1f;
+            if (movingUp) dirY -= 1f;
+            if (movingDown) dirY += 1f;
+            if (isSlowed()) {
+                speedPx *= 0.5f;
+            }
+        }
+        float len = (float) Math.sqrt(dirX * dirX + dirY * dirY);
+        if (len < 0.01f) {
+            return new float[]{x, y};
+        }
+        dirX /= len;
+        dirY /= len;
+        return new float[]{x + dirX * speedPx * leadSeconds, y + dirY * speedPx * leadSeconds};
     }
 
     /**

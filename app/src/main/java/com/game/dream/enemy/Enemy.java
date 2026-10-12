@@ -8,7 +8,9 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.RectF;
 
+import com.game.dream.GameEngine;
 import com.game.dream.figure.Character;
+import com.game.dream.figure.Player;
 import com.game.dream.item.EquipCreator;
 import com.game.dream.item.ItemCreator;
 import com.game.dream.map.MapGenerator;
@@ -121,6 +123,11 @@ public abstract class Enemy extends Character {
     private float bossRetreatDy = 1f;
     private boolean bossPhaseTwo = false;
     private boolean pendingPhaseTwoMechanic = false;
+    private boolean bossEnraged = false;
+    private boolean pendingPostRetreatFireball = false;
+    private boolean pendingForceGapClose = false;
+    private boolean phaseTwoMinion = false;
+    private long meleeStickMs = 0;
 
     // Attack wind-up (攻击前摇)
     protected boolean isWindingUp = false;
@@ -411,6 +418,14 @@ public abstract class Enemy extends Character {
         float dx = playerX - x;
         float dy = playerY - y;
         float distanceToPlayer = (float) Math.sqrt(dx * dx + dy * dy);
+
+        if (isBossTier()) {
+            if (distanceToPlayer < propertyExtra.attackRange) {
+                meleeStickMs = Math.min(4000, meleeStickMs + deltaTime);
+            } else {
+                meleeStickMs = Math.max(0, meleeStickMs - deltaTime * 2);
+            }
+        }
 
         // Check if aggro has expired
         if (isAggroed && currentTime > aggroEndTime) {
@@ -1148,7 +1163,29 @@ public abstract class Enemy extends Character {
 
         List<AttackType> candidates = new ArrayList<>(availableAttackTypes);
         if (candidates.size() > 1) {
-            if (rangeRatio > 0.85f) {
+            boolean bossPunish = false;
+            boolean meleeStuck = false;
+            if (isBossTier()) {
+                Player player = GameEngine.getInstance().getPlayer();
+                if (player != null && (player.isChanneling() || player.isRecentlyHealing() || player.isDashing())) {
+                    bossPunish = true;
+                }
+                meleeStuck = meleeStickMs >= 2500;
+            }
+
+            if (isBossTier() && (pendingForceGapClose || rangeRatio > 1.15f || bossPunish)) {
+                pendingForceGapClose = false;
+                List<AttackType> gapClosers = filterGapCloserAttacks(availableAttackTypes);
+                if (!gapClosers.isEmpty()) {
+                    candidates = gapClosers;
+                }
+            } else if (isBossTier() && meleeStuck) {
+                List<AttackType> finishers = filterFinisherAttacks(availableAttackTypes);
+                if (!finishers.isEmpty()) {
+                    candidates = finishers;
+                    meleeStickMs = 0;
+                }
+            } else if (rangeRatio > 0.85f) {
                 List<AttackType> gapClosers = filterGapCloserAttacks(candidates);
                 if (!gapClosers.isEmpty()) {
                     candidates = gapClosers;
@@ -1161,7 +1198,7 @@ public abstract class Enemy extends Character {
             }
 
             // BOSS 低血量：优先使用高威胁招式
-            if (isBossTier() && hpRatio <= 0.5f) {
+            if (isBossTier() && hpRatio <= 0.5f && !bossPunish) {
                 List<AttackType> finisherTypes = filterFinisherAttacks(candidates);
                 if (!finisherTypes.isEmpty()) {
                     candidates = finisherTypes;
@@ -1544,9 +1581,9 @@ public abstract class Enemy extends Character {
         }
 
         // When damaged, automatically enter CHASING state and set aggro.
-        // BOSS 已经进入前摇、冲锋或施法时，受击只扣血，不打断这招。
+        // BOSS 受击只扣血，不打断当前招式。
         if (isAlive()) {
-            boolean holdAction = isBossTier() && isCommittedAction();
+            boolean holdAction = isBossTier();
             if (!holdAction) {
                 currentState = State.CHASING;
                 stateTimer = currentTime;
@@ -1574,7 +1611,14 @@ public abstract class Enemy extends Character {
                     bossPhaseTwo = true;
                     windUpDuration = Math.max(180L, (long) (windUpDuration * 0.65f));
                     spellWindUpDuration = Math.max(220L, (long) (spellWindUpDuration * 0.65f));
+                    attackCooldown = Math.max(700L, (long) (attackCooldown * 0.7f));
                     pendingPhaseTwoMechanic = true;
+                    interruptBossRetreat();
+                }
+                if (!bossEnraged && health <= maxHealth * 0.3f) {
+                    bossEnraged = true;
+                    windUpDuration = Math.max(140L, (long) (windUpDuration * 0.8f));
+                    attackCooldown = Math.max(550L, (long) (attackCooldown * 0.85f));
                 }
             }
             registerBossHit();
@@ -1623,15 +1667,68 @@ public abstract class Enemy extends Character {
                 || (currentState == State.ATTACKING && currentAttackType == AttackType.COMBO && comboCurrentHit > 0);
     }
 
-    /** 一套攻击或短时间连吃三下之后后撤。猛扑自带撤退，不再叠一次。 */
+    @Override
+    public void applyCC(CrowdControlType type, long durationMillis) {
+        if (isBossTier()) {
+            if (type == CrowdControlType.STUN || type == CrowdControlType.FREEZE || type == CrowdControlType.ROOT) {
+                if (bossPhaseTwo || bossEnraged) {
+                    return;
+                }
+                durationMillis = Math.min(durationMillis, 300L);
+            }
+        }
+        super.applyCC(type, durationMillis);
+    }
+
+    @Override
+    public void applyKnockback(float fromX, float fromY, float force, long durationMillis) {
+        if (isBossTier()) {
+            if (bossPhaseTwo || bossEnraged) {
+                return;
+            }
+            force *= 0.25f;
+            durationMillis = Math.max(40L, (long) (durationMillis * 0.4f));
+        }
+        super.applyKnockback(fromX, fromY, force, durationMillis);
+    }
+
+    /** 一套攻击或短时间连吃三下之后后撤。二阶段不再后撤。猛扑自带撤退，不再叠一次。 */
     public void requestBossRetreat() {
-        if (!isBossTier() || bossRetreating) {
+        if (!isBossTier() || bossRetreating || bossPhaseTwo) {
             return;
         }
         if (currentAttackType == AttackType.POUNCE) {
             return;
         }
         pendingBossRetreat = true;
+    }
+
+    public void requestGapClose() {
+        if (!isBossTier()) {
+            return;
+        }
+        pendingForceGapClose = true;
+        interruptBossRetreat();
+    }
+
+    public boolean consumePostRetreatFireball() {
+        if (!pendingPostRetreatFireball) {
+            return false;
+        }
+        pendingPostRetreatFireball = false;
+        return true;
+    }
+
+    public boolean isBossEnraged() {
+        return bossEnraged;
+    }
+
+    public void markPhaseTwoMinion() {
+        phaseTwoMinion = true;
+    }
+
+    public boolean isPhaseTwoMinion() {
+        return phaseTwoMinion;
     }
 
     protected void interruptBossRetreat() {
@@ -1663,6 +1760,8 @@ public abstract class Enemy extends Character {
         }
         if (currentTime >= bossRetreatEndTime) {
             bossRetreating = false;
+            pendingPostRetreatFireball = true;
+            pendingForceGapClose = true;
             return false;
         }
         targetX = x + bossRetreatDx * 240f;

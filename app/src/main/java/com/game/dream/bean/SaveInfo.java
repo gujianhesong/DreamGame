@@ -20,6 +20,7 @@ public class SaveInfo {
 
     private String saveId;
     private long updatedAt;
+    private int bagMaxSize;
 
     public String getSaveId() {
         return saveId;
@@ -131,5 +132,13 @@ public class SaveInfo {
 
     public void setPetInfos(List<PetInfo> petInfos) {
         this.petInfos = petInfos;
+    }
+
+    public int getBagMaxSize() {
+        return bagMaxSize;
+    }
+
+    public void setBagMaxSize(int bagMaxSize) {
+        this.bagMaxSize = bagMaxSize;
     }
 }

@@ -125,6 +125,12 @@ public class ItemCreator {
                 }
             }
             break;
+            case 270: {
+                if (id == 270001) {
+                    item = createCaptureCharm();
+                }
+            }
+            break;
             case 310: {
                 //食物
                 int ordinal = id - 310000;
@@ -946,6 +952,16 @@ public class ItemCreator {
                 250001, "金刚石", "坚硬无比的宝石，散发着耀眼的光芒，是极其珍贵的材料", Item.Type.MATERIAL,
                 Item.Rarity.Rarity_5,
                 999, 50000
+        );
+    }
+
+    /** 捕捉符：战斗中点「捕捉」时消耗，背包内不可直接使用。 */
+    public static Item createCaptureCharm() {
+        return new Item(
+                270001, "捕捉符", "收服战宠时消耗。先将怪物打至残血，再对附近目标使用捕捉。",
+                Item.Type.SPECIAL,
+                Item.Rarity.Rarity_2,
+                999, 500
         );
     }
 

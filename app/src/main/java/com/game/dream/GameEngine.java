@@ -1394,6 +1394,7 @@ public class GameEngine {
             for (Enemy e : enemies) {
                 if (e == null || !e.isAlive() || e.isPet()) continue;
                 if (e.isBossTier()) continue;
+                if (e.isCaptureLocked()) continue;
                 if (e.getMaxHealth() > 0
                         && e.getHealth() / (float) e.getMaxHealth() > PetSystem.CAPTURE_HP_THRESHOLD) continue;
                 float dx = e.getX() - player.getX();
@@ -1414,6 +1415,7 @@ public class GameEngine {
         if (now - lastCaptureTime < CAPTURE_COOLDOWN) return;
 
         Enemy target = null;
+        Enemy lockedNearby = null;
         float best = Float.MAX_VALUE;
         float captureRange = 220f;
         for (Enemy e : enemies) {
@@ -1422,13 +1424,22 @@ public class GameEngine {
             float dx = e.getX() - player.getX();
             float dy = e.getY() - player.getY();
             float d = dx * dx + dy * dy;
-            if (d < best && d <= captureRange * captureRange) {
+            if (d > captureRange * captureRange) continue;
+            if (e.isCaptureLocked()) {
+                lockedNearby = e;
+                continue;
+            }
+            if (d < best) {
                 best = d;
                 target = e;
             }
         }
         if (target == null) {
-            showCenterToast("附近没有可捕捉的怪物", 1200);
+            if (lockedNearby != null) {
+                showCenterToast("「" + lockedNearby.getName() + "」刚刚挣脱，稍后再试", 1500);
+            } else {
+                showCenterToast("附近没有可捕捉的怪物", 1200);
+            }
             return;
         }
         lastCaptureTime = now;
@@ -1448,8 +1459,14 @@ public class GameEngine {
             case FAIL_FULL:
                 showCenterToast("战宠已满(上限 " + PetSystem.getInstance().getMaxRoster() + " 只)，请先放生或提升等级！", 1500);
                 break;
+            case FAIL_NO_CHARM:
+                showCenterToast("没有捕捉符，去杂货商人处买一些再来", 1800);
+                break;
+            case FAIL_LOCKED:
+                showCenterToast("「" + target.getName() + "」刚刚挣脱，稍后再试", 1500);
+                break;
             case FAIL_ROLL:
-                showCenterToast("「" + target.getName() + "」挣脱了捕捉！", 1500);
+                showCenterToast("「" + target.getName() + "」挣脱了捕捉，恢复了部分气血！", 1800);
                 break;
             default:
                 showCenterToast("无法捕捉该怪物", 1500);
@@ -2291,6 +2308,12 @@ public class GameEngine {
         }
     }
 
+    public void showIllusionRealmPanel() {
+        if (gameUI != null) {
+            gameUI.showIllusionRealmPanel();
+        }
+    }
+
     /**
      * Show float text
      */
@@ -2598,9 +2621,9 @@ public class GameEngine {
         }
         // 死亡后魂归地府幽魂牢：先扣除死亡惩罚，再恢复状态，最后传送
         RoleInfo roleInfo = RoleSystem.getInstance().getRoleInfo();
-        // 死亡惩罚：扣除 10% 经验与 10% 金钱
-        long expLoss = roleInfo.getExp() / 10;
-        long moneyLoss = roleInfo.getMoney() / 10;
+        // 死亡惩罚：扣除 1% 经验与 1% 金钱
+        long expLoss = roleInfo.getExp() / 100;
+        long moneyLoss = roleInfo.getMoney() / 100;
         roleInfo.setExp(roleInfo.getExp() - expLoss);
         roleInfo.setMoney(roleInfo.getMoney() - moneyLoss);
         roleInfo.setHp(roleInfo.getBloodCap());

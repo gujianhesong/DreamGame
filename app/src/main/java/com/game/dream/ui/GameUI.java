@@ -1687,6 +1687,13 @@ public class GameUI {
         }
     }
 
+    public void showIllusionRealmPanel() {
+        closeAllPanels();
+        if (illusionRealmPanel != null) {
+            illusionRealmPanel.show();
+        }
+    }
+
     public DialogBox showDialog(String title, String msg, List<String> options, DialogBox.DialogListener listener) {
         if (currentDialog != null) {
             currentDialog.show(title, msg, options, listener);

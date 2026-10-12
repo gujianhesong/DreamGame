@@ -973,6 +973,18 @@ public class ItemSystem {
         return maxSize;
     }
 
+    public void setMaxSize(int maxSize) {
+        this.maxSize = Math.max(500, maxSize);
+    }
+
+    public boolean expandBag(int extra, int cap) {
+        if (maxSize >= cap) {
+            return false;
+        }
+        maxSize = Math.min(cap, maxSize + extra);
+        return true;
+    }
+
     // ========== Default Potion Management ==========
 
     public List<Integer> getDefaultHpPotionIds() {
@@ -1138,6 +1150,16 @@ public class ItemSystem {
             }
         }
         return value;
+    }
+
+    public int getItemCount(int itemId) {
+        int count = 0;
+        for (ItemStack stack : items) {
+            if (stack.getItem().getId() == itemId) {
+                count += stack.getQuantity();
+            }
+        }
+        return count;
     }
 
     public int getItemCountByName(String name) {

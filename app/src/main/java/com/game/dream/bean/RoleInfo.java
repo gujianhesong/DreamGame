@@ -49,6 +49,7 @@ public class RoleInfo {
     private String label;
     private long exp;
     private long money;
+    private long bankMoney;
     private int remainPoints;
 
     private int hp;
@@ -123,6 +124,14 @@ public class RoleInfo {
 
     public void setMoney(long money) {
         this.money = money;
+    }
+
+    public long getBankMoney() {
+        return bankMoney;
+    }
+
+    public void setBankMoney(long bankMoney) {
+        this.bankMoney = Math.max(0, bankMoney);
     }
 
     public int getRemainPoints() {
@@ -327,7 +336,7 @@ public class RoleInfo {
     }
 
     public int getBloodCap() {
-        int baseValue = 100;
+        int baseValue = 300;
         AddPointResult result = RoleSystem.getInstance().caculateAddPoints(getPropTi(), getPropMo(),
                 getPropLi(), getPropNai(), getPropMin());
         int value = baseValue + result.getBlood() + equipAddition.blood;
@@ -341,7 +350,7 @@ public class RoleInfo {
     }
 
     public int getMagicCap() {
-        int baseValue = 80;
+        int baseValue = 300;
         AddPointResult result = RoleSystem.getInstance().caculateAddPoints(getPropTi(), getPropMo(),
                 getPropLi(), getPropNai(), getPropMin());
         int value = baseValue + result.getMagic() + equipAddition.magic;
@@ -355,7 +364,7 @@ public class RoleInfo {
     }
 
     public int getHit() {
-        int baseValue = 50;
+        int baseValue = 100;
         AddPointResult result = RoleSystem.getInstance().caculateAddPoints(getPropTi(), getPropMo(),
                 getPropLi(), getPropNai(), getPropMin());
         int value = baseValue + result.getHit() + equipAddition.hit;
@@ -363,7 +372,7 @@ public class RoleInfo {
     }
 
     public int getAttack() {
-        int baseValue = 40;
+        int baseValue = 80;
         AddPointResult result = RoleSystem.getInstance().caculateAddPoints(getPropTi(), getPropMo(),
                 getPropLi(), getPropNai(), getPropMin());
         int value = baseValue + result.getAttack() + equipAddition.attack;
@@ -371,7 +380,7 @@ public class RoleInfo {
     }
 
     public int getDefense() {
-        int baseValue = 40;
+        int baseValue = 80;
         AddPointResult result = RoleSystem.getInstance().caculateAddPoints(getPropTi(), getPropMo(),
                 getPropLi(), getPropNai(), getPropMin());
         int value = baseValue + result.getDefense() + equipAddition.defense;
@@ -379,7 +388,7 @@ public class RoleInfo {
     }
 
     public int getSpeed() {
-        int baseValue = 20;
+        int baseValue = 50;
         AddPointResult result = RoleSystem.getInstance().caculateAddPoints(getPropTi(), getPropMo(),
                 getPropLi(), getPropNai(), getPropMin());
         int value = baseValue + result.getSpeed() + equipAddition.speed;
@@ -394,7 +403,7 @@ public class RoleInfo {
     }
 
     public int getDodge() {
-        int baseValue = 20;
+        int baseValue = 100;
         AddPointResult result = RoleSystem.getInstance().caculateAddPoints(getPropTi(), getPropMo(),
                 getPropLi(), getPropNai(), getPropMin());
         int value = baseValue + result.getDodge() + equipAddition.dodge;
@@ -402,7 +411,7 @@ public class RoleInfo {
     }
 
     public int getMana() {
-        int baseValue = 20;
+        int baseValue = 60;
         AddPointResult result = RoleSystem.getInstance().caculateAddPoints(getPropTi(), getPropMo(),
                 getPropLi(), getPropNai(), getPropMin());
         int value = baseValue + result.getMana() + equipAddition.mana;

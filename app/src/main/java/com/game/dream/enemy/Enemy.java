@@ -63,6 +63,8 @@ public abstract class Enemy extends Character {
     protected int petBaseLevel = 1;
     // 仅在首次 setProperty(子类基础属性)时缓存 base*，避免 resetPropertyWithLevel 的等级倍率污染基线
     private boolean baseStatsCached = false;
+    /** 捕捉失败后短时不可再抓 */
+    private long captureLockUntil = 0;
 
     public class EnemyPropertyExtra{
         // Detection and attack ranges
@@ -1970,6 +1972,18 @@ public abstract class Enemy extends Character {
     public void setAggro(long durationMs) {
         this.isAggroed = true;
         this.aggroEndTime = System.currentTimeMillis() + durationMs;
+    }
+
+    public boolean isCaptureLocked() {
+        return System.currentTimeMillis() < captureLockUntil;
+    }
+
+    /** 捕捉失败：短时无法再抓、回复部分气血并进入仇恨。 */
+    public void applyCaptureFailPenalty(long lockMs, float healRatio) {
+        captureLockUntil = System.currentTimeMillis() + Math.max(0, lockMs);
+        int heal = Math.max(1, (int) (maxHealth * healRatio));
+        setHealth(health + heal);
+        setAggro(8000);
     }
 
     /**

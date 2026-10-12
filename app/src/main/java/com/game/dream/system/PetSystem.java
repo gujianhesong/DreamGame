@@ -3,6 +3,7 @@ package com.game.dream.system;
 import com.game.dream.bean.PetInfo;
 import com.game.dream.bean.RoleInfo;
 import com.game.dream.enemy.Enemy;
+import com.game.dream.item.ItemCreator;
 import com.game.dream.utils.LogUtil;
 
 import java.util.ArrayList;
@@ -29,7 +30,9 @@ public class PetSystem {
         FAIL_FULL,        // 花名册已满
         FAIL_NOT_WEAK,    // 目标血量过高，需先削弱
         FAIL_ROLL,        // 概率判定失败，怪物挣脱
-        FAIL_NO_SPECIES   // 无法重建该种类(缺少 (float,float) 构造器)
+        FAIL_NO_SPECIES,  // 无法重建该种类(缺少 (float,float) 构造器)
+        FAIL_NO_CHARM,    // 没有捕捉符
+        FAIL_LOCKED       // 刚挣脱，短时无法再抓
     }
 
     /** 战宠花名册起始上限。 */
@@ -39,6 +42,11 @@ public class PetSystem {
     /** 每多少玩家等级提升一个阶梯。 */
     public static final int ROSTER_LEVEL_STEP = 10;
     public static final float CAPTURE_HP_THRESHOLD = 0.40f;
+    public static final int CAPTURE_CHARM_ID = 270001;
+    /** 捕捉失败后该怪不可再抓的时间。 */
+    public static final long CAPTURE_FAIL_LOCK_MS = 4000;
+    /** 捕捉失败回复最大气血的比例。 */
+    public static final float CAPTURE_FAIL_HEAL_RATIO = 0.20f;
 
     /**
      * 各物种的捕捉起始等级: 越强力的物种起始等级越高, 使其被捕捉时即处于对应强度 tier,
@@ -135,8 +143,9 @@ public class PetSystem {
 
     /**
      * 削弱后概率捕捉。
-     * 规则: BOSS 不可捕捉; 目标血量需低于 {@link #CAPTURE_HP_THRESHOLD};
+     * 规则: 消耗捕捉符; BOSS 不可捕捉; 目标血量需低于 {@link #CAPTURE_HP_THRESHOLD};
      * 成功率 = 0.15 + (1 - 血量比例) * 0.55，上限 0.90; ELITE 结果再乘 0.4。
+     * 失败会让目标短时无法再抓并回复气血。未真正尝试(血量过高/无符等)不扣符。
      */
     public CaptureOutcome tryCapture(Enemy target) {
         if (target == null || !target.isAlive() || target.isPet()) {
@@ -148,11 +157,19 @@ public class PetSystem {
         if (isRosterFull()) {
             return CaptureOutcome.FAIL_FULL;
         }
+        if (target.isCaptureLocked()) {
+            return CaptureOutcome.FAIL_LOCKED;
+        }
         float hpRatio = target.getMaxHealth() <= 0
                 ? 1f : target.getHealth() / (float) target.getMaxHealth();
         if (hpRatio > CAPTURE_HP_THRESHOLD) {
             return CaptureOutcome.FAIL_NOT_WEAK;
         }
+        if (ItemSystem.getInstance().getItemCount(CAPTURE_CHARM_ID) <= 0) {
+            return CaptureOutcome.FAIL_NO_CHARM;
+        }
+
+        ItemSystem.getInstance().removeItem(CAPTURE_CHARM_ID, 1);
 
         float chance = 0.15f + (1f - hpRatio) * 0.55f;
         if (chance > 0.90f) {
@@ -162,11 +179,13 @@ public class PetSystem {
             chance *= 0.4f;
         }
         if (Math.random() >= chance) {
+            target.applyCaptureFailPenalty(CAPTURE_FAIL_LOCK_MS, CAPTURE_FAIL_HEAL_RATIO);
             return CaptureOutcome.FAIL_ROLL;
         }
 
         Enemy body = instantiateSpecies(target.getClass(), target.getX(), target.getY());
         if (body == null) {
+            ItemSystem.getInstance().addItem(ItemCreator.createCaptureCharm(), 1);
             return CaptureOutcome.FAIL_NO_SPECIES;
         }
         int captureLevel = getCaptureLevel(target.getClass().getSimpleName());
@@ -190,10 +209,10 @@ public class PetSystem {
         return lv == null ? 1 : Math.max(1, lv);
     }
 
-    /** 升级到下一级所需经验：200 × N²（N 为当前等级） */
+    /** 升级到下一级所需经验：100 × N²（N 为当前等级） */
     public int expToNext(int level) {
         int n = Math.max(1, level);
-        return 200 * n * n;
+        return 100 * n * n;
     }
 
     /**

@@ -41,6 +41,7 @@ public class NpcSystem {
                 npcList.add(new Npc(100152, "酒馆老板", NpcType.TAVERN_KEEPER, 4200, 4000));
                 npcList.add(new Npc(100153, "妙手郎中", NpcType.DOCTOR, 4400, 4000));
                 npcList.add(new Npc(100154, "装备收购商", NpcType.MERCHANT, 4600, 4000));
+                npcList.add(new Npc(100155, "杂货商人", NpcType.MERCHANT, 4800, 4000));
 
                 npcList.add(new Npc(100101, "青溪村村长", NpcType.OLD_MAN, 5200, 5300));
                 npcList.add(new Npc(100102, "云游商人", NpcType.MERCHANT, 5000, 5300));
@@ -80,6 +81,32 @@ public class NpcSystem {
                 npcList.add(new AnimalNpc(100202, "骏马", NpcType.HORSE, 30300, 35340));
                 npcList.add(new Npc(100209, "玄机真人", NpcType.TAOIST, 29920, 35400));
                 npcList.add(new Npc(100210, "培元先生", NpcType.SCHOLAR, 30500, 35400));
+
+                // 西区：东西主干道上（马厩与铁匠之间），避开商铺网格
+                npcList.add(new Npc(100250, "回春堂掌柜", NpcType.PHARMACIST, 25600, 30000));
+                npcList.add(new Npc(100251, "济世郎中", NpcType.DOCTOR, 26100, 30000));
+                npcList.add(new Npc(100260, "官仓管事", NpcType.SERVANT, 26600, 30000));
+                npcList.add(new Npc(100264, "钱庄掌柜", NpcType.MERCHANT, 27100, 30000));
+                npcList.add(new Npc(100252, "欧冶铁匠", NpcType.MERCHANT, 27600, 30000));
+
+                // 东区：东西主干道上（宝石店与防具店之间）
+                npcList.add(new Npc(100253, "龙泉剑庄老板", NpcType.MERCHANT, 32600, 30000));
+                npcList.add(new Npc(100263, "藏经商人", NpcType.MONK, 33200, 30000));
+                npcList.add(new Npc(100255, "璀璨珠宝商", NpcType.MERCHANT, 33800, 30000));
+                npcList.add(new Npc(100254, "铁甲坊老板", NpcType.MERCHANT, 34300, 30000));
+
+                // 北区：南北主干道（酒楼在西、客栈在东，站在路中间才能避开房屋）
+                npcList.add(new Npc(100256, "醉仙楼掌柜", NpcType.TAVERN_KEEPER, 29920, 26000));
+                npcList.add(new Npc(100257, "悦来客栈老板", NpcType.TAVERN_KEEPER, 30080, 27000));
+
+                // 内城花园：钟楼南侧空地（避开钟楼与府衙建筑）
+                npcList.add(new Npc(100258, "府衙师爷", NpcType.SCHOLAR, 30000, 31300));
+
+                // 南门内侧广场：民居南缘与城墙之间的空地
+                npcList.add(new Npc(100265, "杂货商人", NpcType.MERCHANT, 29840, 34640));
+                npcList.add(new Npc(100261, "兽医师", NpcType.DOCTOR, 29960, 34640));
+                npcList.add(new Npc(100259, "南市收购商", NpcType.MERCHANT, 30080, 34640));
+                npcList.add(new Npc(100262, "幻境司事", NpcType.TAOIST, 30200, 34640));
 
                 // 金陵西侧鬼差（仅夜间出现，传送地府）
                 Npc ghostClerk = new Npc(100207, "鬼差", NpcType.GHOST_CLERK, 24500, 30000);

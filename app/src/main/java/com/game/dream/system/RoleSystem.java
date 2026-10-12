@@ -34,11 +34,11 @@ public class RoleSystem {
         RoleInfo roleInfo = new RoleInfo();
         roleInfo.setName("剑侠客");
         roleInfo.setLabel("初出茅庐");
-        roleInfo.getSelfProperty().propTi = 10;
-        roleInfo.getSelfProperty().propMo = 10;
-        roleInfo.getSelfProperty().propLi = 10;
-        roleInfo.getSelfProperty().propNai = 10;
-        roleInfo.getSelfProperty().propMin = 10;
+        roleInfo.getSelfProperty().propTi = 20;
+        roleInfo.getSelfProperty().propMo = 20;
+        roleInfo.getSelfProperty().propLi = 20;
+        roleInfo.getSelfProperty().propNai = 20;
+        roleInfo.getSelfProperty().propMin = 20;
         roleInfo.setHp(roleInfo.getBloodCap());
         roleInfo.setMp(roleInfo.getMagicCap());
         return roleInfo;
@@ -73,13 +73,13 @@ public class RoleSystem {
 
     /**
      * Calculate experience needed for a given level
-     * Formula: 500 × N²
+     * Formula: 300 × N²
      */
     public int calculateExpForLevel(int level) {
         if (level <= 0) {
             return 0;
         }
-        return 500 * level * level;
+        return 300 * level * level;
     }
 
     public boolean isManualLevelMode() {

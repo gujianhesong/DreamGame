@@ -3,11 +3,15 @@ package com.game.dream.npc;
 import android.util.Pair;
 
 import com.game.dream.GameEngine;
+import com.game.dream.bean.RoleInfo;
 import com.game.dream.item.EquipmentItem;
 import com.game.dream.item.Item;
 import com.game.dream.item.ItemStack;
+import com.game.dream.system.DayNightCycle;
 import com.game.dream.system.ItemSystem;
 import com.game.dream.system.MapSystem;
+import com.game.dream.system.Pet;
+import com.game.dream.system.PetSystem;
 import com.game.dream.system.RoleSystem;
 import com.game.dream.ui.DialogBox;
 import com.game.dream.ui.EquipSellDialog;
@@ -335,6 +339,47 @@ public class FunctionNpcManager {
                 });
                 return true;
             }
+            case 100251: {
+                handleHeal(npc, 2000);
+                return true;
+            }
+            case 100257: {
+                handleInnRest(npc);
+                return true;
+            }
+            case 100258: {
+                handleYamenGuide(npc);
+                return true;
+            }
+            case 100259: {
+                handleEquipSell(npc);
+                return true;
+            }
+            case 100260: {
+                handleWarehouse(npc);
+                return true;
+            }
+            case 100261: {
+                handlePetHeal(npc);
+                return true;
+            }
+            case 100262: {
+                List<String> options = Arrays.asList("前往幻境挑战", "不了");
+                String message = "幻境法门就在此处。少侠可在此选择层数挑战，通关可获经验、金钱与幻境印。";
+                GameEngine.getInstance().showDialog(npc.getName(), message, options, new DialogBox.DialogListener() {
+                    @Override
+                    public void onOptionSelected(int optionIndex) {
+                        if (optionIndex == 0) {
+                            GameEngine.getInstance().showIllusionRealmPanel();
+                        }
+                    }
+                });
+                return true;
+            }
+            case 100264: {
+                handleBank(npc);
+                return true;
+            }
             case 100540: {
                 //地狱鬼差（地狱迷宫入口）
                 List<String> options = Arrays.asList("闯地狱迷宫", "不了");
@@ -412,5 +457,154 @@ public class FunctionNpcManager {
             default: rarityMultiplier = 0.5f; break;
         }
         return (int) (baseValue * levelValue * rarityMultiplier);
+    }
+
+    private void handleHeal(Npc npc, int costMoney) {
+        List<String> options = Arrays.asList("我要疗伤", "暂时不用");
+        String message = "少侠可要疗伤？诊费" + costMoney + "金币，可回满气血与法力。";
+        GameEngine.getInstance().showDialog(npc.getName(), message, options, new DialogBox.DialogListener() {
+            @Override
+            public void onOptionSelected(int optionIndex) {
+                if (optionIndex != 0) {
+                    return;
+                }
+                RoleInfo role = RoleSystem.getInstance().getRoleInfo();
+                if (role.getMoney() < costMoney) {
+                    GameEngine.getInstance().showCenterToast("金钱不足，需要" + costMoney, 2000);
+                    return;
+                }
+                role.setMoney(role.getMoney() - costMoney);
+                role.setHp(role.getBloodCap());
+                role.setMp(role.getMagicCap());
+                GameEngine.getInstance().showDialog(npc.getName(), "好了，少侠已经完全恢复了");
+            }
+        });
+    }
+
+    private void handleInnRest(Npc npc) {
+        int cost = 800;
+        GameEngine.getInstance().showDialog(npc.getName(),
+                "客栈一宿" + cost + "金币，可回满气血、法力、体力与活力，并任选歇至白昼或入夜。",
+                Arrays.asList("歇至白昼", "歇至夜晚", "不了"),
+                new DialogBox.DialogListener() {
+                    @Override
+                    public void onOptionSelected(int optionIndex) {
+                        if (optionIndex == 2) {
+                            return;
+                        }
+                        RoleInfo role = RoleSystem.getInstance().getRoleInfo();
+                        if (role.getMoney() < cost) {
+                            GameEngine.getInstance().showCenterToast("金钱不足，需要" + cost, 2000);
+                            return;
+                        }
+                        role.setMoney(role.getMoney() - cost);
+                        role.setHp(role.getBloodCap());
+                        role.setMp(role.getMagicCap());
+                        role.setHuoli(role.getHuoliMax());
+                        role.setTili(role.getTiliMax());
+                        DayNightCycle cycle = GameEngine.getInstance().getDayNightCycle();
+                        if (cycle != null) {
+                            cycle.setHour(optionIndex == 0 ? 8 : 20);
+                        }
+                        GameEngine.getInstance().showDialog(npc.getName(),
+                                optionIndex == 0 ? "一夜安睡，天已大亮。" : "一觉醒来，已是夜色。");
+                    }
+                });
+    }
+
+    private void handleYamenGuide(Npc npc) {
+        GameEngine.getInstance().showDialog(npc.getName(),
+                "金陵城大，少侠可问贫吏。北有酒楼客栈，西有药铺铁匠钱庄，东有兵器防具宝石，南广场可卖装备、买捕捉符、医战宠、问幻境。修炼找南门外玄机真人，辅助找培元先生。东门车夫去东海湾，西门夜里有鬼差通地府。",
+                Arrays.asList("知道了"), null);
+    }
+
+    private void handleWarehouse(Npc npc) {
+        int cost = 10000;
+        int extra = 50;
+        int cap = 1500;
+        int current = ItemSystem.getInstance().getMaxSize();
+        GameEngine.getInstance().showDialog(npc.getName(),
+                "官仓可扩容行囊。当前格数 " + current + "，每次花费" + cost + "金币可增加" + extra + "格，上限" + cap + "。",
+                Arrays.asList("扩容行囊", "不了"),
+                new DialogBox.DialogListener() {
+                    @Override
+                    public void onOptionSelected(int optionIndex) {
+                        if (optionIndex != 0) {
+                            return;
+                        }
+                        RoleInfo role = RoleSystem.getInstance().getRoleInfo();
+                        if (ItemSystem.getInstance().getMaxSize() >= cap) {
+                            GameEngine.getInstance().showCenterToast("行囊已达上限", 2000);
+                            return;
+                        }
+                        if (role.getMoney() < cost) {
+                            GameEngine.getInstance().showCenterToast("金钱不足，需要" + cost, 2000);
+                            return;
+                        }
+                        role.setMoney(role.getMoney() - cost);
+                        ItemSystem.getInstance().expandBag(extra, cap);
+                        GameEngine.getInstance().showDialog(npc.getName(),
+                                "扩容完成，当前行囊 " + ItemSystem.getInstance().getMaxSize() + " 格。");
+                    }
+                });
+    }
+
+    private void handlePetHeal(Npc npc) {
+        List<Pet> roster = PetSystem.getInstance().getRoster();
+        if (roster == null || roster.isEmpty()) {
+            GameEngine.getInstance().showDialog(npc.getName(), "少侠身边并无战宠，捉一只来再谈疗伤。",
+                    Arrays.asList("告辞"), null);
+            return;
+        }
+        int cost = 500 * roster.size();
+        GameEngine.getInstance().showDialog(npc.getName(),
+                "花名册上共 " + roster.size() + " 只战宠，全部疗伤并解除重伤需" + cost + "金币。",
+                Arrays.asList("全部疗伤", "不了"),
+                new DialogBox.DialogListener() {
+                    @Override
+                    public void onOptionSelected(int optionIndex) {
+                        if (optionIndex != 0) {
+                            return;
+                        }
+                        RoleInfo role = RoleSystem.getInstance().getRoleInfo();
+                        if (role.getMoney() < cost) {
+                            GameEngine.getInstance().showCenterToast("金钱不足，需要" + cost, 2000);
+                            return;
+                        }
+                        role.setMoney(role.getMoney() - cost);
+                        for (Pet pet : PetSystem.getInstance().getRoster()) {
+                            PetSystem.getInstance().heal(pet);
+                        }
+                        GameEngine.getInstance().showDialog(npc.getName(), "都调养好了，可以再战。");
+                    }
+                });
+    }
+
+    private void handleBank(Npc npc) {
+        RoleInfo role = RoleSystem.getInstance().getRoleInfo();
+        GameEngine.getInstance().showDialog(npc.getName(),
+                "钱庄可代为保管银两。身上 " + role.getMoney() + "，柜中 " + role.getBankMoney() + "。",
+                Arrays.asList("全部存入", "全部取出", "存入一半", "离开"),
+                new DialogBox.DialogListener() {
+                    @Override
+                    public void onOptionSelected(int optionIndex) {
+                        RoleInfo r = RoleSystem.getInstance().getRoleInfo();
+                        if (optionIndex == 0) {
+                            r.setBankMoney(r.getBankMoney() + r.getMoney());
+                            r.setMoney(0);
+                            GameEngine.getInstance().showDialog(npc.getName(), "已全部存入，柜中 " + r.getBankMoney() + "。");
+                        } else if (optionIndex == 1) {
+                            r.setMoney(r.getMoney() + r.getBankMoney());
+                            r.setBankMoney(0);
+                            GameEngine.getInstance().showDialog(npc.getName(), "已全部取出，身上 " + r.getMoney() + "。");
+                        } else if (optionIndex == 2) {
+                            long half = r.getMoney() / 2;
+                            r.setBankMoney(r.getBankMoney() + half);
+                            r.setMoney(r.getMoney() - half);
+                            GameEngine.getInstance().showDialog(npc.getName(),
+                                    "已存入 " + half + "，柜中 " + r.getBankMoney() + "。");
+                        }
+                    }
+                });
     }
 }

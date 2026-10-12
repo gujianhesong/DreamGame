@@ -79,6 +79,7 @@ public class SaveSystem {
             saveInfo.setDefaultHpPotionIds(ItemSystem.getInstance().getDefaultHpPotionIds());
             saveInfo.setDefaultMpPotionIds(ItemSystem.getInstance().getDefaultMpPotionIds());
             saveInfo.setPetInfos(PetSystem.getInstance().toSaveInfos());
+            saveInfo.setBagMaxSize(ItemSystem.getInstance().getMaxSize());
             if (this.saveInfo != null) {
                 saveInfo.setIllusionRealmInfo(this.saveInfo.getIllusionRealmInfo());
             }
@@ -193,6 +194,9 @@ public class SaveSystem {
         ItemSystem.getInstance().setDefaultHpPotionIds(saveInfo.getDefaultHpPotionIds());
         ItemSystem.getInstance().setDefaultMpPotionIds(saveInfo.getDefaultMpPotionIds());
         PetSystem.getInstance().loadFrom(saveInfo.getPetInfos());
+        if (saveInfo.getBagMaxSize() > 0) {
+            ItemSystem.getInstance().setMaxSize(saveInfo.getBagMaxSize());
+        }
     }
 
     private SaveInfo getInitData() {

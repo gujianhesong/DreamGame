@@ -181,15 +181,15 @@ public class SkillSystem {
         return true;
     }
 
-    /** 升到 N 级的金币：60 × N × N */
+    /** 升到 N 级的金币：30 × N × N */
     public static int getAssistUpgradeCost(int nextLevel) {
         if (nextLevel <= 0) {
             return 0;
         }
-        return 60 * nextLevel * nextLevel;
+        return 30 * nextLevel * nextLevel;
     }
 
-    /** 升到 N 级的经验：与金币相同，60 × N² */
+    /** 升到 N 级的经验：与金币相同，30 × N² */
     public static int getAssistUpgradeExpCost(int nextLevel) {
         return getAssistUpgradeCost(nextLevel);
     }

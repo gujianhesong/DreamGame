@@ -212,4 +212,16 @@ public class DayNightCycle {
     public boolean isNight() {
         return gameTime >= NIGHT_START || gameTime < DAY_START;
     }
+
+    /** 跳转到指定时辰（0-23） */
+    public void setHour(int hour) {
+        if (hour < 0) {
+            hour = 0;
+        }
+        if (hour > 23) {
+            hour = 23;
+        }
+        this.gameTime = hour * 3600f;
+        calculateOverlay();
+    }
 }

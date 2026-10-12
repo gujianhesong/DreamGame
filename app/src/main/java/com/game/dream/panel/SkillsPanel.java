@@ -447,7 +447,7 @@ public class SkillsPanel {
             // Draw buttons if available
             if (i < skillButtons.size()) {
                 SkillButtonPair pair = skillButtons.get(i);
-                if (skill.isMainSkill() && skill.getLevel() >= 1) {
+                if (skill.isMainSkill() && skill.getLevel() >= 1 && !skill.isPassiveUnlock()) {
                     if (skill.isUseSkill()) {
                         drawUseButton(canvas, paint, pair.equipButton, skill);
                     } else {
@@ -632,7 +632,8 @@ public class SkillsPanel {
             if (!isDragging) {
                 for (SkillButtonPair pair : skillButtons) {
                     // Handle Equip/Unequip for Main Skills
-                    if (pair.skill.isMainSkill() && pair.skill.getLevel() >= 1 && !pair.skill.isUseSkill() && TouchUtil.checkIsInTouchRectFloat(pair.equipButton, x, y)) {
+                    if (pair.skill.isMainSkill() && pair.skill.getLevel() >= 1 && !pair.skill.isUseSkill()
+                            && !pair.skill.isPassiveUnlock() && TouchUtil.checkIsInTouchRectFloat(pair.equipButton, x, y)) {
                         boolean isEquipped = SkillSystem.getInstance().getEquippedActiveSkills().contains(pair.skill);
                         if (isEquipped) {
                             if (listener != null) listener.onUnequipSkill(pair.skill);

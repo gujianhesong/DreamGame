@@ -122,4 +122,9 @@ public class SkillInfo {
     public boolean isUseSkill(){
         return getSkillType() == SkillType.MAIN_DunXing;
     }
+
+    /** 学会即可用，不占技能栏（如冲刺）。 */
+    public boolean isPassiveUnlock() {
+        return getSkillType() == SkillType.MAIN_ChongCi;
+    }
 }

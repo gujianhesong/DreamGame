@@ -43,13 +43,9 @@ public class Player extends Character {
     private long dashStartTime;
     private int dashDirection; // 0=down, 1=up, 2=left, 3=right
     private float dashDistanceRemaining;
-    private static final float DASH_DISTANCE = 500f; // 冲刺总距离(像素)
     private static final float DASH_SPEED = 1000f;   // 冲刺速度(像素/秒)
-    private static final long DASH_IFRAME_DURATION = 250; // 冲刺无敌帧时长(毫秒)
     // 集气系统
     private static final float DASH_CHARGE_MAX = 100f;   // 集气上限
-    private static final float DASH_CHARGE_COST = 20f;   // 每次冲刺消耗
-    private static final float DASH_CHARGE_REGEN = 10f;  // 每秒回复量
     private float dashCharge = DASH_CHARGE_MAX;
     private long lastChargeUpdateTime;
 
@@ -139,10 +135,10 @@ public class Player extends Character {
         // 中毒 DoT 跳伤（与 CC 独立）
         updatePoisonTicks();
 
-        // 集气回复: 每秒回复 DASH_CHARGE_REGEN
-        if (dashCharge < DASH_CHARGE_MAX && deltaTime > 0) {
+        // 集气回复: 学会冲刺后才回复
+        if (getChongCiLevel() > 0 && dashCharge < DASH_CHARGE_MAX && deltaTime > 0) {
             float deltaSeconds = deltaTime / 1000.0f;
-            dashCharge = Math.min(DASH_CHARGE_MAX, dashCharge + DASH_CHARGE_REGEN * deltaSeconds);
+            dashCharge = Math.min(DASH_CHARGE_MAX, dashCharge + getDashChargeRegen() * deltaSeconds);
         }
 
         // Handle knockback movement FIRST (overrides everything, including stun/root)
@@ -306,9 +302,13 @@ public class Player extends Character {
      */
     public void startDash(int direction) {
         long currentTime = System.currentTimeMillis();
+        if (getChongCiLevel() < 1) {
+            return;
+        }
 
+        float cost = getDashChargeCost();
         // Check charge (集气系统)
-        if (dashCharge < DASH_CHARGE_COST) {
+        if (dashCharge < cost) {
             return;
         }
 
@@ -320,11 +320,11 @@ public class Player extends Character {
         isDashing = true;
         dashStartTime = currentTime;
         dashDirection = direction;
-        dashDistanceRemaining = DASH_DISTANCE;
+        dashDistanceRemaining = getDashDistance();
         facingDirection = direction;
 
         // 消耗集气
-        dashCharge -= DASH_CHARGE_COST;
+        dashCharge -= cost;
         lastChargeUpdateTime = currentTime;
 
         // Clear trail
@@ -402,7 +402,7 @@ public class Player extends Character {
      * Check if dash has enough charge
      */
     public boolean isDashOnCooldown() {
-        return dashCharge < DASH_CHARGE_COST;
+        return dashCharge < getDashChargeCost();
     }
 
     /**
@@ -430,7 +430,84 @@ public class Player extends Character {
      * Get dash charge cost per dash
      */
     public float getDashChargeCost() {
-        return DASH_CHARGE_COST;
+        return getChongCiLevel() >= 7 ? 15f : 20f;
+    }
+
+    public float getDashChargeRegen() {
+        int lv = getChongCiLevel();
+        if (lv >= 7) {
+            return 12f;
+        }
+        if (lv >= 3) {
+            return 10f;
+        }
+        return 8f;
+    }
+
+    public float getDashDistance() {
+        return getChongCiLevel() >= 3 ? 500f : 400f;
+    }
+
+    public long getDashIFrameDuration() {
+        int lv = getChongCiLevel();
+        if (lv < 5) {
+            return 0;
+        }
+        if (lv >= 10) {
+            return 300;
+        }
+        if (lv >= 7) {
+            return 250;
+        }
+        return 150;
+    }
+
+    public float getDashKnockbackDistance() {
+        int lv = getChongCiLevel();
+        if (lv >= 10) {
+            return 560f;
+        }
+        if (lv >= 5) {
+            return 500f;
+        }
+        if (lv >= 3) {
+            return 400f;
+        }
+        return 280f;
+    }
+
+    public long getDashStunDuration() {
+        int lv = getChongCiLevel();
+        if (lv >= 10) {
+            return 350;
+        }
+        if (lv >= 5) {
+            return 300;
+        }
+        if (lv >= 3) {
+            return 250;
+        }
+        return 180;
+    }
+
+    /** 10 级冲撞伤害，未满级为 0。 */
+    public int getDashHitDamage() {
+        if (getChongCiLevel() < 10) {
+            return 0;
+        }
+        RoleInfo roleInfo = RoleSystem.getInstance().getRoleInfo();
+        if (roleInfo == null) {
+            return 1;
+        }
+        return Math.max(1, (int) (roleInfo.getAttack() * 0.1f));
+    }
+
+    private int getChongCiLevel() {
+        return SkillSystem.getInstance().getChongCiLevel();
+    }
+
+    public boolean hasChongCiSkill() {
+        return getChongCiLevel() >= 1;
     }
 
     public boolean isDashing() {
@@ -441,7 +518,8 @@ public class Player extends Character {
      * Check if player is in dash invincibility window (i-frames)
      */
     public boolean isDashInvincible() {
-        return isDashing && (System.currentTimeMillis() - dashStartTime) < DASH_IFRAME_DURATION;
+        long iframe = getDashIFrameDuration();
+        return iframe > 0 && isDashing && (System.currentTimeMillis() - dashStartTime) < iframe;
     }
 
     /**
@@ -764,7 +842,8 @@ public class Player extends Character {
         }
 
         // 冲刺无敌帧期间免疫伤害
-        if (isDashing && (currentTime - dashStartTime) < DASH_IFRAME_DURATION) {
+        long iframe = getDashIFrameDuration();
+        if (iframe > 0 && isDashing && (currentTime - dashStartTime) < iframe) {
             return false;
         }
 

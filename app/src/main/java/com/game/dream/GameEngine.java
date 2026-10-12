@@ -866,24 +866,32 @@ public class GameEngine {
                 // Mark as hit
                 hitSet.add(enemy);
 
+                int dashDmg = 0;
                 if (enemy.isBossTier()) {
                     if (!enemy.isCommittedAction()) {
                         enemy.applyKnockback(playerX, playerY, 140f, 90);
                     }
                 } else {
-                    enemy.applyKnockback(playerX, playerY, 500f, 300);
-                    enemy.applyCC(Character.CrowdControlType.STUN, 500);
+                    enemy.applyKnockback(playerX, playerY, player.getDashKnockbackDistance(), 300);
+                    enemy.applyCC(Character.CrowdControlType.STUN, player.getDashStunDuration());
                     if (enemy.isWindingUp()) {
                         enemy.setWindingUpFalse();
                     }
+                    dashDmg = player.getDashHitDamage();
+                    if (dashDmg > 0) {
+                        enemy.takeDamage(dashDmg);
+                    }
                 }
 
-                // Show visual feedback (no damage number, just a text indicator)
-                damageNumbers.add(new DamageNumber(
-                        ex,
-                        ey - eSize - 10,
-                        -2 // Special value for "撞退" indicator
-                ));
+                if (dashDmg > 0) {
+                    damageNumbers.add(new DamageNumber(ex, ey - eSize - 10, dashDmg, false));
+                } else {
+                    damageNumbers.add(new DamageNumber(
+                            ex,
+                            ey - eSize - 10,
+                            -2 // Special value for "撞退" indicator
+                    ));
+                }
 
                 LogUtil.d("Dash hit enemy: " + enemy.getName());
             }
@@ -2759,9 +2767,14 @@ public class GameEngine {
      * @param direction 0=down, 1=up, 2=left, 3=right
      */
     public void triggerPlayerDash(int direction) {
-        if (player != null) {
-            player.startDash(direction);
+        if (player == null) {
+            return;
         }
+        if (!player.hasChongCiSkill()) {
+            showCenterToast("尚未学会冲刺", 1200);
+            return;
+        }
+        player.startDash(direction);
     }
 
     public void doAttackAction() {

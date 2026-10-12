@@ -1531,7 +1531,7 @@ public class GameUI {
      */
     private void drawDashCooldownIndicator(Canvas canvas, Paint paint) {
         Player player = GameEngine.getInstance().getPlayer();
-        if (player == null) return;
+        if (player == null || !player.hasChongCiSkill()) return;
 
         float charge = player.getDashCharge();
         float maxCharge = player.getDashChargeMax();

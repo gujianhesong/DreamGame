@@ -153,12 +153,14 @@ public class ShopSystem {
         List<ShopPanel.ShopItem> shopItems = new ArrayList<>();
         SkillType[] types = {
                 SkillType.MAIN_FIREBALL, SkillType.MAIN_ICE_BOLT, SkillType.MAIN_LIGHTNING,
+                SkillType.MAIN_ChongCi,
                 SkillType.MAIN_FeiShaZouShi, SkillType.MAIN_ROOT, SkillType.MAIN_WanJianGuiZong,
                 SkillType.MAIN_LianQiHuaShen, SkillType.MAIN_DuWuZhen
         };
         for (SkillType type : types) {
             Item book = ItemCreator.createSkillBook(type);
-            shopItems.add(new ShopPanel.ShopItem(book, Math.max(12000, book.getValue() * 3)));
+            int price = type == SkillType.MAIN_ChongCi ? 18000 : Math.max(12000, book.getValue() * 3);
+            shopItems.add(new ShopPanel.ShopItem(book, price));
         }
         return shopItems;
     }

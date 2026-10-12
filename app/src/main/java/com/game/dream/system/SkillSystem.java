@@ -55,6 +55,8 @@ public class SkillSystem {
         playerMainSkills.add(new SkillInfo(SkillType.MAIN_MiaoShouHuiChun, 0, 10, 15, "妙手回春", "消耗法力值恢复大量气血"));
         playerMainSkills.add(new SkillInfo(SkillType.MAIN_LianQiHuaShen, 0, 10, 20, "炼气化神", "消耗气血值恢复大量魔法"));
         playerMainSkills.add(new SkillInfo(SkillType.MAIN_DuWuZhen, 0, 10, 15, "毒雾阵", "释放一片剧毒雾气，对范围内敌人造成持续伤害"));
+        playerMainSkills.add(new SkillInfo(SkillType.MAIN_ChongCi, 0, 10, 0, "冲刺",
+                "双击方向键冲刺。升级增加距离与集气，5级起有无敌，满级冲撞带伤。"));
     }
 
     private void initAssistSkills() {
@@ -89,6 +91,12 @@ public class SkillSystem {
             }
         }
         return null;
+    }
+
+    /** 冲刺技能等级，0 表示尚未学会。 */
+    public int getChongCiLevel() {
+        SkillInfo skill = getPlayerSkill(SkillType.MAIN_ChongCi);
+        return skill == null ? 0 : Math.max(0, skill.getLevel());
     }
 
     public void setMainSkillInfos(List<SkillInfo> skillInfos) {
@@ -277,7 +285,7 @@ public class SkillSystem {
         // Only main skills for now, and not use-type skills
         if (!skill.isMainSkill()) return false;
         if (skill.getLevel() < 1) return false;
-        if (skill.isUseSkill()) return false;
+        if (skill.isUseSkill() || skill.isPassiveUnlock()) return false;
         if (equippedActiveSkills.contains(skill)) return false;
         if (equippedActiveSkills.size() >= MAX_EQUIPED_ACTIVE_SKILLS) return false;
 

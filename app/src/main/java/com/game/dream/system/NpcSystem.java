@@ -4,6 +4,7 @@ import com.game.dream.enums.NpcType;
 import com.game.dream.npc.AnimalNpc;
 import com.game.dream.npc.FunctionNpcManager;
 import com.game.dream.npc.Npc;
+import com.game.dream.quest.SideQuest005;
 import com.game.dream.quest.SideQuestManager;
 
 import java.util.ArrayList;
@@ -46,7 +47,9 @@ public class NpcSystem {
                 npcList.add(new Npc(100101, "青溪村村长", NpcType.OLD_MAN, 5200, 5300));
                 npcList.add(new Npc(100102, "云游商人", NpcType.MERCHANT, 5000, 5300));
                 npcList.add(new Npc(100103, "小虎子", NpcType.CHILD_BOY, 4800, 5300));
-                npcList.add(new Npc(100104, "小花", NpcType.CHILD_GIRL, 4600, 5300));
+                Npc xiaoHua = new Npc(100104, "小花", NpcType.CHILD_GIRL, 4600, 5300);
+                xiaoHua.setHasQuest(true);
+                npcList.add(xiaoHua);
                 npcList.add(new Npc(100105, "赵大哥", NpcType.MAN, 4400, 5300));
                 npcList.add(new Npc(100106, "李婶", NpcType.WOMAN, 4200, 5300));
                 npcList.add(new Npc(100107, "小安子", NpcType.SERVANT, 4000, 5300));
@@ -72,6 +75,7 @@ public class NpcSystem {
                 npcList.add(new AnimalNpc(100194, "绵羊", NpcType.SHEEP, 4600, 5700));
                 npcList.add(new AnimalNpc(100195, "老黄牛", NpcType.COW, 4400, 5700));
                 npcList.add(new AnimalNpc(100196, "骏马", NpcType.HORSE, 3540, 5160));
+                SideQuest005.decorateQingxiNpcs(npcList);
 
             }
             break;
@@ -231,6 +235,56 @@ public class NpcSystem {
             break;
         }
         return npcList;
+    }
+
+    public List<Npc> peekMapNpcList(int mapId) {
+        return npcMap.get(mapId);
+    }
+
+    public void replaceMapNpcList(int mapId, List<Npc> npcList) {
+        npcMap.put(mapId, npcList != null ? new ArrayList<>(npcList) : new ArrayList<Npc>());
+    }
+
+    public Npc findNpc(int mapId, int npcId) {
+        List<Npc> npcList = npcMap.get(mapId);
+        if (npcList == null) {
+            return null;
+        }
+        for (Npc npc : npcList) {
+            if (npc.getId() == npcId) {
+                return npc;
+            }
+        }
+        return null;
+    }
+
+    public void addNpc(int mapId, Npc npc) {
+        if (npc == null) {
+            return;
+        }
+        List<Npc> current = getMapNpcList(mapId);
+        List<Npc> next = new ArrayList<>();
+        for (Npc existing : current) {
+            if (existing.getId() != npc.getId()) {
+                next.add(existing);
+            }
+        }
+        next.add(npc);
+        npcMap.put(mapId, next);
+    }
+
+    public void removeNpc(int mapId, int npcId) {
+        List<Npc> current = npcMap.get(mapId);
+        if (current == null) {
+            return;
+        }
+        List<Npc> next = new ArrayList<>();
+        for (Npc existing : current) {
+            if (existing.getId() != npcId) {
+                next.add(existing);
+            }
+        }
+        npcMap.put(mapId, next);
     }
 
     public void startConversation(Npc npc) {

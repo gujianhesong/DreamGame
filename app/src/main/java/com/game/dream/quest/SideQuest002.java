@@ -60,7 +60,7 @@ public class SideQuest002 implements ISideQuest {
 
         // Stage 0: 需要芋子排骨
         if (stage == 0) {
-            String msg = "汪汪！汪汪！（旺财看起来很久没很饿的样子，给它买点买点芋子排骨吃吧）";
+            String msg = "汪汪！汪汪！（旺财看起来很久没吃东西很饿的样子，给它买点买点芋子排骨吃吧）";
             GameEngine.getInstance().showDialog("旺财", msg, Arrays.asList("给它吃芋子排骨", "离开"), new DialogBox.DialogListener() {
                 @Override
                 public void onOptionSelected(int optionIndex) {

@@ -199,6 +199,7 @@ public class SaveSystem {
             ItemSystem.getInstance().setMaxSize(saveInfo.getBagMaxSize());
         }
         ShopSystem.getInstance().setSkillBookShopBought(saveInfo.getSkillBookShopBought());
+        com.game.dream.quest.SideQuest005.syncWorld();
     }
 
     private SaveInfo getInitData() {

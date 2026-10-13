@@ -107,10 +107,10 @@ public class SideQuest001 implements ISideQuest {
                         ItemSystem.getInstance().removeItem("红糖麻糍", 1);
                         // 推进任务（完成）
                         QuestSystem.getInstance().advanceQuestStage(4);
-                        // 奖励60级无级别剑
+                        // 奖励30级无级别剑
                         EquipCreator.EquipCreatorExtraInfo extraInfo = new EquipCreator.EquipCreatorExtraInfo();
                         extraInfo.isWuJiBie = true;
-                        EquipmentItem equipmentItem = EquipCreator.createEquip(60, EquipmentItem.Slot.WEAPON, extraInfo);
+                        EquipmentItem equipmentItem = EquipCreator.createEquip(30, EquipmentItem.Slot.WEAPON, extraInfo);
                         ItemSystem.getInstance().addItem(equipmentItem, 1);
                         // 显示感谢对话
                         String thanksMsg = "谢谢大哥哥！这把剑是我在野外捡到的，就送给大哥哥吧，谢谢你给我买好吃的！";

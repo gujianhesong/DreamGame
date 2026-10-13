@@ -7,6 +7,7 @@ public enum NpcType {
     SHEEP, //羊
     COW, //牛
     HORSE, //马
+    CAT, //猫
 
     OLD_MAN, //老人
     CHILD_BOY, //小男孩

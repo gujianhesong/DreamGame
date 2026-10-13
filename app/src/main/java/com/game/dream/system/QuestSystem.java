@@ -101,6 +101,15 @@ public class QuestSystem {
                 Arrays.asList("向慧能大师布施并领取技能书")
         );
         questTemplates.add(quest7);
+
+        QuestInfo quest8 = new QuestInfo(
+                8,
+                "走失的小橘",
+                "小花的小猫小橘跑出村子，在清溪村外靠近地图边缘的地方找它，再带回给小花",
+                2,
+                Arrays.asList("在清溪村外靠近地图边缘处寻找小橘", "把小橘带回给小花")
+        );
+        questTemplates.add(quest8);
     }
 
     /**

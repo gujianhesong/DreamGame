@@ -48,8 +48,8 @@ public class AnimalNpc extends Npc{
             this.size = 65; // 中型动物
         } else if (type == NpcType.DOG) {
             this.size = 55; // 中型动物
-        } else if (type == NpcType.CHICKEN || type == NpcType.DUCK) {
-            this.size = 35; // 小型家禽
+        } else if (type == NpcType.CHICKEN || type == NpcType.DUCK || type == NpcType.CAT) {
+            this.size = 35; // 小型家禽 / 小猫
         } else {
             this.size = 70; // 标准人类
         }
@@ -254,6 +254,9 @@ public class AnimalNpc extends Npc{
             case DOG:
                 drawDog(canvas, paint, cx, cy, walkPhase);
                 break;
+            case CAT:
+                drawCat(canvas, paint, cx, cy, walkPhase);
+                break;
             case SHEEP:
                 drawSheep(canvas, paint, cx, cy, walkPhase);
                 break;
@@ -388,6 +391,50 @@ public class AnimalNpc extends Npc{
         // 尾巴（翘起）
         paint.setStrokeWidth(4);
         canvas.drawLine(cx + bodyW/2, cy - bodyH/4, cx + bodyW/2 + 10, cy - bodyH/2, paint);
+    }
+
+    /**
+     * 绘制橘猫 - 橙色身体、竖耳、翘尾
+     */
+    private void drawCat(Canvas canvas, Paint paint, float cx, float cy, float wp) {
+        float bodyW = size * 0.75f;
+        float bodyH = size * 0.5f;
+        float legSwing = wp * 4;
+        int orange = Color.rgb(232, 140, 50);
+        int darkOrange = Color.rgb(196, 96, 28);
+
+        paint.setColor(orange);
+        canvas.drawRoundRect(cx - bodyW / 2, cy - bodyH / 2, cx + bodyW / 2, cy + bodyH / 3, 8, 8, paint);
+
+        float headR = size * 0.28f;
+        float headX = cx - bodyW / 2 - headR / 4;
+        float headY = cy - bodyH / 2;
+        canvas.drawCircle(headX, headY, headR, paint);
+
+        paint.setColor(darkOrange);
+        drawTriangle(canvas, headX - headR * 0.7f, headY - headR * 0.2f,
+                headX - headR * 0.15f, headY - headR * 0.2f,
+                headX - headR * 0.45f, headY - headR * 1.15f, paint);
+        drawTriangle(canvas, headX + headR * 0.05f, headY - headR * 0.2f,
+                headX + headR * 0.7f, headY - headR * 0.2f,
+                headX + headR * 0.4f, headY - headR * 1.15f, paint);
+
+        paint.setColor(Color.BLACK);
+        canvas.drawCircle(headX - headR * 0.25f, headY - 2, 2.2f, paint);
+        canvas.drawCircle(headX + headR * 0.2f, headY - 2, 2.2f, paint);
+        canvas.drawCircle(headX, headY + headR * 0.25f, 1.8f, paint);
+
+        paint.setColor(orange);
+        canvas.drawRect(cx - bodyW / 2 - 2 + legSwing, cy + bodyH / 4, cx - bodyW / 2 + 5 + legSwing, cy + bodyH / 2 + 6, paint);
+        canvas.drawRect(cx - bodyW / 6 - legSwing, cy + bodyH / 4, cx - bodyW / 6 + 6 - legSwing, cy + bodyH / 2 + 6, paint);
+        canvas.drawRect(cx + bodyW / 8 + legSwing, cy + bodyH / 4, cx + bodyW / 8 + 6 + legSwing, cy + bodyH / 2 + 6, paint);
+        canvas.drawRect(cx + bodyW / 2 - 8 - legSwing, cy + bodyH / 4, cx + bodyW / 2 - 2 - legSwing, cy + bodyH / 2 + 6, paint);
+
+        paint.setColor(darkOrange);
+        paint.setStrokeWidth(3);
+        paint.setStyle(Paint.Style.STROKE);
+        canvas.drawLine(cx + bodyW / 2 - 2, cy - bodyH / 5, cx + bodyW / 2 + 10, cy - bodyH / 2 - 4, paint);
+        paint.setStyle(Paint.Style.FILL);
     }
 
     /**

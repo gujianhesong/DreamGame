@@ -33,7 +33,7 @@ public class PracticePanel {
         Rect upgradeBtn;
     }
 
-    private final List<Row> rows = new ArrayList<>();
+    private List<Row> rows = new ArrayList<>();
 
     public PracticePanel() {
         panelBounds = new Rect();
@@ -118,7 +118,7 @@ public class PracticePanel {
         maxScrollOffset = Math.max(0, totalHeight - visibleHeight);
         scrollOffset = Math.max(0, Math.min(scrollOffset, maxScrollOffset));
 
-        rows.clear();
+        List<Row> nextRows = new ArrayList<>(skills.size());
         canvas.save();
         canvas.clipRect(listClip);
 
@@ -130,7 +130,7 @@ public class PracticePanel {
                 Row skip = new Row();
                 skip.skill = skill;
                 skip.upgradeBtn = new Rect();
-                rows.add(skip);
+                nextRows.add(skip);
                 continue;
             }
 
@@ -180,8 +180,9 @@ public class PracticePanel {
             Row row = new Row();
             row.skill = skill;
             row.upgradeBtn = upgradeBtn;
-            rows.add(row);
+            nextRows.add(row);
         }
+        rows = nextRows;
         canvas.restore();
     }
 

@@ -124,7 +124,6 @@ public class BuildEquipPanel {
     }
 
     private void updateRecipeButtons() {
-        recipeButtons.clear();
         int itemHeight = 100;
         int gap = 15;
 
@@ -132,11 +131,12 @@ public class BuildEquipPanel {
         maxScrollOffset = Math.max(0, totalHeight - recipeListArea.height());
         scrollOffset = Math.max(0, Math.min(scrollOffset, maxScrollOffset));
 
+        List<Rect> nextButtons = new ArrayList<>(recipes.size());
         for (int i = 0; i < recipes.size(); i++) {
             int yPos = recipeListArea.top + i * (itemHeight + gap) - (int) scrollOffset;
-            Rect btn = new Rect(recipeListArea.left, yPos, recipeListArea.right, yPos + itemHeight);
-            recipeButtons.add(btn);
+            nextButtons.add(new Rect(recipeListArea.left, yPos, recipeListArea.right, yPos + itemHeight));
         }
+        recipeButtons = nextButtons;
     }
 
     public void draw(Canvas canvas) {
@@ -169,8 +169,9 @@ public class BuildEquipPanel {
         canvas.save();
         canvas.clipRect(recipeListArea);
 
-        List<Rect> curRecipeButtons = new ArrayList<>(recipeButtons);
-        for (int i = 0; i < recipes.size(); i++) {
+        List<Rect> curRecipeButtons = recipeButtons;
+        int count = Math.min(recipes.size(), curRecipeButtons.size());
+        for (int i = 0; i < count; i++) {
             Rect btn = curRecipeButtons.get(i);
             if (btn.bottom < recipeListArea.top || btn.top > recipeListArea.bottom) continue;
 
@@ -297,8 +298,10 @@ public class BuildEquipPanel {
     public boolean handleTouchUp(float x, float y) {
         if (!isVisible || isDragging) return false;
 
-        for (int i = 0; i < recipes.size(); i++) {
-            Rect btn = recipeButtons.get(i);
+        List<Rect> curRecipeButtons = recipeButtons;
+        int count = Math.min(recipes.size(), curRecipeButtons.size());
+        for (int i = 0; i < count; i++) {
+            Rect btn = curRecipeButtons.get(i);
             Rect craftBtn = new Rect(btn.right - 100, btn.top + 25, btn.right - 10, btn.bottom - 25);
 
             if (craftBtn.contains((int) x, (int) y)) {

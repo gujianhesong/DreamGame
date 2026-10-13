@@ -112,7 +112,8 @@ public class EquipSellDialog {
     }
 
     private int getTotalPages() {
-        return Math.max(1, (equipList.size() + PAGE_SIZE - 1) / PAGE_SIZE);
+        int size = equipList == null ? 0 : equipList.size();
+        return Math.max(1, (size + PAGE_SIZE - 1) / PAGE_SIZE);
     }
 
     private void recalcButtons() {
@@ -146,12 +147,12 @@ public class EquipSellDialog {
         }
 
         // Per-row sell and detail buttons
-        sellButtons.clear();
-        detailButtons.clear();
         int startIdx = currentPage * PAGE_SIZE;
         int endIdx = Math.min(startIdx + PAGE_SIZE, equipList.size());
         int listTop = bounds.top + 105;
 
+        List<Rect> nextSell = new ArrayList<>(PAGE_SIZE);
+        List<Rect> nextDetail = new ArrayList<>(PAGE_SIZE);
         for (int i = startIdx; i < endIdx; i++) {
             int rowIdx = i - startIdx;
             int rowY = listTop + rowIdx * (ROW_HEIGHT + ROW_GAP);
@@ -162,9 +163,11 @@ public class EquipSellDialog {
             int sellX = bounds.right - rightMargin - btnW;
             int detailX = sellX - btnW - 20;
 
-            sellButtons.add(new Rect(sellX, rowY + 18, sellX + btnW, rowY + 18 + btnH));
-            detailButtons.add(new Rect(detailX, rowY + 18, detailX + btnW, rowY + 18 + btnH));
+            nextSell.add(new Rect(sellX, rowY + 18, sellX + btnW, rowY + 18 + btnH));
+            nextDetail.add(new Rect(detailX, rowY + 18, detailX + btnW, rowY + 18 + btnH));
         }
+        sellButtons = nextSell;
+        detailButtons = nextDetail;
     }
 
     // ==================== 绘制 ====================
@@ -233,7 +236,9 @@ public class EquipSellDialog {
                 + "  |  共" + equipList.size() + "件  第" + (currentPage + 1) + "/" + getTotalPages() + "页";
         canvas.drawText(info, bounds.centerX(), bounds.top + 80, paint);
 
-        if (equipList.isEmpty()) {
+        List<ItemStack> items = equipList;
+        List<Integer> prices = sellPrices;
+        if (items == null || items.isEmpty()) {
             paint.setColor(Color.WHITE);
             paint.setTextSize(32);
             canvas.drawText("背包里没有可出售的装备", bounds.centerX(), bounds.centerY(), paint);
@@ -241,15 +246,21 @@ public class EquipSellDialog {
         }
 
         // 装备列表行
+        int listSize = Math.min(items.size(), prices == null ? 0 : prices.size());
         int startIdx = currentPage * PAGE_SIZE;
-        int endIdx = Math.min(startIdx + PAGE_SIZE, equipList.size());
+        int endIdx = Math.min(startIdx + PAGE_SIZE, listSize);
         int listTop = bounds.top + 105;
+        List<Rect> sells = sellButtons;
+        List<Rect> details = detailButtons;
 
         for (int i = startIdx; i < endIdx; i++) {
+            if (i >= items.size() || i >= prices.size()) {
+                break;
+            }
             int rowIdx = i - startIdx;
             int rowY = listTop + rowIdx * (ROW_HEIGHT + ROW_GAP);
-            EquipmentItem equip = (EquipmentItem) equipList.get(i).getItem();
-            int price = sellPrices.get(i);
+            EquipmentItem equip = (EquipmentItem) items.get(i).getItem();
+            int price = prices.get(i);
 
             // 行背景（交替色）
             paint.setColor(rowIdx % 2 == 0 ? ROW_BG_EVEN : ROW_BG_ODD);
@@ -276,12 +287,12 @@ public class EquipSellDialog {
             canvas.drawText(rarityText + levelText + "  " + price + "金", bounds.left + 30, rowY + 55, paint);
 
             // 出售按钮
-            if (rowIdx < sellButtons.size()) {
-                drawSmallButton(canvas, paint, sellButtons.get(rowIdx), "出售", SELL_BTN_COLOR);
+            if (rowIdx < sells.size()) {
+                drawSmallButton(canvas, paint, sells.get(rowIdx), "出售", SELL_BTN_COLOR);
             }
             // 详情按钮
-            if (rowIdx < detailButtons.size()) {
-                drawSmallButton(canvas, paint, detailButtons.get(rowIdx), "详情", DETAIL_BTN_COLOR);
+            if (rowIdx < details.size()) {
+                drawSmallButton(canvas, paint, details.get(rowIdx), "详情", DETAIL_BTN_COLOR);
             }
         }
 
@@ -368,19 +379,22 @@ public class EquipSellDialog {
             return true;
         }
 
+        int listSize = Math.min(equipList.size(), sellPrices.size());
         int startIdx = currentPage * PAGE_SIZE;
-        int endIdx = Math.min(startIdx + PAGE_SIZE, equipList.size());
+        int endIdx = Math.min(startIdx + PAGE_SIZE, listSize);
 
+        List<Rect> sells = sellButtons;
+        List<Rect> details = detailButtons;
         for (int i = startIdx; i < endIdx; i++) {
             int rowIdx = i - startIdx;
 
             // 出售按钮
-            if (rowIdx < sellButtons.size() && TouchUtil.checkIsInTouchRectFloat(sellButtons.get(rowIdx), x, y)) {
+            if (rowIdx < sells.size() && TouchUtil.checkIsInTouchRectFloat(sells.get(rowIdx), x, y)) {
                 sellItem(i);
                 return true;
             }
             // 详情按钮
-            if (rowIdx < detailButtons.size() && TouchUtil.checkIsInTouchRectFloat(detailButtons.get(rowIdx), x, y)) {
+            if (rowIdx < details.size() && TouchUtil.checkIsInTouchRectFloat(details.get(rowIdx), x, y)) {
                 showItemDetail(i);
                 return true;
             }
@@ -392,7 +406,8 @@ public class EquipSellDialog {
     // ==================== 业务逻辑 ====================
 
     private void sellItem(int index) {
-        if (index < 0 || index >= equipList.size()) return;
+        if (equipList == null || sellPrices == null) return;
+        if (index < 0 || index >= equipList.size() || index >= sellPrices.size()) return;
 
         ItemStack stack = equipList.get(index);
         int price = sellPrices.get(index);
@@ -407,9 +422,12 @@ public class EquipSellDialog {
             callback.onItemSold(stack, price);
         }
 
-        // 刷新数据
-        equipList.remove(index);
-        sellPrices.remove(index);
+        List<ItemStack> nextEquip = new ArrayList<>(equipList);
+        List<Integer> nextPrices = new ArrayList<>(sellPrices);
+        nextEquip.remove(index);
+        nextPrices.remove(index);
+        equipList = nextEquip;
+        sellPrices = nextPrices;
         int totalPages = getTotalPages();
         if (currentPage >= totalPages) {
             currentPage = Math.max(0, totalPages - 1);

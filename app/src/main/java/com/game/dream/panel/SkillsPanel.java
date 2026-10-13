@@ -201,8 +201,6 @@ public class SkillsPanel {
      * Update button positions based on current tab
      */
     private void updateSkillButtons() {
-        skillButtons.clear();
-
         // Filter skills by current tab
         List<SkillInfo> filteredSkills = new ArrayList<>();
         if (currentTab == 0) {
@@ -229,6 +227,7 @@ public class SkillsPanel {
         // Clamp scroll offset
         scrollOffset = Math.max(0, Math.min(scrollOffset, maxScrollOffset));
 
+        List<SkillButtonPair> nextButtons = new ArrayList<>(filteredSkills.size());
         for (int i = 0; i < filteredSkills.size(); i++) {
             SkillInfo skill = filteredSkills.get(i);
 
@@ -262,8 +261,9 @@ public class SkillsPanel {
                     yPos + itemHeight - 10
             );
 
-            skillButtons.add(new SkillButtonPair(skill, upgradeBtn, downgradeBtn, equipBtn));
+            nextButtons.add(new SkillButtonPair(skill, upgradeBtn, downgradeBtn, equipBtn));
         }
+        skillButtons = nextButtons;
     }
 
     /**
@@ -390,6 +390,7 @@ public class SkillsPanel {
         canvas.save();
         canvas.clipRect(skillListArea);
 
+        List<SkillButtonPair> buttons = skillButtons;
         for (int i = 0; i < filteredSkills.size(); i++) {
             SkillInfo skill = filteredSkills.get(i);
 
@@ -445,8 +446,8 @@ public class SkillsPanel {
             canvas.drawText(skill.getDesc(), xPos + 10, yPos + 85, paint);
 
             // Draw buttons if available
-            if (i < skillButtons.size()) {
-                SkillButtonPair pair = skillButtons.get(i);
+            if (i < buttons.size()) {
+                SkillButtonPair pair = buttons.get(i);
                 if (skill.isMainSkill() && skill.getLevel() >= 1 && !skill.isPassiveUnlock()) {
                     if (skill.isUseSkill()) {
                         drawUseButton(canvas, paint, pair.equipButton, skill);
@@ -630,7 +631,7 @@ public class SkillsPanel {
         if (TouchUtil.checkIsInTouchRectFloat(skillListArea, x, y)) {
             // Check skill buttons first (only if not dragging)
             if (!isDragging) {
-                for (SkillButtonPair pair : skillButtons) {
+                for (SkillButtonPair pair : new ArrayList<>(skillButtons)) {
                     // Handle Equip/Unequip for Main Skills
                     if (pair.skill.isMainSkill() && pair.skill.getLevel() >= 1 && !pair.skill.isUseSkill()
                             && !pair.skill.isPassiveUnlock() && TouchUtil.checkIsInTouchRectFloat(pair.equipButton, x, y)) {

@@ -208,7 +208,7 @@ public class PetPanel {
      * 同时刷新 maxScrollOffset 并夹取 scrollOffset。
      */
     private List<RowRect> computeRowRects() {
-        List<Pet> roster = PetSystem.getInstance().getRoster();
+        List<Pet> roster = new ArrayList<>(PetSystem.getInstance().getRoster());
         int count = roster.size();
 
         float totalContentHeight = count * (ROW_HEIGHT + ROW_GAP);

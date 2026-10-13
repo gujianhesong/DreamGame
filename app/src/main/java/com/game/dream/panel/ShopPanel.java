@@ -45,18 +45,16 @@ public class ShopPanel {
     }
 
     private void initShopItems() {
-        shopItems.clear();
+        List<ShopItem> next = new ArrayList<>();
         for (FoodType foodType : FoodType.values()) {
             Item foodItem = ItemCreator.createCookFood(foodType);
-            shopItems.add(new ShopItem(foodItem, foodItem.getValue()));
+            next.add(new ShopItem(foodItem, foodItem.getValue()));
         }
+        shopItems = next;
     }
 
     public void showShopItems(List<ShopItem> shopItems) {
-        this.shopItems.clear();
-        if(shopItems != null){
-            this.shopItems.addAll(shopItems);
-        }
+        this.shopItems = shopItems != null ? new ArrayList<>(shopItems) : new ArrayList<ShopItem>();
         isVisible = true;
         scrollOffset = 0;
     }
@@ -132,7 +130,8 @@ public class ShopPanel {
         int itemX = panelBounds.left + 30;
 
         // Calculate max scroll
-        int totalHeight = shopItems.size() * (ITEM_HEIGHT + ITEM_GAP);
+        List<ShopItem> items = shopItems;
+        int totalHeight = items.size() * (ITEM_HEIGHT + ITEM_GAP);
         int visibleHeight = listEndY - listStartY;
         maxScrollOffset = Math.max(0, totalHeight - visibleHeight);
         scrollOffset = Math.max(0, Math.min(scrollOffset, maxScrollOffset));
@@ -142,8 +141,8 @@ public class ShopPanel {
         canvas.save();
         canvas.clipRect(clipRect);
 
-        for (int i = 0; i < shopItems.size(); i++) {
-            ShopItem shopItem = shopItems.get(i);
+        for (int i = 0; i < items.size(); i++) {
+            ShopItem shopItem = items.get(i);
             int itemY = (int) (listStartY + i * (ITEM_HEIGHT + ITEM_GAP) - scrollOffset);
 
             // Skip if outside visible area

@@ -414,7 +414,7 @@ public class GameUI {
             // Radius of the arc (distance from attack center to skill centers)
             float radius = attackBtnSize / 2 + skillBtnSize / 2 + 80;
 
-            skillButtons.clear();
+            List<Rect> nextSkillButtons = new ArrayList<>(MAX_SKILL_SLOTS);
             for (int i = 0; i < MAX_SKILL_SLOTS; i++) {
                 // Calculate angle: Distribute 5 buttons between 135 degrees (bottom-left) and 225 degrees (top-left)
                 // Or simply from 180 (left) to 270 (top). Let's do 160 to 260 degrees for a nice left-side arc.
@@ -438,8 +438,9 @@ public class GameUI {
                         centerX + skillBtnSize / 2,
                         centerY + skillBtnSize / 2
                 );
-                skillButtons.add(btn);
+                nextSkillButtons.add(btn);
             }
+            skillButtons = nextSkillButtons;
 
             // Initialize Switch Page Button
             // Place it near the center of the attack button or slightly to the left
@@ -1011,8 +1012,9 @@ public class GameUI {
                     GameEngine.getInstance().requestCapture();
                 }
 
-                for (int index = 0; index < skillButtons.size(); index++) {
-                    Rect skillBtn = skillButtons.get(index);
+                List<Rect> skillBtns = skillButtons;
+                for (int index = 0; index < skillBtns.size(); index++) {
+                    Rect skillBtn = skillBtns.get(index);
                     if (isPointInCircle(x, y, skillBtn.centerX(), skillBtn.centerY(), skillBtn.width() / 2)) {
                         magicAttackPressed = true;
                         handled = true;
@@ -1049,8 +1051,9 @@ public class GameUI {
                     handled = true;
                 }
 
-                for (int index = 0; index < skillButtons.size(); index++) {
-                    Rect skillBtn = skillButtons.get(index);
+                List<Rect> skillBtnsUp = skillButtons;
+                for (int index = 0; index < skillBtnsUp.size(); index++) {
+                    Rect skillBtn = skillBtnsUp.get(index);
                     if (isPointInCircle(x, y, skillBtn.centerX(), skillBtn.centerY(), skillBtn.width() / 2)) {
                         magicAttackPressed = false;
                         handled = true;
@@ -1077,8 +1080,9 @@ public class GameUI {
                         }
                     }
 
-                    for (int index = 0; index < skillButtons.size(); index++) {
-                        Rect skillBtn = skillButtons.get(index);
+                    List<Rect> skillBtnsMove = skillButtons;
+                    for (int index = 0; index < skillBtnsMove.size(); index++) {
+                        Rect skillBtn = skillBtnsMove.get(index);
                         if (isPointInCircle(x, y, skillBtn.centerX(), skillBtn.centerY(), skillBtn.width() / 2)) {
                             anyOnButton = true;
                             if (!magicAttackPressed) {
@@ -1295,8 +1299,10 @@ public class GameUI {
         paint.setAntiAlias(true);
         paint.setTextAlign(Paint.Align.CENTER);
 
-        for (int i = 0; i < MAX_SKILL_SLOTS; i++) {
-            Rect btn = skillButtons.get(i);
+        List<Rect> buttons = skillButtons;
+        int slotCount = Math.min(MAX_SKILL_SLOTS, buttons.size());
+        for (int i = 0; i < slotCount; i++) {
+            Rect btn = buttons.get(i);
             boolean hasSkill = i < equipped.size();
 
             // Button Background

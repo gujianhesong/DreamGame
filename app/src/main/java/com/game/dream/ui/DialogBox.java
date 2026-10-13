@@ -48,10 +48,7 @@ public class DialogBox {
     public void show(String title, String message, List<String> options, DialogListener listener) {
         this.title = title;
         this.message = message;
-        this.options.clear();
-        if(options != null){
-            this.options.addAll(options);
-        }
+        this.options = options != null ? new ArrayList<>(options) : new ArrayList<String>();
         this.listener = listener;
         this.isVisible = true;
         calculateButtonBounds();
@@ -77,8 +74,11 @@ public class DialogBox {
     }
 
     private void calculateButtonBounds() {
-        optionButtons.clear();
-        if (options.isEmpty()) return;
+        List<String> opts = options;
+        if (opts == null || opts.isEmpty()) {
+            optionButtons = new ArrayList<>();
+            return;
+        }
 
         int btnHeight = 42;
         int gap = 20;
@@ -88,12 +88,12 @@ public class DialogBox {
         tempPaint.setAntiAlias(true);
         tempPaint.setTextSize(28);
         int totalBtnWidth = 0;
-        int[] btnWidths = new int[options.size()];
-        for (int i = 0; i < options.size(); i++) {
-            btnWidths[i] = (int) tempPaint.measureText(options.get(i)) + 60;
+        int[] btnWidths = new int[opts.size()];
+        for (int i = 0; i < opts.size(); i++) {
+            btnWidths[i] = (int) tempPaint.measureText(opts.get(i)) + 60;
             totalBtnWidth += btnWidths[i];
         }
-        totalBtnWidth += (options.size() - 1) * gap;
+        totalBtnWidth += (opts.size() - 1) * gap;
 
         // Center buttons horizontally
         int startX = bounds.left + 30;
@@ -112,11 +112,13 @@ public class DialogBox {
         contentY += 30; // gap before buttons
         int startY = contentY;
 
-        for (int i = 0; i < options.size(); i++) {
+        List<Rect> nextButtons = new ArrayList<>(opts.size());
+        for (int i = 0; i < opts.size(); i++) {
             int yPos = startY + i * (btnHeight + gap);
             if (yPos + btnHeight > bounds.bottom - 20) break;
-            optionButtons.add(new Rect(startX, yPos, startX + btnWidths[i], yPos + btnHeight));
+            nextButtons.add(new Rect(startX, yPos, startX + btnWidths[i], yPos + btnHeight));
         }
+        optionButtons = nextButtons;
 
         // Close button
         int padding = 10;
@@ -172,8 +174,11 @@ public class DialogBox {
         }
 
         // Options Buttons
-        for (int i = 0; i < optionButtons.size(); i++) {
-            Rect btn = optionButtons.get(i);
+        List<Rect> buttons = optionButtons;
+        List<String> opts = options;
+        int optionCount = Math.min(buttons.size(), opts.size());
+        for (int i = 0; i < optionCount; i++) {
+            Rect btn = buttons.get(i);
 
             // Button background
             paint.setColor(BTN_BG_COLOR);
@@ -190,7 +195,7 @@ public class DialogBox {
             paint.setColor(Color.WHITE);
             paint.setTextSize(30);
             paint.setTextAlign(Paint.Align.CENTER);
-            canvas.drawText(options.get(i), btn.centerX(), btn.centerY() + 10, paint);
+            canvas.drawText(opts.get(i), btn.centerX(), btn.centerY() + 10, paint);
         }
     }
 
@@ -240,8 +245,9 @@ public class DialogBox {
             return true;
         }
 
-        for (int i = 0; i < optionButtons.size(); i++) {
-            if (optionButtons.get(i).contains((int) x, (int) y)) {
+        List<Rect> buttons = optionButtons;
+        for (int i = 0; i < buttons.size(); i++) {
+            if (buttons.get(i).contains((int) x, (int) y)) {
                 hide();
                 if (listener != null) {
                     listener.onOptionSelected(i);

@@ -107,27 +107,28 @@ public class RoleInfoPanel {
      * Initialize attribute button positions
      */
     private void initAttributeButtons(int startY) {
-        plusButtons.clear();
-        minusButtons.clear();
-
         int lineHeight = 50;
         int buttonSize = 40;
         int buttonGap = 20;
         int deltaY = 8;
 
+        List<Rect> nextPlus = new ArrayList<>(6);
+        List<Rect> nextMinus = new ArrayList<>(6);
         for (int i = 0; i < 6; i++) {
             int y = startY + i * lineHeight;
 
             // Plus button (right side of derived attr)
             int plusX = panelBounds.centerX() + 160;
-            plusButtons.add(new Rect(plusX, y - deltaY,
+            nextPlus.add(new Rect(plusX, y - deltaY,
                     plusX + buttonSize, y + buttonSize - deltaY));
 
             // Minus button (left of plus)
             int minusX = plusX - buttonSize - buttonGap;
-            minusButtons.add(new Rect(minusX, y - deltaY,
+            nextMinus.add(new Rect(minusX, y - deltaY,
                     minusX + buttonSize, y + buttonSize - deltaY));
         }
+        plusButtons = nextPlus;
+        minusButtons = nextMinus;
 
         // Confirm button at bottom
         int btnWidth = 100;
@@ -411,7 +412,9 @@ public class RoleInfoPanel {
             }
 
             // Draw +/- buttons (except for last row - potential)
-            if (i < 5) {
+            List<Rect> plus = plusButtons;
+            List<Rect> minus = minusButtons;
+            if (i < 5 && i < plus.size() && i < minus.size()) {
                 // Determine if buttons should be enabled
                 boolean plusEnabled = tempRemainPoints > 0;
                 boolean minusEnabled = false;
@@ -434,8 +437,8 @@ public class RoleInfoPanel {
                         break;
                 }
 
-                drawPlusButton(canvas, paint, plusButtons.get(i), plusEnabled);
-                drawMinusButton(canvas, paint, minusButtons.get(i), minusEnabled);
+                drawPlusButton(canvas, paint, plus.get(i), plusEnabled);
+                drawMinusButton(canvas, paint, minus.get(i), minusEnabled);
             }
         }
     }
@@ -586,11 +589,14 @@ public class RoleInfoPanel {
 
         // Check if touched +/- buttons
         RoleInfo roleInfo = RoleSystem.getInstance().getRoleInfo();
-        for (int i = 0; i < 5; i++) { // Only first 5 attributes have buttons
-            if (TouchUtil.checkIsInTouchRectFloat(plusButtons.get(i), x, y)) {
+        List<Rect> plus = plusButtons;
+        List<Rect> minus = minusButtons;
+        int attrCount = Math.min(5, Math.min(plus.size(), minus.size()));
+        for (int i = 0; i < attrCount; i++) { // Only first 5 attributes have buttons
+            if (TouchUtil.checkIsInTouchRectFloat(plus.get(i), x, y)) {
                 increaseAttribute(i, roleInfo);
                 return true;
-            } else if (TouchUtil.checkIsInTouchRectFloat(minusButtons.get(i), x, y)) {
+            } else if (TouchUtil.checkIsInTouchRectFloat(minus.get(i), x, y)) {
                 decreaseAttribute(i, roleInfo);
                 return true;
             }

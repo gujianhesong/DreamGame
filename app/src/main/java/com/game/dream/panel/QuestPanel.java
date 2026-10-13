@@ -10,6 +10,7 @@ import com.game.dream.bean.QuestInfo;
 import com.game.dream.system.QuestSystem;
 import com.game.dream.utils.TouchUtil;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -115,13 +116,16 @@ public class QuestPanel {
     }
 
     private void updateQuestItemRects() {
-        questItemRects.clear();
-
         List<QuestInfo> quests;
         if (currentTab == 0) {
             quests = QuestSystem.getInstance().getActiveQuests();
         } else {
             quests = QuestSystem.getInstance().getCompletedQuests();
+        }
+        if (quests == null) {
+            quests = new ArrayList<>();
+        } else {
+            quests = new ArrayList<>(quests);
         }
 
         int itemHeight = 180;
@@ -131,6 +135,7 @@ public class QuestPanel {
         maxScrollOffset = Math.max(0, totalContentHeight - questListArea.height());
         scrollOffset = Math.max(0, Math.min(scrollOffset, maxScrollOffset));
 
+        List<QuestItemRect> nextRects = new ArrayList<>(quests.size());
         for (int i = 0; i < quests.size(); i++) {
             QuestInfo quest = quests.get(i);
             int yPos = questListArea.top + i * (itemHeight + gap) - (int) scrollOffset;
@@ -141,8 +146,9 @@ public class QuestPanel {
                     questListArea.right,
                     yPos + itemHeight
             );
-            questItemRects.add(new QuestItemRect(quest, itemRect));
+            nextRects.add(new QuestItemRect(quest, itemRect));
         }
+        questItemRects = nextRects;
     }
 
     public void draw(Canvas canvas) {
@@ -203,6 +209,11 @@ public class QuestPanel {
             quests = QuestSystem.getInstance().getActiveQuests();
         } else {
             quests = QuestSystem.getInstance().getCompletedQuests();
+        }
+        if (quests == null) {
+            quests = new ArrayList<>();
+        } else {
+            quests = new ArrayList<>(quests);
         }
 
         if (quests.isEmpty()) {

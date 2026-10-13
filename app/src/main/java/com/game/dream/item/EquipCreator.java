@@ -260,18 +260,17 @@ public class EquipCreator {
 
         if (extraInfo != null && extraInfo.isWuJiBie) {
             List<String> effects = equipItemInfo.getSpecialEffects();
-            if (effects == null || effects.isEmpty()) {
-                equipItemInfo.setSpecialEffects(Arrays.asList(SpecialEffect.SE_WuJiBieXianZhi.name()));
-            } else {
-                List<String> newEffects = Arrays.asList(SpecialEffect.SE_WuJiBieXianZhi.name());
+            List<String> newEffects = new ArrayList<>();
+            newEffects.add(SpecialEffect.SE_WuJiBieXianZhi.name());
+            if (effects != null) {
                 for (String effect : effects) {
                     if (!TextUtils.equals(effect, SpecialEffect.SE_WuJiBieXianZhi.name())) {
                         newEffects.add(effect);
                         break;
                     }
                 }
-                equipItemInfo.setSpecialEffects(newEffects);
             }
+            equipItemInfo.setSpecialEffects(newEffects);
         }
 
         return new EquipmentItem(equipItemInfo);

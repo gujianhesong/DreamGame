@@ -197,7 +197,6 @@ public class CraftingPanel {
     }
 
     private void updateRecipeButtons() {
-        recipeButtons.clear();
         int itemHeight = 100;
         int gap = 15;
 
@@ -207,11 +206,13 @@ public class CraftingPanel {
         maxScrollOffset = Math.max(0, totalHeight - recipeListArea.height());
         scrollOffset = Math.max(0, Math.min(scrollOffset, maxScrollOffset));
 
+        List<Rect> nextButtons = new ArrayList<>(recipes.size());
         for (int i = 0; i < recipes.size(); i++) {
             int yPos = recipeListArea.top + i * (itemHeight + gap) - (int) scrollOffset;
             Rect btn = new Rect(recipeListArea.left, yPos, recipeListArea.right, yPos + itemHeight);
-            recipeButtons.add(btn);
+            nextButtons.add(btn);
         }
+        recipeButtons = nextButtons;
     }
 
     public void draw(Canvas canvas) {

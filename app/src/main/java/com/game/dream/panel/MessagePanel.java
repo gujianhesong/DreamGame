@@ -128,12 +128,12 @@ public class MessagePanel {
      */
     public void addMessage(String text, MessageType type) {
         int color = getColorForType(type);
-        messages.add(new MessageEntry(text, color, type));
-
-        // 限制消息数量
-        while (messages.size() > MAX_MESSAGES) {
-            messages.remove(0);
+        List<MessageEntry> next = new ArrayList<>(messages);
+        next.add(new MessageEntry(text, color, type));
+        while (next.size() > MAX_MESSAGES) {
+            next.remove(0);
         }
+        messages = next;
 
         // 新消息提示
         hasNewMessage = true;
@@ -149,11 +149,12 @@ public class MessagePanel {
      * 添加消息 (自定义颜色)
      */
     public void addMessage(String text, int color) {
-        messages.add(new MessageEntry(text, color, MessageType.INFO));
-
-        while (messages.size() > MAX_MESSAGES) {
-            messages.remove(0);
+        List<MessageEntry> next = new ArrayList<>(messages);
+        next.add(new MessageEntry(text, color, MessageType.INFO));
+        while (next.size() > MAX_MESSAGES) {
+            next.remove(0);
         }
+        messages = next;
 
         hasNewMessage = true;
         newMessageTime = System.currentTimeMillis();
@@ -329,7 +330,8 @@ public class MessagePanel {
      * 绘制消息列表
      */
     private void drawMessages(Canvas canvas, Paint paint, float left, float top, float width, float height) {
-        if (messages.isEmpty()) {
+        List<MessageEntry> list = messages;
+        if (list.isEmpty()) {
             // 空消息提示
             paint.setColor(Color.argb(150, 200, 200, 200));
             paint.setTextSize(TEXT_SIZE);
@@ -341,10 +343,10 @@ public class MessagePanel {
         // 计算可见区域
         float contentTop = top - scrollOffset;
         int startIndex = (int) (scrollOffset / MESSAGE_HEIGHT);
-        int endIndex = Math.min(messages.size(), startIndex + (int)(height / MESSAGE_HEIGHT) + 2);
+        int endIndex = Math.min(list.size(), startIndex + (int)(height / MESSAGE_HEIGHT) + 2);
 
         for (int i = startIndex; i < endIndex; i++) {
-            MessageEntry entry = messages.get(i);
+            MessageEntry entry = list.get(i);
             float y = contentTop + i * MESSAGE_HEIGHT + MESSAGE_HEIGHT / 2 + 8;
 
             // 检查是否在可见区域内
@@ -377,7 +379,7 @@ public class MessagePanel {
         }
 
         // 更新最大滚动偏移
-        float totalHeight = messages.size() * MESSAGE_HEIGHT;
+        float totalHeight = list.size() * MESSAGE_HEIGHT;
         float visibleHeight = height;
         maxScrollOffset = Math.max(0, totalHeight - visibleHeight);
         scrollOffset = Math.min(scrollOffset, maxScrollOffset);

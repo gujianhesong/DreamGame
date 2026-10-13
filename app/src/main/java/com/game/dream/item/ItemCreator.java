@@ -128,6 +128,8 @@ public class ItemCreator {
             case 270: {
                 if (id == 270001) {
                     item = createCaptureCharm();
+                } else if (id == ID_RU_LAI_SHEN_ZHANG_VOL1) {
+                    item = createRuLaiShenZhangVolume1();
                 }
             }
             break;
@@ -955,6 +957,8 @@ public class ItemCreator {
         );
     }
 
+    public static final int ID_RU_LAI_SHEN_ZHANG_VOL1 = 270002;
+
     /** 捕捉符：战斗中点「捕捉」时消耗，背包内不可直接使用。 */
     public static Item createCaptureCharm() {
         return new Item(
@@ -962,6 +966,17 @@ public class ItemCreator {
                 Item.Type.SPECIAL,
                 Item.Rarity.Rarity_2,
                 999, 500
+        );
+    }
+
+    /** 如来神掌上册：乞丐支线骗术奇书，无法使用、无法学会技能。 */
+    public static Item createRuLaiShenZhangVolume1() {
+        return new Item(
+                ID_RU_LAI_SHEN_ZHANG_VOL1, "如来神掌上册",
+                "残破发黄的手抄本，字迹潦草，翻来翻去也看不出练法。",
+                Item.Type.SPECIAL,
+                Item.Rarity.Rarity_5,
+                1, 0
         );
     }
 

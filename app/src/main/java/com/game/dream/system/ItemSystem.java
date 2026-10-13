@@ -256,6 +256,11 @@ public class ItemSystem {
 
         Item item = stack.getItem();
 
+        if (item.getId() == ItemCreator.ID_RU_LAI_SHEN_ZHANG_VOL1) {
+            GameEngine.getInstance().showCenterToast("这本书无法使用", 2000);
+            return false;
+        }
+
         // 处理技能书
         if (item.getType() == Item.Type.SKILL_BOOK && item instanceof SkillBookItem) {
             return useSkillBook(index, (SkillBookItem) item);

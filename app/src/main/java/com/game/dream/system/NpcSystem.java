@@ -5,6 +5,7 @@ import com.game.dream.npc.AnimalNpc;
 import com.game.dream.npc.FunctionNpcManager;
 import com.game.dream.npc.Npc;
 import com.game.dream.quest.SideQuest005;
+import com.game.dream.quest.SideQuest006;
 import com.game.dream.quest.SideQuestManager;
 
 import java.util.ArrayList;
@@ -62,7 +63,9 @@ public class NpcSystem {
                 npcList.add(new Npc(100116, "黑风强盗", NpcType.BANDIT, 4200, 5100));
                 npcList.add(new Npc(100117, "驿站车夫", NpcType.COACHMAN, 3440, 5220));
 
-                npcList.add(new Npc(100121, "老丐", NpcType.BEGGAR, 5200, 5500));
+                Npc laoGai = new Npc(100121, "老丐", NpcType.BEGGAR, 5200, 5500);
+                laoGai.setHasQuest(true);
+                npcList.add(laoGai);
                 npcList.add(new Npc(100122, "赵六", NpcType.GAMBLER, 5000, 5500));
                 npcList.add(new Npc(100123, "柳公子", NpcType.SCHOLAR, 4800, 5500));
                 npcList.add(new Npc(100124, "小翠", NpcType.MAID, 4600, 5500));
@@ -76,6 +79,7 @@ public class NpcSystem {
                 npcList.add(new AnimalNpc(100195, "老黄牛", NpcType.COW, 4400, 5700));
                 npcList.add(new AnimalNpc(100196, "骏马", NpcType.HORSE, 3540, 5160));
                 SideQuest005.decorateQingxiNpcs(npcList);
+                SideQuest006.applyToQingxiNpcs(npcList);
 
             }
             break;

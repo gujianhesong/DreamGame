@@ -27,6 +27,7 @@ public class SideQuestManager {
         registe(new SideQuest003());
         registe(new SideQuest004());
         registe(new SideQuest005());
+        registe(new SideQuest006());
     }
 
     public void registe(ISideQuest sideQuest) {

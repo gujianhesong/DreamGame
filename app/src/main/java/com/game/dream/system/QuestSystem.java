@@ -110,6 +110,15 @@ public class QuestSystem {
                 Arrays.asList("在清溪村外靠近地图边缘处寻找小橘", "把小橘带回给小花")
         );
         questTemplates.add(quest8);
+
+        QuestInfo quest9 = new QuestInfo(
+                9,
+                "老丐化缘",
+                "清溪村的老丐向你化缘，给得多了，他拿出一本奇书要卖",
+                2,
+                Arrays.asList("给老丐一些钱", "买下如来神掌上册")
+        );
+        questTemplates.add(quest9);
     }
 
     /**

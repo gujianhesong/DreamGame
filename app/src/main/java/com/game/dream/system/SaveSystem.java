@@ -200,6 +200,7 @@ public class SaveSystem {
         }
         ShopSystem.getInstance().setSkillBookShopBought(saveInfo.getSkillBookShopBought());
         com.game.dream.quest.SideQuest005.syncWorld();
+        com.game.dream.quest.SideQuest006.syncWorld();
     }
 
     private SaveInfo getInitData() {

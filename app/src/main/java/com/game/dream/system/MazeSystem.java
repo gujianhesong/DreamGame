@@ -1,6 +1,7 @@
 package com.game.dream.system;
 
 import com.game.dream.map.MazeGenerator;
+import com.game.dream.npc.MazeToken;
 import com.game.dream.npc.TreasureChest;
 
 import java.util.ArrayList;
@@ -19,6 +20,7 @@ public class MazeSystem {
     }
 
     private List<TreasureChest> treasureChests = new ArrayList<>();
+    private MazeToken villageToken;
     private float exitPortalX;
     private float exitPortalY;
     private float entranceX;
@@ -42,6 +44,7 @@ public class MazeSystem {
         exitPortalY = mazeGen.getExitY();
 
         placeTreasureChests(mapData);
+        villageToken = null;
     }
 
     /**
@@ -49,6 +52,7 @@ public class MazeSystem {
      */
     public void initMazeObjects(int[][] mapData, int entranceX, int entranceY, int exitX, int exitY) {
         treasureChests.clear();
+        villageToken = null;
         isInitialized = true;
 
         this.entranceX = entranceX;
@@ -121,6 +125,53 @@ public class MazeSystem {
         return treasureChests;
     }
 
+    public MazeToken getVillageToken() {
+        return villageToken;
+    }
+
+    /**
+     * 在靠近迷宫出口的通道上放置镇村令石台。
+     */
+    public void placeVillageToken(int[][] mapData) {
+        villageToken = null;
+        if (mapData == null || mapData.length == 0) {
+            return;
+        }
+        Random random = new Random(20261013L);
+        int rows = mapData.length;
+        int cols = mapData[0].length;
+        int tileSize = 20;
+        MazeToken best = null;
+        float bestScore = Float.MAX_VALUE;
+
+        for (int attempt = 0; attempt < 200; attempt++) {
+            int gridX = 5 + random.nextInt(Math.max(1, cols - 10));
+            int gridY = 5 + random.nextInt(Math.max(1, rows - 10));
+            if (!MazeGenerator.checkCanPass(mapData[gridY][gridX])) {
+                continue;
+            }
+            float px = gridX * tileSize + tileSize / 2f;
+            float py = gridY * tileSize + tileSize / 2f;
+            float distToEntrance = (float) Math.hypot(px - entranceX, py - entranceY);
+            float distToExit = (float) Math.hypot(px - exitPortalX, py - exitPortalY);
+            if (distToEntrance < 900) {
+                continue;
+            }
+            if (distToExit > 1400) {
+                continue;
+            }
+            if (distToExit < bestScore) {
+                bestScore = distToExit;
+                best = new MazeToken(px, py);
+            }
+        }
+        if (best == null) {
+            villageToken = new MazeToken(exitPortalX, exitPortalY - 180);
+        } else {
+            villageToken = best;
+        }
+    }
+
     public float getExitPortalX() { return exitPortalX; }
     public float getExitPortalY() { return exitPortalY; }
     public float getEntranceX() { return entranceX; }
@@ -129,6 +180,7 @@ public class MazeSystem {
 
     public void reset() {
         treasureChests.clear();
+        villageToken = null;
         isInitialized = false;
     }
 }

@@ -133,6 +133,12 @@ public class ItemCreator {
                 }
             }
             break;
+            case 290: {
+                if (id == ID_ZHEN_CUN_LING) {
+                    item = createZhenCunLing();
+                }
+            }
+            break;
             case 310: {
                 //食物
                 int ordinal = id - 310000;
@@ -958,6 +964,7 @@ public class ItemCreator {
     }
 
     public static final int ID_RU_LAI_SHEN_ZHANG_VOL1 = 270002;
+    public static final int ID_ZHEN_CUN_LING = 290001;
 
     /** 捕捉符：战斗中点「捕捉」时消耗，背包内不可直接使用。 */
     public static Item createCaptureCharm() {
@@ -976,6 +983,16 @@ public class ItemCreator {
                 "残破发黄的手抄本，字迹潦草，翻来翻去也看不出练法。",
                 Item.Type.SPECIAL,
                 Item.Rarity.Rarity_5,
+                1, 0
+        );
+    }
+
+    public static Item createZhenCunLing() {
+        return new Item(
+                ID_ZHEN_CUN_LING, "镇村令",
+                "清溪村祖传信物，取自迷雾迷宫石台。交给村长可完成迷雾试炼。",
+                Item.Type.QUEST_ITEM,
+                Item.Rarity.Rarity_4,
                 1, 0
         );
     }

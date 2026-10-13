@@ -2071,6 +2071,10 @@ public class GameEngine {
             for (TreasureChest chest : MazeSystem.getInstance().getTreasureChests()) {
                 chest.draw(canvas, -cameraX, -cameraY);
             }
+            com.game.dream.npc.MazeToken villageToken = MazeSystem.getInstance().getVillageToken();
+            if (villageToken != null) {
+                villageToken.draw(canvas, -cameraX, -cameraY);
+            }
         }
 
         // Draw ground items (below player, above map)
@@ -2181,6 +2185,11 @@ public class GameEngine {
 
             // 检查是否点击了宝箱 (迷宫中)
             if (MapSystem.getInstance().isCurrentMazaMap() && MazeSystem.getInstance().isInitialized()) {
+                com.game.dream.npc.MazeToken villageToken = MazeSystem.getInstance().getVillageToken();
+                if (villageToken != null && villageToken.isTouched(worldX, worldY)) {
+                    com.game.dream.quest.SideQuest007.tryCollectToken();
+                    return true;
+                }
                 TreasureChest chest = MazeSystem.getInstance().checkTreasureChestClick(worldX, worldY);
                 if (chest != null) {
                     chest.open();

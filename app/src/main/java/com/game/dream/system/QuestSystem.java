@@ -119,6 +119,15 @@ public class QuestSystem {
                 Arrays.asList("给老丐一些钱", "买下如来神掌上册")
         );
         questTemplates.add(quest9);
+
+        QuestInfo quest10 = new QuestInfo(
+                10,
+                "迷雾试炼",
+                "清溪村长要你进入迷雾迷宫，取回靠近出口石台上的镇村令",
+                1,
+                Arrays.asList("从迷雾迷宫取回镇村令交给村长")
+        );
+        questTemplates.add(quest10);
     }
 
     /**

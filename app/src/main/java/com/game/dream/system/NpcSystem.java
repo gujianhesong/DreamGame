@@ -6,6 +6,7 @@ import com.game.dream.npc.FunctionNpcManager;
 import com.game.dream.npc.Npc;
 import com.game.dream.quest.SideQuest005;
 import com.game.dream.quest.SideQuest006;
+import com.game.dream.quest.SideQuest007;
 import com.game.dream.quest.SideQuestManager;
 
 import java.util.ArrayList;
@@ -45,7 +46,9 @@ public class NpcSystem {
                 npcList.add(new Npc(100154, "装备收购商", NpcType.MERCHANT, 4600, 4000));
                 npcList.add(new Npc(100155, "杂货商人", NpcType.MERCHANT, 4800, 4000));
 
-                npcList.add(new Npc(100101, "青溪村村长", NpcType.OLD_MAN, 5200, 5300));
+                Npc villageChief = new Npc(100101, "青溪村村长", NpcType.OLD_MAN, 5200, 5300);
+                villageChief.setHasQuest(true);
+                npcList.add(villageChief);
                 npcList.add(new Npc(100102, "云游商人", NpcType.MERCHANT, 5000, 5300));
                 npcList.add(new Npc(100103, "小虎子", NpcType.CHILD_BOY, 4800, 5300));
                 Npc xiaoHua = new Npc(100104, "小花", NpcType.CHILD_GIRL, 4600, 5300);
@@ -80,6 +83,7 @@ public class NpcSystem {
                 npcList.add(new AnimalNpc(100196, "骏马", NpcType.HORSE, 3540, 5160));
                 SideQuest005.decorateQingxiNpcs(npcList);
                 SideQuest006.applyToQingxiNpcs(npcList);
+                SideQuest007.applyToQingxiNpcs(npcList);
 
             }
             break;

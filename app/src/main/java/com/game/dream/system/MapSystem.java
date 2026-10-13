@@ -195,6 +195,7 @@ public class MapSystem {
                 additionalVillageRenderers.clear();
                 // 初始化迷宫对象
                 MazeSystem.getInstance().initMazeObjects(mapData, mazeGenerator);
+                com.game.dream.quest.SideQuest007.onQingxiMazeInitialized(mapData);
             } else if (isUnderwaterMazeId(mapId)) {
                 // 海底迷宫（三层，每次进入重新生成）
                 underwaterMazeGenerator = new UnderwaterMazeGenerator(findMap.getMapWidth(), findMap.getMapHeight(), TILE_SIZE);

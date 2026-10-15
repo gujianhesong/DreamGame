@@ -47,6 +47,22 @@ public class FunctionNpcManager {
                 });
                 return true;
             }
+            case 100106: {
+                handleLiShenGossip(npc);
+                return true;
+            }
+            case 100105: {
+                handleZhaoDageTalk(npc);
+                return true;
+            }
+            case 100115: {
+                handleHunterTalk(npc);
+                return true;
+            }
+            case 100114: {
+                handleZhangDaboTalk(npc);
+                return true;
+            }
             case 100153: {
                 //清溪-妙手郎中
                 int costMoney = 500;
@@ -578,6 +594,113 @@ public class FunctionNpcManager {
                         GameEngine.getInstance().showDialog(npc.getName(), "都调养好了，可以再战。");
                     }
                 });
+    }
+
+    private void handleLiShenGossip(Npc npc) {
+        GameEngine.getInstance().showDialog(npc.getName(),
+                "哟，少侠来了？来来来，婶子正闲得慌。想听啥？",
+                Arrays.asList("小花最近怎样", "村里有啥新鲜事", "告辞"),
+                new DialogBox.DialogListener() {
+                    @Override
+                    public void onOptionSelected(int optionIndex) {
+                        if (optionIndex == 0) {
+                            GameEngine.getInstance().showDialog(npc.getName(),
+                                    "我家小花呀，就爱吃绿豆饼，甜滋滋的，小虎子还老来讨。她最喜欢逗那只橘猫小橘玩，一会儿追鸡一会儿摸羊，就是不敢出村，说村外有大虫。你要是路过，帮我看着点她。",
+                                    Arrays.asList("再聊聊", "告辞"),
+                                    gossipBackListener(npc, 0));
+                        } else if (optionIndex == 1) {
+                            GameEngine.getInstance().showDialog(npc.getName(),
+                                    "新鲜事可多了。村长非要年轻人进迷雾迷宫取什么镇村令；清风道长又在送剑气心法；慧能大师化缘化得可勤。还有那个老丐，给多了就掏破书喊天价，我看是骗子。小虎子整天喊饿，小橘前阵子还跑丢过，吓死个人。",
+                                    Arrays.asList("再聊聊", "告辞"),
+                                    gossipBackListener(npc, 0));
+                        }
+                    }
+                });
+    }
+
+    private void handleZhaoDageTalk(Npc npc) {
+        GameEngine.getInstance().showDialog(npc.getName(),
+                "少侠好。清溪虽小，过日子倒也安稳。想打听点啥？",
+                Arrays.asList("清溪村怎么样", "出村要注意什么", "告辞"),
+                new DialogBox.DialogListener() {
+                    @Override
+                    public void onOptionSelected(int optionIndex) {
+                        if (optionIndex == 0) {
+                            GameEngine.getInstance().showDialog(npc.getName(),
+                                    "清溪村四面草地，村里是安全的，妖兽进不来。药店、酒馆、杂货、郎中、收购商都在，缺啥能买。想去金陵，找西边驿站车夫，一百金钱送到稻香屯。村长管迷宫，云游商人偶尔带两本心法。",
+                                    Arrays.asList("再聊聊", "告辞"),
+                                    gossipBackListener(npc, 1));
+                        } else if (optionIndex == 1) {
+                            GameEngine.getInstance().showDialog(npc.getName(),
+                                    "一出村就不是省油的灯了。野狼成群，野猪拱田，草里还有毒蛇，运气不好能碰上猛虎。迷路了用遁形能回村。真要闯迷宫，去找村长，别自己瞎转。",
+                                    Arrays.asList("再聊聊", "告辞"),
+                                    gossipBackListener(npc, 1));
+                        }
+                    }
+                });
+    }
+
+    private void handleHunterTalk(Npc npc) {
+        GameEngine.getInstance().showDialog(npc.getName(),
+                "打猎的事，问我就对了。想听村外的货色，还是问怎么抓活的？",
+                Arrays.asList("村外有什么怪物", "怎么捕捉战宠", "告辞"),
+                new DialogBox.DialogListener() {
+                    @Override
+                    public void onOptionSelected(int optionIndex) {
+                        if (optionIndex == 0) {
+                            GameEngine.getInstance().showDialog(npc.getName(),
+                                    "清溪村外常见四样：野狼、野猪、毒蛇、猛虎。狼爱群，猪莽，蛇阴，虎最凶。别硬刚一窝，打不过就往村里跑，安全区它们进不来。中了毒去找郎中。",
+                                    Arrays.asList("再聊聊", "告辞"),
+                                    gossipBackListener(npc, 2));
+                        } else if (optionIndex == 1) {
+                            GameEngine.getInstance().showDialog(npc.getName(),
+                                    "先去杂货商人买捕捉符，没符别瞎按。把目标打到残血，气血低于四成才有机会，打得越残越稳。大boss抓不了。失败了它会回血，还得等一阵才能再抓。精英更难到手。成功了就是你的战宠。",
+                                    Arrays.asList("再聊聊", "告辞"),
+                                    gossipBackListener(npc, 2));
+                        }
+                    }
+                });
+    }
+
+    private void handleZhangDaboTalk(Npc npc) {
+        GameEngine.getInstance().showDialog(npc.getName(),
+                "哦，是客。老汉就种点田、喂喂牛羊，没啥大出息。坐会儿？",
+                Arrays.asList("田里还好吗", "牛羊呢", "告辞"),
+                new DialogBox.DialogListener() {
+                    @Override
+                    public void onOptionSelected(int optionIndex) {
+                        if (optionIndex == 0) {
+                            GameEngine.getInstance().showDialog(npc.getName(),
+                                    "还行。就是野猪隔三差五拱垄，气人。年轻人老往村外跑，能帮看一眼田就好。天晴了赶紧晒麦，别的老汉也不懂。",
+                                    Arrays.asList("再聊聊", "告辞"),
+                                    gossipBackListener(npc, 3));
+                        } else if (optionIndex == 1) {
+                            GameEngine.getInstance().showDialog(npc.getName(),
+                                    "老黄牛、绵羊都在村里晃，大公鸡天天叫。只要不跑出村子，就没大事。你看见了当自家的，别吓着它们就成。",
+                                    Arrays.asList("再聊聊", "告辞"),
+                                    gossipBackListener(npc, 3));
+                        }
+                    }
+                });
+    }
+
+    private DialogBox.DialogListener gossipBackListener(Npc npc, int who) {
+        return new DialogBox.DialogListener() {
+            @Override
+            public void onOptionSelected(int optionIndex) {
+                if (optionIndex == 0) {
+                    if (who == 0) {
+                        handleLiShenGossip(npc);
+                    } else if (who == 1) {
+                        handleZhaoDageTalk(npc);
+                    } else if (who == 2) {
+                        handleHunterTalk(npc);
+                    } else {
+                        handleZhangDaboTalk(npc);
+                    }
+                }
+            }
+        };
     }
 
     private void handleBank(Npc npc) {

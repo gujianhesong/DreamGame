@@ -39,48 +39,52 @@ public class NpcSystem {
         List<Npc> npcList = new ArrayList<>();
         switch (mapId) {
             case MapSystem.MAP_ID_QING_XI: {
-                //清溪
-                npcList.add(new Npc(100151, "药店老板", NpcType.PHARMACIST, 4000, 4000));
-                npcList.add(new Npc(100152, "酒馆老板", NpcType.TAVERN_KEEPER, 4200, 4000));
-                npcList.add(new Npc(100153, "妙手郎中", NpcType.DOCTOR, 4400, 4000));
-                npcList.add(new Npc(100154, "装备收购商", NpcType.MERCHANT, 4600, 4000));
-                npcList.add(new Npc(100155, "杂货商人", NpcType.MERCHANT, 4800, 4000));
+                //清溪：按村西驿站 / 北侧集市 / 水井广场 / 房前田边分区摆放，避开房屋与水井碰撞箱
 
-                Npc villageChief = new Npc(100101, "青溪村村长", NpcType.OLD_MAN, 5200, 5300);
-                villageChief.setHasQuest(true);
-                npcList.add(villageChief);
-                npcList.add(new Npc(100102, "云游商人", NpcType.MERCHANT, 5000, 5300));
-                npcList.add(new Npc(100103, "小虎子", NpcType.CHILD_BOY, 4800, 5300));
-                Npc xiaoHua = new Npc(100104, "小花", NpcType.CHILD_GIRL, 4600, 5300);
-                xiaoHua.setHasQuest(true);
-                npcList.add(xiaoHua);
-                npcList.add(new Npc(100105, "赵大哥", NpcType.MAN, 4400, 5300));
-                npcList.add(new Npc(100106, "李婶", NpcType.WOMAN, 4200, 5300));
-                npcList.add(new Npc(100107, "小安子", NpcType.SERVANT, 4000, 5300));
+                // 西门驿站（出生点西侧通道，房屋在 x>=3845）
+                npcList.add(new Npc(100117, "驿站车夫", NpcType.COACHMAN, 3460, 5240));
+                npcList.add(new AnimalNpc(100196, "骏马", NpcType.HORSE, 3610, 5150));
 
-                npcList.add(new Npc(100111, "清风道长", NpcType.TAOIST, 5200, 5100));
-                npcList.add(new Npc(100112, "慧能大师", NpcType.MONK, 5000, 5100));
-                npcList.add(new Npc(100113, "王护卫", NpcType.SOLDIER, 4800, 5100));
-                npcList.add(new Npc(100114, "张大伯", NpcType.FARMER, 4600, 5100));
-                npcList.add(new Npc(100115, "李猎户", NpcType.HUNTER, 4400, 5100));
-                npcList.add(new Npc(100116, "黑风强盗", NpcType.BANDIT, 4200, 5100));
-                npcList.add(new Npc(100117, "驿站车夫", NpcType.COACHMAN, 3440, 5220));
+                // 北侧集市（北侧空格子南缘，错落站在水井以北）
+                npcList.add(new Npc(100151, "药店老板", NpcType.PHARMACIST, 4580, 4440));
+                npcList.add(new Npc(100152, "酒馆老板", NpcType.TAVERN_KEEPER, 4760, 4500));
+                npcList.add(new Npc(100153, "妙手郎中", NpcType.DOCTOR, 4960, 4450));
+                npcList.add(new Npc(100154, "装备收购商", NpcType.MERCHANT, 5160, 4510));
+                npcList.add(new Npc(100155, "杂货商人", NpcType.MERCHANT, 5350, 4460));
+                npcList.add(new Npc(100102, "云游商人", NpcType.MERCHANT, 5520, 4560));
 
-                Npc laoGai = new Npc(100121, "老丐", NpcType.BEGGAR, 5200, 5500);
+                // 水井广场
+                Npc laoGai = new Npc(100121, "老丐", NpcType.BEGGAR, 4920, 4760);
                 laoGai.setHasQuest(true);
                 npcList.add(laoGai);
-                npcList.add(new Npc(100122, "赵六", NpcType.GAMBLER, 5000, 5500));
-                npcList.add(new Npc(100123, "柳公子", NpcType.SCHOLAR, 4800, 5500));
-                npcList.add(new Npc(100124, "小翠", NpcType.MAID, 4600, 5500));
-                npcList.add(new Npc(100125, "灵儿", NpcType.GIRL, 4400, 5500));
-                npcList.add(new Npc(100126, "苏姑娘", NpcType.BEAUTY, 4200, 5500));
+                npcList.add(new Npc(100106, "李婶", NpcType.WOMAN, 4760, 5100));
+                npcList.add(new Npc(100105, "赵大哥", NpcType.MAN, 5140, 5110));
 
-                npcList.add(new AnimalNpc(100191, "大公鸡", NpcType.CHICKEN, 5200, 5700));
-                npcList.add(new AnimalNpc(100192, "小鸭子", NpcType.DUCK, 5000, 5700));
-                npcList.add(new AnimalNpc(100193, "旺财", NpcType.DOG, 4800, 5700));
-                npcList.add(new AnimalNpc(100194, "绵羊", NpcType.SHEEP, 4600, 5700));
-                npcList.add(new AnimalNpc(100195, "老黄牛", NpcType.COW, 4400, 5700));
-                npcList.add(new AnimalNpc(100196, "骏马", NpcType.HORSE, 3540, 5160));
+                // 东房门口：村长
+                Npc villageChief = new Npc(100101, "青溪村村长", NpcType.OLD_MAN, 6200, 4900);
+                villageChief.setHasQuest(true);
+                npcList.add(villageChief);
+
+                // 井南干草堆：孩子与旺财
+                npcList.add(new Npc(100103, "小虎子", NpcType.CHILD_BOY, 4540, 5510));
+                Npc xiaoHua = new Npc(100104, "小花", NpcType.CHILD_GIRL, 4400, 5460);
+                xiaoHua.setHasQuest(true);
+                npcList.add(xiaoHua);
+                npcList.add(new AnimalNpc(100193, "旺财", NpcType.DOG, 4460, 5585));
+
+                // 村南田边：张大伯与牛羊，猎户再偏南
+                npcList.add(new Npc(100114, "张大伯", NpcType.FARMER, 4680, 6060));
+                npcList.add(new AnimalNpc(100194, "绵羊", NpcType.SHEEP, 4860, 6120));
+                npcList.add(new AnimalNpc(100195, "老黄牛", NpcType.COW, 4380, 6100));
+                npcList.add(new Npc(100115, "李猎户", NpcType.HUNTER, 5200, 6400));
+
+                // 东北树荫：出家人分开站
+                npcList.add(new Npc(100111, "清风道长", NpcType.TAOIST, 5960, 4260));
+                npcList.add(new Npc(100112, "慧能大师", NpcType.MONK, 5880, 4480));
+
+                // 家禽散养
+                npcList.add(new AnimalNpc(100191, "大公鸡", NpcType.CHICKEN, 4280, 4360));
+                npcList.add(new AnimalNpc(100192, "小鸭子", NpcType.DUCK, 5220, 5340));
                 SideQuest005.decorateQingxiNpcs(npcList);
                 SideQuest006.applyToQingxiNpcs(npcList);
                 SideQuest007.applyToQingxiNpcs(npcList);
@@ -177,6 +181,16 @@ public class NpcSystem {
                 npcList.add(new AnimalNpc(100240, "小鸭子", NpcType.DUCK, 33900, 33080));
                 npcList.add(new AnimalNpc(100241, "小花狗", NpcType.DOG, 33300, 33560));
                 npcList.add(new AnimalNpc(100242, "小绵羊", NpcType.SHEEP, 32700, 34040));
+
+                // 从清溪迁来的闲散居民（无对话，点缀城内街道）
+                npcList.add(new Npc(100123, "柳公子", NpcType.SCHOLAR, 29800, 31800));
+                npcList.add(new Npc(100124, "小翠", NpcType.MAID, 30120, 31800));
+                npcList.add(new Npc(100125, "灵儿", NpcType.GIRL, 30440, 31800));
+                npcList.add(new Npc(100126, "苏姑娘", NpcType.BEAUTY, 30760, 31800));
+                npcList.add(new Npc(100107, "小安子", NpcType.SERVANT, 29680, 32240));
+                npcList.add(new Npc(100113, "王护卫", NpcType.SOLDIER, 30320, 32240));
+                npcList.add(new Npc(100116, "黑风强盗", NpcType.BANDIT, 29400, 33800));
+                npcList.add(new Npc(100122, "赵六", NpcType.GAMBLER, 30600, 33800));
             }
             break;
             case MapSystem.MAP_ID_DONGHAI_BAY: {

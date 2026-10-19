@@ -685,9 +685,10 @@ public class GameUI {
         }
 
         if (currentDialog != null && currentDialog.isVisible()) {
-            if (action == MotionEvent.ACTION_DOWN && currentDialog.handleTouch(x, y)) {
-                return true; // currentDialog handled the touch (closed itself)
+            if (action == MotionEvent.ACTION_DOWN) {
+                currentDialog.handleTouch(x, y);
             }
+            return true;
         }
 
         // Handle Shop Panel

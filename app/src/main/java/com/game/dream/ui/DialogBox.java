@@ -255,6 +255,6 @@ public class DialogBox {
                 return true;
             }
         }
-        return false; // Return false to allow clicking outside to close if desired
+        return true;
     }
 }

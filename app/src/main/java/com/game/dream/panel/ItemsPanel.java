@@ -1107,21 +1107,21 @@ public class ItemsPanel {
             public void onOptionSelected(int optionIndex) {
                 String option = options.get(optionIndex);
                 GemtoneType gemtoneType = null;
-                if (option.startsWith("太阳石")) {
+                if (option.contains("太阳石")) {
                     gemtoneType = GemtoneType.GT_TaiYangShi;
-                } else if (option.startsWith("红玛瑙")) {
+                } else if (option.contains("红玛瑙")) {
                     gemtoneType = GemtoneType.GT_HoneMaNao;
-                } else if (option.startsWith("舍利子")) {
+                } else if (option.contains("舍利子")) {
                     gemtoneType = GemtoneType.GT_SheLiZi;
-                } else if (option.startsWith("蓝宝石")) {
+                } else if (option.contains("蓝宝石")) {
                     gemtoneType = GemtoneType.GT_LanBaoShi;
-                } else if (option.startsWith("月亮石")) {
+                } else if (option.contains("月亮石")) {
                     gemtoneType = GemtoneType.GT_YueLiangShi;
-                } else if (option.startsWith("光芒石")) {
+                } else if (option.contains("光芒石")) {
                     gemtoneType = GemtoneType.GT_GuangMangShi;
-                } else if (option.startsWith("黑宝石")) {
+                } else if (option.contains("黑宝石")) {
                     gemtoneType = GemtoneType.GT_HeiBaoShi;
-                } else if (option.startsWith("神秘石")) {
+                } else if (option.contains("神秘石")) {
                     gemtoneType = GemtoneType.GT_ShenMiShi;
                 }
 

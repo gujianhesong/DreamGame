@@ -85,7 +85,7 @@ public class Projectile {
                     speed = 300;
                     this.size = 10;
                     this.color = Color.rgb(210, 235, 255);
-                    this.lifetime = 1200;
+                    this.lifetime = 1400;
                     break;
                 case MAIN_ICE_BOLT:
                     speed = 400;

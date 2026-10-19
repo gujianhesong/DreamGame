@@ -1074,7 +1074,7 @@ public abstract class Enemy extends Character {
         float dy = targetY - y;
         float distance = (float) Math.sqrt(dx * dx + dy * dy);
 
-        float moveSpeed = (100 + speed * 0.5f);
+        float moveSpeed = (130 + speed * 0.8f);
         float speedRatio = 1f;
         if (isSlowed()) {
             speedRatio = 0.5f;

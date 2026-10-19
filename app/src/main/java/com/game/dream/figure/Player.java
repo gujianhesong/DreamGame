@@ -230,7 +230,7 @@ public class Player extends Character {
         if (isSlowed()) {
             speedRatio = 0.5f;
         }
-        float moveAmount = (150 + speed * 0.5f) * deltaSeconds * speedRatio;
+        float moveAmount = (200 + speed * 0.7f) * deltaSeconds * speedRatio;
 
         if (movingLeft) {
             newX -= moveAmount;

@@ -465,7 +465,10 @@ public class SkillSystem {
         Projectile proj = new Projectile(player.getX(), player.getY(), aim[0], aim[1], SkillType.MAIN_SwordQi);
         proj.applySwordQiLook(ItemSystem.getInstance().getEquippedItem(EquipmentItem.Slot.WEAPON));
         proj.setSkillLevel(fireLevel);
-        proj.scaleSpeed(2.0f + (fireLevel - 1) * 0.08f);
+        float moveAxis = 200f + RoleSystem.getInstance().getRoleInfo().getSpeed() * 0.7f;
+        float playerTop = Math.max(1000f, moveAxis * 1.42f);
+        float flight = Math.max(1400f + (fireLevel - 1) * 60f, playerTop * 1.35f);
+        proj.scaleSpeed(flight / 300f);
         if (fireLevel >= 10) {
             proj.setPierceCount(2);
         } else if (fireLevel >= 9) {

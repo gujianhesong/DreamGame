@@ -2,6 +2,7 @@ package com.game.dream.system;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.net.Uri;
 
 import com.game.dream.bean.EquipItemInfo;
 import com.game.dream.bean.ItemInfo;
@@ -23,6 +24,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -139,6 +141,77 @@ public class SaveSystem {
         currentSaveId = saveId;
         persistCurrentSaveId(context, saveId);
         applySaveInfo(loaded);
+    }
+
+    public File getSlotFile(Context context, String saveId) {
+        return new File(getSavesDir(context), "save_" + saveId + ".json");
+    }
+
+    /**
+     * 复制一份便于分享的存档文件（.dreamsave），失败返回 null。
+     */
+    public File createShareCopy(Context context, SaveSlotInfo slot) {
+        if (slot == null || slot.getId() == null) {
+            return null;
+        }
+        File src = getSlotFile(context, slot.getId());
+        if (!src.exists()) {
+            return null;
+        }
+        File dir = new File(context.getCacheDir(), "share");
+        if (!dir.exists() && !dir.mkdirs()) {
+            return null;
+        }
+        String safeName = sanitizeFileName(slot.getRoleName());
+        File dest = new File(dir, "DreamGame_" + safeName + "_Lv" + slot.getLevel() + ".dreamsave");
+        copyFile(src, dest);
+        return dest.exists() ? dest : null;
+    }
+
+    /**
+     * 从分享/文件选择器导入存档。成功返回 null，失败返回原因。
+     */
+    public String importSave(Context context, Uri uri) {
+        if (uri == null) {
+            return "未选择文件";
+        }
+        try {
+            InputStream in = context.getContentResolver().openInputStream(uri);
+            if (in == null) {
+                return "无法读取文件";
+            }
+            BufferedReader reader = new BufferedReader(new InputStreamReader(in, "UTF-8"));
+            StringBuilder sb = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                sb.append(line);
+            }
+            reader.close();
+            in.close();
+
+            SaveInfo info = gson.fromJson(sb.toString(), SaveInfo.class);
+            if (info == null || info.getRoleInfo() == null) {
+                return "不是有效的游戏存档";
+            }
+            String newId = String.valueOf(System.currentTimeMillis());
+            info.setSaveId(newId);
+            info.setUpdatedAt(System.currentTimeMillis());
+            String jsonData = gson.toJson(info);
+            FileOutputStream fos = new FileOutputStream(getSlotFile(context, newId));
+            fos.write(jsonData.getBytes("UTF-8"));
+            fos.close();
+            return null;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "导入失败：" + (e.getMessage() == null ? "文件无法识别" : e.getMessage());
+        }
+    }
+
+    private String sanitizeFileName(String name) {
+        if (name == null || name.trim().isEmpty()) {
+            return "无名侠客";
+        }
+        return name.trim().replaceAll("[\\\\/:*?\"<>|]", "_");
     }
 
     public boolean deleteSlot(Context context, String saveId) {
@@ -326,10 +399,6 @@ public class SaveSystem {
             dir.mkdirs();
         }
         return dir;
-    }
-
-    private File getSlotFile(Context context, String saveId) {
-        return new File(getSavesDir(context), "save_" + saveId + ".json");
     }
 
     private String idFromFileName(String name) {

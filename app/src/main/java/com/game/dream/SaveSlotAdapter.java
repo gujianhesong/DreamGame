@@ -22,6 +22,8 @@ public class SaveSlotAdapter extends RecyclerView.Adapter<SaveSlotAdapter.Holder
     public interface Listener {
         void onLoad(SaveSlotInfo slot);
 
+        void onShare(SaveSlotInfo slot);
+
         void onDelete(SaveSlotInfo slot);
     }
 
@@ -57,6 +59,11 @@ public class SaveSlotAdapter extends RecyclerView.Adapter<SaveSlotAdapter.Holder
         String time = slot.getUpdatedAt() > 0 ? dateFormat.format(new Date(slot.getUpdatedAt())) : "--";
         String mapName = slot.getMapName() == null ? "未知地图" : slot.getMapName();
         holder.detailText.setText(mapName + "    " + time);
+        holder.shareButton.setOnClickListener(v -> {
+            if (listener != null) {
+                listener.onShare(slot);
+            }
+        });
         holder.loadButton.setOnClickListener(v -> {
             if (listener != null) {
                 listener.onLoad(slot);
@@ -77,6 +84,7 @@ public class SaveSlotAdapter extends RecyclerView.Adapter<SaveSlotAdapter.Holder
     static class Holder extends RecyclerView.ViewHolder {
         final TextView roleText;
         final TextView detailText;
+        final Button shareButton;
         final Button loadButton;
         final Button deleteButton;
 
@@ -84,6 +92,7 @@ public class SaveSlotAdapter extends RecyclerView.Adapter<SaveSlotAdapter.Holder
             super(itemView);
             roleText = itemView.findViewById(R.id.roleText);
             detailText = itemView.findViewById(R.id.detailText);
+            shareButton = itemView.findViewById(R.id.shareButton);
             loadButton = itemView.findViewById(R.id.loadButton);
             deleteButton = itemView.findViewById(R.id.deleteButton);
         }

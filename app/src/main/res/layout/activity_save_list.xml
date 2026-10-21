@@ -22,6 +22,16 @@
             android:textStyle="bold" />
 
         <Button
+            android:id="@+id/importSaveButton"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:layout_marginEnd="8dp"
+            android:backgroundTint="#9b59b6"
+            android:minWidth="80dp"
+            android:text="导入"
+            android:textColor="#ffffff" />
+
+        <Button
             android:id="@+id/newSaveButton"
             android:layout_width="wrap_content"
             android:layout_height="40dp"

@@ -32,12 +32,22 @@
     </LinearLayout>
 
     <Button
+        android:id="@+id/shareButton"
+        android:layout_width="wrap_content"
+        android:layout_height="40dp"
+        android:layout_marginStart="8dp"
+        android:backgroundTint="#8e44ad"
+        android:minWidth="64dp"
+        android:text="分享"
+        android:textColor="#ffffff" />
+
+    <Button
         android:id="@+id/loadButton"
         android:layout_width="wrap_content"
         android:layout_height="40dp"
         android:layout_marginStart="8dp"
         android:backgroundTint="#3498db"
-        android:minWidth="72dp"
+        android:minWidth="64dp"
         android:text="加载"
         android:textColor="#ffffff" />
 

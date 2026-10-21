@@ -3,6 +3,7 @@ package com.game.dream.npc;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.RectF;
 
 import com.game.dream.enums.NpcType;
@@ -22,6 +23,9 @@ public class Npc {
 
     // 夜间专属 NPC（白天不显示，仅显示标记）
     protected boolean nightOnly = false;
+
+    /** 0=南/下, 1=北/上, 2=西/左, 3=东/右。默认朝南，与人物一致。 */
+    protected int facingDirection = 0;
 
     // 待机动画
     protected float animTime = 0;
@@ -107,6 +111,14 @@ public class Npc {
         this.nightOnly = nightOnly;
     }
 
+    public int getFacingDirection() {
+        return facingDirection;
+    }
+
+    public void setFacingDirection(int facingDirection) {
+        this.facingDirection = facingDirection;
+    }
+
     /**
      * 更新 NPC 待机动画
      */
@@ -132,6 +144,13 @@ public class Npc {
         float t = animTime + animPhaseOffset;
         float breathOffset = (float) Math.sin(t * breathSpeed) * breathAmount;
         float headLookX = (float) Math.sin(t * headLookSpeed) * headLookAmount;
+        if (type == NpcType.SOLDIER) {
+            if (facingDirection == 2) {
+                headLookX -= size * 0.18f;
+            } else if (facingDirection == 3) {
+                headLookX += size * 0.18f;
+            }
+        }
         float bodySwayX = (float) Math.sin(t * 1.8f + 1.3f) * bodySwayAmount;
 
         // 1. 阴影（不动）
@@ -150,8 +169,10 @@ public class Npc {
         // 4. 绘制头发
         drawHair(canvas, paint, cx + headLookX, headY, headRadius);
 
-        // 5. 绘制脸部和五官
-        drawFace(canvas, paint, cx + headLookX, headY, headRadius);
+        // 5. 绘制脸部和五官（朝北的士兵只露后脑勺）
+        if (!(type == NpcType.SOLDIER && facingDirection == 1)) {
+            drawFace(canvas, paint, cx + headLookX, headY, headRadius);
+        }
 
         // 6. 名字 (不动)
         paint.setColor(Color.WHITE);
@@ -408,6 +429,69 @@ public class Npc {
         drawAccessories(canvas, paint, cx, cy);
     }
 
+    /** 长枪朝向：0南 1北 2西 3东。 */
+    private void drawSoldierSpear(Canvas canvas, Paint paint, float cx, float cy) {
+        paint.setAntiAlias(true);
+        paint.setStrokeWidth(5);
+        paint.setStrokeCap(Paint.Cap.ROUND);
+        paint.setColor(Color.rgb(120, 90, 50));
+        float shaft = size * 0.95f;
+        float sx;
+        float sy;
+        float ex;
+        float ey;
+        switch (facingDirection) {
+            case 1:
+                sx = cx - size * 0.28f;
+                sy = cy + size * 0.15f;
+                ex = cx - size * 0.28f;
+                ey = cy - shaft;
+                break;
+            case 2:
+                sx = cx + size * 0.1f;
+                sy = cy + size * 0.05f;
+                ex = cx - shaft;
+                ey = cy + size * 0.05f;
+                break;
+            case 3:
+                sx = cx - size * 0.1f;
+                sy = cy + size * 0.05f;
+                ex = cx + shaft;
+                ey = cy + size * 0.05f;
+                break;
+            default:
+                sx = cx + size * 0.28f;
+                sy = cy - size * 0.1f;
+                ex = cx + size * 0.28f;
+                ey = cy + shaft;
+                break;
+        }
+        canvas.drawLine(sx, sy, ex, ey, paint);
+        paint.setColor(Color.rgb(210, 215, 220));
+        paint.setStyle(Paint.Style.FILL);
+        float tip = size * 0.16f;
+        Path blade = new Path();
+        if (facingDirection == 2) {
+            blade.moveTo(ex - tip, ey);
+            blade.lineTo(ex + 4, ey - tip * 0.45f);
+            blade.lineTo(ex + 4, ey + tip * 0.45f);
+        } else if (facingDirection == 3) {
+            blade.moveTo(ex + tip, ey);
+            blade.lineTo(ex - 4, ey - tip * 0.45f);
+            blade.lineTo(ex - 4, ey + tip * 0.45f);
+        } else if (facingDirection == 1) {
+            blade.moveTo(ex, ey - tip);
+            blade.lineTo(ex - tip * 0.45f, ey + 4);
+            blade.lineTo(ex + tip * 0.45f, ey + 4);
+        } else {
+            blade.moveTo(ex, ey + tip);
+            blade.lineTo(ex - tip * 0.45f, ey - 4);
+            blade.lineTo(ex + tip * 0.45f, ey - 4);
+        }
+        blade.close();
+        canvas.drawPath(blade, paint);
+    }
+
     /**
      * 专门绘制脚部的逻辑
      */
@@ -562,6 +646,7 @@ public class Npc {
                 paint.setColor(Color.rgb(180, 0, 0));
                 canvas.drawRect(cx - size / 2.5f, cy - size / 2.5f, cx - size / 4, cy - size / 4, paint);
                 canvas.drawRect(cx + size / 4, cy - size / 2.5f, cx + size / 2.5f, cy - size / 4, paint);
+                drawSoldierSpear(canvas, paint, cx, cy);
                 break;
 
             case FARMER:
@@ -1196,13 +1281,21 @@ public class Npc {
                 break;
 
             case SOLDIER:
-                // 严肃的平头和平视眼
                 paint.setColor(Color.BLACK);
-                canvas.drawCircle(cx - radius / 2.5f, cy - radius / 5, radius / 8, paint);
-                canvas.drawCircle(cx + radius / 2.5f, cy - radius / 5, radius / 8, paint);
-                // 紧抿的嘴唇
-                paint.setStrokeWidth(2);
-                canvas.drawLine(cx - radius / 3, cy + radius / 3, cx + radius / 3, cy + radius / 3, paint);
+                if (facingDirection == 2) {
+                    canvas.drawCircle(cx - radius / 2.2f, cy - radius / 5, radius / 8, paint);
+                    paint.setStrokeWidth(2);
+                    canvas.drawLine(cx - radius / 2.5f, cy + radius / 3, cx - radius / 8, cy + radius / 3, paint);
+                } else if (facingDirection == 3) {
+                    canvas.drawCircle(cx + radius / 2.2f, cy - radius / 5, radius / 8, paint);
+                    paint.setStrokeWidth(2);
+                    canvas.drawLine(cx + radius / 8, cy + radius / 3, cx + radius / 2.5f, cy + radius / 3, paint);
+                } else {
+                    canvas.drawCircle(cx - radius / 2.5f, cy - radius / 5, radius / 8, paint);
+                    canvas.drawCircle(cx + radius / 2.5f, cy - radius / 5, radius / 8, paint);
+                    paint.setStrokeWidth(2);
+                    canvas.drawLine(cx - radius / 3, cy + radius / 3, cx + radius / 3, cy + radius / 3, paint);
+                }
                 break;
 
             case FARMER:

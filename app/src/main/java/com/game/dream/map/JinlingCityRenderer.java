@@ -182,53 +182,42 @@ public class JinlingCityRenderer {
         decorations.add(new Decoration(DecoType.TREE, 30000, 31600, 145));
     }
 
-    // ==================== 北区：酒楼街 + 客栈区 ====================
+    // ==================== 北区：酒楼 + 客栈 + 民居 ====================
 
     private void buildNorthDistrict() {
-        // 区域: (25200, 25200) ~ (34800, 28000)
-        // 主街两侧分布酒楼和客栈
+        // 只留醉仙楼、悦来客栈各一座，中间三摊，其余改民居/茶馆
+        buildings.add(new Building(BuildingType.INN, 25600, 25800, 720, 440, "醉仙楼"));
+        fillBuildings(26640, 25400, 27800, 26400,
+                400, 320, 200, 160, BuildingType.HOUSE, new String[]{null});
+        fillBuildings(25400, 26440, 27800, 27800,
+                400, 320, 200, 160, BuildingType.HOUSE, new String[]{null});
 
-        // 酒楼街 (西侧)
-        placeShops(25400, 25400, 27800, 27800,
-                400, 320, 200, 160, BuildingType.INN,
-                new String[]{"醉仙楼", "金陵酒楼", "望月阁", "春风饭店", "聚贤庄", "太白酒楼", "悦宾楼", "福满园", "香满楼", "八仙楼", "迎宾阁", "状元楼"});
+        buildings.add(new Building(BuildingType.INN, 32800, 25800, 720, 440, "悦来客栈"));
+        buildings.add(new Building(BuildingType.TEA_HOUSE, 33760, 25800, 480, 400, "清风茶馆"));
+        fillBuildings(32200, 25400, 32800, 26400,
+                400, 320, 200, 160, BuildingType.TALL_HOUSE, new String[]{null});
+        fillBuildings(32200, 26440, 34600, 27800,
+                400, 320, 200, 160, BuildingType.TALL_HOUSE, new String[]{null});
 
-        // 客栈区 (东侧)
-        placeShops(30200, 25400, 34600, 27800,
-                400, 320, 200, 160, BuildingType.TEA_HOUSE,
-                new String[]{"悦来客栈", "如家旅舍", "清风茶馆", "明月茶楼", "听雨轩", "品茗居", "怡心茶庄", "碧云轩", "翠竹茶坊", "松风馆", "兰香居", "杏花村"});
-
-        // 中间小摊位
-        placeShops(28200, 25600, 29800, 27600,
-                400, 320, 200, 160, BuildingType.MARKET_STALL,
-                new String[]{"面摊", "包子铺", "馄饨摊", "粥铺", "烧饼档", "豆腐坊"});
+        buildings.add(new Building(BuildingType.MARKET_STALL, 28400, 25480, 320, 240, "面摊"));
+        buildings.add(new Building(BuildingType.MARKET_STALL, 29040, 25480, 320, 240, "包子铺"));
+        buildings.add(new Building(BuildingType.MARKET_STALL, 30800, 25480, 320, 240, "馄饨摊"));
     }
 
-    // ==================== 东区：武器坊 + 杂货市集 ====================
+    // ==================== 东区：兵甲珠宝藏经（各留一座） ====================
 
     private void buildEastDistrict() {
-        // 区域: (32000, 25200) ~ (34800, 34800)
-        // 注意：避开南北向主干道（x=30000附近）和东西向主干道（y=30000附近）
+        // 主干道北：龙泉、藏经、璀璨；南：铁甲坊贴龙泉。其余民居，杂货改去南广场
+        fillBuildings(32200, 28200, 34600, 29080,
+                400, 320, 200, 160, BuildingType.TALL_HOUSE, new String[]{null});
 
-        // 上半区：武器坊街（全部在东西向主干道 y=29850 上方）
-        placeShops(32200, 25400, 34600, 27400,
-                400, 320, 200, 160, BuildingType.WEAPON_SHOP,
-                new String[]{"龙泉剑庄", "霸王枪铺", "倚天锻坊", "寒铁兵器", "神兵阁", "干将剑庐", "莫邪铸坊", "玄铁堂", "碧血武器", "青锋兵器"});
+        buildings.add(new Building(BuildingType.WEAPON_SHOP, 32400, 29120, 640, 480, "龙泉剑庄"));
+        buildings.add(new Building(BuildingType.TEA_HOUSE, 33200, 29120, 560, 480, "藏经阁"));
+        buildings.add(new Building(BuildingType.GEM_SHOP, 33920, 29120, 560, 480, "璀璨珠宝"));
 
-        // 杂货铺 (间隔160px，底部28520 < 道路29850)
-        placeShops(32200, 27560, 34600, 28680,
-                400, 320, 200, 160, BuildingType.GENERAL_STORE,
-                new String[]{"万宝杂货", "百宝箱", "奇珍铺", "聚宝盆", "万象阁", "杂货郎"});
-
-        // 宝石店 (底部29000 < 道路29850，安全)
-        placeShops(32200, 28840, 34600, 29640,
-                400, 320, 200, 160, BuildingType.GEM_SHOP,
-                new String[]{"璀璨宝石", "翡翠轩", "珠玉阁", "碧玺坊", "玛瑙居", "琉璃轩", "钻石斋", "紫晶洞"});
-
-        // 下半区：防具店（全部在东西向主干道 y=30150 下方）
-        placeShops(32200, 30600, 34600, 32040,
-                400, 320, 200, 160, BuildingType.ARMOR_SHOP,
-                new String[]{"铁甲坊", "锦衣卫", "玄甲防具", "金缕衣阁", "银盔铺", "锁子甲坊", "虎威防具", "龙鳞甲铺"});
+        buildings.add(new Building(BuildingType.ARMOR_SHOP, 32400, 30400, 640, 480, "铁甲坊"));
+        fillBuildings(33200, 30400, 34600, 31000,
+                400, 320, 200, 160, BuildingType.HOUSE, new String[]{null});
     }
 
     // ==================== 南区：民居区 + 南广场 ====================
@@ -247,7 +236,7 @@ public class JinlingCityRenderer {
         // 东区民居（建筑 400x320，间距 200x160）
         fillBuildings(30400, 32200, 34600, 34600,
                 400, 320, 200, 160, BuildingType.TALL_HOUSE,
-                new String[]{"二层小楼", "民居", "商铺"});
+                new String[]{"二层小楼", "民居", "小院"});
 
         // 广场装饰
         decorations.add(new Decoration(DecoType.STATUE, CCX, 33500, 80));
@@ -306,30 +295,18 @@ public class JinlingCityRenderer {
         decorations.add(new Decoration(DecoType.TREE, CCX + ROAD_HALF + 100, 34200, 110));
     }
 
-    // ==================== 西区：药铺街 + 铁匠铺 ====================
+    // ==================== 西区：药铺、官仓、钱庄、铁匠各一座 ====================
 
     private void buildWestDistrict() {
-        // 区域: (25200, 25200) ~ (28000, 34800)
+        buildings.add(new Building(BuildingType.STABLE, 25440, 28240, 520, 360, "马厩"));
+        fillBuildings(26200, 28200, 27800, 29080,
+                400, 320, 200, 160, BuildingType.HOUSE, new String[]{null});
 
-        // 上半区：药铺街（全部在东西向主干道 y=29850 上方）
-        placeShops(25400, 25400, 27800, 27400,
-                400, 320, 200, 160, BuildingType.PHARMACY,
-                new String[]{"回春堂", "百草堂", "济世药铺", "同仁堂", "妙手药房", "悬壶斋", "杏林春", "活死人堂", "仁心药庐", "万金丹铺"});
+        buildings.add(new Building(BuildingType.PHARMACY, 25440, 29120, 640, 480, "回春堂"));
+        buildings.add(new Building(BuildingType.WAREHOUSE, 26240, 29120, 560, 480, "官仓"));
 
-        // 仓库 (间隔160px，底部28200 < 道路29850)
-        placeShops(25400, 27560, 27800, 28680,
-                400, 320, 200, 160, BuildingType.WAREHOUSE,
-                new String[]{"官仓", "民仓", "货栈", "粮仓", "储物阁", "集货栈"});
-
-        // 马厩 (底部28680 < 道路29850，安全)
-        placeShops(25400, 28840, 27800, 29480,
-                400, 320, 200, 160, BuildingType.STABLE,
-                new String[]{"马厩", "骡马行", "骏马坊", "奔马场"});
-
-        // 下半区：铁匠铺（全部在东西向主干道 y=30150 下方）
-        placeShops(25400, 30440, 27800, 32440,
-                400, 320, 200, 160, BuildingType.BLACKSMITH,
-                new String[]{"欧冶铁铺", "干将铸坊", "铸剑山庄", "打铁铺", "莫邪剑庐", "龙泉锻坊", "玄铁铺", "赤焰铁坊", "天工锻坊", "百炼堂"});
+        buildings.add(new Building(BuildingType.GENERAL_STORE, 25440, 30400, 560, 400, "金陵钱庄"));
+        buildings.add(new Building(BuildingType.BLACKSMITH, 26160, 30400, 640, 480, "欧冶铁铺"));
     }
 
     // ==================== 装饰物 ====================
@@ -393,7 +370,7 @@ public class JinlingCityRenderer {
         // 东区果树（统一网格400x320+200x160，步长600x480）
         // 武器坊/杂货铺间隙中心: x=32600/33200/..., y=28680/29160/...
         decorations.add(new Decoration(DecoType.TREE, 33200, 28760, 125));
-        decorations.add(new Decoration(DecoType.TREE, 34000, 29400, 130));
+        decorations.add(new Decoration(DecoType.TREE, 33640, 28760, 130));
 
         // 主干道两侧行道树
         decorations.add(new Decoration(DecoType.TREE, CCX - ROAD_HALF - 120, 26500, 110));
@@ -402,8 +379,8 @@ public class JinlingCityRenderer {
         decorations.add(new Decoration(DecoType.TREE, CCX + ROAD_HALF + 120, 33500, 110));
 
         // 水井 (各街区)
-        decorations.add(new Decoration(DecoType.WELL, 26500, 26500, 120));
-        decorations.add(new Decoration(DecoType.WELL, 33500, 26500, 120));
+        decorations.add(new Decoration(DecoType.WELL, 26500, 26840, 120));
+        decorations.add(new Decoration(DecoType.WELL, 33500, 26840, 120));
         decorations.add(new Decoration(DecoType.WELL, 26500, 33500, 120));
         decorations.add(new Decoration(DecoType.WELL, 33500, 33500, 120));
         decorations.add(new Decoration(DecoType.WELL, CCX, CCY - 500, 120));
@@ -412,20 +389,20 @@ public class JinlingCityRenderer {
         // 东区商铺间隙
         decorations.add(new Decoration(DecoType.STONE_TABLE, 32800, 27200, 90));
         decorations.add(new Decoration(DecoType.STONE_TABLE, 34000, 28300, 85));
-        decorations.add(new Decoration(DecoType.STONE_TABLE, 33200, 29200, 90));
+        decorations.add(new Decoration(DecoType.STONE_TABLE, 33120, 28740, 90));
         // 西区商铺间隙
         decorations.add(new Decoration(DecoType.STONE_TABLE, 26200, 27200, 85));
         decorations.add(new Decoration(DecoType.STONE_TABLE, 27200, 28300, 90));
-        decorations.add(new Decoration(DecoType.STONE_TABLE, 26600, 29200, 85));
+        decorations.add(new Decoration(DecoType.STONE_TABLE, 26960, 28740, 85));
         // 北区商铺间隙
         decorations.add(new Decoration(DecoType.STONE_TABLE, 26200, 26200, 90));
         decorations.add(new Decoration(DecoType.STONE_TABLE, 33200, 26200, 85));
 
         // === 商铺街道装饰：手推车 ===
         decorations.add(new Decoration(DecoType.CART, 33600, 27200, 85));
-        decorations.add(new Decoration(DecoType.CART, 32600, 29200, 90));
+        decorations.add(new Decoration(DecoType.CART, 32320, 28740, 90));
         decorations.add(new Decoration(DecoType.CART, 27400, 27200, 85));
-        decorations.add(new Decoration(DecoType.CART, 25800, 29200, 90));
+        decorations.add(new Decoration(DecoType.CART, 26100, 28740, 90));
 
         // === 商铺街道装饰：花坛 ===
         decorations.add(new Decoration(DecoType.FLOWER_BED, 34200, 26000, 150));
@@ -508,7 +485,7 @@ public class JinlingCityRenderer {
         decorations.add(new Decoration(DecoType.BAMBOO, 34400, 34800, 105));
         // 东西主干道旁竹林
         decorations.add(new Decoration(DecoType.BAMBOO, 27000, 30400, 100));
-        decorations.add(new Decoration(DecoType.BAMBOO, 33000, 30400, 105));
+        decorations.add(new Decoration(DecoType.BAMBOO, 33240, 31020, 105));
 
         // === 假山（内城花园、广场、各区空地） ===
         // 内城花园假山
@@ -535,7 +512,7 @@ public class JinlingCityRenderer {
         // 东区杂货铺门前
         decorations.add(new Decoration(DecoType.BARREL, 33000, 28600, 55));
         // 东区宝石店门前
-        decorations.add(new Decoration(DecoType.BARREL, 32600, 29500, 50));
+        decorations.add(new Decoration(DecoType.BARREL, 32720, 29720, 50));
         // 西区药铺门前
         decorations.add(new Decoration(DecoType.BARREL, 25600, 27300, 55));
         decorations.add(new Decoration(DecoType.BARREL, 27400, 27300, 50));
@@ -600,7 +577,7 @@ public class JinlingCityRenderer {
         decorations.add(new Decoration(DecoType.LANTERN, 32200, 28800, 22));
         decorations.add(new Decoration(DecoType.LANTERN, 25400, 28800, 22));
         decorations.add(new Decoration(DecoType.LANTERN, 32200, 30600, 22));
-        decorations.add(new Decoration(DecoType.LANTERN, 25400, 30400, 22));
+        decorations.add(new Decoration(DecoType.LANTERN, 25320, 30240, 22));
         // 南门附近灯笼
         decorations.add(new Decoration(DecoType.LANTERN, CCX - GATE_WIDTH/2 - 50, CY2 - WALL_THICK - 50, 25));
         decorations.add(new Decoration(DecoType.LANTERN, CCX + GATE_WIDTH/2 + 50, CY2 - WALL_THICK - 50, 25));
@@ -665,24 +642,6 @@ public class JinlingCityRenderer {
                 idx++;
             }
             curY += bh + gapY;
-        }
-    }
-
-    /** 商铺专用：每个名称只使用一次，使用与民居相同的紧凑间距 */
-    private void placeShops(int zoneX1, int zoneY1, int zoneX2, int zoneY2,
-                            int bw, int bh, int gapX, int gapY,
-                            BuildingType type, String[] names) {
-        int count = names.length;
-        int zoneW = zoneX2 - zoneX1;
-        int cols = Math.max(1, Math.min(count, zoneW / (bw + gapX)));
-        int stepX = cols > 1 ? (zoneW - bw) / (cols - 1) : 0;
-        int stepY = bh + gapY;
-        for (int i = 0; i < count; i++) {
-            int col = i % cols;
-            int row = i / cols;
-            int x = zoneX1 + col * stepX;
-            int y = zoneY1 + row * stepY;
-            buildings.add(new Building(type, x, y, bw, bh, names[i]));
         }
     }
 

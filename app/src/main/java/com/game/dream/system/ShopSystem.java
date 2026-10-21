@@ -168,28 +168,59 @@ public class ShopSystem {
 
     private List<ShopPanel.ShopItem> buildWeaponShop() {
         List<ShopPanel.ShopItem> shopItems = new ArrayList<>();
-        int[] levels = {10, 20, 30, 40, 50};
-        for (int level : levels) {
-            addItem(shopItems, ItemCreator.createBuildEquipBook(level, EquipmentItem.Slot.WEAPON));
-            addItem(shopItems, ItemCreator.createBuildEquipIron(level));
+        int[] materialLevels = {60, 70, 80};
+        int[] materialPrices = {30000, 50000, 70000};
+        for (int i = 0; i < materialLevels.length; i++) {
+            Item iron = ItemCreator.createBuildEquipIron(materialLevels[i]);
+            if (iron != null) {
+                shopItems.add(new ShopPanel.ShopItem(iron, materialPrices[i]));
+            }
         }
-        addItem(shopItems, EquipCreator.createEquip(10, EquipmentItem.Slot.WEAPON));
-        addItem(shopItems, EquipCreator.createEquip(20, EquipmentItem.Slot.WEAPON));
+        addCraftBooks(shopItems, new EquipmentItem.Slot[]{EquipmentItem.Slot.WEAPON});
+        addFinishedEquip(shopItems, 30, EquipmentItem.Slot.WEAPON, 10000);
+        addFinishedEquip(shopItems, 40, EquipmentItem.Slot.WEAPON, 20000);
+        addFinishedEquip(shopItems, 50, EquipmentItem.Slot.WEAPON, 40000);
         return shopItems;
     }
 
     private List<ShopPanel.ShopItem> buildArmorShop() {
         List<ShopPanel.ShopItem> shopItems = new ArrayList<>();
-        int[] levels = {10, 20, 30, 40};
-        for (int level : levels) {
-            addItem(shopItems, ItemCreator.createBuildEquipBook(level, EquipmentItem.Slot.ARMOR));
-            addItem(shopItems, ItemCreator.createBuildEquipBook(level, EquipmentItem.Slot.HELMET));
-            addItem(shopItems, ItemCreator.createBuildEquipBook(level, EquipmentItem.Slot.BELT));
-            addItem(shopItems, ItemCreator.createBuildEquipBook(level, EquipmentItem.Slot.SHOES));
+        EquipmentItem.Slot[] slots = {
+                EquipmentItem.Slot.ARMOR,
+                EquipmentItem.Slot.HELMET,
+                EquipmentItem.Slot.BELT,
+                EquipmentItem.Slot.SHOES,
+                EquipmentItem.Slot.ACCESSORY
+        };
+        addCraftBooks(shopItems, slots);
+        int[] saleLevels = {30, 40, 50};
+        int[] salePrices = {10000, 20000, 40000};
+        for (int i = 0; i < saleLevels.length; i++) {
+            for (EquipmentItem.Slot slot : slots) {
+                addFinishedEquip(shopItems, saleLevels[i], slot, salePrices[i]);
+            }
         }
-        addItem(shopItems, EquipCreator.createEquip(10, EquipmentItem.Slot.ARMOR));
-        addItem(shopItems, EquipCreator.createEquip(10, EquipmentItem.Slot.HELMET));
         return shopItems;
+    }
+
+    private void addCraftBooks(List<ShopPanel.ShopItem> shopItems, EquipmentItem.Slot[] slots) {
+        int[] bookLevels = {60, 70, 80};
+        int[] bookPrices = {30000, 50000, 70000};
+        for (int i = 0; i < bookLevels.length; i++) {
+            for (EquipmentItem.Slot slot : slots) {
+                Item book = ItemCreator.createBuildEquipBook(bookLevels[i], slot);
+                if (book != null) {
+                    shopItems.add(new ShopPanel.ShopItem(book, bookPrices[i]));
+                }
+            }
+        }
+    }
+
+    private void addFinishedEquip(List<ShopPanel.ShopItem> shopItems, int level, EquipmentItem.Slot slot, int price) {
+        EquipmentItem equip = EquipCreator.createEquip(level, slot);
+        if (equip != null) {
+            shopItems.add(new ShopPanel.ShopItem(equip, price));
+        }
     }
 
     private List<ShopPanel.ShopItem> buildGemShop() {

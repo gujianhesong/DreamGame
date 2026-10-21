@@ -219,6 +219,19 @@ public class FunctionNpcManager {
                 });
                 return true;
             }
+            case 100270:
+            case 100271:
+            case 100272:
+            case 100273:
+            case 100274:
+            case 100275:
+            case 100276:
+            case 100277: {
+                GameEngine.getInstance().showDialog(npc.getName(),
+                        "城门重地，闲杂人等不得喧哗。",
+                        Arrays.asList("知道了"), null);
+                return true;
+            }
             case 100208: {
                 //金陵东侧-东城车夫（传送东海湾）
                 List<String> options = Arrays.asList("前往东海湾", "不了");
@@ -530,7 +543,7 @@ public class FunctionNpcManager {
 
     private void handleYamenGuide(Npc npc) {
         GameEngine.getInstance().showDialog(npc.getName(),
-                "金陵城大，少侠可问贫吏。北有酒楼客栈，西有药铺铁匠钱庄，东有兵器防具宝石藏经。南广场可卖装备、买捕捉符、医战宠、问幻境。修炼找南门外玄机真人，辅助找培元先生。东门车夫去东海湾，西门夜里有鬼差通地府。",
+                "金陵城大，少侠可问贫吏。北街醉仙楼用膳、悦来客栈歇宿。西街回春堂买药，欧冶铁铺打铁，钱庄存钱，官仓扩行囊。东街龙泉剑庄、铁甲坊、璀璨珠宝、藏经阁。南广场杂货买捕捉符，旁有收购、兽医与幻境司事。修炼找南门外玄机真人，辅助找培元先生。东门车夫去东海湾，西门夜里有鬼差通地府。",
                 Arrays.asList("知道了"), null);
     }
 

@@ -265,6 +265,10 @@ public class NpcSystem {
                 npcList.add(new Npc(100540, "地狱鬼差", NpcType.GHOST_CLERK, 9300, 13400));
             }
             break;
+            case MapSystem.MAP_ID_MONSTER_GALLERY: {
+                npcList.add(new Npc(100601, "万妖台车夫", NpcType.COACHMAN, 2000, 3700));
+            }
+            break;
         }
         return npcList;
     }

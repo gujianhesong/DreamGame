@@ -65,6 +65,9 @@ public class MapContentManager {
         if (mapId == MapSystem.MAP_ID_ILLUSION_REALM) {
             return enemies;
         }
+        if (mapId == MapSystem.MAP_ID_MONSTER_GALLERY) {
+            return spawnMonsterGallery();
+        }
 
         int enemyCount;
         if (mapId >= MapSystem.MAP_ID_HELL_MAZE_1 && mapId <= MapSystem.MAP_ID_HELL_MAZE_4) {
@@ -430,6 +433,58 @@ public class MapContentManager {
                 break;
             }
         }
+        return enemy;
+    }
+
+    private List<Enemy> spawnMonsterGallery() {
+        List<Enemy> enemies = new ArrayList<>();
+        float originX = 500f;
+        float originY = 500f;
+        float gap = 520f;
+        int cols = 6;
+        Enemy[] lineup = new Enemy[]{
+                named(new Wolf(0, 0), "野狼"),
+                named(new Tiger(0, 0), "猛虎"),
+                named(new Viper(0, 0), "毒蛇"),
+                named(new WildBoar(0, 0), "野猪"),
+                named(new Bandit(0, 0), "强盗"),
+                named(new FoxSpirit(0, 0), "狐狸精"),
+                named(new LonelySpirit(0, 0), "孤魂"),
+                named(new LittleGreenDragon(0, 0), "小青龙"),
+                named(new ShrimpSoldier(0, 0), "虾兵"),
+                named(new CrabGeneral(0, 0), "蟹将"),
+                named(new GiantSeaTurtle(0, 0), "巨海龟"),
+                named(new TurtleChancellor(0, 0), "龟丞相"),
+                named(new SeaDragonPrince(0, 0), "龙太子"),
+                named(new SeaDragonKing(0, 0), "龙王"),
+                named(new Yaksha(0, 0), "夜叉"),
+                named(new YellowSpringGuide(0, 0), "黄泉引路使"),
+                named(new Vampire(0, 0), "吸血鬼"),
+                named(new ChainBoundWraith(0, 0), "锁魂幽灵"),
+                named(new SavageWraith(0, 0), "野鬼"),
+                named(new GhostGeneral(0, 0), "鬼将"),
+                named(new BloodPoolDemonKing(0, 0), "血池魔王"),
+                named(new JudgeCuiYu(0, 0), "崔判官"),
+                named(new KingYanluo(0, 0), "阎罗王"),
+                named(new HellGuardian(0, 0, HellGuardian.GuardType.COW_HEAD), "牛头"),
+                named(new HellGuardian(0, 0, HellGuardian.GuardType.HORSE_FACE), "马面"),
+                named(new HellGuardian(0, 0, HellGuardian.GuardType.BLACK), "黑无常"),
+                named(new HellGuardian(0, 0, HellGuardian.GuardType.WHITE), "白无常")
+        };
+        for (int i = 0; i < lineup.length; i++) {
+            Enemy enemy = lineup[i];
+            float x = originX + (i % cols) * gap;
+            float y = originY + (i / cols) * gap;
+            enemy.setX(x);
+            enemy.setY(y);
+            enemy.setExhibitionMode(true);
+            enemies.add(enemy);
+        }
+        return enemies;
+    }
+
+    private Enemy named(Enemy enemy, String name) {
+        enemy.setName(name);
         return enemy;
     }
 }

@@ -230,7 +230,8 @@ public class GameEngine {
         }
 
         int mapId = roleInfo.getMapId();
-        if (mapId <= 0 || mapId == MapSystem.MAP_ID_ILLUSION_REALM) {
+        if (mapId <= 0 || mapId == MapSystem.MAP_ID_ILLUSION_REALM
+                || mapId == MapSystem.MAP_ID_MONSTER_GALLERY) {
             mapId = MapSystem.getInstance().getBornMap().getMapId();
             roleInfo.setMapId(mapId);
         }
@@ -327,7 +328,8 @@ public class GameEngine {
             return;
         }
         int mapId = MapSystem.getInstance().getCurrentMapId();
-        if (mapId > 0 && mapId != MapSystem.MAP_ID_ILLUSION_REALM) {
+        if (mapId > 0 && mapId != MapSystem.MAP_ID_ILLUSION_REALM
+                && mapId != MapSystem.MAP_ID_MONSTER_GALLERY) {
             roleInfo.setMapId(mapId);
             roleInfo.setMapX((int) player.getX());
             roleInfo.setMapY((int) player.getY());
@@ -627,7 +629,7 @@ public class GameEngine {
         java.util.List<Enemy> attackPass = new java.util.ArrayList<>(enemies);
 
         for (Enemy enemy : attackPass) {
-            if (!enemy.isAlive()) continue;
+            if (!enemy.isAlive() || enemy.isExhibitionMode()) continue;
 
             // Check if enemy is in attacking state and close to player
             if (enemy.getState() == Enemy.State.ATTACKING) {
@@ -938,6 +940,9 @@ public class GameEngine {
                     if (enemy.isPhaseTwoMinion() && enemy.isAlive() && distanceSquared < 180f * 180f) {
                         player.applyCC(Character.CrowdControlType.SLOW, 500);
                     }
+                    if (enemy.isExhibitionMode()) {
+                        enemy.updateDisplayOnly(deltaTime);
+                    } else {
                     int[][] map = MapSystem.getInstance().getCurMapInfo().getMapData();
                     enemy.update(deltaTime, player.getX(), player.getY(), map, getCurrentMapWidth(), getCurrentMapHeight());
 
@@ -1042,6 +1047,7 @@ public class GameEngine {
                             player.applyCC(com.game.dream.figure.Character.CrowdControlType.SLOW,
                                     dragon.getAuraSlowDuration());
                         }
+                    }
                     }
                 } else {
                     // Far away enemies don't need AI updates
@@ -2396,11 +2402,34 @@ public class GameEngine {
         }
     }
 
+    /** 进入幻境、万妖台前记下当前世界坐标，退出重进仍落在原处，不会把临时场景坐标写入存档。 */
+    private void snapshotPersistentLocationIfEnteringTransientMap(int destMapId) {
+        if (destMapId != MapSystem.MAP_ID_MONSTER_GALLERY
+                && destMapId != MapSystem.MAP_ID_ILLUSION_REALM) {
+            return;
+        }
+        int currentMapId = MapSystem.getInstance().getCurrentMapId();
+        if (currentMapId == MapSystem.MAP_ID_MONSTER_GALLERY
+                || currentMapId == MapSystem.MAP_ID_ILLUSION_REALM) {
+            return;
+        }
+        RoleInfo roleInfo = RoleSystem.getInstance().getRoleInfo();
+        if (roleInfo == null || player == null) {
+            return;
+        }
+        if (currentMapId > 0) {
+            roleInfo.setMapId(currentMapId);
+        }
+        roleInfo.setMapX((int) player.getX());
+        roleInfo.setMapY((int) player.getY());
+    }
+
     /**
      * 传送到指定地图
      * @param mapId
      */
     public void teleportToMap(int mapId) {
+        snapshotPersistentLocationIfEnteringTransientMap(mapId);
         isLoading = true;
         dragonLightningZones.clear();
         seaSealZones.clear();
@@ -2484,10 +2513,13 @@ public class GameEngine {
                 player.setX(x);
                 player.setY(y);
                 player.setRespawnPoint(x, y);
-                RoleInfo roleInfo = RoleSystem.getInstance().getRoleInfo();
-                roleInfo.setMapId(mapId);
-                roleInfo.setMapX((int) x);
-                roleInfo.setMapY((int) y);
+                if (mapId != MapSystem.MAP_ID_ILLUSION_REALM
+                        && mapId != MapSystem.MAP_ID_MONSTER_GALLERY) {
+                    RoleInfo roleInfo = RoleSystem.getInstance().getRoleInfo();
+                    roleInfo.setMapId(mapId);
+                    roleInfo.setMapX((int) x);
+                    roleInfo.setMapY((int) y);
+                }
                 initializeEnemies();
                 if (gameUI != null) {
                     gameUI.refreshMinimap();

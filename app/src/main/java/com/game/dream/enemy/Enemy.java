@@ -217,6 +217,9 @@ public abstract class Enemy extends Character {
     public enum AttackShape { CIRCLE, ARC, RECT }
     protected AttackShape attackShape = AttackShape.CIRCLE;
 
+    /** 万妖台展示：站桩、不移动、不攻击 */
+    protected boolean exhibitionMode = false;
+
     public Enemy(float x, float y, int size) {
         super(x, y, size);
         this.baseSize = size;
@@ -1561,7 +1564,27 @@ public abstract class Enemy extends Character {
         isCastingSpell = false;
     }
 
+    public void setExhibitionMode(boolean exhibitionMode) {
+        this.exhibitionMode = exhibitionMode;
+        if (exhibitionMode) {
+            currentState = State.IDLE;
+            isAggroed = false;
+        }
+    }
+
+    public boolean isExhibitionMode() {
+        return exhibitionMode;
+    }
+
+    public void updateDisplayOnly(long deltaTime) {
+        updateAnimation(System.currentTimeMillis());
+    }
+
     public boolean takeDamage(int damage) {
+        if (exhibitionMode) {
+            triggerHitFlash();
+            return false;
+        }
         long currentTime = System.currentTimeMillis();
 
         // Check if invincible
@@ -1682,6 +1705,9 @@ public abstract class Enemy extends Character {
 
     @Override
     public void applyKnockback(float fromX, float fromY, float force, long durationMillis) {
+        if (exhibitionMode) {
+            return;
+        }
         if (isBossTier()) {
             if (bossPhaseTwo || bossEnraged) {
                 return;

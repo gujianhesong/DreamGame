@@ -76,6 +76,10 @@ public class MapSystem {
     public static final int ILLUSION_MAP_WIDTH = 3000;
     public static final int ILLUSION_MAP_HEIGHT = 3000;
 
+    public static final int MAP_ID_MONSTER_GALLERY = 3002; //万妖台（怪物造型展示）
+    public static final int GALLERY_MAP_WIDTH = 4000;
+    public static final int GALLERY_MAP_HEIGHT = 4000;
+
     // 海底迷宫尺寸
     public static final int UNDERWATER_MAZE_WIDTH = 10000;
     public static final int UNDERWATER_MAZE_HEIGHT = 10000;
@@ -166,8 +170,8 @@ public class MapSystem {
         if (findMap != null) {
             curMapInfo = findMap;
             currentMapId = mapId;
-            // 幻境为临时副本，不写入存档地图ID
-            if (mapId != MAP_ID_ILLUSION_REALM) {
+            // 幻境、万妖台为临时副本，不写入存档地图ID
+            if (mapId != MAP_ID_ILLUSION_REALM && mapId != MAP_ID_MONSTER_GALLERY) {
                 RoleSystem.getInstance().getRoleInfo().setMapId(mapId);
             }
 
@@ -377,6 +381,22 @@ public class MapSystem {
                 underwaterMazeRenderer = null;
                 underwaterMazeGenerator = null;
                 additionalVillageRenderers.clear();
+            } else if (mapId == MAP_ID_MONSTER_GALLERY) {
+                mapData = IllusionRealmMapGenerator.generate(
+                        findMap.getMapWidth(), findMap.getMapHeight(), TILE_SIZE,
+                        IllusionRealmMapGenerator.THEME_FANCHEN);
+                curMapInfo.setMapData(mapData);
+                mapRenderer = new MapRenderer(mapData, GALLERY_MAP_WIDTH, GALLERY_MAP_HEIGHT, TILE_SIZE);
+                mazeRenderer = null;
+                mazeGenerator = null;
+                villageRenderer = null;
+                jinlingCityRenderer = null;
+                donghaiBayRenderer = null;
+                donghaiSeabedRenderer = null;
+                netherworldRenderer = null;
+                underwaterMazeRenderer = null;
+                underwaterMazeGenerator = null;
+                additionalVillageRenderers.clear();
             } else if (mapId == MAP_ID_DONGHAI_SEABED) {
                 // 东海海底地图
                 DonghaiSeabedMapGenerator seabedGen = new DonghaiSeabedMapGenerator(TILE_SIZE);
@@ -513,10 +533,16 @@ public class MapSystem {
         mapInfoList.add(new MapInfo(MAP_ID_HELL_MAZE_4, "阎罗殿", HELL_MAZE_4_WIDTH, HELL_MAZE_4_HEIGHT, null));
         mapInfoList.add(new MapInfo(MAP_ID_ILLUSION_REALM, "幻境挑战",
                 ILLUSION_MAP_WIDTH, ILLUSION_MAP_HEIGHT, new Pair<>(1400, 1400)));
+        mapInfoList.add(new MapInfo(MAP_ID_MONSTER_GALLERY, "万妖台",
+                GALLERY_MAP_WIDTH, GALLERY_MAP_HEIGHT, new Pair<>(2000, 3600)));
     }
 
     public boolean isIllusionRealmMap() {
         return currentMapId == MAP_ID_ILLUSION_REALM;
+    }
+
+    public boolean isMonsterGalleryMap() {
+        return currentMapId == MAP_ID_MONSTER_GALLERY;
     }
 
     public MapInfo getBornMap() {

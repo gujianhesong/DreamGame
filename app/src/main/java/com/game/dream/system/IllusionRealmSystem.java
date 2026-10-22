@@ -8,6 +8,7 @@ import android.graphics.Rect;
 
 import com.game.dream.GameEngine;
 import com.game.dream.bean.IllusionRealmInfo;
+import com.game.dream.figure.Player;
 import com.game.dream.bean.SaveInfo;
 import com.game.dream.enemy.Bandit;
 import com.game.dream.enemy.CrabGeneral;
@@ -217,16 +218,26 @@ public class IllusionRealmSystem {
             return;
         }
         RoleSystem role = RoleSystem.getInstance();
-        returnMapId = role.getRoleInfo().getMapId();
-        if (returnMapId == MapSystem.MAP_ID_ILLUSION_REALM) {
+        int currentMapId = MapSystem.getInstance().getCurrentMapId();
+        returnMapId = currentMapId > 0 ? currentMapId : role.getRoleInfo().getMapId();
+        if (returnMapId == MapSystem.MAP_ID_ILLUSION_REALM
+                || returnMapId == MapSystem.MAP_ID_MONSTER_GALLERY
+                || returnMapId <= 0) {
             returnMapId = MapSystem.getInstance().getBornMap().getMapId();
         }
-        if (role.getRoleInfo().getMapX() >= 0 && role.getRoleInfo().getMapY() >= 0) {
+        Player player = GameEngine.getInstance().getPlayer();
+        if (player != null) {
+            returnX = player.getX();
+            returnY = player.getY();
+        } else {
             returnX = role.getRoleInfo().getMapX();
             returnY = role.getRoleInfo().getMapY();
-        } else {
-            returnX = GameEngine.getInstance().getPlayer().getX();
-            returnY = GameEngine.getInstance().getPlayer().getY();
+        }
+        if (currentMapId != MapSystem.MAP_ID_ILLUSION_REALM
+                && currentMapId != MapSystem.MAP_ID_MONSTER_GALLERY) {
+            role.getRoleInfo().setMapId(returnMapId);
+            role.getRoleInfo().setMapX((int) returnX);
+            role.getRoleInfo().setMapY((int) returnY);
         }
 
         currentRealm = realm;

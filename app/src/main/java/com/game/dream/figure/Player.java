@@ -1151,9 +1151,10 @@ public class Player extends Character {
         return health <= 0;
     }
 
-    /** 幻境内移动不写入存档坐标 */
+    /** 幻境、万妖台为临时场景，移动不写入存档坐标 */
     private void persistMapPositionToRole() {
-        if (MapSystem.getInstance().isIllusionRealmMap()) {
+        if (MapSystem.getInstance().isIllusionRealmMap()
+                || MapSystem.getInstance().isMonsterGalleryMap()) {
             return;
         }
         RoleSystem.getInstance().getRoleInfo().setMapX((int) x);

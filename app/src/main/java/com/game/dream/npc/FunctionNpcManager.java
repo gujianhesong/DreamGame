@@ -409,6 +409,20 @@ public class FunctionNpcManager {
                 handleBank(npc);
                 return true;
             }
+            case 100601: {
+                List<String> options = Arrays.asList("返回金陵", "不了");
+                String message = "万妖台上的妖物只供观形，不会伤人。客官要返回金陵府衙吗？";
+                GameEngine.getInstance().showDialog(npc.getName(), message, options, new DialogBox.DialogListener() {
+                    @Override
+                    public void onOptionSelected(int optionIndex) {
+                        if (optionIndex == 0) {
+                            GameEngine.getInstance().teleportToMapWithPosition(
+                                    MapSystem.MAP_ID_JIN_LING, 30000, 31300);
+                        }
+                    }
+                });
+                return true;
+            }
             case 100540: {
                 //地狱鬼差（地狱迷宫入口）
                 List<String> options = Arrays.asList("闯地狱迷宫", "不了");
@@ -543,8 +557,16 @@ public class FunctionNpcManager {
 
     private void handleYamenGuide(Npc npc) {
         GameEngine.getInstance().showDialog(npc.getName(),
-                "金陵城大，少侠可问贫吏。北街醉仙楼用膳、悦来客栈歇宿。西街回春堂买药，欧冶铁铺打铁，钱庄存钱，官仓扩行囊。东街龙泉剑庄、铁甲坊、璀璨珠宝、藏经阁。南广场杂货买捕捉符，旁有收购、兽医与幻境司事。修炼找南门外玄机真人，辅助找培元先生。东门车夫去东海湾，西门夜里有鬼差通地府。",
-                Arrays.asList("知道了"), null);
+                "金陵城大，少侠可问贫吏。北街醉仙楼用膳、悦来客栈歇宿。西街回春堂买药，欧冶铁铺打铁，钱庄存钱，官仓扩行囊。东街龙泉剑庄、铁甲坊、璀璨珠宝、藏经阁。南广场杂货买捕捉符，旁有收购、兽医与幻境司事。修炼找南门外玄机真人，辅助找培元先生。东门车夫去东海湾，西门夜里有鬼差通地府。府内另有万妖台，可观天下妖物造型。",
+                Arrays.asList("前往万妖台", "知道了"),
+                new DialogBox.DialogListener() {
+                    @Override
+                    public void onOptionSelected(int optionIndex) {
+                        if (optionIndex == 0) {
+                            GameEngine.getInstance().teleportToMap(MapSystem.MAP_ID_MONSTER_GALLERY);
+                        }
+                    }
+                });
     }
 
     private void handleWarehouse(Npc npc) {

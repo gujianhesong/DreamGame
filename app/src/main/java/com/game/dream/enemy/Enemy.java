@@ -1576,14 +1576,27 @@ public abstract class Enemy extends Character {
         return exhibitionMode;
     }
 
+    public void wakeFromExhibition() {
+        if (!exhibitionMode) {
+            return;
+        }
+        exhibitionMode = false;
+        isAggroed = true;
+        aggroEndTime = System.currentTimeMillis() + 10 * 60 * 1000;
+        currentState = State.CHASING;
+        GameEngine engine = GameEngine.getInstance();
+        if (engine != null) {
+            engine.onGalleryExhibitAwakened(this);
+        }
+    }
+
     public void updateDisplayOnly(long deltaTime) {
         updateAnimation(System.currentTimeMillis());
     }
 
     public boolean takeDamage(int damage) {
         if (exhibitionMode) {
-            triggerHitFlash();
-            return false;
+            wakeFromExhibition();
         }
         long currentTime = System.currentTimeMillis();
 

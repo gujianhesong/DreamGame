@@ -87,6 +87,11 @@ public class Player extends Character {
     // 引导锁: 持续型领域法术(飞沙走石/万剑归宗/毒雾阵)释放期间禁止施放任何法术, 到点自动解除
     private long channelLockUntil = 0;
 
+    /** 万妖台试斗：临时气血，不写入存档 */
+    private static final int GALLERY_TRIAL_HP = 1_000_000;
+    private boolean galleryTrialActive;
+    private int galleryTrialHp;
+
     // 敌人毒击（AttackType.POISON_STRIKE）施加的中毒 DoT：不叠加，已中毒时忽略新的尝试
     private static final long POISON_DURATION_MS = 16_000;
     private static final long POISON_TICK_MS = 2_000;
@@ -130,7 +135,10 @@ public class Player extends Character {
         }
     }
 
-    public void update(int[][] map, int mapWidth, int mapHeight, int tileSize, long deltaTime) {
+    private List<Enemy> combatEnemies;
+
+    public void update(int[][] map, int mapWidth, int mapHeight, int tileSize, long deltaTime, List<Enemy> worldEnemies) {
+        this.combatEnemies = worldEnemies;
         // Update CC state
         updateCCState();
 
@@ -167,11 +175,13 @@ public class Player extends Character {
                 }
                 persistMapPositionToRole();
             }
+            separateFromBosses(combatEnemies);
             return;
         }
 
         // If stunned, rooted, or frozen, prevent movement input from taking effect
         if (isStunned() || isRooted() || isFrozen()) {
+            separateFromBosses(combatEnemies);
             return;
         }
 
@@ -181,10 +191,14 @@ public class Player extends Character {
         // Update dash
         if (isDashing) {
             updateDash(map, mapWidth, mapHeight, tileSize, deltaTime);
+            separateFromBosses(combatEnemies);
             return;
         }
 
-        // 攻击前冲移动
+        // 攻击前冲移动。已接近 BOSS 则原地挥砍，一像素都不前冲。
+        if (attackLungeRemaining > 0 && shouldSkipAttackLunge()) {
+            attackLungeRemaining = 0;
+        }
         if (attackLungeRemaining > 0) {
             float deltaSeconds = deltaTime / 1000.0f;
             float lungeMove = ATTACK_LUNGE_SPEED * deltaSeconds;
@@ -209,8 +223,8 @@ public class Player extends Character {
                 }
             }
 
-            if (terrainBlocked) {
-                attackLungeRemaining = 0; // 地形阻挡停止前冲
+            if (terrainBlocked || isMovingDeeperIntoBoss(newX, newY)) {
+                attackLungeRemaining = 0; // 地形或已贴上BOSS，停止前冲
             } else {
                 x = newX;
                 y = newY;
@@ -218,6 +232,8 @@ public class Player extends Character {
             }
             persistMapPositionToRole();
         }
+
+        separateFromBosses(combatEnemies);
 
         boolean isMoving = false;
         float newX = x;
@@ -270,6 +286,7 @@ public class Player extends Character {
 
         // If not moving, return early (but animation still plays)
         if (!isMoving) {
+            separateFromBosses(combatEnemies);
             return;
         }
 
@@ -287,15 +304,14 @@ public class Player extends Character {
                     && terrain != MazeGenerator.MAZE_WALL
                     && terrain != MapGenerator.RIVER && terrain != MapGenerator.MOUNTAIN
                     && terrain != MapGenerator.CITY_WALL && terrain != MapGenerator.SEA) {
-                x = newX;
-                y = newY;
+                applyMoveUnlessDeeperIntoBoss(newX, newY);
             }
         } else {
-            x = newX;
-            y = newY;
+            applyMoveUnlessDeeperIntoBoss(newX, newY);
         }
 
         persistMapPositionToRole();
+        separateFromBosses(combatEnemies);
     }
 
     /**
@@ -378,10 +394,14 @@ public class Player extends Character {
                     || terrain == MapGenerator.CITY_WALL || terrain == MapGenerator.SEA) {
                 // Hit impassable, stop dash
                 dashDistanceRemaining = 0;
+            } else if (isMovingDeeperIntoBoss(newX, newY)) {
+                dashDistanceRemaining = 0;
             } else {
                 x = newX;
                 y = newY;
             }
+        } else if (isMovingDeeperIntoBoss(newX, newY)) {
+            dashDistanceRemaining = 0;
         } else {
             x = newX;
             y = newY;
@@ -714,8 +734,7 @@ public class Player extends Character {
         attackStartTime = System.currentTimeMillis();
         attackAnimationFrame = 0;
 
-        // 设置攻击前冲方向
-        attackLungeRemaining = ATTACK_LUNGE_DISTANCE;
+        // 设置攻击前冲方向。已贴上 BOSS 时不再前冲，避免钻进模型。
         lungeHitEnemies.clear();
         switch (facingDirection) {
             case 0: attackLungeDirX = 0;  attackLungeDirY = 1;  break; // down
@@ -723,6 +742,7 @@ public class Player extends Character {
             case 2: attackLungeDirX = -1; attackLungeDirY = 0;  break; // left
             case 3: attackLungeDirX = 1;  attackLungeDirY = 0;  break; // right
         }
+        attackLungeRemaining = shouldSkipAttackLunge() ? 0 : ATTACK_LUNGE_DISTANCE;
     }
 
     /** 只播挥剑动作，不前冲。用于剑气。 */
@@ -771,6 +791,10 @@ public class Player extends Character {
      */
     public boolean isAttackLunging() {
         return attackLungeRemaining > 0;
+    }
+
+    public void stopAttackLunge() {
+        attackLungeRemaining = 0;
     }
 
     /**
@@ -825,12 +849,34 @@ public class Player extends Character {
 
     @Override
     public int getHealth() {
+        if (galleryTrialActive) {
+            return galleryTrialHp;
+        }
         return RoleSystem.getInstance().getRoleInfo().getHp();
     }
 
     @Override
     public int getMaxHealth() {
+        if (galleryTrialActive) {
+            return GALLERY_TRIAL_HP;
+        }
         return RoleSystem.getInstance().getRoleInfo().getBloodCap();
+    }
+
+    public void beginGalleryTrial() {
+        galleryTrialActive = true;
+        galleryTrialHp = GALLERY_TRIAL_HP;
+        clearPoisonDebuff();
+    }
+
+    public void endGalleryTrial() {
+        galleryTrialActive = false;
+        galleryTrialHp = 0;
+        clearPoisonDebuff();
+    }
+
+    public boolean isGalleryTrialActive() {
+        return galleryTrialActive;
     }
 
     public boolean takeDamage(int damage) {
@@ -871,7 +917,11 @@ public class Player extends Character {
             }
         }
 
-        RoleSystem.getInstance().getRoleInfo().setHp(health);
+        if (galleryTrialActive) {
+            galleryTrialHp = health;
+        } else {
+            RoleSystem.getInstance().getRoleInfo().setHp(health);
+        }
 
         // Check if dead
         if (health <= 0) {
@@ -892,7 +942,11 @@ public class Player extends Character {
 
         int oldHealth = this.getHealth();
         int newHealth = Math.min(oldHealth + amount, getMaxHealth());
-        RoleSystem.getInstance().getRoleInfo().setHp(newHealth);
+        if (galleryTrialActive) {
+            galleryTrialHp = newHealth;
+        } else {
+            RoleSystem.getInstance().getRoleInfo().setHp(newHealth);
+        }
 
         if (newHealth > oldHealth) {
             lastHealBloodTime = System.currentTimeMillis(); // Trigger visual effect
@@ -1147,8 +1201,134 @@ public class Player extends Character {
             }
         }
 
-        RoleSystem.getInstance().getRoleInfo().setHp(health);
+        if (galleryTrialActive) {
+            galleryTrialHp = health;
+        } else {
+            RoleSystem.getInstance().getRoleInfo().setHp(health);
+        }
         return health <= 0;
+    }
+
+    /** 已贴上 BOSS 时，禁止再往其中心挤，避免人物钻进模型。 */
+    private float bossContactRadius(Enemy enemy) {
+        return size * 0.5f + Math.max(64f, enemy.getSize() * 0.42f);
+    }
+
+    private List<Enemy> livingBosses() {
+        if (combatEnemies != null && !combatEnemies.isEmpty()) {
+            return combatEnemies;
+        }
+        GameEngine engine = GameEngine.getInstance();
+        if (engine == null) {
+            return null;
+        }
+        List<Enemy> enemies = engine.getEnemies();
+        if (enemies == null || enemies.isEmpty()) {
+            return null;
+        }
+        return enemies;
+    }
+
+    public void separateFromBosses(List<Enemy> enemies) {
+        if (enemies == null || enemies.isEmpty()) {
+            return;
+        }
+        for (Enemy enemy : enemies) {
+            if (enemy == null || !enemy.isAlive() || !enemy.isBossTier() || enemy.isExhibitionMode()) {
+                continue;
+            }
+            float bodyR = bossContactRadius(enemy);
+            float dx = x - enemy.getX();
+            float dy = y - enemy.getY();
+            float dist = (float) Math.sqrt(dx * dx + dy * dy);
+            if (dist >= bodyR) {
+                continue;
+            }
+            if (dist < 1f) {
+                dx = attackLungeDirX != 0 || attackLungeDirY != 0 ? -attackLungeDirX : 1f;
+                dy = attackLungeDirX != 0 || attackLungeDirY != 0 ? -attackLungeDirY : 0f;
+                dist = (float) Math.sqrt(dx * dx + dy * dy);
+                if (dist < 1f) {
+                    dx = 1f;
+                    dist = 1f;
+                }
+            }
+            x = enemy.getX() + dx / dist * bodyR;
+            y = enemy.getY() + dy / dist * bodyR;
+            attackLungeRemaining = 0;
+            if (isDashing) {
+                isDashing = false;
+                dashDistanceRemaining = 0;
+            }
+        }
+    }
+
+    public boolean isTouchingBoss() {
+        return isNearBoss(0f);
+    }
+
+    /** 已贴身或再前冲就会撞进 BOSS 时，攻击不再前冲。 */
+    public boolean shouldSkipAttackLunge() {
+        return isNearBoss(ATTACK_LUNGE_DISTANCE);
+    }
+
+    private boolean isNearBoss(float extraRange) {
+        List<Enemy> enemies = livingBosses();
+        if (enemies == null) {
+            return false;
+        }
+        for (Enemy enemy : enemies) {
+            if (enemy == null || !enemy.isAlive() || !enemy.isBossTier()) {
+                continue;
+            }
+            float dx = x - enemy.getX();
+            float dy = y - enemy.getY();
+            float dist = (float) Math.sqrt(dx * dx + dy * dy);
+            // 龙王这类体型很大，画面已经叠上时圆心距离仍可能大于 (size+eSize)/2
+            float touchR = Math.max(enemy.getSize() * 0.55f, (size + enemy.getSize()) * 0.5f) + extraRange;
+            if (dist <= touchR) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean isMovingDeeperIntoBoss(float newX, float newY) {
+        List<Enemy> enemies = livingBosses();
+        if (enemies == null) {
+            return false;
+        }
+        for (Enemy enemy : enemies) {
+            if (enemy == null || !enemy.isAlive() || !enemy.isBossTier() || enemy.isExhibitionMode()) {
+                continue;
+            }
+            float bodyR = bossContactRadius(enemy);
+            float odx = x - enemy.getX();
+            float ody = y - enemy.getY();
+            float oldDist = (float) Math.sqrt(odx * odx + ody * ody);
+            float ndx = newX - enemy.getX();
+            float ndy = newY - enemy.getY();
+            float newDist = (float) Math.sqrt(ndx * ndx + ndy * ndy);
+            if (newDist + 0.4f < oldDist && newDist < bodyR) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void applyMoveUnlessDeeperIntoBoss(float newX, float newY) {
+        if (!isMovingDeeperIntoBoss(newX, newY)) {
+            x = newX;
+            y = newY;
+            return;
+        }
+        if (!isMovingDeeperIntoBoss(newX, y)) {
+            x = newX;
+            return;
+        }
+        if (!isMovingDeeperIntoBoss(x, newY)) {
+            y = newY;
+        }
     }
 
     /** 幻境、万妖台为临时场景，移动不写入存档坐标 */

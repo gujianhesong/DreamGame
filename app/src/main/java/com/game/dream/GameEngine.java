@@ -363,7 +363,7 @@ public class GameEngine {
 
         // Update player movement (pass deltaTime)
         player.update(MapSystem.getInstance().getCurMapInfo().getMapData(),
-                getCurrentMapWidth() / TILE_SIZE, getCurrentMapHeight() / TILE_SIZE, TILE_SIZE, deltaTime);
+                getCurrentMapWidth() / TILE_SIZE, getCurrentMapHeight() / TILE_SIZE, TILE_SIZE, deltaTime, enemies);
 
         // 中毒 DoT：跳伤飘字与毒杀
         int poisonTickDamage = player.consumePendingPoisonTickDamage();
@@ -802,9 +802,7 @@ public class GameEngine {
                 hitSet.add(enemy);
 
                 if (enemy.isBossTier()) {
-                    if (!enemy.isCommittedAction()) {
-                        enemy.applyKnockback(playerX, playerY, 120f, 80);
-                    }
+                    player.stopAttackLunge();
                 } else {
                     enemy.applyKnockback(playerX, playerY, 400f, 350);
                     enemy.applyCC(Character.CrowdControlType.STUN, 250);
@@ -2430,6 +2428,8 @@ public class GameEngine {
      */
     public void teleportToMap(int mapId) {
         snapshotPersistentLocationIfEnteringTransientMap(mapId);
+        final boolean leavingGallery = MapSystem.getInstance().isMonsterGalleryMap()
+                && mapId != MapSystem.MAP_ID_MONSTER_GALLERY;
         isLoading = true;
         dragonLightningZones.clear();
         seaSealZones.clear();
@@ -2491,6 +2491,7 @@ public class GameEngine {
                     gameUI.refreshMinimap();
                 }
 
+                applyGalleryTrialForMap(mapId, leavingGallery);
                 isLoading = false;
                 if (!MapSystem.getInstance().isIllusionRealmMap()) {
                     showCenterToast("到达了" + mapName);
@@ -2500,6 +2501,8 @@ public class GameEngine {
     }
 
     public void teleportToMapWithPosition(int mapId, float x, float y) {
+        final boolean leavingGallery = MapSystem.getInstance().isMonsterGalleryMap()
+                && mapId != MapSystem.MAP_ID_MONSTER_GALLERY;
         isLoading = true;
         dragonLightningZones.clear();
         seaSealZones.clear();
@@ -2521,12 +2524,32 @@ public class GameEngine {
                     roleInfo.setMapY((int) y);
                 }
                 initializeEnemies();
+                applyGalleryTrialForMap(mapId, leavingGallery);
                 if (gameUI != null) {
                     gameUI.refreshMinimap();
                 }
                 isLoading = false;
             }
         });
+    }
+
+    private void applyGalleryTrialForMap(int mapId, boolean leavingGallery) {
+        if (player == null) {
+            return;
+        }
+        if (mapId == MapSystem.MAP_ID_MONSTER_GALLERY) {
+            player.beginGalleryTrial();
+            showCenterToast("万妖台试斗：气血暂为100万，攻击可打醒怪物", 2500);
+        } else if (leavingGallery) {
+            player.endGalleryTrial();
+        }
+    }
+
+    public void onGalleryExhibitAwakened(Enemy enemy) {
+        if (enemy == null || !MapSystem.getInstance().isMonsterGalleryMap()) {
+            return;
+        }
+        showCenterToast(enemy.getName() + " 被打醒，开始试斗", 2000);
     }
 
     public void clearEnemies() {
@@ -2847,11 +2870,15 @@ public class GameEngine {
     }
 
     public void doAttackAction() {
-        // 冷却中不触发攻击前冲
-        if (player.isAttackOnCooldown()) return;
+        // 冷却中、或正在前冲时不能再点一次把前冲距离重置，否则会一点点往前顶。
+        if (player.isAttackOnCooldown() || player.isAttackLunging()) return;
 
-        // Trigger attack animation and lunge
-        player.triggerAttackAnimation();
+        if (player.shouldSkipAttackLunge()) {
+            player.triggerSwordSwingAnimation();
+        } else {
+            player.triggerAttackAnimation();
+        }
+        player.separateFromBosses(enemies);
 
         // Set pending attack - damage will be applied after lunge completes
         pendingMeleeAttack = true;
@@ -2880,12 +2907,10 @@ public class GameEngine {
                             hit.isCrit
                     ));
 
-                    // 击退。BOSS 出招途中不受近战硬直打断。
+                    // 击退。BOSS 不受近战击退，否则会被打退一点、下一刀又判定没碰到并再次前冲。
                     if (!hit.enemy.isBossTier()) {
                         hit.enemy.applyKnockback(player.getX(), player.getY(), 300f, 200);
                         hit.enemy.applyCC(Character.CrowdControlType.STUN, 150);
-                    } else if (!hit.enemy.isCommittedAction()) {
-                        hit.enemy.applyKnockback(player.getX(), player.getY(), 120f, 80);
                     }
 
                     // 大海龟反伤: 反弹 20% 伤害给玩家

@@ -27,7 +27,7 @@ public class TurtleChancellor extends Enemy {
 
     public TurtleChancellor(float x, float y) {
         super(x, y, 400);
-        enemyLevel = EnemyLevel.STAGE_BOSS;
+        becomeUniqueBoss();
         attackCooldown = 2400;
         windUpDuration = 560;
         pounceFixedSpeed = 520f;

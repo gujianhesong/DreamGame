@@ -90,7 +90,7 @@ public class HellGuardian extends Enemy {
         setPropertyExtra(prop);
 
         // 四名守卫都是关卡BOSS，和第4层阎罗王一样必须击败才能离开关卡
-        enemyLevel = EnemyLevel.STAGE_BOSS;
+        becomeUniqueBoss();
         size = size * 3;
         setProperty(maxHealth * 28, attackDamage * 4, defense * 5, speed * 4, mana * 4);
     }

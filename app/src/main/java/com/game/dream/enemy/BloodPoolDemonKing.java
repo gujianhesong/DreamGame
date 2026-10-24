@@ -66,7 +66,7 @@ public class BloodPoolDemonKing extends Enemy {
         setProperty(2800, 800, 420, 180, 260);
 
         // 地狱迷宫第2层关卡BOSS
-        enemyLevel = EnemyLevel.STAGE_BOSS;
+        becomeUniqueBoss();
         size = size * 3;
         setProperty(maxHealth * 30, attackDamage * 4, defense * 5, speed * 4, mana * 4);
     }

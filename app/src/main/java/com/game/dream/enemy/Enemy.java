@@ -219,6 +219,8 @@ public abstract class Enemy extends Character {
 
     /** 万妖台展示：站桩、不移动、不攻击 */
     protected boolean exhibitionMode = false;
+    /** 阎罗王、龙王等只有 BOSS 形态的种类，名字不加 BOSS 后缀 */
+    protected boolean uniqueBossSpecies = false;
 
     public Enemy(float x, float y, int size) {
         super(x, y, size);
@@ -1842,6 +1844,9 @@ public abstract class Enemy extends Character {
     @Override
     public void setName(String name) {
         this.name = name;
+        if (uniqueBossSpecies) {
+            return;
+        }
         if (enemyLevel == EnemyLevel.STAGE_BOSS) {
             this.name = name + "关卡BOSS";
         } else if (enemyLevel == EnemyLevel.BOSS) {
@@ -1851,6 +1856,11 @@ public abstract class Enemy extends Character {
         } else if (enemyLevel == EnemyLevel.LEADER) {
             this.name = name + "首领";
         }
+    }
+
+    protected void becomeUniqueBoss() {
+        enemyLevel = EnemyLevel.STAGE_BOSS;
+        uniqueBossSpecies = true;
     }
 
     /**
@@ -2101,6 +2111,55 @@ public abstract class Enemy extends Character {
      */
     public void setEnemyLevel(EnemyLevel level) {
         this.enemyLevel = level;
+    }
+
+    /**
+     * 万妖台：强制提升为 BOSS 体型与属性（与野生刷新出 BOSS 时同一套倍率）。
+     * 已经是关卡 BOSS 的保持原属性，只统一成 BOSS 类型。
+     */
+    public void forceAsBoss() {
+        if (enemyLevel == EnemyLevel.STAGE_BOSS) {
+            uniqueBossSpecies = true;
+            enemyLevel = EnemyLevel.BOSS;
+            String stageName = stripRankSuffix(this.name);
+            if (stageName != null && !stageName.isEmpty()) {
+                setName(stageName);
+            }
+            return;
+        }
+        if (enemyLevel != EnemyLevel.BOSS) {
+            size = baseSize * 3;
+            int hp = Math.max(1, baseMaxHealth) * 40;
+            int atk = Math.max(1, baseAttackDamage) * 5;
+            int def = Math.max(1, baseDefense) * 6;
+            int spd = Math.max(1, baseSpeed) * 6;
+            int mp = Math.max(1, baseMana) * 5;
+            setProperty(hp, atk, def, spd, mp);
+        } else {
+            size = Math.max(size, baseSize * 3);
+        }
+        enemyLevel = EnemyLevel.BOSS;
+        health = maxHealth;
+        String baseName = stripRankSuffix(this.name);
+        if (baseName != null && !baseName.isEmpty()) {
+            setName(baseName);
+        }
+    }
+
+    private static String stripRankSuffix(String rawName) {
+        if (rawName == null || rawName.isEmpty()) {
+            return rawName;
+        }
+        if (rawName.endsWith("关卡BOSS")) {
+            return rawName.substring(0, rawName.length() - 6);
+        }
+        if (rawName.endsWith("BOSS")) {
+            return rawName.substring(0, rawName.length() - 4);
+        }
+        if (rawName.endsWith("精英") || rawName.endsWith("首领")) {
+            return rawName.substring(0, rawName.length() - 2);
+        }
+        return rawName;
     }
 
     /**

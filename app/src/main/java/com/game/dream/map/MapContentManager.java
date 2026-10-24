@@ -477,6 +477,7 @@ public class MapContentManager {
             float y = originY + (i / cols) * gap;
             enemy.setX(x);
             enemy.setY(y);
+            enemy.forceAsBoss();
             enemy.setExhibitionMode(true);
             enemies.add(enemy);
         }

@@ -32,7 +32,7 @@ public class SeaDragonKing extends Enemy {
 
     public SeaDragonKing(float x, float y) {
         super(x, y, 600);
-        enemyLevel = EnemyLevel.STAGE_BOSS;
+        becomeUniqueBoss();
         attackCooldown = 2000;
         setAttackShape(AttackShape.CIRCLE);
         addAvailableAttackType(AttackType.SPIN_ATTACK);

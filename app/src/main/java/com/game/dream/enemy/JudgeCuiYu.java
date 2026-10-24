@@ -51,7 +51,7 @@ public class JudgeCuiYu extends Enemy {
         setProperty(3200, 720, 460, 130, 620);
 
         // 地狱迷宫第3层关卡BOSS
-        enemyLevel = EnemyLevel.STAGE_BOSS;
+        becomeUniqueBoss();
         size = size * 3;
         setProperty(maxHealth * 30, attackDamage * 4, defense * 5, speed * 4, mana * 4);
     }

@@ -32,7 +32,7 @@ public class SeaDragonPrince extends Enemy {
 
     public SeaDragonPrince(float x, float y) {
         super(x, y, 480);
-        enemyLevel = EnemyLevel.STAGE_BOSS;
+        becomeUniqueBoss();
         attackCooldown = 2200;
         pounceFixedSpeed = 780f;
         setAttackShape(AttackShape.CIRCLE);

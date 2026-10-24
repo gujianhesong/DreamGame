@@ -49,7 +49,7 @@ public class YellowSpringGuide extends Enemy {
         setProperty(2200, 550, 380, 110, 500);
 
         // 地狱迷宫第1层关卡BOSS（跳过随机等级）
-        enemyLevel = EnemyLevel.STAGE_BOSS;
+        becomeUniqueBoss();
         size = size * 3;
         setProperty(maxHealth * 30, attackDamage * 4, defense * 5, speed * 4, mana * 4);
     }

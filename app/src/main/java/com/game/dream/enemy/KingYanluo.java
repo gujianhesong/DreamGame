@@ -52,7 +52,7 @@ public class KingYanluo extends Enemy {
         setProperty(4000, 900, 520, 160, 800);
 
         // 地狱迷宫第4层关卡BOSS
-        enemyLevel = EnemyLevel.STAGE_BOSS;
+        becomeUniqueBoss();
         size = size * 3;
         setProperty(maxHealth * 35, attackDamage * 4, defense * 6, speed * 4, mana * 5);
     }

@@ -17,10 +17,9 @@ import java.util.List;
  * 吸血鬼 · 血色贵公子 - 地狱迷宫第2层血池炼狱主题怪物
  * 生前为堕落的血色贵族，死后沉眠于血池深处，以阳人鲜血维系不死之身。
  *
- * 视觉(参照梦幻西游吸血鬼): 狂野长发、蝙蝠式大尖耳、青灰苍白面孔、
- *       血红斜眼、血盆大口外露两颗长獠牙并滴血；残破暗紫黑高领披风
- *       （血红内衬），敞开胸口血迹斑斑，细长苍白手臂末端生四根黑爪，
- *       脚下悬浮不接地，移动拖出血雾尾迹。
+ * 视觉(参照梦幻西游吸血鬼): 圆形竹编斗笠，帽檐四周垂下一圈帘子把脸
+ *       完全挡住；深紫黑窄袍微驼；袖口从帘下伸出苍白细腕与短黑爪；
+ *       脚下悬浮，拖出血雾尾迹。首领/精英帘更长更红，BOSS斗笠更大。
  *
  * 攻击:
  *  1. 血之吮吸 - DRAIN_BITE 近战咬击，命中回复自身伤害量 60% HP
@@ -93,9 +92,7 @@ public class Vampire extends Enemy {
         super.update(deltaTime, playerX, playerY, map, mapWidth, mapHeight);
         if (!isAlive()) return;
 
-        capePhase += 0.0025f * deltaTime;
-        floatPhase += 0.003f * deltaTime;
-        eyeGlowPhase += 0.004f * deltaTime;
+        tickVisual(deltaTime);
 
         // 血池共鸣：检测所站地形
         long now = System.currentTimeMillis();
@@ -147,6 +144,18 @@ public class Vampire extends Enemy {
     }
 
     @Override
+    public void updateDisplayOnly(long deltaTime) {
+        super.updateDisplayOnly(deltaTime);
+        tickVisual(deltaTime);
+    }
+
+    private void tickVisual(long deltaTime) {
+        capePhase += 0.0055f * deltaTime;
+        floatPhase += 0.0042f * deltaTime;
+        eyeGlowPhase += 0.006f * deltaTime;
+    }
+
+    @Override
     protected void performAttack() {
         // 由 GameEngine 处理
     }
@@ -180,300 +189,274 @@ public class Vampire extends Enemy {
             }
         }
 
-        // 悬浮上下起伏（不接地）
-        float floatY = (float) Math.sin(floatPhase) * 3 * scale;
+        float t = now / 1000f;
+        float floatY = (float) Math.sin(t * 2.35f + floatPhase) * 5.8f * scale;
         float cx = x + offsetX + vibX;
-        float cy = y + offsetY + vibY + floatY - 6 * scale; // 上浮 6px 表示悬浮
+        float cy = y + offsetY + vibY + floatY - 7 * scale;
         boolean facingRight = targetX > x;
         float dir = facingRight ? 1f : -1f;
+        float brimY = hatBrimY(cy, scale);
+        float hatTilt = (float) Math.sin(t * 1.65f + floatPhase) * 3.2f;
+        if (currentState == State.ATTACKING && isWindingUp) {
+            hatTilt += dir * getWindUpProgress() * 8f;
+        }
 
-        // 1. 血雾尾迹（脚下）
         drawBloodMist(canvas, paint, cx, cy, scale, now);
-        // 2. 披风
-        drawCape(canvas, paint, cx, cy, scale, now, dir);
-        // 3. 身体（贵族礼服）
-        drawBody(canvas, paint, cx, cy, scale, now);
-        // 4. 头部（苍白面孔 + 血红双眸 + 獠牙）
-        drawHead(canvas, paint, cx, cy, scale, now);
-        // 5. 手臂（白手套 + 黑爪）
-        drawArms(canvas, paint, cx, cy, scale, now, dir);
-        // 6. 攻击特效：獠牙撕咬
+        drawHatVeil(canvas, paint, cx, cy, scale, true);
+        drawRobe(canvas, paint, cx, cy, scale, now);
+        drawArms(canvas, paint, cx, cy, scale);
+        drawHatVeil(canvas, paint, cx, cy, scale, false);
+
+        canvas.save();
+        canvas.rotate(hatTilt, cx, brimY);
+        drawRoundHat(canvas, paint, cx, cy, scale, now);
+        canvas.restore();
         if (currentState == State.ATTACKING && isWindingUp) {
             drawFangSlashEffect(canvas, paint, cx, cy, scale, dir);
         }
-        // 7. 血池共鸣激活视觉（红色光环）
         if (bloodPoolBuffActive) {
             drawBloodPoolAura(canvas, paint, cx, cy, scale, now);
         }
     }
 
+    private boolean isHatElite() {
+        return enemyLevel == EnemyLevel.LEADER
+                || enemyLevel == EnemyLevel.ELITE
+                || enemyLevel == EnemyLevel.BOSS
+                || enemyLevel == EnemyLevel.STAGE_BOSS;
+    }
+
+    private boolean isHatBoss() {
+        return enemyLevel == EnemyLevel.BOSS || enemyLevel == EnemyLevel.STAGE_BOSS;
+    }
+
     private void drawBloodMist(Canvas canvas, Paint paint, float cx, float cy, float scale, long now) {
-        // 脚下血雾尾迹（3团缓慢漂移的暗红雾气）
-        for (int i = 0; i < 3; i++) {
-            float angle = capePhase * 0.6f + i * (float) (Math.PI * 2 / 3);
-            float mx = cx + (float) Math.cos(angle) * 12 * scale;
-            float my = cy + 22 * scale + (float) Math.sin(angle) * 3 * scale;
-            float pulse = 0.4f + 0.3f * (float) Math.sin(now / 600.0 + i);
-            paint.setColor(Color.argb((int) (90 * pulse), 160, 25, 25));
-            canvas.drawCircle(mx, my, 7 * scale, paint);
-            paint.setColor(Color.argb((int) (130 * pulse), 210, 45, 45));
-            canvas.drawCircle(mx, my, 3.5f * scale, paint);
+        for (int i = 0; i < 5; i++) {
+            float angle = now / 520f + i * (float) (Math.PI * 2 / 5);
+            float mx = cx + (float) Math.cos(angle) * 13 * scale;
+            float my = cy + 23 * scale + (float) Math.sin(angle * 1.4f) * 4.5f * scale;
+            float pulse = 0.45f + 0.35f * (float) Math.sin(now / 380.0 + i);
+            paint.setColor(Color.argb((int) (85 * pulse), 170, 30, 40));
+            canvas.drawCircle(mx, my, 6.5f * scale, paint);
+            paint.setColor(Color.argb((int) (140 * pulse), 220, 50, 55));
+            canvas.drawCircle(mx, my, 2.8f * scale, paint);
         }
     }
 
-    private void drawCape(Canvas canvas, Paint paint, float cx, float cy, float scale, long now, float dir) {
-        // 残破的暗紫黑披风（底部锯齿状破损），内衬血红
-        float wave = (float) Math.sin(capePhase) * 2 * scale;
-
-        // 血红内衬（底层）
-        paint.setColor(Color.argb(240, 120, 15, 25));
+    private void drawRobe(Canvas canvas, Paint paint, float cx, float cy, float scale, long now) {
+        float waveL = (float) Math.sin(now / 430.0) * 2.8f * scale;
+        float waveR = (float) Math.sin(now / 430.0 + 1.3f) * 2.8f * scale;
+        paint.setColor(Color.argb(isHatElite() ? 220 : 170, 128, 28, 42));
         Path lining = new Path();
-        lining.moveTo(cx - 10 * scale, cy - 8 * scale);
-        lining.lineTo(cx + 10 * scale, cy - 8 * scale);
-        lining.lineTo(cx + 13 * scale + wave, cy + 18 * scale);
-        lining.lineTo(cx - 13 * scale - wave, cy + 18 * scale);
+        lining.moveTo(cx - 6 * scale, cy - 2 * scale);
+        lining.lineTo(cx + 6 * scale, cy - 2 * scale);
+        lining.lineTo(cx + 10 * scale + waveR, cy + 21 * scale);
+        lining.lineTo(cx - 10 * scale + waveL, cy + 21 * scale);
         lining.close();
         canvas.drawPath(lining, paint);
 
-        // 暗紫黑披风外层（残破锯齿下摆，中间开口露出血红内衬）
-        paint.setColor(Color.argb(245, 32, 20, 40));
-        Path leftCape = new Path();
-        leftCape.moveTo(cx - 10 * scale, cy - 9 * scale);
-        leftCape.lineTo(cx - 3 * scale, cy - 6 * scale);
-        leftCape.lineTo(cx - 5 * scale - wave, cy + 20 * scale);
-        leftCape.lineTo(cx - 9 * scale - wave, cy + 14 * scale);
-        leftCape.lineTo(cx - 12 * scale - wave, cy + 22 * scale);
-        leftCape.lineTo(cx - 16 * scale - wave, cy + 15 * scale);
-        leftCape.close();
-        canvas.drawPath(leftCape, paint);
+        paint.setColor(Color.argb(250, 36, 24, 48));
+        Path robe = new Path();
+        robe.moveTo(cx - 5.5f * scale, cy - 6 * scale);
+        robe.lineTo(cx + 5.5f * scale, cy - 6 * scale);
+        robe.lineTo(cx + 8.5f * scale, cy + 6 * scale);
+        robe.lineTo(cx + 7.5f * scale + waveR, cy + 20 * scale);
+        robe.lineTo(cx, cy + 17.5f * scale);
+        robe.lineTo(cx - 7.5f * scale + waveL, cy + 20 * scale);
+        robe.lineTo(cx - 8.5f * scale, cy + 6 * scale);
+        robe.close();
+        canvas.drawPath(robe, paint);
 
-        Path rightCape = new Path();
-        rightCape.moveTo(cx + 10 * scale, cy - 9 * scale);
-        rightCape.lineTo(cx + 3 * scale, cy - 6 * scale);
-        rightCape.lineTo(cx + 5 * scale + wave, cy + 20 * scale);
-        rightCape.lineTo(cx + 9 * scale + wave, cy + 14 * scale);
-        rightCape.lineTo(cx + 12 * scale + wave, cy + 22 * scale);
-        rightCape.lineTo(cx + 16 * scale + wave, cy + 15 * scale);
-        rightCape.close();
-        canvas.drawPath(rightCape, paint);
+        paint.setColor(Color.argb(240, 96, 22, 36));
+        canvas.drawRect(cx - 6.5f * scale, cy + 6 * scale, cx + 6.5f * scale, cy + 7.6f * scale, paint);
 
-        // 高耸尖立领（吸血鬼标志性高领，两片尖角）
-        paint.setColor(Color.argb(250, 24, 16, 30));
-        Path collar = new Path();
-        collar.moveTo(cx - 9 * scale, cy - 8 * scale);
-        collar.lineTo(cx - 13 * scale, cy - 24 * scale);
-        collar.lineTo(cx - 4 * scale, cy - 12 * scale);
-        collar.lineTo(cx + 4 * scale, cy - 12 * scale);
-        collar.lineTo(cx + 13 * scale, cy - 24 * scale);
-        collar.lineTo(cx + 9 * scale, cy - 8 * scale);
-        collar.close();
-        canvas.drawPath(collar, paint);
-
-        // 立领血红内缘
-        paint.setColor(Color.argb(200, 130, 20, 30));
-        paint.setStrokeWidth(0.9f * scale);
-        paint.setStyle(Paint.Style.STROKE);
-        canvas.drawLine(cx - 12 * scale, cy - 22 * scale, cx - 4 * scale, cy - 12 * scale, paint);
-        canvas.drawLine(cx + 12 * scale, cy - 22 * scale, cx + 4 * scale, cy - 12 * scale, paint);
-        paint.setStyle(Paint.Style.FILL);
-        paint.setStrokeWidth(1);
+        float pulse = 0.6f + 0.4f * (float) Math.sin(now / 420.0);
+        paint.setColor(Color.argb((int) (230 * pulse), 220, 36, 48));
+        canvas.drawCircle(cx, cy + 2.2f * scale, 1.4f * scale, paint);
     }
 
-    private void drawBody(Canvas canvas, Paint paint, float cx, float cy, float scale, long now) {
-        // 破旧的暗色贵族外衣
-        paint.setColor(Color.argb(245, 28, 22, 34));
-        Path body = new Path();
-        body.moveTo(cx - 8 * scale, cy - 9 * scale);
-        body.lineTo(cx + 8 * scale, cy - 9 * scale);
-        body.lineTo(cx + 9 * scale, cy + 5 * scale);
-        body.lineTo(cx + 6 * scale, cy + 17 * scale);
-        body.lineTo(cx - 6 * scale, cy + 17 * scale);
-        body.lineTo(cx - 9 * scale, cy + 5 * scale);
-        body.close();
-        canvas.drawPath(body, paint);
-
-        // 敞开的胸口（苍白皮肤 V 形）
-        paint.setColor(Color.argb(240, 200, 208, 199));
-        Path chest = new Path();
-        chest.moveTo(cx - 3.5f * scale, cy - 9 * scale);
-        chest.lineTo(cx + 3.5f * scale, cy - 9 * scale);
-        chest.lineTo(cx + 2 * scale, cy + 6 * scale);
-        chest.lineTo(cx, cy + 9 * scale);
-        chest.lineTo(cx - 2 * scale, cy + 6 * scale);
-        chest.close();
-        canvas.drawPath(chest, paint);
-
-        // 胸前血迹斑斑
-        paint.setColor(Color.argb(160, 140, 20, 28));
-        canvas.drawCircle(cx - 1 * scale, cy - 1 * scale, 1.4f * scale, paint);
-        canvas.drawCircle(cx + 1.4f * scale, cy + 3 * scale, 1 * scale, paint);
-
-        // 血色宝石胸针（胸前一点红光）
-        float pulse = 0.7f + 0.3f * (float) Math.sin(now / 500.0);
-        paint.setColor(Color.argb((int) (255 * pulse), 220, 30, 40));
-        canvas.drawCircle(cx, cy - 5 * scale, 1.6f * scale, paint);
-        paint.setColor(Color.argb((int) (120 * pulse), 255, 80, 90));
-        canvas.drawCircle(cx, cy - 5 * scale, 3 * scale, paint);
-
-        // 残破腰带（暗红丝带）
-        paint.setColor(Color.argb(240, 90, 15, 25));
-        canvas.drawRect(cx - 8 * scale, cy + 4 * scale, cx + 8 * scale, cy + 6 * scale, paint);
+    private float hatBrimY(float cy, float scale) {
+        return cy - 12.5f * scale;
     }
 
-    private void drawHead(Canvas canvas, Paint paint, float cx, float cy, float scale, long now) {
-        float headY = cy - 16 * scale;
+    private float hatRx(float scale) {
+        return 18.5f * scale * (isHatBoss() ? 1.1f : 1f);
+    }
 
-        // 1. 狂野长发（后层，垂至肩部，发梢残破）—— 深蓝黑
-        paint.setColor(Color.argb(248, 22, 18, 30));
-        Path backHair = new Path();
-        backHair.moveTo(cx - 7 * scale, headY - 6 * scale);
-        backHair.quadTo(cx - 12 * scale, headY + 2 * scale, cx - 9 * scale, headY + 14 * scale);
-        backHair.lineTo(cx - 6 * scale, headY + 9 * scale);
-        backHair.lineTo(cx - 4 * scale, headY + 15 * scale);
-        backHair.lineTo(cx - 1 * scale, headY + 9 * scale);
-        backHair.lineTo(cx + 2 * scale, headY + 15 * scale);
-        backHair.lineTo(cx + 5 * scale, headY + 9 * scale);
-        backHair.lineTo(cx + 9 * scale, headY + 14 * scale);
-        backHair.quadTo(cx + 12 * scale, headY + 2 * scale, cx + 7 * scale, headY - 6 * scale);
-        backHair.close();
-        canvas.drawPath(backHair, paint);
+    private float hatRy(float scale) {
+        return 6.4f * scale * (isHatBoss() ? 1.1f : 1f);
+    }
 
-        // 2. 蝙蝠式大尖耳（梦幻西游吸血鬼标志性特征）
-        drawPointedEar(canvas, paint, cx, headY, scale, -1);
-        drawPointedEar(canvas, paint, cx, headY, scale, 1);
+    private float hatCurtainLen(float scale) {
+        return (isHatElite() ? 15.5f : 13.8f) * scale;
+    }
 
-        // 3. 青灰苍白病态面孔
-        paint.setColor(Color.argb(245, 206, 214, 205));
-        canvas.drawOval(cx - 6 * scale, headY - 7 * scale,
-                cx + 6 * scale, headY + 7.5f * scale, paint);
-        // 消瘦的下颌阴影
-        paint.setColor(Color.argb(55, 90, 110, 95));
-        canvas.drawOval(cx - 4.5f * scale, headY + 0.5f * scale,
-                cx + 4.5f * scale, headY + 7.5f * scale, paint);
+    /** backLayer=true 画身后垂帘，false 画身前垂帘挡住脸。 */
+    private void drawHatVeil(Canvas canvas, Paint paint, float cx, float cy, float scale, boolean backLayer) {
+        float brimCy = hatBrimY(cy, scale);
+        float rx = hatRx(scale);
+        float ry = hatRy(scale);
+        float curtainLen = hatCurtainLen(scale);
+        if (!backLayer) {
+            paint.setColor(Color.argb(185, 24, 10, 18));
+            canvas.drawOval(cx - rx * 0.42f, brimCy + 1.2f * scale,
+                    cx + rx * 0.42f, brimCy + curtainLen * 0.55f, paint);
 
-        // 4. 前额乱发（锯齿状刘海）
-        paint.setColor(Color.argb(248, 26, 20, 34));
-        Path fringe = new Path();
-        fringe.moveTo(cx - 6.5f * scale, headY - 2.5f * scale);
-        fringe.quadTo(cx - 6 * scale, headY - 9 * scale, cx, headY - 8 * scale);
-        fringe.quadTo(cx + 6 * scale, headY - 9 * scale, cx + 6.5f * scale, headY - 2.5f * scale);
-        fringe.lineTo(cx + 4 * scale, headY - 5 * scale);
-        fringe.lineTo(cx + 2.5f * scale, headY - 0.5f * scale);
-        fringe.lineTo(cx + 1 * scale, headY - 5 * scale);
-        fringe.lineTo(cx - 1 * scale, headY - 1.5f * scale);
-        fringe.lineTo(cx - 3 * scale, headY - 5.5f * scale);
-        fringe.lineTo(cx - 4.5f * scale, headY - 1 * scale);
-        fringe.close();
-        canvas.drawPath(fringe, paint);
+            float glow = 0.1f + 0.08f * (float) Math.sin(System.currentTimeMillis() / 320.0);
+            if (currentState == State.ATTACKING && isWindingUp) {
+                glow = 0.3f + 0.5f * getWindUpProgress();
+            } else if (isHatBoss()) {
+                glow += 0.12f;
+            }
+            int eyeA = (int) (255 * glow);
+            if (eyeA > 22) {
+                paint.setColor(Color.argb(eyeA, 210, 28, 36));
+                canvas.drawCircle(cx - 2.3f * scale, brimCy + 6.2f * scale, 1.15f * scale, paint);
+                canvas.drawCircle(cx + 2.3f * scale, brimCy + 6.2f * scale, 1.15f * scale, paint);
+            }
+        }
+        drawHatCurtains(canvas, paint, cx, brimCy, rx, ry, curtainLen, scale, backLayer);
+    }
 
-        // 5. 血红斜眼（发光）+ 愤怒斜眉
-        float glow = 0.75f + 0.25f * (float) Math.sin(eyeGlowPhase);
-        paint.setColor(Color.argb(110, 40, 20, 30));
-        canvas.drawOval(cx - 4.6f * scale, headY - 3 * scale, cx - 0.4f * scale, headY + 0.6f * scale, paint);
-        canvas.drawOval(cx + 0.4f * scale, headY - 3 * scale, cx + 4.6f * scale, headY + 0.6f * scale, paint);
-        paint.setColor(Color.argb((int) (255 * glow), 230, 25, 30));
-        canvas.drawCircle(cx - 2.5f * scale, headY - 1.2f * scale, 1.4f * scale, paint);
-        canvas.drawCircle(cx + 2.5f * scale, headY - 1.2f * scale, 1.4f * scale, paint);
-        paint.setColor(Color.argb((int) (110 * glow), 255, 60, 60));
-        canvas.drawCircle(cx - 2.5f * scale, headY - 1.2f * scale, 3 * scale, paint);
-        canvas.drawCircle(cx + 2.5f * scale, headY - 1.2f * scale, 3 * scale, paint);
-        paint.setColor(Color.argb(230, 20, 15, 22));
-        paint.setStrokeWidth(1.2f * scale);
+    private void drawRoundHat(Canvas canvas, Paint paint, float cx, float cy, float scale, long now) {
+        float brimCy = hatBrimY(cy, scale);
+        float rx = hatRx(scale);
+        float ry = hatRy(scale);
+        float domeH = 5.2f * scale * (isHatBoss() ? 1.1f : 1f);
+
+        paint.setColor(Color.argb(255, 118, 78, 42));
+        canvas.drawOval(cx - rx, brimCy - ry * 0.15f, cx + rx, brimCy + ry * 1.12f, paint);
+
+        paint.setColor(Color.argb(255, 214, 176, 108));
+        canvas.drawOval(cx - rx * 0.97f, brimCy - ry * 0.62f, cx + rx * 0.97f, brimCy + ry * 0.78f, paint);
+
+        paint.setColor(Color.argb(255, 232, 198, 128));
+        canvas.drawOval(cx - rx * 0.62f, brimCy - ry * 0.55f - domeH * 0.55f,
+                cx + rx * 0.62f, brimCy + ry * 0.22f, paint);
+
+        paint.setColor(Color.argb(90, 255, 236, 190));
+        canvas.drawOval(cx - rx * 0.28f, brimCy - ry * 0.4f - domeH * 0.72f,
+                cx + rx * 0.2f, brimCy - ry * 0.08f, paint);
+
         paint.setStyle(Paint.Style.STROKE);
-        canvas.drawLine(cx - 4.6f * scale, headY - 3.8f * scale, cx - 1 * scale, headY - 2 * scale, paint);
-        canvas.drawLine(cx + 4.6f * scale, headY - 3.8f * scale, cx + 1 * scale, headY - 2 * scale, paint);
+        paint.setStrokeWidth(0.85f * scale);
+        paint.setColor(Color.argb(170, 150, 108, 58));
+        canvas.drawOval(cx - rx * 0.82f, brimCy - ry * 0.38f, cx + rx * 0.82f, brimCy + ry * 0.58f, paint);
+        canvas.drawOval(cx - rx * 0.5f, brimCy - ry * 0.42f - domeH * 0.28f,
+                cx + rx * 0.5f, brimCy + ry * 0.28f, paint);
+        canvas.drawLine(cx - rx * 0.9f, brimCy, cx + rx * 0.9f, brimCy, paint);
+
+        paint.setStrokeWidth(1.7f * scale);
+        paint.setColor(Color.argb(240, 96, 62, 32));
+        canvas.drawOval(cx - rx, brimCy - ry * 0.08f, cx + rx, brimCy + ry * 1.02f, paint);
         paint.setStyle(Paint.Style.FILL);
         paint.setStrokeWidth(1);
 
-        // 6. 张开的血盆大口
-        paint.setColor(Color.argb(235, 60, 12, 18));
-        canvas.drawOval(cx - 3.2f * scale, headY + 1.5f * scale,
-                cx + 3.2f * scale, headY + 6.5f * scale, paint);
-        paint.setColor(Color.argb(235, 25, 5, 8));
-        canvas.drawOval(cx - 2.2f * scale, headY + 2.5f * scale,
-                cx + 2.2f * scale, headY + 6 * scale, paint);
-
-        // 7. 两颗长上獠牙（从上前唇垂下）
-        paint.setColor(Color.argb(252, 250, 248, 240));
-        Path fangL = new Path();
-        fangL.moveTo(cx - 2.7f * scale, headY + 2 * scale);
-        fangL.lineTo(cx - 1.5f * scale, headY + 2 * scale);
-        fangL.lineTo(cx - 2.1f * scale, headY + 8 * scale);
-        fangL.close();
-        canvas.drawPath(fangL, paint);
-        Path fangR = new Path();
-        fangR.moveTo(cx + 1.5f * scale, headY + 2 * scale);
-        fangR.lineTo(cx + 2.7f * scale, headY + 2 * scale);
-        fangR.lineTo(cx + 2.1f * scale, headY + 8 * scale);
-        fangR.close();
-        canvas.drawPath(fangR, paint);
-
-        // 8. 獠牙滴血（持续滴落动画）
-        float drip = (float) ((now / 500.0) % 1.0);
-        paint.setColor(Color.argb(210, 190, 20, 30));
-        canvas.drawCircle(cx - 2.1f * scale, headY + 8 * scale + drip * 3 * scale, 0.9f * scale * (1 - drip * 0.4f), paint);
-        canvas.drawCircle(cx + 2.1f * scale, headY + 8 * scale + drip * 3 * scale, 0.9f * scale * (1 - drip * 0.4f), paint);
+        float beadPulse = 0.75f + 0.25f * (float) Math.sin(now / 380.0);
+        paint.setColor(Color.argb((int) (255 * beadPulse), isHatElite() ? 196 : 140, 32, 40));
+        canvas.drawCircle(cx, brimCy - domeH * 0.55f, 1.55f * scale, paint);
     }
 
     /**
-     * 蝙蝠式大尖耳（梦幻西游吸血鬼标志性造型）
-     * @param s -1=左耳, 1=右耳
+     * 帽檐四周垂帘。前帘沿帽檐一排挂下，邻片错相大幅摆动。
      */
-    private void drawPointedEar(Canvas canvas, Paint paint, float cx, float headY, float scale, int s) {
-        // 外耳（苍白皮肤，尖角朝外上方）
-        paint.setColor(Color.argb(245, 198, 206, 197));
-        Path ear = new Path();
-        ear.moveTo(cx + s * 4.5f * scale, headY - 3 * scale);
-        ear.lineTo(cx + s * 13 * scale, headY - 10 * scale);
-        ear.lineTo(cx + s * 11 * scale, headY - 1 * scale);
-        ear.lineTo(cx + s * 5.5f * scale, headY + 3 * scale);
-        ear.close();
-        canvas.drawPath(ear, paint);
-        // 内耳阴影（暗红）
-        paint.setColor(Color.argb(150, 150, 55, 65));
-        Path inner = new Path();
-        inner.moveTo(cx + s * 6 * scale, headY - 2.5f * scale);
-        inner.lineTo(cx + s * 11.5f * scale, headY - 8 * scale);
-        inner.lineTo(cx + s * 9.5f * scale, headY - 1 * scale);
-        inner.close();
-        canvas.drawPath(inner, paint);
+    private void drawHatCurtains(Canvas canvas, Paint paint, float cx, float brimCy,
+                                 float rx, float ry, float curtainLen, float scale, boolean backLayer) {
+        long now = System.currentTimeMillis();
+        int strips = backLayer ? 6 : 9;
+        float wind = (float) Math.sin(now / 480.0 + floatPhase) * 0.9f * scale;
+        for (int i = 0; i < strips; i++) {
+            float u = strips == 1 ? 0.5f : (i / (float) (strips - 1));
+            float nx = (u - 0.5f) * 2f;
+            float ax = cx + nx * rx * (backLayer ? 0.78f : 0.9f);
+            float ay = brimCy + ry * 0.22f + (1f - nx * nx) * ry * (backLayer ? -0.35f : 0.55f);
+            float phase = (float) (now / 220.0 + i * 0.85f + floatPhase);
+            float midSway = wind * 0.4f + (float) Math.sin(phase) * 1.8f * scale;
+            float botSway = wind + (float) Math.sin(phase + 0.7f) * 3.0f * scale;
+            if (backLayer) {
+                midSway *= 0.6f;
+                botSway *= 0.6f;
+            }
+            float halfW = (1.25f + (1f - Math.abs(nx)) * 0.35f) * scale;
+            float len = curtainLen * (backLayer ? 0.82f : 1f)
+                    * (1f + 0.045f * (float) Math.sin(phase * 0.7f));
+            float mx = ax + midSway;
+            float my = ay + len * 0.45f;
+            float bx = ax + botSway;
+            float by = ay + len + (float) Math.sin(phase + 0.4f) * 1.2f * scale;
+
+            boolean warm = i % 2 == 0;
+            int cr = warm ? (isHatElite() ? 98 : 76) : (isHatElite() ? 68 : 50);
+            int cg = warm ? 28 : 18;
+            int cb = warm ? 56 : 42;
+            paint.setStyle(Paint.Style.FILL);
+            paint.setColor(Color.argb(backLayer ? 200 : 240, cr, cg, cb));
+            Path strip = new Path();
+            strip.moveTo(ax - halfW, ay);
+            strip.lineTo(ax + halfW, ay);
+            strip.quadTo(mx + halfW, my, bx + halfW * 0.75f, by);
+            strip.quadTo(bx, by + halfW * 0.85f, bx - halfW * 0.75f, by);
+            strip.quadTo(mx - halfW, my, ax - halfW, ay);
+            strip.close();
+            canvas.drawPath(strip, paint);
+
+            paint.setColor(Color.argb(120, 220, 150, 160));
+            paint.setStrokeWidth(1.1f * scale);
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setStrokeCap(Paint.Cap.ROUND);
+            Path edge = new Path();
+            edge.moveTo(ax, ay + scale);
+            edge.quadTo(mx, my, bx, by);
+            canvas.drawPath(edge, paint);
+            paint.setStyle(Paint.Style.FILL);
+            paint.setStrokeWidth(1);
+
+            paint.setColor(Color.argb(245, isHatElite() ? 196 : 148, 40, 48));
+            canvas.drawCircle(bx, by + 0.8f * scale, 1.35f * scale, paint);
+        }
     }
 
-    private void drawArms(Canvas canvas, Paint paint, float cx, float cy, float scale, long now, float dir) {
-        // 细长苍白手臂，前伸，末端生四根长黑爪（凶残）
-        float swing = 0;
+    private void drawArms(Canvas canvas, Paint paint, float cx, float cy, float scale) {
+        long now = System.currentTimeMillis();
+        float idle = (float) Math.sin(now / 360.0) * 2.4f * scale;
+        float swing = idle;
         if (currentState == State.ATTACKING && isWindingUp) {
-            swing = -getWindUpProgress() * 12 * scale;
+            swing = -getWindUpProgress() * 9 * scale;
         }
 
-        // 手臂（苍白带青灰）
-        paint.setColor(Color.argb(245, 198, 206, 197));
-        paint.setStrokeWidth(3.2f * scale);
+        paint.setColor(Color.argb(250, 32, 22, 42));
+        paint.setStrokeWidth(4.2f * scale);
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeCap(Paint.Cap.ROUND);
         for (int s = -1; s <= 1; s += 2) {
-            Path arm = new Path();
-            arm.moveTo(cx + s * 7 * scale, cy - 5 * scale);
-            arm.quadTo(cx + s * 13 * scale, cy + 1 * scale,
-                    cx + s * 15 * scale, cy + 9 * scale + swing * 0.3f);
-            canvas.drawPath(arm, paint);
+            Path sleeve = new Path();
+            sleeve.moveTo(cx + s * 6.2f * scale, cy - 2 * scale);
+            sleeve.quadTo(cx + s * 11.5f * scale, cy + 3 * scale,
+                    cx + s * 13.2f * scale, cy + 9 * scale + swing * 0.35f);
+            canvas.drawPath(sleeve, paint);
+        }
+
+        paint.setColor(Color.argb(245, 220, 214, 208));
+        paint.setStrokeWidth(2.3f * scale);
+        for (int s = -1; s <= 1; s += 2) {
+            canvas.drawLine(cx + s * 13.2f * scale, cy + 9 * scale + swing * 0.35f,
+                    cx + s * 14.2f * scale, cy + 12.2f * scale + swing * 0.35f, paint);
         }
         paint.setStyle(Paint.Style.FILL);
         paint.setStrokeWidth(1);
 
-        // 手掌 + 4根细长黑爪
         for (int s = -1; s <= 1; s += 2) {
-            float hx = cx + s * 15 * scale;
-            float hy = cy + 9 * scale + swing * 0.3f;
-            paint.setColor(Color.argb(245, 205, 212, 203));
-            canvas.drawCircle(hx, hy, 2.2f * scale, paint);
-            paint.setColor(Color.argb(252, 18, 12, 18));
-            for (int i = 0; i < 4; i++) {
-                float off = (i - 1.5f) * 1.3f * scale;
+            float hx = cx + s * 14.2f * scale;
+            float hy = cy + 12.2f * scale + swing * 0.35f;
+            paint.setColor(Color.argb(245, 224, 218, 212));
+            canvas.drawCircle(hx, hy, 1.65f * scale, paint);
+            paint.setColor(Color.argb(252, 18, 12, 16));
+            for (int i = 0; i < 3; i++) {
+                float off = (i - 1) * 1.05f * scale;
                 Path claw = new Path();
-                claw.moveTo(hx + off * 0.4f, hy + 1 * scale);
-                claw.lineTo(hx + off + s * 2.5f * scale, hy + 7 * scale);
-                claw.lineTo(hx + off * 0.4f + s * 0.6f * scale, hy + 2 * scale);
+                claw.moveTo(hx + off * 0.3f, hy + 0.5f * scale);
+                claw.lineTo(hx + off + s * 1.35f * scale, hy + 4f * scale);
+                claw.lineTo(hx + off * 0.3f + s * 0.35f * scale, hy + 1.1f * scale);
                 claw.close();
                 canvas.drawPath(claw, paint);
             }

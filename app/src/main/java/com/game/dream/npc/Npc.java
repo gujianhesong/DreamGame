@@ -83,6 +83,10 @@ public class Npc {
         return name;
     }
 
+    public NpcType getNpcType() {
+        return type;
+    }
+
     public float getX() {
         return x;
     }

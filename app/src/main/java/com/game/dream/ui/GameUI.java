@@ -27,6 +27,7 @@ import com.game.dream.panel.AssistPanel;
 import com.game.dream.panel.PracticePanel;
 import com.game.dream.panel.ShopPanel;
 import com.game.dream.panel.SkillsPanel;
+import com.game.dream.panel.WorldMapPanel;
 import com.game.dream.system.ItemSystem;
 import com.game.dream.system.MapSystem;
 import com.game.dream.system.RoleSystem;
@@ -102,6 +103,8 @@ public class GameUI {
     private Rect captureButton;
 
     private IllusionRealmPanel illusionRealmPanel;
+
+    private WorldMapPanel worldMapPanel;
 
     // For tracking scroll gestures
     private float lastSkillsPanelTouchY = 0;
@@ -181,6 +184,8 @@ public class GameUI {
 
         illusionRealmPanel = new IllusionRealmPanel();
 
+        worldMapPanel = new WorldMapPanel();
+
         // Initialize Shop panel
         shopPanel = new ShopPanel();
         practicePanel = new PracticePanel();
@@ -213,12 +218,18 @@ public class GameUI {
         minimap = new Minimap(GameEngine.getInstance().getMap(), curMapW,
                 curMapH, TILE_SIZE);
         minimap.initialize();
+        if (worldMapPanel != null) {
+            worldMapPanel.invalidateMap();
+        }
     }
 
     public void cleanup() {
         // Clean up minimap
         if (minimap != null) {
             minimap.cleanup();
+        }
+        if (worldMapPanel != null) {
+            worldMapPanel.cleanup();
         }
     }
 
@@ -323,6 +334,14 @@ public class GameUI {
             int panelX = (width - panelWidth) / 2;
             int panelY = (height - panelHeight) / 2;
             illusionRealmPanel.setBounds(panelX, panelY, panelWidth, panelHeight);
+        }
+
+        if (worldMapPanel != null) {
+            int panelWidth = Math.min(1420, width - 8);
+            int panelHeight = Math.min(860, height - 24);
+            int panelX = (width - panelWidth) / 2;
+            int panelY = (height - panelHeight) / 2;
+            worldMapPanel.setBounds(panelX, panelY, panelWidth, panelHeight);
         }
 
         // Initialize shop panel (center of screen)
@@ -648,6 +667,10 @@ public class GameUI {
             IllusionRealmSystem.getInstance().drawHud(canvas, screenWidth);
         }
 
+        if (worldMapPanel != null && worldMapPanel.isVisible()) {
+            worldMapPanel.draw(canvas);
+        }
+
         // Draw message panel (always on top)
         if (messagePanel != null) {
             messagePanel.draw(canvas);
@@ -689,6 +712,27 @@ public class GameUI {
                 currentDialog.handleTouch(x, y);
             }
             return true;
+        }
+
+        if (worldMapPanel != null && worldMapPanel.isVisible()) {
+            switch (action) {
+                case MotionEvent.ACTION_DOWN:
+                    if (worldMapPanel.handleTouchDown(x, y)) {
+                        return true;
+                    }
+                    break;
+                case MotionEvent.ACTION_MOVE:
+                    if (worldMapPanel.handleTouchMove(x, y)) {
+                        return true;
+                    }
+                    break;
+                case MotionEvent.ACTION_UP:
+                case MotionEvent.ACTION_CANCEL:
+                    if (worldMapPanel.handleTouchUp(x, y)) {
+                        return true;
+                    }
+                    break;
+            }
         }
 
         // Handle Shop Panel
@@ -873,6 +917,12 @@ public class GameUI {
                 }
             }
             return true; // Consume all events when pet panel is open
+        }
+
+        if (action == MotionEvent.ACTION_DOWN && minimap != null && worldMapPanel != null
+                && minimap.hitTest(x, y, screenWidth, screenHeight)) {
+            worldMapPanel.show();
+            return true;
         }
 
         // Handle D-pad with pointer tracking

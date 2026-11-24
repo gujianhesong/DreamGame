@@ -32,6 +32,10 @@ public class WorldMapPanel {
     private static final int LEGEND_HEIGHT = 96;
     private static final int LIST_ITEM_HEIGHT = 44;
     private static final int LIST_HEADER_HEIGHT = 36;
+    private static final long LIST_NPC_DOUBLE_TAP_MS = 450;
+    private static final int ACTION_BTN_W = 112;
+    private static final int ACTION_BTN_H = 44;
+    private static final int ACTION_BAR_GAP = 12;
     /** 图例中「玩家 / 常驻NPC / 任务 / 夜间」等说明文字 */
     private static final float LEGEND_TEXT_SIZE = 26f;
     /** 右侧列表 NPC 名称 */
@@ -66,6 +70,8 @@ public class WorldMapPanel {
     private float lastListDragY;
     private float listDragTotalDist;
     private final List<Rect> listItemBounds = new ArrayList<>();
+    private int lastListTapNpcId = -1;
+    private long lastListTapTime;
 
     private static final int CHIP_NPC_NORMAL = 1;
     private static final int CHIP_NPC_QUEST = 2;
@@ -98,12 +104,23 @@ public class WorldMapPanel {
 
     private final List<FilterChip> filterChips = new ArrayList<>();
 
+    private boolean hasMapTarget;
+    private float mapTargetWorldX;
+    private float mapTargetWorldY;
+    private float mapTargetScreenX;
+    private float mapTargetScreenY;
+    private final Rect actionBarBounds = new Rect();
+    private final Rect btnNavigate = new Rect();
+    private final Rect btnTeleport = new Rect();
+
     public void show() {
         isVisible = true;
         selectedNpcId = -1;
         mapDragActive = false;
         listDragActive = false;
         listScrollOffset = 0;
+        lastListTapNpcId = -1;
+        lastListTapTime = 0;
         rebuildMapContent();
         centerOnPlayer();
         updateListItemBounds();
@@ -114,6 +131,7 @@ public class WorldMapPanel {
         selectedNpcId = -1;
         mapDragActive = false;
         listDragActive = false;
+        clearMapTarget();
     }
 
     public boolean isVisible() {
@@ -283,6 +301,109 @@ public class WorldMapPanel {
         return mapViewBounds.top + (worldY - panWorldY) * viewScale;
     }
 
+    private float screenToWorldX(float screenX) {
+        return panWorldX + (screenX - mapViewBounds.left) / viewScale;
+    }
+
+    private float screenToWorldY(float screenY) {
+        return panWorldY + (screenY - mapViewBounds.top) / viewScale;
+    }
+
+    private void clearMapTarget() {
+        hasMapTarget = false;
+        actionBarBounds.setEmpty();
+        btnNavigate.setEmpty();
+        btnTeleport.setEmpty();
+    }
+
+    private void setMapTarget(float screenX, float screenY) {
+        mapTargetScreenX = screenX;
+        mapTargetScreenY = screenY;
+        mapTargetWorldX = screenToWorldX(screenX);
+        mapTargetWorldY = screenToWorldY(screenY);
+        mapTargetWorldX = Math.max(0, Math.min(mapTargetWorldX, mapWidth));
+        mapTargetWorldY = Math.max(0, Math.min(mapTargetWorldY, mapHeight));
+        hasMapTarget = true;
+        layoutActionBar();
+    }
+
+    private void layoutActionBar() {
+        int barW = ACTION_BTN_W * 2 + ACTION_BAR_GAP + 16;
+        int barH = ACTION_BTN_H + 12;
+        int centerX = (int) mapTargetScreenX;
+        int top = (int) mapTargetScreenY - barH - 16;
+        int left = centerX - barW / 2;
+        if (left < mapViewBounds.left + 4) {
+            left = mapViewBounds.left + 4;
+        }
+        if (left + barW > mapViewBounds.right - 4) {
+            left = mapViewBounds.right - 4 - barW;
+        }
+        if (top < mapViewBounds.top + 4) {
+            top = (int) mapTargetScreenY + 20;
+        }
+        if (top + barH > mapViewBounds.bottom - 4) {
+            top = mapViewBounds.bottom - 4 - barH;
+        }
+        actionBarBounds.set(left, top, left + barW, top + barH);
+        int btnTop = actionBarBounds.top + 6;
+        int btnBottom = btnTop + ACTION_BTN_H;
+        btnNavigate.set(actionBarBounds.left + 8, btnTop,
+                actionBarBounds.left + 8 + ACTION_BTN_W, btnBottom);
+        btnTeleport.set(btnNavigate.right + ACTION_BAR_GAP, btnTop,
+                btnNavigate.right + ACTION_BAR_GAP + ACTION_BTN_W, btnBottom);
+    }
+
+    private void drawMapActionBar(Canvas canvas, Paint paint) {
+        paint.setColor(Color.argb(230, 18, 24, 36));
+        canvas.drawRoundRect(actionBarBounds.left, actionBarBounds.top,
+                actionBarBounds.right, actionBarBounds.bottom, 10, 10, paint);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(2);
+        paint.setColor(Color.rgb(100, 150, 210));
+        canvas.drawRoundRect(actionBarBounds.left, actionBarBounds.top,
+                actionBarBounds.right, actionBarBounds.bottom, 10, 10, paint);
+        paint.setStyle(Paint.Style.FILL);
+
+        drawActionButton(canvas, paint, btnNavigate, "导航", Color.rgb(50, 120, 200));
+        drawActionButton(canvas, paint, btnTeleport, "传送", Color.rgb(90, 160, 90));
+    }
+
+    private void drawActionButton(Canvas canvas, Paint paint, Rect rect, String label, int fillColor) {
+        paint.setColor(fillColor);
+        canvas.drawRoundRect(rect.left, rect.top, rect.right, rect.bottom, 8, 8, paint);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(1.5f);
+        paint.setColor(Color.argb(180, 255, 255, 255));
+        canvas.drawRoundRect(rect.left, rect.top, rect.right, rect.bottom, 8, 8, paint);
+        paint.setStyle(Paint.Style.FILL);
+        paint.setColor(Color.WHITE);
+        paint.setTextSize(24f);
+        paint.setTextAlign(Paint.Align.CENTER);
+        float textY = rect.centerY() - (paint.descent() + paint.ascent()) / 2f;
+        canvas.drawText(label, rect.centerX(), textY, paint);
+    }
+
+    private boolean handleActionBarTouch(float x, float y) {
+        if (!hasMapTarget) {
+            return false;
+        }
+        layoutActionBar();
+        if (TouchUtil.checkIsInTouchRectFloat(btnNavigate, x, y)) {
+            if (GameEngine.getInstance().startWorldMapNavigation(mapTargetWorldX, mapTargetWorldY)) {
+                hide();
+            }
+            return true;
+        }
+        if (TouchUtil.checkIsInTouchRectFloat(btnTeleport, x, y)) {
+            if (GameEngine.getInstance().tryWorldMapLocalTeleport(mapTargetWorldX, mapTargetWorldY)) {
+                hide();
+            }
+            return true;
+        }
+        return TouchUtil.checkIsInTouchRectFloat(actionBarBounds, x, y);
+    }
+
     public void draw(Canvas canvas) {
         if (!isVisible) {
             return;
@@ -384,7 +505,24 @@ public class WorldMapPanel {
             paint.setStyle(Paint.Style.FILL);
         }
 
+        if (hasMapTarget) {
+            float tx = worldToScreenX(mapTargetWorldX);
+            float ty = worldToScreenY(mapTargetWorldY);
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setStrokeWidth(3f);
+            paint.setColor(Color.rgb(255, 200, 60));
+            canvas.drawCircle(tx, ty, markerR + 5f, paint);
+            paint.setColor(Color.argb(90, 255, 200, 60));
+            paint.setStyle(Paint.Style.FILL);
+            canvas.drawCircle(tx, ty, markerR + 3f, paint);
+            paint.setStyle(Paint.Style.FILL);
+        }
+
         canvas.restoreToCount(saveCount);
+
+        if (hasMapTarget) {
+            drawMapActionBar(canvas, paint);
+        }
 
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(2);
@@ -782,6 +920,9 @@ public class WorldMapPanel {
             hide();
             return true;
         }
+        if (hasMapTarget && handleActionBarTouch(x, y)) {
+            return true;
+        }
         if (TouchUtil.checkIsInTouchRectFloat(legendBounds, x, y) && handleFilterChipTouch(x, y)) {
             return true;
         }
@@ -840,7 +981,17 @@ public class WorldMapPanel {
             if (listDragTotalDist < 20f) {
                 Npc listHit = findListNpcAt(x, y);
                 if (listHit != null) {
-                    focusOnNpc(listHit);
+                    long now = System.currentTimeMillis();
+                    if (listHit.getId() == lastListTapNpcId
+                            && (now - lastListTapTime) <= LIST_NPC_DOUBLE_TAP_MS) {
+                        lastListTapNpcId = -1;
+                        lastListTapTime = 0;
+                        navigateToNpc(listHit);
+                    } else {
+                        focusOnNpc(listHit);
+                        lastListTapNpcId = listHit.getId();
+                        lastListTapTime = now;
+                    }
                 }
             }
             handled = true;
@@ -848,9 +999,17 @@ public class WorldMapPanel {
         if (mapDragActive) {
             mapDragActive = false;
             if (dragTotalDist < 24f && TouchUtil.checkIsInTouchRectFloat(mapViewBounds, x, y)) {
+                if (hasMapTarget && handleActionBarTouch(x, y)) {
+                    handled = true;
+                    return handled;
+                }
                 Npc hit = findNpcAt(x, y);
                 if (hit != null) {
                     focusOnNpc(hit);
+                    clearMapTarget();
+                } else {
+                    setMapTarget(x, y);
+                    selectedNpcId = -1;
                 }
             }
             handled = true;
@@ -860,6 +1019,18 @@ public class WorldMapPanel {
 
     public boolean handleTouch(float x, float y) {
         return handleTouchDown(x, y);
+    }
+
+    private void navigateToNpc(Npc npc) {
+        if (npc == null) {
+            return;
+        }
+        float tx = npc.getX() + npc.getSize() * 0.5f;
+        float ty = npc.getY() + npc.getSize() * 0.5f;
+        clearMapTarget();
+        if (GameEngine.getInstance().startWorldMapNavigation(tx, ty)) {
+            hide();
+        }
     }
 
     private Npc findListNpcAt(float x, float y) {

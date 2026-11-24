@@ -26,6 +26,7 @@ import com.game.dream.system.SkillSystem;
 import com.game.dream.ui.FloatingText;
 import com.game.dream.utils.BattleUtil;
 import com.game.dream.utils.LogUtil;
+import com.game.dream.utils.MapWalkUtil;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -37,6 +38,8 @@ public class Player extends Character {
 
     // Movement
     private boolean movingUp, movingDown, movingLeft, movingRight;
+    /** 大地图自动导航本帧是否在位移（用于走路动画） */
+    private boolean autoNavWalking;
 
     // Dash (冲刺) - 集气系统
     private boolean isDashing;
@@ -234,6 +237,16 @@ public class Player extends Character {
         }
 
         separateFromBosses(combatEnemies);
+
+        if (GameEngine.getInstance().isWorldMapNavigating()) {
+            if (autoNavWalking) {
+                walkCycle = (walkCycle + 2) % 60;
+            } else {
+                walkCycle = (walkCycle + 1) % 120;
+            }
+            separateFromBosses(combatEnemies);
+            return;
+        }
 
         boolean isMoving = false;
         float newX = x;
@@ -836,7 +849,11 @@ public class Player extends Character {
     }
 
     public boolean isMoving() {
-        return isDashing || movingUp || movingDown || movingLeft || movingRight;
+        return isDashing || movingUp || movingDown || movingLeft || movingRight || autoNavWalking;
+    }
+
+    public void setAutoNavWalking(boolean walking) {
+        this.autoNavWalking = walking;
     }
 
     public int getWalkCycle() {
@@ -1328,6 +1345,80 @@ public class Player extends Character {
         }
         if (!isMovingDeeperIntoBoss(x, newY)) {
             y = newY;
+        }
+    }
+
+    public float getWalkSpeedPerSecond() {
+        int speed = RoleSystem.getInstance().getRoleInfo().getSpeed();
+        float speedRatio = isSlowed() ? 0.5f : 1f;
+        return (200 + speed * 0.7f) * speedRatio;
+    }
+
+    /**
+     * 大地图自动导航：沿直线朝目标推进一格，含贴墙滑动。
+     *
+     * @return 本帧是否发生了位移
+     */
+    public boolean tryAutoNavigateStep(float targetX, float targetY, float maxStep, List<Enemy> worldEnemies) {
+        float startX = x;
+        float startY = y;
+        float remaining = maxStep;
+        float dirX = 0f;
+        float dirY = 0f;
+        int mapW = MapSystem.getInstance().getCurMapInfo().getMapWidth();
+        int mapH = MapSystem.getInstance().getCurMapInfo().getMapHeight();
+
+        while (remaining > 0.5f) {
+            float dx = targetX - x;
+            float dy = targetY - y;
+            float dist = (float) Math.hypot(dx, dy);
+            if (dist < 0.5f) {
+                break;
+            }
+            dirX = dx / dist;
+            dirY = dy / dist;
+            float step = Math.min(remaining, Math.min(dist, 16f));
+            float newX = x + dirX * step;
+            float newY = y + dirY * step;
+
+            newX = Math.max(size / 2f, Math.min(newX, mapW - size / 2f));
+            newY = Math.max(size / 2f, Math.min(newY, mapH - size / 2f));
+
+            float beforeX = x;
+            float beforeY = y;
+            if (MapWalkUtil.isWorldPositionReachable(newX, newY)) {
+                applyMoveUnlessDeeperIntoBoss(newX, newY);
+            } else if (MapWalkUtil.isWorldPositionReachable(newX, y)) {
+                applyMoveUnlessDeeperIntoBoss(newX, y);
+            } else if (MapWalkUtil.isWorldPositionReachable(x, newY)) {
+                applyMoveUnlessDeeperIntoBoss(x, newY);
+            }
+            float subMoved = (float) Math.hypot(x - beforeX, y - beforeY);
+            if (subMoved < 0.2f) {
+                break;
+            }
+            remaining -= subMoved;
+        }
+
+        float moved = (float) Math.hypot(x - startX, y - startY);
+        autoNavWalking = moved > 0.35f;
+        if (autoNavWalking) {
+            updateFacingToward(dirX, dirY);
+            persistMapPositionToRole();
+            separateFromBosses(worldEnemies);
+            return true;
+        }
+        return false;
+    }
+
+    private void updateFacingToward(float dx, float dy) {
+        if (Math.abs(dx) < 0.01f && Math.abs(dy) < 0.01f) {
+            return;
+        }
+        if (Math.abs(dx) >= Math.abs(dy)) {
+            facingDirection = dx > 0 ? 3 : 2;
+        } else {
+            facingDirection = dy > 0 ? 0 : 1;
         }
     }
 

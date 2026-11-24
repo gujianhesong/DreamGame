@@ -652,14 +652,8 @@ public class GameUI {
             equipSellDialog.draw(canvas);
         }
 
-        // Draw center notification (on top of everything except UI panels)
-        if (currentNotification != null) {
-            currentNotification.draw(canvas, GameEngine.getScreenWidth(), GameEngine.getScreenHeight());
-        }
-
-        // Draw center toast (on top of everything except UI panels)
-        if (centerToast != null) {
-            centerToast.draw(canvas, GameEngine.getScreenWidth(), GameEngine.getScreenHeight());
+        if (worldMapPanel != null && worldMapPanel.isVisible()) {
+            worldMapPanel.draw(canvas);
         }
 
         if (MapSystem.getInstance().isIllusionRealmMap()
@@ -667,13 +661,16 @@ public class GameUI {
             IllusionRealmSystem.getInstance().drawHud(canvas, screenWidth);
         }
 
-        if (worldMapPanel != null && worldMapPanel.isVisible()) {
-            worldMapPanel.draw(canvas);
-        }
-
-        // Draw message panel (always on top)
         if (messagePanel != null) {
             messagePanel.draw(canvas);
+        }
+
+        // 居中消息提示置于 UI 最顶层（大地图、消息面板等之上）
+        if (currentNotification != null) {
+            currentNotification.draw(canvas, GameEngine.getScreenWidth(), GameEngine.getScreenHeight());
+        }
+        if (centerToast != null) {
+            centerToast.draw(canvas, GameEngine.getScreenWidth(), GameEngine.getScreenHeight());
         }
     }
 

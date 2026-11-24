@@ -89,6 +89,8 @@ import com.game.dream.ui.GameUI;
 import com.game.dream.ui.Projectile;
 import com.game.dream.utils.BattleUtil;
 import com.game.dream.utils.LogUtil;
+import com.game.dream.utils.MapWalkUtil;
+import com.game.dream.utils.MapPathfinder;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -149,6 +151,20 @@ public class GameEngine {
 
     // 异步加载标志
     private volatile boolean isLoading = false;
+
+    /** 大地图导航：自动朝目标点移动 */
+    private boolean worldMapNavActive;
+    private float worldMapNavTargetX;
+    private float worldMapNavTargetY;
+    private boolean applyingWorldMapNavDirection;
+    private static final float WORLD_MAP_NAV_ARRIVE_DIST = 48f;
+    private List<float[]> worldMapNavWaypoints;
+    private int worldMapNavWaypointIndex;
+    private long worldMapNavLastProgressTime;
+    private int worldMapNavReplanAttempts;
+    private static final int WORLD_MAP_NAV_MAX_REPLAN = 4;
+    private static final long WORLD_MAP_NAV_STUCK_MS = 1100;
+    private static final float WORLD_MAP_NAV_WAYPOINT_PASS = 28f;
 
     // Projectiles (magic attacks)
     private java.util.List<Projectile> projectiles;
@@ -360,6 +376,8 @@ public class GameEngine {
             deltaTime = currentTime - lastUpdateTime;
         }
         lastUpdateTime = currentTime;
+
+        tickWorldMapNavigation(deltaTime);
 
         // Update player movement (pass deltaTime)
         player.update(MapSystem.getInstance().getCurMapInfo().getMapData(),
@@ -2848,10 +2866,165 @@ public class GameEngine {
 
     public void updatePlayerDirection(boolean upPressed, boolean downPressed,
                                       boolean leftPressed, boolean rightPressed) {
+        if (!applyingWorldMapNavDirection
+                && (upPressed || downPressed || leftPressed || rightPressed)) {
+            cancelWorldMapNavigation();
+        }
         player.setMovingUp(upPressed);
         player.setMovingDown(downPressed);
         player.setMovingLeft(leftPressed);
         player.setMovingRight(rightPressed);
+    }
+
+    public boolean isWorldMapNavigating() {
+        return worldMapNavActive;
+    }
+
+    public void cancelWorldMapNavigation() {
+        worldMapNavActive = false;
+        worldMapNavWaypoints = null;
+        worldMapNavWaypointIndex = 0;
+        worldMapNavReplanAttempts = 0;
+        if (player != null) {
+            player.setAutoNavWalking(false);
+        }
+    }
+
+    /**
+     * 大地图「导航」：关闭面板后自动寻路到可行走目标点。
+     */
+    public boolean startWorldMapNavigation(float worldX, float worldY) {
+        if (player == null || isLoading) {
+            return false;
+        }
+        if (!MapWalkUtil.isWorldPositionReachable(worldX, worldY)) {
+            showCenterToast("该位置无法到达", 1800);
+            return false;
+        }
+        List<float[]> path = MapPathfinder.findPath(player.getX(), player.getY(), worldX, worldY);
+        if (path == null || path.isEmpty()) {
+            showCenterToast("该位置无法到达", 1800);
+            return false;
+        }
+        worldMapNavTargetX = worldX;
+        worldMapNavTargetY = worldY;
+        worldMapNavWaypoints = path;
+        worldMapNavWaypointIndex = 0;
+        worldMapNavReplanAttempts = 0;
+        worldMapNavLastProgressTime = System.currentTimeMillis();
+        worldMapNavActive = true;
+        return true;
+    }
+
+    /**
+     * 大地图「传送」：同地图瞬移到可行走点。
+     */
+    public boolean tryWorldMapLocalTeleport(float worldX, float worldY) {
+        if (player == null || isLoading) {
+            return false;
+        }
+        if (!MapWalkUtil.isWorldPositionReachable(worldX, worldY)) {
+            showCenterToast("该位置无法到达", 1800);
+            return false;
+        }
+        cancelWorldMapNavigation();
+        player.setX(worldX);
+        player.setY(worldY);
+        int mapId = MapSystem.getInstance().getCurrentMapId();
+        if (mapId > 0 && mapId != MapSystem.MAP_ID_ILLUSION_REALM
+                && mapId != MapSystem.MAP_ID_MONSTER_GALLERY) {
+            RoleInfo roleInfo = RoleSystem.getInstance().getRoleInfo();
+            roleInfo.setMapX((int) worldX);
+            roleInfo.setMapY((int) worldY);
+        }
+        updateCamera();
+        if (gameUI != null) {
+            gameUI.refreshMinimap();
+        }
+        showCenterToast("已传送到目标位置", 1200);
+        return true;
+    }
+
+    private void tickWorldMapNavigation(long deltaTime) {
+        if (!worldMapNavActive || player == null) {
+            return;
+        }
+        if (player.isStunned() || player.isRooted() || player.isFrozen()) {
+            return;
+        }
+        updatePlayerDirection(false, false, false, false);
+
+        long now = System.currentTimeMillis();
+        float px = player.getX();
+        float py = player.getY();
+
+        float dx = worldMapNavTargetX - px;
+        float dy = worldMapNavTargetY - py;
+        float dist = (float) Math.hypot(dx, dy);
+        if (dist <= WORLD_MAP_NAV_ARRIVE_DIST) {
+            cancelWorldMapNavigation();
+            return;
+        }
+        if (!MapWalkUtil.isWorldPositionReachable(worldMapNavTargetX, worldMapNavTargetY)) {
+            cancelWorldMapNavigation();
+            showCenterToast("该位置无法到达", 1800);
+            return;
+        }
+
+        float[] next = nextNavigationWaypoint(px, py);
+        float step = player.getWalkSpeedPerSecond() * (deltaTime / 1000f);
+        player.tryAutoNavigateStep(next[0], next[1], step, enemies);
+
+        float pxAfter = player.getX();
+        float pyAfter = player.getY();
+        float frameMoved = (float) Math.hypot(pxAfter - px, pyAfter - py);
+
+        if (frameMoved > 2f) {
+            worldMapNavLastProgressTime = now;
+        } else if (now - worldMapNavLastProgressTime > WORLD_MAP_NAV_STUCK_MS) {
+            skipPassedNavigationWaypoint(pxAfter, pyAfter, true);
+            if (worldMapNavReplanAttempts >= WORLD_MAP_NAV_MAX_REPLAN) {
+                cancelWorldMapNavigation();
+                showCenterToast("道路被阻挡，无法到达", 2000);
+                return;
+            }
+            List<float[]> newPath = MapPathfinder.findPath(pxAfter, pyAfter,
+                    worldMapNavTargetX, worldMapNavTargetY);
+            worldMapNavReplanAttempts++;
+            worldMapNavLastProgressTime = now;
+            if (newPath == null || newPath.isEmpty()) {
+                cancelWorldMapNavigation();
+                showCenterToast("道路被阻挡，无法到达", 2000);
+                return;
+            }
+            worldMapNavWaypoints = newPath;
+            worldMapNavWaypointIndex = 0;
+        }
+    }
+
+    private float[] nextNavigationWaypoint(float px, float py) {
+        skipPassedNavigationWaypoint(px, py, false);
+        if (worldMapNavWaypoints == null || worldMapNavWaypoints.isEmpty()
+                || worldMapNavWaypointIndex >= worldMapNavWaypoints.size()) {
+            return new float[]{worldMapNavTargetX, worldMapNavTargetY};
+        }
+        return worldMapNavWaypoints.get(worldMapNavWaypointIndex);
+    }
+
+    private void skipPassedNavigationWaypoint(float px, float py, boolean forceSkipOne) {
+        if (worldMapNavWaypoints == null || worldMapNavWaypoints.isEmpty()) {
+            return;
+        }
+        while (worldMapNavWaypointIndex < worldMapNavWaypoints.size()) {
+            float[] wp = worldMapNavWaypoints.get(worldMapNavWaypointIndex);
+            float d = (float) Math.hypot(wp[0] - px, wp[1] - py);
+            if (d <= WORLD_MAP_NAV_WAYPOINT_PASS || forceSkipOne) {
+                worldMapNavWaypointIndex++;
+                forceSkipOne = false;
+            } else {
+                break;
+            }
+        }
     }
 
     /**

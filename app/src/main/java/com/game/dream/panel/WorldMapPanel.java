@@ -250,11 +250,11 @@ public class WorldMapPanel {
         float zoomFactor;
         int maxDim = Math.max(mapWidth, mapHeight);
         if (maxDim < 12000) {
-            zoomFactor = 5.5f;
+            zoomFactor = 11f;
         } else if (maxDim > 40000) {
-            zoomFactor = 3f;
+            zoomFactor = 6f;
         } else {
-            zoomFactor = 4f;
+            zoomFactor = 8f;
         }
         viewScale = fit * zoomFactor;
     }

@@ -75,6 +75,7 @@ public class GameUI {
     // Equipment sell dialog
     private EquipSellDialog equipSellDialog;
     private com.game.dream.ui.StockBookDialog stockBookDialog;
+    private GamblingDiceOverlay gamblingDiceOverlay;
 
     // Message panel
     private MessagePanel messagePanel;
@@ -199,6 +200,7 @@ public class GameUI {
         // Initialize EquipSellDialog
         equipSellDialog = new EquipSellDialog();
         stockBookDialog = new com.game.dream.ui.StockBookDialog();
+        gamblingDiceOverlay = new GamblingDiceOverlay();
 
         // Initialize message panel
         messagePanel = new MessagePanel();
@@ -258,6 +260,10 @@ public class GameUI {
         // Update message panel
         if (messagePanel != null) {
             messagePanel.update();
+        }
+
+        if (gamblingDiceOverlay != null) {
+            gamblingDiceOverlay.update();
         }
     }
 
@@ -660,6 +666,9 @@ public class GameUI {
         if (stockBookDialog != null && stockBookDialog.isVisible()) {
             stockBookDialog.draw(canvas);
         }
+        if (gamblingDiceOverlay != null && gamblingDiceOverlay.isVisible()) {
+            gamblingDiceOverlay.draw(canvas);
+        }
 
         if (worldMapPanel != null && worldMapPanel.isVisible()) {
             worldMapPanel.draw(canvas);
@@ -724,6 +733,12 @@ public class GameUI {
                     lastStockBookTouchY = y;
                     return true;
                 }
+            }
+            return true;
+        }
+        if (gamblingDiceOverlay != null && gamblingDiceOverlay.isVisible()) {
+            if (action == MotionEvent.ACTION_UP) {
+                gamblingDiceOverlay.handleTouch(x, y);
             }
             return true;
         }
@@ -1792,6 +1807,13 @@ public class GameUI {
 
     public com.game.dream.ui.StockBookDialog getStockBookDialog() {
         return stockBookDialog;
+    }
+
+    public void showGamblingDiceRoll(String dealerName, int die1, int die2,
+                                     GamblingDiceOverlay.Listener listener) {
+        if (gamblingDiceOverlay != null) {
+            gamblingDiceOverlay.show(dealerName, die1, die2, listener);
+        }
     }
 
     /**

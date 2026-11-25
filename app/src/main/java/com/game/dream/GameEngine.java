@@ -2403,6 +2403,13 @@ public class GameEngine {
         return null;
     }
 
+    public void showGamblingDiceRoll(String dealerName, int die1, int die2,
+                                     com.game.dream.ui.GamblingDiceOverlay.Listener listener) {
+        if (gameUI != null) {
+            gameUI.showGamblingDiceRoll(dealerName, die1, die2, listener);
+        }
+    }
+
     /**
      * Show float text
      */

@@ -8,6 +8,7 @@ import com.game.dream.item.EquipmentItem;
 import com.game.dream.item.Item;
 import com.game.dream.item.ItemStack;
 import com.game.dream.system.DayNightCycle;
+import com.game.dream.system.GamblingSystem;
 import com.game.dream.system.StockMarketSystem;
 import com.game.dream.system.ItemSystem;
 import com.game.dream.system.MapSystem;
@@ -566,43 +567,115 @@ public class FunctionNpcManager {
     }
 
     private void handleGamblingHouse(Npc npc) {
-        final int stake = 100;
+        GamblingSystem gambling = GamblingSystem.getInstance();
+        if (gambling.isDailyLossCapped()) {
+            GameEngine.getInstance().showDialog(npc.getName(),
+                    "今日你已输足 " + GamblingSystem.DAILY_MAX_NET_LOSS + " 银，钱麻子摆手让你明日再来。",
+                    Arrays.asList("告辞"),
+                    null);
+            return;
+        }
+        RoleInfo role = RoleSystem.getInstance().getRoleInfo();
+        long spendable = gambling.getSpendableSilver();
+        long dayNet = gambling.getDailyNetSilver();
+        String dayNetText = dayNet >= 0 ? "今日盈亏 +" + dayNet : "今日盈亏 " + dayNet;
+        String intro = "两把骰比点，大八以上、小六以下；七点庄通吃。先选筹码，先扣身上银，不足再扣钱庄。\n"
+                + "身上 " + role.getMoney() + "，柜中 " + role.getBankMoney() + "，可用 " + spendable
+                + "。" + dayNetText + "。";
+        List<String> options = new ArrayList<>();
+        options.add("闲玩（" + GamblingSystem.STAKE_LEISURE + " 银）");
+        options.add("常态（" + GamblingSystem.STAKE_NORMAL + " 银）");
+        if (gambling.canUseHighRoller()) {
+            options.add("豪客（" + GamblingSystem.STAKE_HIGH + " 银）");
+        } else {
+            options.add("豪客（" + GamblingSystem.MIN_LEVEL_HIGH_ROLLER + "级解锁）");
+        }
+        options.add("走了走了，不赌为赢");
+        GameEngine.getInstance().showDialog(npc.getName(), intro, options, new DialogBox.DialogListener() {
+            @Override
+            public void onOptionSelected(int optionIndex) {
+                if (optionIndex == options.size() - 1) {
+                    return;
+                }
+                int stake;
+                if (optionIndex == 0) {
+                    stake = GamblingSystem.STAKE_LEISURE;
+                } else if (optionIndex == 1) {
+                    stake = GamblingSystem.STAKE_NORMAL;
+                } else if (optionIndex == 2) {
+                    if (!gambling.canUseHighRoller()) {
+                        GameEngine.getInstance().showCenterToast(
+                                "未满" + GamblingSystem.MIN_LEVEL_HIGH_ROLLER + "级，豪客席暂不接待。", 2000);
+                        return;
+                    }
+                    stake = GamblingSystem.STAKE_HIGH;
+                } else {
+                    return;
+                }
+                if (!gambling.canAfford(stake)) {
+                    GameEngine.getInstance().showCenterToast(
+                            "银两不足，需要 " + stake + "（含钱庄可用 " + gambling.getSpendableSilver() + "）。", 2500);
+                    return;
+                }
+                if (gambling.wouldExceedDailyLossCap(stake)) {
+                    GameEngine.getInstance().showCenterToast(
+                            "再押此筹码恐超今日输额上限 " + GamblingSystem.DAILY_MAX_NET_LOSS + " 银。", 2500);
+                    return;
+                }
+                openGamblingBetDialog(npc, stake);
+            }
+        });
+    }
+
+    private void openGamblingBetDialog(final Npc npc, final int stake) {
+        GamblingSystem gambling = GamblingSystem.getInstance();
         GameEngine.getInstance().showDialog(npc.getName(),
-                "小赌怡情，大赌伤身。两把骰子比总点数，各押" + stake + "金：点大赢" + (stake * 2)
-                        + "，点小亦然；若恰好七点庄家通吃。",
-                Arrays.asList("押大（≥8点）", "押小（≤6点）", "不赌了"),
+                "押" + stake + " 银：猜大（≥8）或猜小（≤6），中则得 " + (stake * 2) + " 银；七点通杀。",
+                Arrays.asList("押大（≥8点）", "押小（≤6点）", "换筹码"),
                 new DialogBox.DialogListener() {
                     @Override
                     public void onOptionSelected(int optionIndex) {
                         if (optionIndex == 2) {
+                            handleGamblingHouse(npc);
                             return;
                         }
-                        RoleInfo role = RoleSystem.getInstance().getRoleInfo();
-                        if (role.getMoney() < stake) {
-                            GameEngine.getInstance().showCenterToast("金钱不足，需要" + stake, 2000);
+                        if (gambling.isDailyLossCapped() || gambling.wouldExceedDailyLossCap(stake)) {
+                            GameEngine.getInstance().showCenterToast("今日输额已达或将近上限。", 2000);
                             return;
                         }
-                        int d1 = 1 + (int) (Math.random() * 6);
-                        int d2 = 1 + (int) (Math.random() * 6);
-                        int sum = d1 + d2;
-                        boolean betBig = optionIndex == 0;
-                        role.setMoney(role.getMoney() - stake);
-                        String roll = "钱麻子一摇盅子：" + d1 + "、" + d2 + "，共" + sum + "点。";
-                        if (sum == 7) {
-                            GameEngine.getInstance().showDialog(npc.getName(), roll + "恰好七点，庄家通吃。");
+                        if (!gambling.withdrawStake(stake)) {
+                            GameEngine.getInstance().showCenterToast("扣款失败，银两不足。", 2000);
                             return;
                         }
-                        boolean win = betBig ? sum >= 8 : sum <= 6;
-                        if (win) {
-                            role.setMoney(role.getMoney() + stake * 2);
-                            GameEngine.getInstance().showDialog(npc.getName(),
-                                    roll + "少侠押中了，赢得" + stake + "金！");
-                        } else {
-                            GameEngine.getInstance().showDialog(npc.getName(),
-                                    roll + "手气差点，下次再来。");
-                        }
+                        final int d1 = 1 + (int) (Math.random() * 6);
+                        final int d2 = 1 + (int) (Math.random() * 6);
+                        final boolean betBig = optionIndex == 0;
+                        GameEngine.getInstance().showGamblingDiceRoll(npc.getName(), d1, d2,
+                                () -> finishGamblingRoll(npc, stake, betBig, d1, d2));
                     }
                 });
+    }
+
+    private void finishGamblingRoll(Npc npc, int stake, boolean betBig, int d1, int d2) {
+        GamblingSystem gambling = GamblingSystem.getInstance();
+        int sum = d1 + d2;
+        String roll = d1 + "、" + d2 + "，共" + sum + "点。";
+        if (sum == 7) {
+            gambling.recordNetResult(-stake);
+            GameEngine.getInstance().showDialog(npc.getName(), roll + "恰好七点，庄家通吃。");
+            return;
+        }
+        boolean win = betBig ? sum >= 8 : sum <= 6;
+        if (win) {
+            gambling.depositWinnings(stake * 2);
+            gambling.recordNetResult(stake);
+            GameEngine.getInstance().showDialog(npc.getName(),
+                    roll + "押中了！净赢 " + stake + " 银，" + (stake * 2) + " 银已入袋。");
+        } else {
+            gambling.recordNetResult(-stake);
+            GameEngine.getInstance().showDialog(npc.getName(),
+                    roll + "手气差点，输掉 " + stake + " 银。");
+        }
     }
 
     private void handleInnRest(Npc npc) {
@@ -638,7 +711,7 @@ public class FunctionNpcManager {
 
     private void handleYamenGuide(Npc npc) {
         GameEngine.getInstance().showDialog(npc.getName(),
-                "金陵城大，少侠可问贫吏。北街醉仙楼用膳、悦来客栈歇宿，东侧背街有红香院听曲；醉仙楼东巷有如意赌坊。西街回春堂买药，欧冶铁铺打铁，钱庄存钱，旁有股簿馆合股买卖；官仓扩行囊。东街龙泉剑庄、铁甲坊、璀璨珠宝、藏经阁。南广场杂货买捕捉符，旁有收购、兽医与幻境司事。修炼找南门外玄机真人，辅助找培元先生。东门车夫去东海湾，西门夜里有鬼差通地府。府内另有万妖台，可观天下妖物造型。",
+                "金陵城大，少侠可问贫吏。北街醉仙楼用膳、悦来客栈歇宿，东侧背街有红香院听曲；醉仙楼东侧毗如意赌坊。西街回春堂买药，欧冶铁铺打铁，钱庄存钱，旁有股簿馆合股买卖；官仓扩行囊。东街龙泉剑庄、铁甲坊、璀璨珠宝、藏经阁。南广场杂货买捕捉符，旁有收购、兽医与幻境司事。修炼找南门外玄机真人，辅助找培元先生。东门车夫去东海湾，西门夜里有鬼差通地府。府内另有万妖台，可观天下妖物造型。",
                 Arrays.asList("前往万妖台", "知道了"),
                 new DialogBox.DialogListener() {
                     @Override

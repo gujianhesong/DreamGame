@@ -189,9 +189,11 @@ public class JinlingCityRenderer {
     private void buildNorthDistrict() {
         // 只留醉仙楼、悦来客栈各一座，中间三摊，其余改民居/茶馆
         buildings.add(new Building(BuildingType.INN, 25600, 25800, 720, 440, "醉仙楼"));
-        fillBuildings(26640, 25400, 27800, 26400,
+        // 醉仙楼东侧同排：如意赌坊（避开东侧民居网格重叠）
+        buildings.add(new Building(BuildingType.GAMBLING_HOUSE, 26400, 25800, 520, 440, "如意赌坊"));
+        fillBuildings(27000, 25400, 27800, 26400,
                 400, 320, 200, 160, BuildingType.HOUSE, new String[]{null});
-        fillBuildings(25400, 26440, 27800, 27800,
+        fillBuildings(25400, 26440, 27000, 27800,
                 400, 320, 200, 160, BuildingType.HOUSE, new String[]{null});
 
         buildings.add(new Building(BuildingType.INN, 32800, 25800, 720, 440, "悦来客栈"));
@@ -205,8 +207,6 @@ public class JinlingCityRenderer {
         buildings.add(new Building(BuildingType.MARKET_STALL, 29040, 25480, 320, 240, "包子铺"));
         buildings.add(new Building(BuildingType.MARKET_STALL, 30800, 25480, 320, 240, "馄饨摊"));
 
-        // 醉仙楼东侧背巷：如意赌坊
-        buildings.add(new Building(BuildingType.GAMBLING_HOUSE, 26380, 26320, 520, 400, "如意赌坊"));
         // 北区东侧背街：红香院（近客栈文化带）
         buildings.add(new Building(BuildingType.RED_PAVILION, 31400, 27240, 640, 460, "红香院"));
 
@@ -217,9 +217,9 @@ public class JinlingCityRenderer {
         decorations.add(new Decoration(DecoType.FENCE, 32780, 27580, 90));
         decorations.add(new Decoration(DecoType.FLOWER_BED, 32060, 27640, 140));
 
-        decorations.add(new Decoration(DecoType.LANTERN, 26440, 26300, 22));
-        decorations.add(new Decoration(DecoType.LANTERN, 26880, 26300, 22));
-        decorations.add(new Decoration(DecoType.NOTICE_BOARD, 26640, 26270, 70));
+        decorations.add(new Decoration(DecoType.LANTERN, 26480, 25780, 22));
+        decorations.add(new Decoration(DecoType.LANTERN, 26920, 25780, 22));
+        decorations.add(new Decoration(DecoType.NOTICE_BOARD, 26660, 25760, 70));
     }
 
     // ==================== 东区：兵甲珠宝藏经（各留一座） ====================

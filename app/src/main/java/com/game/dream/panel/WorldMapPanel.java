@@ -1025,10 +1025,8 @@ public class WorldMapPanel {
         if (npc == null) {
             return;
         }
-        float tx = npc.getX() + npc.getSize() * 0.5f;
-        float ty = npc.getY() + npc.getSize() * 0.5f;
         clearMapTarget();
-        if (GameEngine.getInstance().startWorldMapNavigation(tx, ty)) {
+        if (GameEngine.getInstance().startWorldMapNavigationToNpc(npc)) {
             hide();
         }
     }

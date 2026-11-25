@@ -91,6 +91,7 @@ import com.game.dream.utils.BattleUtil;
 import com.game.dream.utils.LogUtil;
 import com.game.dream.utils.MapWalkUtil;
 import com.game.dream.utils.MapPathfinder;
+import com.game.dream.utils.NpcNavUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -165,6 +166,12 @@ public class GameEngine {
     private static final int WORLD_MAP_NAV_MAX_REPLAN = 4;
     private static final long WORLD_MAP_NAV_STUCK_MS = 1100;
     private static final float WORLD_MAP_NAV_WAYPOINT_PASS = 28f;
+    private boolean worldMapNavToNpc;
+    private float worldMapNavNpcCenterX;
+    private float worldMapNavNpcCenterY;
+    private float worldMapNavNpcStandOff;
+    private float worldMapNavApproachUx;
+    private float worldMapNavApproachUy;
 
     // Projectiles (magic attacks)
     private java.util.List<Projectile> projectiles;
@@ -2885,6 +2892,7 @@ public class GameEngine {
         worldMapNavWaypoints = null;
         worldMapNavWaypointIndex = 0;
         worldMapNavReplanAttempts = 0;
+        worldMapNavToNpc = false;
         if (player != null) {
             player.setAutoNavWalking(false);
         }
@@ -2894,6 +2902,39 @@ public class GameEngine {
      * 大地图「导航」：关闭面板后自动寻路到可行走目标点。
      */
     public boolean startWorldMapNavigation(float worldX, float worldY) {
+        worldMapNavToNpc = false;
+        return beginWorldMapNavigation(worldX, worldY);
+    }
+
+    /**
+     * 导航到 NPC：停在 NPC 面前（不穿过 NPC），到达后面向 NPC。
+     */
+    public boolean startWorldMapNavigationToNpc(Npc npc) {
+        if (npc == null || player == null || isLoading) {
+            return false;
+        }
+        float fromX = player.getX();
+        float fromY = player.getY();
+        float[] stand = NpcNavUtil.standNearNpc(npc, fromX, fromY);
+        float[] center = NpcNavUtil.npcCenter(npc);
+        worldMapNavToNpc = true;
+        worldMapNavNpcCenterX = center[0];
+        worldMapNavNpcCenterY = center[1];
+        worldMapNavNpcStandOff = NpcNavUtil.standOffDistance(npc);
+        float ax = fromX - worldMapNavNpcCenterX;
+        float ay = fromY - worldMapNavNpcCenterY;
+        float alen = (float) Math.hypot(ax, ay);
+        if (alen < 1f) {
+            worldMapNavApproachUx = 0f;
+            worldMapNavApproachUy = 1f;
+        } else {
+            worldMapNavApproachUx = ax / alen;
+            worldMapNavApproachUy = ay / alen;
+        }
+        return beginWorldMapNavigation(stand[0], stand[1]);
+    }
+
+    private boolean beginWorldMapNavigation(float worldX, float worldY) {
         if (player == null || isLoading) {
             return false;
         }
@@ -2958,11 +2999,20 @@ public class GameEngine {
         float px = player.getX();
         float py = player.getY();
 
+        if (worldMapNavToNpc && shouldStopNpcNavigation(px, py)) {
+            finishWorldMapNavFacingNpc();
+            return;
+        }
+
         float dx = worldMapNavTargetX - px;
         float dy = worldMapNavTargetY - py;
         float dist = (float) Math.hypot(dx, dy);
         if (dist <= WORLD_MAP_NAV_ARRIVE_DIST) {
-            cancelWorldMapNavigation();
+            if (worldMapNavToNpc) {
+                finishWorldMapNavFacingNpc();
+            } else {
+                cancelWorldMapNavigation();
+            }
             return;
         }
         if (!MapWalkUtil.isWorldPositionReachable(worldMapNavTargetX, worldMapNavTargetY)) {
@@ -2971,7 +3021,7 @@ public class GameEngine {
             return;
         }
 
-        float[] next = nextNavigationWaypoint(px, py);
+        float[] next = resolveNavigationSteerPoint(px, py);
         float step = player.getWalkSpeedPerSecond() * (deltaTime / 1000f);
         player.tryAutoNavigateStep(next[0], next[1], step, enemies);
 
@@ -3009,6 +3059,53 @@ public class GameEngine {
             return new float[]{worldMapNavTargetX, worldMapNavTargetY};
         }
         return worldMapNavWaypoints.get(worldMapNavWaypointIndex);
+    }
+
+    private float[] resolveNavigationSteerPoint(float px, float py) {
+        if (!worldMapNavToNpc) {
+            return nextNavigationWaypoint(px, py);
+        }
+        float pdx = px - worldMapNavNpcCenterX;
+        float pdy = py - worldMapNavNpcCenterY;
+        float distNpc = (float) Math.hypot(pdx, pdy);
+        if (distNpc > worldMapNavNpcStandOff * 2.8f) {
+            return nextNavigationWaypoint(px, py);
+        }
+        float tdx = worldMapNavNpcCenterX - px;
+        float tdy = worldMapNavNpcCenterY - py;
+        float len = (float) Math.hypot(tdx, tdy);
+        if (len < 1f) {
+            return new float[]{px, py};
+        }
+        float moveDist = Math.max(0f, len - worldMapNavNpcStandOff);
+        return new float[]{px + tdx / len * moveDist, py + tdy / len * moveDist};
+    }
+
+    private boolean shouldStopNpcNavigation(float px, float py) {
+        float pdx = px - worldMapNavNpcCenterX;
+        float pdy = py - worldMapNavNpcCenterY;
+        float dist = (float) Math.hypot(pdx, pdy);
+        if (dist <= worldMapNavNpcStandOff + 18f) {
+            return true;
+        }
+        float dot = pdx * worldMapNavApproachUx + pdy * worldMapNavApproachUy;
+        return dot <= 6f;
+    }
+
+    private void finishWorldMapNavFacingNpc() {
+        if (player != null) {
+            float dx = worldMapNavNpcCenterX - player.getX();
+            float dy = worldMapNavNpcCenterY - player.getY();
+            player.setFacingDirection(facingFromDelta(dx, dy));
+        }
+        cancelWorldMapNavigation();
+    }
+
+    private static int facingFromDelta(float dx, float dy) {
+        if (Math.abs(dx) >= Math.abs(dy)) {
+            return dx > 0 ? 3 : 2;
+        }
+        return dy > 0 ? 0 : 1;
     }
 
     private void skipPassedNavigationWaypoint(float px, float py, boolean forceSkipOne) {

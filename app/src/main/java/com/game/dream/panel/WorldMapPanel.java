@@ -16,9 +16,11 @@ import com.game.dream.npc.AnimalNpc;
 import com.game.dream.npc.Npc;
 import com.game.dream.system.MapSystem;
 import com.game.dream.system.NpcSystem;
+import com.game.dream.utils.NpcListCategoryUtil;
 import com.game.dream.utils.TouchUtil;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -214,6 +216,7 @@ public class WorldMapPanel {
                 residentNpcs.add(npc);
             }
         }
+        Collections.sort(residentNpcs, NpcListCategoryUtil::compareForWorldMapList);
         listScrollOffset = 0;
         updateListItemBounds();
     }

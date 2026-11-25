@@ -981,7 +981,7 @@ public class GameEngine {
                             spawnEnemyGenericFireballs(enemy, player.getX(), player.getY());
                         }
                         enemy.resetCastingState();
-                        if (enemy.isBossTier()) {
+                        if (enemy.isThreatenedCombatTier()) {
                             enemy.requestGapClose();
                         } else {
                             enemy.requestBossRetreat();

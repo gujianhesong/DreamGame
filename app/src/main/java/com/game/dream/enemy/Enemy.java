@@ -129,6 +129,16 @@ public abstract class Enemy extends Character {
     private boolean phaseTwoMinion = false;
     private long meleeStickMs = 0;
 
+    /** A/B/C：风筝压制 */
+    private long kiteChaseFarSince = 0;
+    private long lastChasePressureSpellTime = 0;
+    private long antiKiteSpeedBoostUntil = 0;
+    private boolean pendingChaseGapClose = false;
+    private static final float CHASE_MELEE_RATIO = 1.05f;
+    private static final float CHASE_MID_MAX_RATIO = 1.85f;
+    private static final long KITE_PUNISH_MS_ELITE = 4800;
+    private static final long KITE_PUNISH_MS_BOSS = 3600;
+
     // Attack wind-up (攻击前摇)
     protected boolean isWindingUp = false;
     protected long windUpStartTime = 0;
@@ -328,6 +338,11 @@ public abstract class Enemy extends Character {
         return enemyLevel == EnemyLevel.BOSS || enemyLevel == EnemyLevel.STAGE_BOSS;
     }
 
+    /** 精英与 BOSS：启用追击压制与反风筝（头领保持原 AI）。 */
+    public boolean isThreatenedCombatTier() {
+        return isBossTier() || enemyLevel == EnemyLevel.ELITE;
+    }
+
     /**
      * 战宠跟随玩家移动(不进入攻击态，避免误伤玩家)。
      */
@@ -451,11 +466,31 @@ public abstract class Enemy extends Character {
             case CHASING:
                 updateChasing(deltaSeconds, playerX, playerY, map, mapWidth, mapHeight);
 
+                if (isThreatenedCombatTier()) {
+                    if (distanceToPlayer > propertyExtra.attackRange * 1.12f) {
+                        if (kiteChaseFarSince == 0) {
+                            kiteChaseFarSince = currentTime;
+                        }
+                    } else {
+                        kiteChaseFarSince = 0;
+                    }
+                    long kiteMs = isBossTier() ? KITE_PUNISH_MS_BOSS : KITE_PUNISH_MS_ELITE;
+                    if (kiteChaseFarSince > 0 && currentTime - kiteChaseFarSince >= kiteMs) {
+                        applyAntiKitePunish(distanceToPlayer, currentTime);
+                        kiteChaseFarSince = currentTime;
+                    }
+                    if (pendingChaseGapClose) {
+                        pendingChaseGapClose = false;
+                        beginGapCloseAttack(distanceToPlayer, currentTime);
+                    }
+                }
+
                 // Only return to idle if not aggroed AND player is far away
                 if (!isAggroed && distanceToPlayer > propertyExtra.detectionRange * 1.5f || MapSystem.getInstance().isLocationSafe(playerX, playerY)) {
                     currentState = State.IDLE;
                     stateTimer = currentTime;
-                } else if (shouldBeginAttacking(distanceToPlayer, currentTime)) {
+                    kiteChaseFarSince = 0;
+                } else if (currentState == State.CHASING && shouldBeginAttacking(distanceToPlayer, currentTime)) {
                     currentState = State.ATTACKING;
                     stateTimer = currentTime;
                     selectCurrentAttackType(distanceToPlayer);
@@ -875,10 +910,108 @@ public abstract class Enemy extends Character {
             return;
         }
 
+        if (isThreatenedCombatTier()) {
+            updateChaseDistancePressure(distanceToPlayer, currentTime);
+        }
+
         tryCastGenericSpell(distanceToPlayer, currentTime);
 
         float chaseSpeed = speed * 1.1f;
+        if (isThreatenedCombatTier()) {
+            if (currentTime < antiKiteSpeedBoostUntil) {
+                chaseSpeed *= 1.48f;
+            } else {
+                float rangeRatio = distanceToPlayer / Math.max(propertyExtra.attackRange, 1f);
+                if (rangeRatio > 1.25f) {
+                    chaseSpeed *= 1.14f;
+                }
+            }
+        }
         moveToTargetWithSpeed(deltaSeconds, chaseSpeed);
+    }
+
+    /**
+     * B 分层交战 + A 追击保底施压（法术 / 突进）。
+     */
+    protected void updateChaseDistancePressure(float distanceToPlayer, long currentTime) {
+        if (distanceToPlayer > propertyExtra.detectionRange) {
+            return;
+        }
+        if (isSpellWindingUp || isCastingSpell || isPounceRetreating) {
+            return;
+        }
+
+        float rangeRatio = distanceToPlayer / Math.max(propertyExtra.attackRange, 1f);
+        long interval = getChasePressureIntervalMs();
+        if (currentTime - lastChasePressureSpellTime < interval) {
+            return;
+        }
+
+        boolean acted = false;
+        long spellCd = getChasePressureSpellCooldown();
+        if (rangeRatio >= CHASE_MELEE_RATIO && usesGenericFireball()
+                && currentTime - lastGenericSpellTime >= spellCd
+                && currentTime - lastAttackTime >= 700) {
+            beginSpellWindUp(SPELL_GENERIC_FIREBALL);
+            lastChasePressureSpellTime = currentTime;
+            acted = true;
+        }
+
+        if (!acted && rangeRatio >= 1.12f && rangeRatio <= CHASE_MID_MAX_RATIO
+                && hasGapCloserAttack()
+                && currentTime - lastAttackTime >= (long) (attackCooldown * 0.5f)) {
+            pendingChaseGapClose = true;
+            lastChasePressureSpellTime = currentTime;
+        }
+    }
+
+    private long getChasePressureIntervalMs() {
+        if (isBossTier()) {
+            return 1850;
+        }
+        if (enemyLevel == EnemyLevel.ELITE) {
+            return 2350;
+        }
+        return 2900;
+    }
+
+    private long getChasePressureSpellCooldown() {
+        if (isBossTier()) {
+            return 1550;
+        }
+        if (enemyLevel == EnemyLevel.ELITE) {
+            return 1950;
+        }
+        return 2400;
+    }
+
+    /** C：长时间风筝触发突进 / 强法术 / 短追加速。 */
+    protected void applyAntiKitePunish(float distanceToPlayer, long currentTime) {
+        if (hasGapCloserAttack() && currentTime - lastAttackTime >= (long) (attackCooldown * 0.45f)) {
+            beginGapCloseAttack(distanceToPlayer, currentTime);
+            return;
+        }
+        if (usesGenericFireball() && currentTime - lastGenericSpellTime >= 900) {
+            beginSpellWindUp(SPELL_GENERIC_FIREBALL);
+            lastChasePressureSpellTime = currentTime;
+            requestGapClose();
+            return;
+        }
+        antiKiteSpeedBoostUntil = currentTime + 2000;
+        pendingForceGapClose = true;
+    }
+
+    protected void beginGapCloseAttack(float distanceToPlayer, long currentTime) {
+        if (currentState != State.CHASING) {
+            return;
+        }
+        pendingForceGapClose = true;
+        currentState = State.ATTACKING;
+        stateTimer = currentTime;
+        selectCurrentAttackType(distanceToPlayer);
+        isWindingUp = true;
+        windUpStartTime = currentTime;
+        attackJustFired = false;
     }
 
     /**
@@ -922,7 +1055,10 @@ public abstract class Enemy extends Character {
         if (isBossTier()) {
             chance *= 1.25f;
         } else if (enemyLevel == EnemyLevel.ELITE) {
-            chance *= 1.1f;
+            chance *= 1.22f;
+        }
+        if (isThreatenedCombatTier() && rangeRatio >= 1.05f && rangeRatio <= CHASE_MID_MAX_RATIO) {
+            chance *= 1.35f;
         }
         if (bossPhaseTwo) {
             chance *= 1.6f;
@@ -1178,9 +1314,15 @@ public abstract class Enemy extends Character {
                 meleeStuck = meleeStickMs >= 2500;
             }
 
-            if (isBossTier() && (pendingForceGapClose || rangeRatio > 1.15f || bossPunish)) {
+            if (isThreatenedCombatTier() && (pendingForceGapClose || rangeRatio > 1.08f || bossPunish)) {
                 pendingForceGapClose = false;
                 List<AttackType> gapClosers = filterGapCloserAttacks(availableAttackTypes);
+                if (!gapClosers.isEmpty()) {
+                    candidates = gapClosers;
+                }
+            } else if ((isBossTier() || enemyLevel == EnemyLevel.ELITE) && rangeRatio > CHASE_MID_MAX_RATIO
+                    && hasGapCloserAttack()) {
+                List<AttackType> gapClosers = filterGapCloserAttacks(candidates);
                 if (!gapClosers.isEmpty()) {
                     candidates = gapClosers;
                 }
@@ -1223,11 +1365,20 @@ public abstract class Enemy extends Character {
         if (currentAttackType == AttackType.POUNCE && currentTime - lastAttackTime < attackCooldown) {
             return false;
         }
+        float rangeRatio = distanceToPlayer / Math.max(propertyExtra.attackRange, 1f);
         if (distanceToPlayer < propertyExtra.attackRange) {
             return true;
         }
+        if (isThreatenedCombatTier()) {
+            if (rangeRatio <= CHASE_MELEE_RATIO) {
+                return true;
+            }
+            if (hasGapCloserAttack() && rangeRatio <= 1.38f
+                    && currentTime - lastAttackTime >= (long) (attackCooldown * 0.55f)) {
+                return true;
+            }
+        }
         if (distanceToPlayer < propertyExtra.attackRange * 1.2f && hasGapCloserAttack()) {
-            float rangeRatio = distanceToPlayer / propertyExtra.attackRange;
             return rangeRatio >= 0.75f;
         }
         return false;
@@ -1745,11 +1896,13 @@ public abstract class Enemy extends Character {
     }
 
     public void requestGapClose() {
-        if (!isBossTier()) {
+        if (!isThreatenedCombatTier()) {
             return;
         }
         pendingForceGapClose = true;
-        interruptBossRetreat();
+        if (isBossTier()) {
+            interruptBossRetreat();
+        }
     }
 
     public boolean consumePostRetreatFireball() {

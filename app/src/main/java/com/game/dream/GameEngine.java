@@ -445,7 +445,9 @@ public class GameEngine {
                 && curId != MapSystem.MAP_ID_ILLUSION_REALM
                 && !MapSystem.getInstance().isCurrentHellMazeMap()) {
             dayNightCycle.update(deltaTime);
+            com.game.dream.system.StockMarketSystem.getInstance().tickDayNight(dayNightCycle);
         }
+        com.game.dream.system.StockMarketSystem.getInstance().tickRealtime(deltaTime);
 
         // Update weather system
         if (weatherSystem != null) {
@@ -2386,6 +2388,19 @@ public class GameEngine {
         if (gameUI != null) {
             gameUI.showIllusionRealmPanel();
         }
+    }
+
+    public void showStockBookPanel() {
+        if (gameUI != null) {
+            gameUI.showStockBookPanel();
+        }
+    }
+
+    public com.game.dream.ui.StockBookDialog getStockBookDialog() {
+        if (gameUI != null) {
+            return gameUI.getStockBookDialog();
+        }
+        return null;
     }
 
     /**

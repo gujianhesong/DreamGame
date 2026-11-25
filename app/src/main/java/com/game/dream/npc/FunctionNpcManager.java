@@ -8,6 +8,7 @@ import com.game.dream.item.EquipmentItem;
 import com.game.dream.item.Item;
 import com.game.dream.item.ItemStack;
 import com.game.dream.system.DayNightCycle;
+import com.game.dream.system.StockMarketSystem;
 import com.game.dream.system.ItemSystem;
 import com.game.dream.system.MapSystem;
 import com.game.dream.system.Pet;
@@ -429,6 +430,10 @@ public class FunctionNpcManager {
                 handleBank(npc);
                 return true;
             }
+            case 100281: {
+                handleStockBook(npc);
+                return true;
+            }
             case 100601: {
                 List<String> options = Arrays.asList("返回金陵", "不了");
                 String message = "万妖台上的妖物只供观形，不会伤人。客官要返回金陵府衙吗？";
@@ -633,7 +638,7 @@ public class FunctionNpcManager {
 
     private void handleYamenGuide(Npc npc) {
         GameEngine.getInstance().showDialog(npc.getName(),
-                "金陵城大，少侠可问贫吏。北街醉仙楼用膳、悦来客栈歇宿，东侧背街有红香院听曲；醉仙楼东巷有如意赌坊。西街回春堂买药，欧冶铁铺打铁，钱庄存钱，官仓扩行囊。东街龙泉剑庄、铁甲坊、璀璨珠宝、藏经阁。南广场杂货买捕捉符，旁有收购、兽医与幻境司事。修炼找南门外玄机真人，辅助找培元先生。东门车夫去东海湾，西门夜里有鬼差通地府。府内另有万妖台，可观天下妖物造型。",
+                "金陵城大，少侠可问贫吏。北街醉仙楼用膳、悦来客栈歇宿，东侧背街有红香院听曲；醉仙楼东巷有如意赌坊。西街回春堂买药，欧冶铁铺打铁，钱庄存钱，旁有股簿馆合股买卖；官仓扩行囊。东街龙泉剑庄、铁甲坊、璀璨珠宝、藏经阁。南广场杂货买捕捉符，旁有收购、兽医与幻境司事。修炼找南门外玄机真人，辅助找培元先生。东门车夫去东海湾，西门夜里有鬼差通地府。府内另有万妖台，可观天下妖物造型。",
                 Arrays.asList("前往万妖台", "知道了"),
                 new DialogBox.DialogListener() {
                     @Override
@@ -812,6 +817,28 @@ public class FunctionNpcManager {
                 }
             }
         };
+    }
+
+    private void handleStockBook(final Npc npc) {
+        StockMarketSystem market = StockMarketSystem.getInstance();
+        if (!market.canUseMarket()) {
+            GameEngine.getInstance().showDialog(npc.getName(),
+                    market.getUnlockHint(),
+                    Arrays.asList("告辞"),
+                    null);
+            return;
+        }
+        GameEngine.getInstance().showDialog(npc.getName(),
+                "合股哩，不是赌坊一色子。九家字号录于此簿：市价约三息一变，可随买随卖；每旬按股分利入钱庄。",
+                Arrays.asList("翻看股簿", "告辞"),
+                new DialogBox.DialogListener() {
+                    @Override
+                    public void onOptionSelected(int optionIndex) {
+                        if (optionIndex == 0) {
+                            GameEngine.getInstance().showStockBookPanel();
+                        }
+                    }
+                });
     }
 
     private void handleBank(Npc npc) {

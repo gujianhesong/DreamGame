@@ -9,6 +9,7 @@ import com.game.dream.bean.ItemInfo;
 import com.game.dream.bean.TreasureMapItemInfo;
 import com.game.dream.bean.RoleInfo;
 import com.game.dream.bean.SaveInfo;
+import com.game.dream.bean.StockMarketInfo;
 import com.game.dream.bean.SaveSlotInfo;
 import com.game.dream.utils.LogUtil;
 import com.game.dream.utils.StorageHelper;
@@ -85,6 +86,7 @@ public class SaveSystem {
             saveInfo.setSkillBookShopBought(ShopSystem.getInstance().getSkillBookShopBought());
             if (this.saveInfo != null) {
                 saveInfo.setIllusionRealmInfo(this.saveInfo.getIllusionRealmInfo());
+                saveInfo.setStockMarketInfo(this.saveInfo.getStockMarketInfo());
             }
 
             String jsonData = gson.toJson(saveInfo);
@@ -275,6 +277,11 @@ public class SaveSystem {
         com.game.dream.quest.SideQuest005.syncWorld();
         com.game.dream.quest.SideQuest006.syncWorld();
         com.game.dream.quest.SideQuest007.syncWorld();
+        StockMarketSystem.getInstance().resetDayTracking();
+        StockMarketInfo sm = saveInfo.getStockMarketInfo();
+        if (sm != null) {
+            StockMarketSystem.getInstance().ensureMarketInitialized(sm);
+        }
     }
 
     private SaveInfo getInitData() {

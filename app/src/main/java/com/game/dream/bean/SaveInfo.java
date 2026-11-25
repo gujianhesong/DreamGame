@@ -19,6 +19,7 @@ public class SaveInfo {
     private List<PetInfo> petInfos;
 
     private IllusionRealmInfo illusionRealmInfo;
+    private StockMarketInfo stockMarketInfo;
 
     private String saveId;
     private long updatedAt;
@@ -128,6 +129,14 @@ public class SaveInfo {
 
     public void setIllusionRealmInfo(IllusionRealmInfo illusionRealmInfo) {
         this.illusionRealmInfo = illusionRealmInfo;
+    }
+
+    public StockMarketInfo getStockMarketInfo() {
+        return stockMarketInfo;
+    }
+
+    public void setStockMarketInfo(StockMarketInfo stockMarketInfo) {
+        this.stockMarketInfo = stockMarketInfo;
     }
 
     public List<PetInfo> getPetInfos() {

@@ -103,6 +103,7 @@ public class NpcSystem {
                 npcList.add(new Npc(100251, "济世郎中", NpcType.DOCTOR, 26080, 29910));
                 npcList.add(new Npc(100260, "官仓管事", NpcType.SERVANT, 26400, 29910));
                 npcList.add(new Npc(100264, "钱庄掌柜", NpcType.MERCHANT, 25600, 30040));
+                npcList.add(new Npc(100281, "股簿馆主·沈簿首", NpcType.SCHOLAR, 25820, 29940));
                 npcList.add(new Npc(100252, "欧冶铁匠", NpcType.MERCHANT, 26400, 30040));
 
                 // 东街旗舰店门前

@@ -74,6 +74,7 @@ public class GameUI {
 
     // Equipment sell dialog
     private EquipSellDialog equipSellDialog;
+    private com.game.dream.ui.StockBookDialog stockBookDialog;
 
     // Message panel
     private MessagePanel messagePanel;
@@ -110,6 +111,7 @@ public class GameUI {
     private float lastSkillsPanelTouchY = 0;
     private float lastItemsPanelTouchY = 0; // Add this line
     private float lastQuestPanelTouchY = 0;
+    private float lastStockBookTouchY = 0;
     private float lastPetPanelTouchY = 0;
     /** 物品信息框盖住底栏时，这一轮按下/抬起都不要交给菜单 */
     private boolean blockMenuUntilTouchUp;
@@ -196,6 +198,7 @@ public class GameUI {
 
         // Initialize EquipSellDialog
         equipSellDialog = new EquipSellDialog();
+        stockBookDialog = new com.game.dream.ui.StockBookDialog();
 
         // Initialize message panel
         messagePanel = new MessagePanel();
@@ -376,6 +379,9 @@ public class GameUI {
             int panelY = (height - panelHeight) / 2;
             currentDialog.setBounds(panelX, panelY, panelWidth, panelHeight);
             equipSellDialog.setBounds(panelX, panelY, panelWidth, panelHeight);
+            if (stockBookDialog != null) {
+                stockBookDialog.setBounds(panelX, panelY, panelWidth, panelHeight);
+            }
         }
 
         // Initialize message panel bounds
@@ -651,6 +657,9 @@ public class GameUI {
         if (equipSellDialog != null && equipSellDialog.isVisible()) {
             equipSellDialog.draw(canvas);
         }
+        if (stockBookDialog != null && stockBookDialog.isVisible()) {
+            stockBookDialog.draw(canvas);
+        }
 
         if (worldMapPanel != null && worldMapPanel.isVisible()) {
             worldMapPanel.draw(canvas);
@@ -702,6 +711,21 @@ public class GameUI {
             if (action == MotionEvent.ACTION_DOWN && equipSellDialog.handleTouch(x, y)) {
                 return true;
             }
+        }
+        if (stockBookDialog != null && stockBookDialog.isVisible()) {
+            if (action == MotionEvent.ACTION_DOWN) {
+                lastStockBookTouchY = y;
+                if (stockBookDialog.handleTouch(x, y)) {
+                    return true;
+                }
+            } else if (action == MotionEvent.ACTION_MOVE) {
+                float deltaY = y - lastStockBookTouchY;
+                if (Math.abs(deltaY) > 5 && stockBookDialog.handleScroll(0, deltaY)) {
+                    lastStockBookTouchY = y;
+                    return true;
+                }
+            }
+            return true;
         }
 
         if (currentDialog != null && currentDialog.isVisible()) {
@@ -1758,6 +1782,16 @@ public class GameUI {
 
     public EquipSellDialog getEquipSellDialog() {
         return equipSellDialog;
+    }
+
+    public void showStockBookPanel() {
+        if (stockBookDialog != null) {
+            stockBookDialog.show();
+        }
+    }
+
+    public com.game.dream.ui.StockBookDialog getStockBookDialog() {
+        return stockBookDialog;
     }
 
     /**

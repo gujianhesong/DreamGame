@@ -213,6 +213,11 @@ public class DayNightCycle {
         return gameTime >= NIGHT_START || gameTime < DAY_START;
     }
 
+    /** 当前游戏日内经过的秒数（0～86400） */
+    public float getGameTimeSeconds() {
+        return gameTime;
+    }
+
     /** 跳转到指定时辰（0-23） */
     public void setHour(int hour) {
         if (hour < 0) {

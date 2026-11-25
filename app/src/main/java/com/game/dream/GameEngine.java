@@ -448,6 +448,7 @@ public class GameEngine {
             com.game.dream.system.StockMarketSystem.getInstance().tickDayNight(dayNightCycle);
         }
         com.game.dream.system.StockMarketSystem.getInstance().tickRealtime(deltaTime);
+        com.game.dream.system.LotterySystem.getInstance().tickRealtime(deltaTime);
 
         // Update weather system
         if (weatherSystem != null) {

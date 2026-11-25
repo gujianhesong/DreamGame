@@ -21,6 +21,7 @@ public class SaveInfo {
     private IllusionRealmInfo illusionRealmInfo;
     private StockMarketInfo stockMarketInfo;
     private GamblingInfo gamblingInfo;
+    private LotteryInfo lotteryInfo;
 
     private String saveId;
     private long updatedAt;
@@ -146,6 +147,14 @@ public class SaveInfo {
 
     public void setGamblingInfo(GamblingInfo gamblingInfo) {
         this.gamblingInfo = gamblingInfo;
+    }
+
+    public LotteryInfo getLotteryInfo() {
+        return lotteryInfo;
+    }
+
+    public void setLotteryInfo(LotteryInfo lotteryInfo) {
+        this.lotteryInfo = lotteryInfo;
     }
 
     public List<PetInfo> getPetInfos() {

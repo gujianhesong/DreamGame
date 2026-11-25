@@ -9,6 +9,7 @@ import com.game.dream.item.Item;
 import com.game.dream.item.ItemStack;
 import com.game.dream.system.DayNightCycle;
 import com.game.dream.system.GamblingSystem;
+import com.game.dream.system.LotterySystem;
 import com.game.dream.system.StockMarketSystem;
 import com.game.dream.system.ItemSystem;
 import com.game.dream.system.MapSystem;
@@ -398,6 +399,10 @@ public class FunctionNpcManager {
                 handleGamblingHouse(npc);
                 return true;
             }
+            case 100282: {
+                handleFireworksLottery(npc);
+                return true;
+            }
             case 100258: {
                 handleYamenGuide(npc);
                 return true;
@@ -566,6 +571,51 @@ public class FunctionNpcManager {
                 });
     }
 
+    private void handleFireworksLottery(Npc npc) {
+        LotterySystem lottery = LotterySystem.getInstance();
+        int round = lottery.getCurrentDrawRound();
+        String pending = lottery.hasTicketForCurrentPeriod()
+                ? "\n本期已购第 " + round + " 期，您的号码：" + lottery.getCurrentPeriodTicketNumber()
+                + "，约 " + LotterySystem.formatCountdown(lottery.getSecondsUntilDraw()) + " 后烟花开奖。"
+                : "\n第 " + round + " 期尚未购彩，约 "
+                + LotterySystem.formatCountdown(lottery.getSecondsUntilDraw()) + " 后开奖。";
+        String intro = lottery.formatRules() + pending;
+        GameEngine.getInstance().showDialog(npc.getName(), intro,
+                Arrays.asList("购彩（" + LotterySystem.TICKET_PRICE + " 银）", "查看上期开奖", "下次再来"),
+                new DialogBox.DialogListener() {
+                    @Override
+                    public void onOptionSelected(int optionIndex) {
+                        if (optionIndex == 2) {
+                            return;
+                        }
+                        if (optionIndex == 1) {
+                            GameEngine.getInstance().showDialog(npc.getName(), lottery.formatLastDrawSummary());
+                            return;
+                        }
+                        if (lottery.hasTicketForCurrentPeriod()) {
+                            GameEngine.getInstance().showCenterToast("本期已买过一注，等下期再试。", 2200);
+                            return;
+                        }
+                        if (!lottery.canAffordTicket()) {
+                            GameEngine.getInstance().showCenterToast(
+                                    "银两不足，需要 " + LotterySystem.TICKET_PRICE
+                                            + " 银（含钱庄可用 " + lottery.getSpendableSilver() + "）。", 2500);
+                            return;
+                        }
+                        int num = lottery.buyTicket();
+                        if (num <= 0) {
+                            GameEngine.getInstance().showCenterToast("购彩失败。", 2000);
+                            return;
+                        }
+                        int r = lottery.getCurrentDrawRound();
+                        GameEngine.getInstance().showDialog(npc.getName(),
+                                "机筒一转，烟花一窜——您第 " + r + " 期的号码是【" + num + "】。\n"
+                                        + "约 " + LotterySystem.formatCountdown(lottery.getSecondsUntilDraw())
+                                        + " 后满城烟花，便揭晓开奖号。祝君好运！");
+                    }
+                });
+    }
+
     private void handleGamblingHouse(Npc npc) {
         GamblingSystem gambling = GamblingSystem.getInstance();
         if (gambling.isDailyLossCapped()) {
@@ -711,7 +761,7 @@ public class FunctionNpcManager {
 
     private void handleYamenGuide(Npc npc) {
         GameEngine.getInstance().showDialog(npc.getName(),
-                "金陵城大，少侠可问贫吏。北街醉仙楼用膳、悦来客栈歇宿，东侧背街有红香院听曲；醉仙楼东侧毗如意赌坊。西街回春堂买药，欧冶铁铺打铁，钱庄存钱，旁有股簿馆合股买卖；官仓扩行囊。东街龙泉剑庄、铁甲坊、璀璨珠宝、藏经阁。南广场杂货买捕捉符，旁有收购、兽医与幻境司事。修炼找南门外玄机真人，辅助找培元先生。东门车夫去东海湾，西门夜里有鬼差通地府。府内另有万妖台，可观天下妖物造型。",
+                "金陵城大，少侠可问贫吏。北街醉仙楼用膳、悦来客栈歇宿，东侧背街有红香院听曲；醉仙楼东侧毗如意赌坊。西街回春堂买药，欧冶铁铺打铁，钱庄存钱，旁有股簿馆合股买卖；官仓扩行囊。东街龙泉剑庄、铁甲坊、璀璨珠宝、藏经阁。南广场杂货买捕捉符，旁有收购、兽医、幻境司事与烟花使者售金陵彩。修炼找南门外玄机真人，辅助找培元先生。东门车夫去东海湾，西门夜里有鬼差通地府。府内另有万妖台，可观天下妖物造型。",
                 Arrays.asList("前往万妖台", "知道了"),
                 new DialogBox.DialogListener() {
                     @Override

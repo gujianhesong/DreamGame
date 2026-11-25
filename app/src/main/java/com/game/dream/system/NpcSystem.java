@@ -127,6 +127,7 @@ public class NpcSystem {
                 npcList.add(new Npc(100261, "兽医师", NpcType.DOCTOR, 30120, 33380));
                 npcList.add(new Npc(100259, "南市收购商", NpcType.MERCHANT, 29880, 33620));
                 npcList.add(new Npc(100262, "幻境司事", NpcType.TAOIST, 30120, 33620));
+                npcList.add(new Npc(100282, "烟花使者", NpcType.GIRL, 30280, 33740));
 
                 // 四面城门左右卫兵，面朝城外（0南 1北 2西 3东）
                 npcList.add(gateGuard(100270, 29710, 34660, 0));

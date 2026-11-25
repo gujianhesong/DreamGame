@@ -1185,6 +1185,7 @@ public class GameEngine {
 
                     // If player leveled up, show special notification
                     if (newLevel > oldLevel) {
+                        com.game.dream.system.TitleSystem.getInstance().onLevelUp(newLevel);
                         floatingTexts.add(new FloatingText(
                                 player.getX(),
                                 player.getY() - 220,
@@ -1194,6 +1195,7 @@ public class GameEngine {
                         addMessage("恭喜升级! 当前等级: " + newLevel, com.game.dream.panel.MessagePanel.MessageType.LEVEL_UP);
                     }
 
+                    com.game.dream.system.TitleSystem.getInstance().onKillEnemy();
                     enemies.remove(i);
                 }
             }
@@ -1438,6 +1440,7 @@ public class GameEngine {
                                     return;
                                 }
                                 pet.setName(nm);
+                                com.game.dream.system.TitleSystem.getInstance().onUiFlag("pet_rename");
                                 showCenterToast("已改名为「" + nm + "」", 1200);
                             }
                         })
@@ -1513,6 +1516,7 @@ public class GameEngine {
         switch (outcome) {
             case SUCCESS:
                 enemies.remove(target);
+                com.game.dream.system.TitleSystem.getInstance().onPetCapture(true);
                 showCenterToast("成功收服「" + target.getName() + "」！", 1800);
                 syncActivePetToWorld();
                 break;
@@ -1532,6 +1536,7 @@ public class GameEngine {
                 showCenterToast("「" + target.getName() + "」刚刚挣脱，稍后再试", 1500);
                 break;
             case FAIL_ROLL:
+                com.game.dream.system.TitleSystem.getInstance().onPetCapture(false);
                 showCenterToast("「" + target.getName() + "」挣脱了捕捉，恢复了部分气血！", 1800);
                 break;
             default:
@@ -2411,6 +2416,12 @@ public class GameEngine {
         }
     }
 
+    public void showTitlePanel() {
+        if (gameUI != null) {
+            gameUI.showTitlePanel();
+        }
+    }
+
     /**
      * Show float text
      */
@@ -2541,6 +2552,8 @@ public class GameEngine {
 
                 applyGalleryTrialForMap(mapId, leavingGallery);
                 isLoading = false;
+                com.game.dream.system.TitleSystem.getInstance().onTeleport();
+                com.game.dream.system.TitleSystem.getInstance().onMapEntered(mapId);
                 if (!MapSystem.getInstance().isIllusionRealmMap()) {
                     showCenterToast("到达了" + mapName);
                 }
@@ -2767,6 +2780,7 @@ public class GameEngine {
             IllusionRealmSystem.getInstance().onPlayerDefeated();
             return;
         }
+        com.game.dream.system.TitleSystem.getInstance().onPlayerDeath();
         // 死亡后魂归地府幽魂牢：先扣除死亡惩罚，再恢复状态，最后传送
         RoleInfo roleInfo = RoleSystem.getInstance().getRoleInfo();
         // 死亡惩罚：扣除 1% 经验与 1% 金钱

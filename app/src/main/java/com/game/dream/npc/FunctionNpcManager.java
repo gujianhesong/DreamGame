@@ -16,6 +16,7 @@ import com.game.dream.system.MapSystem;
 import com.game.dream.system.Pet;
 import com.game.dream.system.PetSystem;
 import com.game.dream.system.RoleSystem;
+import com.game.dream.system.TitleSystem;
 import com.game.dream.ui.DialogBox;
 import com.game.dream.ui.EquipSellDialog;
 
@@ -35,6 +36,7 @@ public class FunctionNpcManager {
     }
 
     public boolean handleNpcClick(Npc npc) {
+        TitleSystem.getInstance().onNpcId(npc.getId());
         switch (npc.getId()) {
             case 100101: {
                 // 清溪村村长 - 迷宫入口
@@ -108,6 +110,7 @@ public class FunctionNpcManager {
                             }
                             RoleSystem.getInstance().getRoleInfo().setMoney(
                                     RoleSystem.getInstance().getRoleInfo().getMoney() - cost);
+                            TitleSystem.getInstance().onCoachTravel();
                             GameEngine.getInstance().teleportToMapWithPosition(MapSystem.MAP_ID_JIN_LING, 2880, 58470);
                         }
                     }
@@ -365,6 +368,7 @@ public class FunctionNpcManager {
                     @Override
                     public void onOptionSelected(int optionIndex) {
                         if (optionIndex == 0) {
+                            TitleSystem.getInstance().onSoulReturn();
                             GameEngine.getInstance().teleportToMap(MapSystem.MAP_ID_QING_XI);
                         }
                     }
@@ -384,6 +388,7 @@ public class FunctionNpcManager {
                 return true;
             }
             case 100279: {
+                TitleSystem.getInstance().onShuyingTalk();
                 GameEngine.getInstance().showDialog(npc.getName(),
                         "疏影抱琴，只承风雅之客。院中有茶有色，亦可听一曲清词，与刀兵之事无关。",
                         Arrays.asList("多谢姑娘", "告辞"),
@@ -550,6 +555,7 @@ public class FunctionNpcManager {
                 role.setMoney(role.getMoney() - costMoney);
                 role.setHp(role.getBloodCap());
                 role.setMp(role.getMagicCap());
+                TitleSystem.getInstance().onHealNpc();
                 GameEngine.getInstance().showDialog(npc.getName(), "好了，少侠已经完全恢复了");
             }
         });
@@ -565,6 +571,7 @@ public class FunctionNpcManager {
                         if (optionIndex != 0) {
                             return;
                         }
+                        TitleSystem.getInstance().onHongxiang();
                         GameEngine.getInstance().showDialog(npc.getName(),
                                 "春香含笑一礼：楼上疏影正调弦，可听一曲《清平乐》。少侠且安心，不问江湖恩怨。");
                     }
@@ -602,12 +609,16 @@ public class FunctionNpcManager {
                                             + " 银（含钱庄可用 " + lottery.getSpendableSilver() + "）。", 2500);
                             return;
                         }
+                        boolean rush = lottery.getSecondsUntilDraw() <= 30;
                         int num = lottery.buyTicket();
                         if (num <= 0) {
                             GameEngine.getInstance().showCenterToast("购彩失败。", 2000);
                             return;
                         }
                         int r = lottery.getCurrentDrawRound();
+                        if (rush) {
+                            TitleSystem.getInstance().setFlag("lottery_rush_buy");
+                        }
                         GameEngine.getInstance().showDialog(npc.getName(),
                                 "机筒一转，烟花一窜——您第 " + r + " 期的号码是【" + num + "】。\n"
                                         + "约 " + LotterySystem.formatCountdown(lottery.getSecondsUntilDraw())
@@ -710,22 +721,30 @@ public class FunctionNpcManager {
         GamblingSystem gambling = GamblingSystem.getInstance();
         int sum = d1 + d2;
         String roll = d1 + "、" + d2 + "，共" + sum + "点。";
+        int net;
         if (sum == 7) {
-            gambling.recordNetResult(-stake);
+            net = -stake;
+            gambling.recordNetResult(net);
+            TitleSystem.getInstance().onGambleBet(betBig, sum, false, net, stake);
             GameEngine.getInstance().showDialog(npc.getName(), roll + "恰好七点，庄家通吃。");
             return;
         }
         boolean win = betBig ? sum >= 8 : sum <= 6;
         if (win) {
+            net = stake;
             gambling.depositWinnings(stake * 2);
-            gambling.recordNetResult(stake);
+            gambling.recordNetResult(net);
+            TitleSystem.getInstance().onGambleBet(betBig, sum, true, net, stake);
             GameEngine.getInstance().showDialog(npc.getName(),
                     roll + "押中了！净赢 " + stake + " 银，" + (stake * 2) + " 银已入袋。");
         } else {
-            gambling.recordNetResult(-stake);
+            net = -stake;
+            gambling.recordNetResult(net);
+            TitleSystem.getInstance().onGambleBet(betBig, sum, false, net, stake);
             GameEngine.getInstance().showDialog(npc.getName(),
                     roll + "手气差点，输掉 " + stake + " 银。");
         }
+        TitleSystem.getInstance().onGambleComeback(gambling.getDailyNetSilver());
     }
 
     private void handleInnRest(Npc npc) {
@@ -753,6 +772,7 @@ public class FunctionNpcManager {
                         if (cycle != null) {
                             cycle.setHour(optionIndex == 0 ? 8 : 20);
                         }
+                        TitleSystem.getInstance().onInnRest(optionIndex == 0);
                         GameEngine.getInstance().showDialog(npc.getName(),
                                 optionIndex == 0 ? "一夜安睡，天已大亮。" : "一觉醒来，已是夜色。");
                     }
@@ -798,6 +818,7 @@ public class FunctionNpcManager {
                         }
                         role.setMoney(role.getMoney() - cost);
                         ItemSystem.getInstance().expandBag(extra, cap);
+                        TitleSystem.getInstance().onWarehouseExpand();
                         GameEngine.getInstance().showDialog(npc.getName(),
                                 "扩容完成，当前行囊 " + ItemSystem.getInstance().getMaxSize() + " 格。");
                     }
@@ -830,6 +851,7 @@ public class FunctionNpcManager {
                         for (Pet pet : PetSystem.getInstance().getRoster()) {
                             PetSystem.getInstance().heal(pet);
                         }
+                        TitleSystem.getInstance().onPetHeal();
                         GameEngine.getInstance().showDialog(npc.getName(), "都调养好了，可以再战。");
                     }
                 });
@@ -976,6 +998,7 @@ public class FunctionNpcManager {
                         if (optionIndex == 0) {
                             r.setBankMoney(r.getBankMoney() + r.getMoney());
                             r.setMoney(0);
+                            TitleSystem.getInstance().onBankUsed();
                             GameEngine.getInstance().showDialog(npc.getName(), "已全部存入，柜中 " + r.getBankMoney() + "。");
                         } else if (optionIndex == 1) {
                             r.setMoney(r.getMoney() + r.getBankMoney());
@@ -985,6 +1008,7 @@ public class FunctionNpcManager {
                             long half = r.getMoney() / 2;
                             r.setBankMoney(r.getBankMoney() + half);
                             r.setMoney(r.getMoney() - half);
+                            TitleSystem.getInstance().onBankUsed();
                             GameEngine.getInstance().showDialog(npc.getName(),
                                     "已存入 " + half + "，柜中 " + r.getBankMoney() + "。");
                         }

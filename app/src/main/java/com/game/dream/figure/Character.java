@@ -127,6 +127,25 @@ public abstract class Character {
         // Draw name with color
         namePaint.setColor(Color.WHITE);
         canvas.drawText(name, cx, cy + 45 * scale, namePaint);
+
+        String subtitle = getSubtitleLine();
+        if (subtitle != null && !subtitle.isEmpty()) {
+            float subSize = 13.5f * scale;
+            float subY = cy + 45 * scale + 14 * scale;
+            namePaint.setTextSize(subSize);
+            namePaint.setColor(Color.BLACK);
+            canvas.drawText(subtitle, cx + 1, subY + 1, namePaint);
+            namePaint.setColor(getSubtitleColor());
+            canvas.drawText(subtitle, cx, subY, namePaint);
+        }
+    }
+
+    protected String getSubtitleLine() {
+        return null;
+    }
+
+    protected int getSubtitleColor() {
+        return Color.rgb(255, 235, 150);
     }
 
     /**

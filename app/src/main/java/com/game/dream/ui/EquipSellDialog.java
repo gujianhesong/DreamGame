@@ -417,6 +417,7 @@ public class EquipSellDialog {
         RoleSystem.getInstance().getRoleInfo().setMoney(
                 RoleSystem.getInstance().getRoleInfo().getMoney() + price);
         GameEngine.getInstance().showCenterToast("出售 " + name + " 获得 " + price + " 金钱");
+        com.game.dream.system.TitleSystem.getInstance().onEquipSell();
 
         if (callback != null) {
             callback.onItemSold(stack, price);

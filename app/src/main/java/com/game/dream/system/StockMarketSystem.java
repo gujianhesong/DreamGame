@@ -420,6 +420,7 @@ public class StockMarketSystem {
         if (total <= 0) {
             return;
         }
+        TitleSystem.getInstance().onStockDividend();
         RoleInfo role = RoleSystem.getInstance().getRoleInfo();
         role.setBankMoney(role.getBankMoney() + total);
         GameEngine engine = GameEngine.getInstance();
@@ -471,6 +472,7 @@ public class StockMarketSystem {
         long[] totalCost = info.getTotalCost();
         shares[stockId] += qty;
         totalCost[stockId] += cost;
+        TitleSystem.getInstance().onStockTrade();
         return "落契成功：购入 " + STOCK_NAMES[stockId] + " " + qty + " 股，耗银 " + cost + "。";
     }
 
@@ -492,6 +494,7 @@ public class StockMarketSystem {
         }
         shares[stockId] -= qty;
         depositSilver(gain);
+        TitleSystem.getInstance().onStockTrade();
         return "出让 " + STOCK_NAMES[stockId] + " " + qty + " 股，得银 " + gain + "，已入钱庄。";
     }
 }

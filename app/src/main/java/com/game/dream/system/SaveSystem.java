@@ -89,6 +89,7 @@ public class SaveSystem {
                 saveInfo.setStockMarketInfo(this.saveInfo.getStockMarketInfo());
                 saveInfo.setGamblingInfo(this.saveInfo.getGamblingInfo());
                 saveInfo.setLotteryInfo(this.saveInfo.getLotteryInfo());
+                saveInfo.setTitleProgressInfo(this.saveInfo.getTitleProgressInfo());
             }
 
             String jsonData = gson.toJson(saveInfo);

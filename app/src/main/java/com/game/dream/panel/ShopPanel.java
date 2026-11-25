@@ -327,6 +327,7 @@ public class ShopPanel {
 
         RoleSystem.getInstance().removeMoney(shopItem.price);
         ItemSystem.getInstance().addItem(itemToAdd, 1);
+        com.game.dream.system.TitleSystem.getInstance().onShopBuy();
         GameEngine.getInstance().showCenterToast("购买了 " + itemToAdd.getName());
     }
 

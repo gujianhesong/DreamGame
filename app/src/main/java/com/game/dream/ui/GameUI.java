@@ -76,6 +76,8 @@ public class GameUI {
     private EquipSellDialog equipSellDialog;
     private com.game.dream.ui.StockBookDialog stockBookDialog;
     private GamblingDiceOverlay gamblingDiceOverlay;
+    private com.game.dream.panel.TitlePanel titlePanel;
+    private float lastTitlePanelTouchY = 0;
 
     // Message panel
     private MessagePanel messagePanel;
@@ -201,6 +203,7 @@ public class GameUI {
         equipSellDialog = new EquipSellDialog();
         stockBookDialog = new com.game.dream.ui.StockBookDialog();
         gamblingDiceOverlay = new GamblingDiceOverlay();
+        titlePanel = new com.game.dream.panel.TitlePanel();
 
         // Initialize message panel
         messagePanel = new MessagePanel();
@@ -281,6 +284,13 @@ public class GameUI {
             int panelX = (width - panelWidth) / 2;
             int panelY = (height - panelHeight) / 2;
             roleInfoPanel.setBounds(panelX, panelY, panelWidth, panelHeight);
+        }
+        if (titlePanel != null) {
+            int panelWidth = Math.min(720, width - 24);
+            int panelHeight = Math.min(860, height - 48);
+            int panelX = (width - panelWidth) / 2;
+            int panelY = (height - panelHeight) / 2;
+            titlePanel.setBounds(panelX, panelY, panelWidth, panelHeight);
         }
 
         // Initialize equipment panel (center of screen)
@@ -669,6 +679,9 @@ public class GameUI {
         if (gamblingDiceOverlay != null && gamblingDiceOverlay.isVisible()) {
             gamblingDiceOverlay.draw(canvas);
         }
+        if (titlePanel != null && titlePanel.isVisible()) {
+            titlePanel.draw(canvas);
+        }
 
         if (worldMapPanel != null && worldMapPanel.isVisible()) {
             worldMapPanel.draw(canvas);
@@ -739,6 +752,24 @@ public class GameUI {
         if (gamblingDiceOverlay != null && gamblingDiceOverlay.isVisible()) {
             if (action == MotionEvent.ACTION_UP) {
                 gamblingDiceOverlay.handleTouch(x, y);
+            }
+            return true;
+        }
+        if (titlePanel != null && titlePanel.isVisible()) {
+            if (action == MotionEvent.ACTION_DOWN) {
+                lastTitlePanelTouchY = y;
+                if (titlePanel.handleTouch(x, y)) {
+                    return true;
+                }
+            } else if (action == MotionEvent.ACTION_UP) {
+                titlePanel.handleTouch(x, y);
+                return true;
+            } else if (action == MotionEvent.ACTION_MOVE) {
+                float d = y - lastTitlePanelTouchY;
+                if (Math.abs(d) > 6 && titlePanel.handleScroll(d)) {
+                    lastTitlePanelTouchY = y;
+                    return true;
+                }
             }
             return true;
         }
@@ -1763,6 +1794,7 @@ public class GameUI {
     }
 
     public void showShopPanel(List<ShopPanel.ShopItem> shopItems) {
+        com.game.dream.system.TitleSystem.getInstance().onShopOpen();
         if (shopPanel != null) {
             shopPanel.showShopItems(shopItems);
         }
@@ -1813,6 +1845,12 @@ public class GameUI {
                                      GamblingDiceOverlay.Listener listener) {
         if (gamblingDiceOverlay != null) {
             gamblingDiceOverlay.show(dealerName, die1, die2, listener);
+        }
+    }
+
+    public void showTitlePanel() {
+        if (titlePanel != null) {
+            titlePanel.show();
         }
     }
 

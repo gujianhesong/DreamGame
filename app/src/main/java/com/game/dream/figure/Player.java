@@ -22,6 +22,7 @@ import com.game.dream.map.MazeGenerator;
 import com.game.dream.system.ItemSystem;
 import com.game.dream.system.MapSystem;
 import com.game.dream.system.RoleSystem;
+import com.game.dream.system.TitleSystem;
 import com.game.dream.system.SkillSystem;
 import com.game.dream.ui.FloatingText;
 import com.game.dream.utils.BattleUtil;
@@ -129,6 +130,16 @@ public class Player extends Character {
 
         // Initialize renderer
         this.renderer = new PlayerRenderer(this);
+    }
+
+    @Override
+    protected String getSubtitleLine() {
+        return TitleSystem.getInstance().getEquippedDisplayName();
+    }
+
+    @Override
+    protected int getSubtitleColor() {
+        return TitleSystem.getInstance().getEquippedColor();
     }
 
     @Override

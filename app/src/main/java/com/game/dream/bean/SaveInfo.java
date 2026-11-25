@@ -22,6 +22,7 @@ public class SaveInfo {
     private StockMarketInfo stockMarketInfo;
     private GamblingInfo gamblingInfo;
     private LotteryInfo lotteryInfo;
+    private TitleProgressInfo titleProgressInfo;
 
     private String saveId;
     private long updatedAt;
@@ -155,6 +156,14 @@ public class SaveInfo {
 
     public void setLotteryInfo(LotteryInfo lotteryInfo) {
         this.lotteryInfo = lotteryInfo;
+    }
+
+    public TitleProgressInfo getTitleProgressInfo() {
+        return titleProgressInfo;
+    }
+
+    public void setTitleProgressInfo(TitleProgressInfo titleProgressInfo) {
+        this.titleProgressInfo = titleProgressInfo;
     }
 
     public List<PetInfo> getPetInfos() {

@@ -10,6 +10,7 @@ import com.game.dream.figure.Player;
 import com.game.dream.bean.AddPointResult;
 import com.game.dream.bean.RoleInfo;
 import com.game.dream.system.RoleSystem;
+import com.game.dream.system.TitleSystem;
 import com.game.dream.utils.TouchUtil;
 
 import java.util.ArrayList;
@@ -28,6 +29,7 @@ public class RoleInfoPanel {
     private List<Rect> plusButtons;
     private List<Rect> minusButtons;
     private Rect confirmButton;
+    private Rect titleButton;
     private Rect levelUpButton;
 
     // Attribute names mapping
@@ -53,6 +55,7 @@ public class RoleInfoPanel {
         this.plusButtons = new ArrayList<>();
         this.minusButtons = new ArrayList<>();
         this.confirmButton = new Rect();
+        this.titleButton = new Rect();
         this.levelUpButton = new Rect();
     }
 
@@ -141,6 +144,24 @@ public class RoleInfoPanel {
         );
     }
 
+    /** 称谓行：标签「称谓」右侧为「更改」按钮 */
+    private void layoutTitleButtonBesideLabel(int rowTop) {
+        paintMeasure.setAntiAlias(true);
+        paintMeasure.setTextSize(28);
+        float labelRight = panelBounds.left + 20 + paintMeasure.measureText("称谓");
+        int btnW = 72;
+        int btnH = 34;
+        int gap = 10;
+        titleButton.set(
+                (int) (labelRight + gap),
+                rowTop - 6,
+                (int) (labelRight + gap + btnW),
+                rowTop - 6 + btnH
+        );
+    }
+
+    private final Paint paintMeasure = new Paint();
+
     /**
      * Draw the character info panel
      */
@@ -203,15 +224,22 @@ public class RoleInfoPanel {
         canvas.drawText("Lv." + roleInfo.getLevel(), panelBounds.right - 20, startY + 20, paint);
         startY += lineHeight;
 
-        // Label
+        // 称谓行：左「称谓」，紧邻右侧「更改」，余白显示当前佩戴
         paint.setColor(Color.WHITE);
         paint.setTextSize(28);
         paint.setTextAlign(Paint.Align.LEFT);
         canvas.drawText("称谓", panelBounds.left + 20, startY + 20, paint);
-
-        paint.setColor(Color.rgb(255, 215, 0)); // Gold
+        layoutTitleButtonBesideLabel(startY);
+        drawTitleButton(canvas, paint);
         paint.setTextAlign(Paint.Align.RIGHT);
-        canvas.drawText(roleInfo.getLabel(), panelBounds.right - 20, startY + 20, paint);
+        String worn = TitleSystem.getInstance().getEquippedDisplayName();
+        if (worn != null) {
+            paint.setColor(TitleSystem.getInstance().getEquippedColor());
+            canvas.drawText(worn, panelBounds.right - 20, startY + 20, paint);
+        } else {
+            paint.setColor(Color.rgb(255, 220, 140));
+            canvas.drawText("未佩戴", panelBounds.right - 20, startY + 20, paint);
+        }
         startY += lineHeight;
 
         // Huoli
@@ -262,7 +290,6 @@ public class RoleInfoPanel {
         }
         drawAttributeRows(canvas, paint, roleInfo, startY);
 
-        // Draw confirm button
         drawConfirmButton(canvas, paint);
 
         // Experience bar
@@ -539,6 +566,24 @@ public class RoleInfoPanel {
     /**
      * Draw confirm button
      */
+    private void drawTitleButton(Canvas canvas, Paint paint) {
+        paint.setColor(Color.argb(200, 120, 90, 50));
+        canvas.drawRoundRect(titleButton.left, titleButton.top,
+                titleButton.right, titleButton.bottom, 8, 8, paint);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(2);
+        paint.setColor(Color.WHITE);
+        canvas.drawRoundRect(titleButton.left, titleButton.top,
+                titleButton.right, titleButton.bottom, 8, 8, paint);
+        paint.setStyle(Paint.Style.FILL);
+        paint.setColor(Color.WHITE);
+        paint.setTextSize(24);
+        paint.setTextAlign(Paint.Align.CENTER);
+        float centerX = (titleButton.left + titleButton.right) / 2f;
+        float centerY = (titleButton.top + titleButton.bottom) / 2f + 9;
+        canvas.drawText("更改", centerX, centerY, paint);
+    }
+
     private void drawConfirmButton(Canvas canvas, Paint paint) {
         // Button background
         paint.setColor(Color.argb(200, 50, 150, 255));
@@ -577,6 +622,11 @@ public class RoleInfoPanel {
 
         if (!levelUpButton.isEmpty() && TouchUtil.checkIsInTouchRectFloat(levelUpButton, x, y)) {
             handleLevelUpClick();
+            return true;
+        }
+
+        if (TouchUtil.checkIsInTouchRectFloat(titleButton, x, y)) {
+            GameEngine.getInstance().showTitlePanel();
             return true;
         }
 
@@ -703,6 +753,7 @@ public class RoleInfoPanel {
         int need = roleSystem.getExpForNextLevel();
         if (roleSystem.tryManualLevelUp()) {
             tempRemainPoints += 5;
+            com.game.dream.system.TitleSystem.getInstance().onLevelUp(roleSystem.getRoleInfo().getLevel());
             GameEngine.getInstance().showCenterToast(
                     "升级! Lv." + roleSystem.getRoleInfo().getLevel(), 1800);
         } else {

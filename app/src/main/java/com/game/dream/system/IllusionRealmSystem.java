@@ -551,6 +551,7 @@ public class IllusionRealmSystem {
         if (stageRewardGranted) {
             return;
         }
+        com.game.dream.system.TitleSystem.getInstance().onIllusionClear();
         stageRewardGranted = true;
         phase = Phase.VICTORY;
         phaseStartTime = System.currentTimeMillis();

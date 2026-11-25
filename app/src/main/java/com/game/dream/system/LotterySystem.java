@@ -142,6 +142,7 @@ public class LotterySystem {
         int num = NUMBER_MIN + random.nextInt(NUMBER_MAX);
         info.setTicketNumber(num);
         info.setTicketDrawRound(info.getCurrentDrawRound());
+        TitleSystem.getInstance().onLotteryBuy();
         return num;
     }
 
@@ -206,6 +207,7 @@ public class LotterySystem {
                 depositPrize(prize);
                 notifyPrize(prize, player, winning, diff);
             }
+            TitleSystem.getInstance().onLotteryPrize(prize, prize >= PRIZE_EXACT);
         } else {
             info.setLastPlayerNumber(0);
             info.setLastPrizeSilver(0);

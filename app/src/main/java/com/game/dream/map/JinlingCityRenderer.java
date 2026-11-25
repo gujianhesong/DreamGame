@@ -36,7 +36,9 @@ public class JinlingCityRenderer {
         WELL,           // 水井
         CLOCK_TOWER,    // 钟楼
         STABLE,         // 马厩
-        WAREHOUSE       // 仓库
+        WAREHOUSE,      // 仓库
+        RED_PAVILION,   // 红香院（风雅娱乐）
+        GAMBLING_HOUSE  // 赌坊
     }
 
     public static class Building {
@@ -202,6 +204,22 @@ public class JinlingCityRenderer {
         buildings.add(new Building(BuildingType.MARKET_STALL, 28400, 25480, 320, 240, "面摊"));
         buildings.add(new Building(BuildingType.MARKET_STALL, 29040, 25480, 320, 240, "包子铺"));
         buildings.add(new Building(BuildingType.MARKET_STALL, 30800, 25480, 320, 240, "馄饨摊"));
+
+        // 醉仙楼东侧背巷：如意赌坊
+        buildings.add(new Building(BuildingType.GAMBLING_HOUSE, 26380, 26320, 520, 400, "如意赌坊"));
+        // 北区东侧背街：红香院（近客栈文化带）
+        buildings.add(new Building(BuildingType.RED_PAVILION, 31400, 27240, 640, 460, "红香院"));
+
+        decorations.add(new Decoration(DecoType.LANTERN, 31560, 27220, 28));
+        decorations.add(new Decoration(DecoType.LANTERN, 32120, 27220, 28));
+        decorations.add(new Decoration(DecoType.LANTERN, 32640, 27220, 28));
+        decorations.add(new Decoration(DecoType.FENCE, 31360, 27580, 90));
+        decorations.add(new Decoration(DecoType.FENCE, 32780, 27580, 90));
+        decorations.add(new Decoration(DecoType.FLOWER_BED, 32060, 27640, 140));
+
+        decorations.add(new Decoration(DecoType.LANTERN, 26440, 26300, 22));
+        decorations.add(new Decoration(DecoType.LANTERN, 26880, 26300, 22));
+        decorations.add(new Decoration(DecoType.NOTICE_BOARD, 26640, 26270, 70));
     }
 
     // ==================== 东区：兵甲珠宝藏经（各留一座） ====================
@@ -395,7 +413,7 @@ public class JinlingCityRenderer {
         decorations.add(new Decoration(DecoType.STONE_TABLE, 27200, 28300, 90));
         decorations.add(new Decoration(DecoType.STONE_TABLE, 26960, 28740, 85));
         // 北区商铺间隙
-        decorations.add(new Decoration(DecoType.STONE_TABLE, 26200, 26200, 90));
+        decorations.add(new Decoration(DecoType.STONE_TABLE, 25800, 26200, 90));
         decorations.add(new Decoration(DecoType.STONE_TABLE, 33200, 26200, 85));
 
         // === 商铺街道装饰：手推车 ===
@@ -826,6 +844,12 @@ public class JinlingCityRenderer {
                 break;
             case WAREHOUSE:
                 drawWarehouse(canvas, paint, b, dx, dy, w, h);
+                break;
+            case RED_PAVILION:
+                drawRedPavilion(canvas, paint, b, dx, dy, w, h);
+                break;
+            case GAMBLING_HOUSE:
+                drawGamblingHouse(canvas, paint, b, dx, dy, w, h);
                 break;
         }
 
@@ -1394,6 +1418,128 @@ public class JinlingCityRenderer {
         // 钟面
         paint.setColor(Color.rgb(240, 230, 200));
         canvas.drawCircle(x + w / 2, y + h * 0.18f, Math.min(w, h) * 0.12f, paint);
+    }
+
+  /** 红香院：粉墙黛瓦、月洞门、绣帘与连排红灯笼。 */
+    private void drawRedPavilion(Canvas canvas, Paint paint, Building b, float x, float y, float w, float h) {
+        float cx = x + w / 2f;
+        // 院墙
+        paint.setColor(Color.rgb(185, 155, 145));
+        canvas.drawRect(x - 18, y + h * 0.35f, x + w + 18, y + h, paint);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(3);
+        paint.setColor(Color.rgb(160, 120, 110));
+        canvas.drawRect(x - 18, y + h * 0.35f, x + w + 18, y + h, paint);
+        paint.setStyle(Paint.Style.FILL);
+        // 二层绣楼主体
+        paint.setColor(Color.rgb(228, 185, 185));
+        canvas.drawRect(x + w * 0.08f, y + h * 0.12f, x + w * 0.92f, y + h, paint);
+        drawWallLines(canvas, paint, x + w * 0.08f, y + h * 0.12f, w * 0.84f, h);
+        paint.setColor(Color.rgb(175, 135, 135));
+        canvas.drawRect(x + w * 0.08f, y + h * 0.52f, x + w * 0.92f, y + h * 0.56f, paint);
+        // 屋顶
+        paint.setColor(Color.rgb(55, 48, 52));
+        android.graphics.Path roof = new android.graphics.Path();
+        roof.moveTo(x - 12, y + h * 0.22f);
+        roof.lineTo(cx, y);
+        roof.lineTo(x + w + 12, y + h * 0.22f);
+        roof.close();
+        canvas.drawPath(roof, paint);
+        drawRoofTiles(canvas, paint, x - 12, y + h * 0.22f, w + 24);
+        drawEaves(canvas, paint, x, y, w, h, -12, 0.22f);
+        // 檐下绣帘
+        drawCurtain(canvas, paint, x + w * 0.1f, y + h * 0.22f, w * 0.8f);
+        paint.setColor(Color.rgb(200, 60, 90));
+        canvas.drawRect(x + w * 0.12f, y + h * 0.28f, x + w * 0.88f, y + h * 0.34f, paint);
+        // 格窗
+        drawLatticeWindow(canvas, paint, x + w * 0.14f, y + h * 0.3f, w * 0.12f, h * 0.1f);
+        drawLatticeWindow(canvas, paint, x + w * 0.74f, y + h * 0.3f, w * 0.12f, h * 0.1f);
+        drawLatticeWindow(canvas, paint, x + w * 0.14f, y + h * 0.62f, w * 0.12f, h * 0.1f);
+        drawLatticeWindow(canvas, paint, x + w * 0.74f, y + h * 0.62f, w * 0.12f, h * 0.1f);
+        // 月洞门
+        float gateR = Math.min(w, h) * 0.16f;
+        paint.setColor(Color.rgb(245, 235, 225));
+        canvas.drawCircle(cx, y + h - gateR - 8, gateR, paint);
+        paint.setColor(Color.rgb(35, 20, 25));
+        canvas.drawCircle(cx, y + h - gateR - 8, gateR - 12, paint);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(4);
+        paint.setColor(Color.rgb(200, 160, 80));
+        canvas.drawCircle(cx, y + h - gateR - 8, gateR, paint);
+        paint.setStyle(Paint.Style.FILL);
+        // 门额匾
+        drawSignboard(canvas, paint, cx, y + h * 0.24f, "红香院");
+        // 连排红灯笼
+        for (int i = -2; i <= 2; i++) {
+            drawBuildingLantern(canvas, paint, cx + i * w * 0.14f, y + h * 0.26f, 11, 16);
+        }
+        drawSteps(canvas, paint, cx, y + h, 4);
+    }
+
+    /** 赌坊：深色门面、骰子匾、板窗与幽绿灯笼。 */
+    private void drawGamblingHouse(Canvas canvas, Paint paint, Building b, float x, float y, float w, float h) {
+        float cx = x + w / 2f;
+        paint.setColor(Color.rgb(72, 62, 58));
+        canvas.drawRect(x, y + h * 0.22f, x + w, y + h, paint);
+        drawWallBase(canvas, paint, x, y, w, h);
+        paint.setColor(Color.rgb(45, 95, 65));
+        canvas.drawRect(x, y + h * 0.22f, x + w, y + h * 0.28f, paint);
+        paint.setColor(Color.rgb(92, 78, 70));
+        canvas.drawRect(x, y + h * 0.22f, x + w, y + h, paint);
+        // 屋顶压低（偏秘）
+        paint.setColor(Color.rgb(40, 35, 38));
+        android.graphics.Path roof = new android.graphics.Path();
+        roof.moveTo(x - 6, y + h * 0.28f);
+        roof.lineTo(cx, y + h * 0.06f);
+        roof.lineTo(x + w + 6, y + h * 0.28f);
+        roof.close();
+        canvas.drawPath(roof, paint);
+        drawRoofTiles(canvas, paint, x - 6, y + h * 0.28f, w + 12);
+        // 厚木板窗
+        paint.setColor(Color.rgb(55, 45, 40));
+        canvas.drawRect(x + 22, y + h * 0.35f, x + w * 0.35f, y + h * 0.62f, paint);
+        canvas.drawRect(x + w * 0.65f, y + h * 0.35f, x + w - 22, y + h * 0.62f, paint);
+        paint.setColor(Color.rgb(110, 95, 80));
+        paint.setStrokeWidth(2);
+        for (int i = 1; i < 4; i++) {
+            float lx = x + 22 + (w * 0.35f - 22) * i / 4f;
+            canvas.drawLine(lx, y + h * 0.35f, lx, y + h * 0.62f, paint);
+            float rx = x + w * 0.65f + (w * 0.35f - 22) * i / 4f;
+            canvas.drawLine(rx, y + h * 0.35f, rx, y + h * 0.62f, paint);
+        }
+        paint.setStrokeWidth(1);
+        // 招牌底
+        paint.setColor(Color.rgb(25, 60, 45));
+        canvas.drawRect(cx - 110, y + h * 0.3f, cx + 110, y + h * 0.42f, paint);
+        paint.setColor(Color.rgb(220, 200, 120));
+        paint.setTextSize(26);
+        paint.setTextAlign(Paint.Align.CENTER);
+        canvas.drawText("如意赌坊", cx, y + h * 0.375f, paint);
+        // 骰子图标
+        float d1x = cx - 32, d2x = cx + 32, dy = y + h * 0.36f;
+        paint.setColor(Color.rgb(235, 230, 215));
+        canvas.drawRoundRect(d1x - 14, dy - 14, d1x + 14, dy + 14, 4, 4, paint);
+        canvas.drawRoundRect(d2x - 14, dy - 14, d2x + 14, dy + 14, 4, 4, paint);
+        paint.setColor(Color.rgb(30, 25, 22));
+        canvas.drawCircle(d1x - 5, dy - 5, 3, paint);
+        canvas.drawCircle(d1x + 5, dy + 5, 3, paint);
+        canvas.drawCircle(d2x, dy, 3, paint);
+        canvas.drawCircle(d2x - 6, dy + 6, 3, paint);
+        canvas.drawCircle(d2x + 6, dy - 6, 3, paint);
+        // 门
+        paint.setColor(Color.rgb(35, 28, 25));
+        canvas.drawRect(cx - 42, y + h - 110, cx + 42, y + h, paint);
+        paint.setColor(Color.rgb(180, 140, 60));
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(3);
+        canvas.drawCircle(cx - 18, y + h - 55, 8, paint);
+        canvas.drawCircle(cx + 18, y + h - 55, 8, paint);
+        paint.setStyle(Paint.Style.FILL);
+        // 幽绿灯笼
+        paint.setColor(Color.rgb(50, 140, 90));
+        canvas.drawOval(cx - 55, y + h * 0.32f, cx - 35, y + h * 0.42f, paint);
+        canvas.drawOval(cx + 35, y + h * 0.32f, cx + 55, y + h * 0.42f, paint);
+        drawSteps(canvas, paint, cx, y + h, 3);
     }
 
     private void drawPavilion(Canvas canvas, Paint paint, Building b, float x, float y, float w, float h) {

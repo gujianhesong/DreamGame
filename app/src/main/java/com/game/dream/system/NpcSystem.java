@@ -112,27 +112,30 @@ public class NpcSystem {
                 npcList.add(new Npc(100254, "铁甲坊老板", NpcType.MERCHANT, 32720, 30040));
 
                 // 北区：醉仙楼、悦来客栈各自门前
-                npcList.add(new Npc(100256, "醉仙楼掌柜", NpcType.TAVERN_KEEPER, 25840, 26300));
-                npcList.add(new Npc(100257, "悦来客栈老板", NpcType.TAVERN_KEEPER, 33040, 26300));
+                npcList.add(new Npc(100256, "醉仙楼掌柜", NpcType.TAVERN_KEEPER, 25980, 26380));
+                npcList.add(new Npc(100257, "悦来客栈老板", NpcType.TAVERN_KEEPER, 33160, 26380));
+                npcList.add(new Npc(100278, "红娘·春香", NpcType.WOMAN, 31700, 27880));
+                npcList.add(new Npc(100279, "琴师·疏影", NpcType.GIRL, 31920, 27880));
+                npcList.add(new Npc(100280, "钱麻子", NpcType.GAMBLER, 26660, 26880));
 
                 // 内城花园：钟楼南侧空地（避开钟楼与府衙建筑）
                 npcList.add(new Npc(100258, "府衙师爷", NpcType.SCHOLAR, 30000, 31300));
 
                 // 南广场：围着石像四点，不横排
-                npcList.add(new Npc(100265, "杂货商人", NpcType.MERCHANT, 29740, 33460));
-                npcList.add(new Npc(100261, "兽医师", NpcType.DOCTOR, 30180, 33460));
-                npcList.add(new Npc(100259, "南市收购商", NpcType.MERCHANT, 29740, 33680));
-                npcList.add(new Npc(100262, "幻境司事", NpcType.TAOIST, 30180, 33680));
+                npcList.add(new Npc(100265, "杂货商人", NpcType.MERCHANT, 29880, 33380));
+                npcList.add(new Npc(100261, "兽医师", NpcType.DOCTOR, 30120, 33380));
+                npcList.add(new Npc(100259, "南市收购商", NpcType.MERCHANT, 29880, 33620));
+                npcList.add(new Npc(100262, "幻境司事", NpcType.TAOIST, 30120, 33620));
 
                 // 四面城门左右卫兵，面朝城外（0南 1北 2西 3东）
-                npcList.add(gateGuard(100270, 29710, 34820, 0));
-                npcList.add(gateGuard(100271, 30200, 34820, 0));
-                npcList.add(gateGuard(100272, 29710, 25040, 1));
-                npcList.add(gateGuard(100273, 30200, 25040, 1));
-                npcList.add(gateGuard(100274, 25040, 29710, 2));
-                npcList.add(gateGuard(100275, 25040, 30200, 2));
-                npcList.add(gateGuard(100276, 34870, 29710, 3));
-                npcList.add(gateGuard(100277, 34870, 30200, 3));
+                npcList.add(gateGuard(100270, 29710, 34660, 0));
+                npcList.add(gateGuard(100271, 30200, 34660, 0));
+                npcList.add(gateGuard(100272, 29710, 25340, 1));
+                npcList.add(gateGuard(100273, 30200, 25340, 1));
+                npcList.add(gateGuard(100274, 25320, 29710, 2));
+                npcList.add(gateGuard(100275, 25320, 30200, 2));
+                npcList.add(gateGuard(100276, 34680, 29710, 3));
+                npcList.add(gateGuard(100277, 34680, 30200, 3));
 
                 // 金陵西侧鬼差（仅夜间出现，传送地府）
                 Npc ghostClerk = new Npc(100207, "鬼差", NpcType.GHOST_CLERK, 24500, 30000);
@@ -200,7 +203,6 @@ public class NpcSystem {
                 npcList.add(new Npc(100107, "小安子", NpcType.SERVANT, 27100, 33560));
                 npcList.add(new Npc(100113, "王护卫", NpcType.SOLDIER, 30900, 33110));
                 npcList.add(new Npc(100116, "黑风强盗", NpcType.BANDIT, 28900, 34040));
-                npcList.add(new Npc(100122, "赵六", NpcType.GAMBLER, 33300, 32600));
             }
             break;
             case MapSystem.MAP_ID_DONGHAI_BAY: {

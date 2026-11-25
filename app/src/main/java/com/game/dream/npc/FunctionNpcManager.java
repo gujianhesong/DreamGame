@@ -376,6 +376,26 @@ public class FunctionNpcManager {
                 handleInnRest(npc);
                 return true;
             }
+            case 100278: {
+                handleHongxiangPavilion(npc);
+                return true;
+            }
+            case 100279: {
+                GameEngine.getInstance().showDialog(npc.getName(),
+                        "疏影抱琴，只承风雅之客。院中有茶有色，亦可听一曲清词，与刀兵之事无关。",
+                        Arrays.asList("多谢姑娘", "告辞"),
+                        new DialogBox.DialogListener() {
+                            @Override
+                            public void onOptionSelected(int optionIndex) {
+                                // 纯剧情对白，无后续逻辑
+                            }
+                        });
+                return true;
+            }
+            case 100280: {
+                handleGamblingHouse(npc);
+                return true;
+            }
             case 100258: {
                 handleYamenGuide(npc);
                 return true;
@@ -524,6 +544,62 @@ public class FunctionNpcManager {
         });
     }
 
+    private void handleHongxiangPavilion(Npc npc) {
+        GameEngine.getInstance().showDialog(npc.getName(),
+                "红香院曲直有序，清茶丝竹自娱。俗客喧哗、携兵刃闹事者恕不接待，还望少侠自重。",
+                Arrays.asList("入内略坐", "改日再来"),
+                new DialogBox.DialogListener() {
+                    @Override
+                    public void onOptionSelected(int optionIndex) {
+                        if (optionIndex != 0) {
+                            return;
+                        }
+                        GameEngine.getInstance().showDialog(npc.getName(),
+                                "春香含笑一礼：楼上疏影正调弦，可听一曲《清平乐》。少侠且安心，不问江湖恩怨。");
+                    }
+                });
+    }
+
+    private void handleGamblingHouse(Npc npc) {
+        final int stake = 100;
+        GameEngine.getInstance().showDialog(npc.getName(),
+                "小赌怡情，大赌伤身。两把骰子比总点数，各押" + stake + "金：点大赢" + (stake * 2)
+                        + "，点小亦然；若恰好七点庄家通吃。",
+                Arrays.asList("押大（≥8点）", "押小（≤6点）", "不赌了"),
+                new DialogBox.DialogListener() {
+                    @Override
+                    public void onOptionSelected(int optionIndex) {
+                        if (optionIndex == 2) {
+                            return;
+                        }
+                        RoleInfo role = RoleSystem.getInstance().getRoleInfo();
+                        if (role.getMoney() < stake) {
+                            GameEngine.getInstance().showCenterToast("金钱不足，需要" + stake, 2000);
+                            return;
+                        }
+                        int d1 = 1 + (int) (Math.random() * 6);
+                        int d2 = 1 + (int) (Math.random() * 6);
+                        int sum = d1 + d2;
+                        boolean betBig = optionIndex == 0;
+                        role.setMoney(role.getMoney() - stake);
+                        String roll = "钱麻子一摇盅子：" + d1 + "、" + d2 + "，共" + sum + "点。";
+                        if (sum == 7) {
+                            GameEngine.getInstance().showDialog(npc.getName(), roll + "恰好七点，庄家通吃。");
+                            return;
+                        }
+                        boolean win = betBig ? sum >= 8 : sum <= 6;
+                        if (win) {
+                            role.setMoney(role.getMoney() + stake * 2);
+                            GameEngine.getInstance().showDialog(npc.getName(),
+                                    roll + "少侠押中了，赢得" + stake + "金！");
+                        } else {
+                            GameEngine.getInstance().showDialog(npc.getName(),
+                                    roll + "手气差点，下次再来。");
+                        }
+                    }
+                });
+    }
+
     private void handleInnRest(Npc npc) {
         int cost = 800;
         GameEngine.getInstance().showDialog(npc.getName(),
@@ -557,7 +633,7 @@ public class FunctionNpcManager {
 
     private void handleYamenGuide(Npc npc) {
         GameEngine.getInstance().showDialog(npc.getName(),
-                "金陵城大，少侠可问贫吏。北街醉仙楼用膳、悦来客栈歇宿。西街回春堂买药，欧冶铁铺打铁，钱庄存钱，官仓扩行囊。东街龙泉剑庄、铁甲坊、璀璨珠宝、藏经阁。南广场杂货买捕捉符，旁有收购、兽医与幻境司事。修炼找南门外玄机真人，辅助找培元先生。东门车夫去东海湾，西门夜里有鬼差通地府。府内另有万妖台，可观天下妖物造型。",
+                "金陵城大，少侠可问贫吏。北街醉仙楼用膳、悦来客栈歇宿，东侧背街有红香院听曲；醉仙楼东巷有如意赌坊。西街回春堂买药，欧冶铁铺打铁，钱庄存钱，官仓扩行囊。东街龙泉剑庄、铁甲坊、璀璨珠宝、藏经阁。南广场杂货买捕捉符，旁有收购、兽医与幻境司事。修炼找南门外玄机真人，辅助找培元先生。东门车夫去东海湾，西门夜里有鬼差通地府。府内另有万妖台，可观天下妖物造型。",
                 Arrays.asList("前往万妖台", "知道了"),
                 new DialogBox.DialogListener() {
                     @Override

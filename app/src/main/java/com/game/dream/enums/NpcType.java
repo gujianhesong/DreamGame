@@ -33,6 +33,20 @@ public enum NpcType {
     TAVERN_KEEPER, //酒馆老板
     DOCTOR, //郎中
 
+    MAGISTRATE_CLERK, //府衙师爷·幕僚
+    PREFECT,          //知府主官
+    YAMEN_RUNNER,     //衙门衙役捕快
+    BLACKSMITH,       //铁匠
+    CRAFTSMAN,        //匠人·甲匠等
+    ENTERTAINER,      //琴师优伶
+    NIGHT_WATCH,      //更夫
+    BOATMAN,          //船夫舵公
+    STATION_MASTER,   //驿丞
+    SWORDSMAN,        //护卫剑客
+    WANDERER,         //江湖游子
+    REALM_ATTENDANT,  //幻境司事
+    VILLAGE_ELDER,    //村长乡老
+
     // 地府 NPC
     JUDGE_YANLUO,       // 阎罗王
     JUDGE_CUI,          // 崔判官

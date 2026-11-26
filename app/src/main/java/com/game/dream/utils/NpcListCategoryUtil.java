@@ -45,6 +45,8 @@ public final class NpcListCategoryUtil {
         switch (type) {
             case COACHMAN:
             case GHOST_CLERK:
+            case BOATMAN:
+            case STATION_MASTER:
                 return Category.TRANSPORT;
             case MERCHANT:
             case PHARMACIST:
@@ -54,9 +56,20 @@ public final class NpcListCategoryUtil {
             case MONK:
             case TAOIST:
             case SERVANT:
+            case BLACKSMITH:
+            case CRAFTSMAN:
+            case ENTERTAINER:
                 return Category.SERVICE;
             case SCHOLAR:
             case SOLDIER:
+            case MAGISTRATE_CLERK:
+            case PREFECT:
+            case YAMEN_RUNNER:
+            case SWORDSMAN:
+            case WANDERER:
+            case REALM_ATTENDANT:
+            case VILLAGE_ELDER:
+            case NIGHT_WATCH:
             case JUDGE_YANLUO:
             case JUDGE_CUI:
             case GHOST_OFFICER_BLACK:

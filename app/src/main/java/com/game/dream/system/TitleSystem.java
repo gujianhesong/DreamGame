@@ -357,6 +357,7 @@ public class TitleSystem {
     public void onNpcId(int npcId) {
         switch (npcId) {
             case 100258:
+            case 100283:
                 addCounter(TitleStats.YAMEN_TALK, 1);
                 break;
             case 100256:

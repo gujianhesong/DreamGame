@@ -47,10 +47,14 @@ public class Npc {
         // 根据类型设置不同的大小
         if (type == NpcType.CHILD_BOY || type == NpcType.CHILD_GIRL) {
             this.size = 55;
-        } else if (type == NpcType.WOMAN || type == NpcType.MAID || type == NpcType.GIRL || type == NpcType.BEAUTY) {
+        } else if (type == NpcType.WOMAN || type == NpcType.MAID || type == NpcType.GIRL || type == NpcType.BEAUTY
+                || type == NpcType.ENTERTAINER) {
             this.size = 80;
-        } else if (type == NpcType.SOLDIER || type == NpcType.HUNTER || type == NpcType.BANDIT) {
+        } else if (type == NpcType.SOLDIER || type == NpcType.HUNTER || type == NpcType.BANDIT
+                || type == NpcType.YAMEN_RUNNER || type == NpcType.SWORDSMAN) {
             this.size = 90;
+        } else if (type == NpcType.PREFECT) {
+            this.size = 95;
         } else if (type == NpcType.JUDGE_YANLUO) {
             this.size = 120; // 阎罗王：威严巨大
         } else if (type == NpcType.GHOST_OFFICER_BLACK || type == NpcType.GHOST_OFFICER_WHITE
@@ -148,7 +152,7 @@ public class Npc {
         float t = animTime + animPhaseOffset;
         float breathOffset = (float) Math.sin(t * breathSpeed) * breathAmount;
         float headLookX = (float) Math.sin(t * headLookSpeed) * headLookAmount;
-        if (type == NpcType.SOLDIER) {
+        if (type == NpcType.SOLDIER || type == NpcType.YAMEN_RUNNER) {
             if (facingDirection == 2) {
                 headLookX -= size * 0.18f;
             } else if (facingDirection == 3) {
@@ -174,7 +178,7 @@ public class Npc {
         drawHair(canvas, paint, cx + headLookX, headY, headRadius);
 
         // 5. 绘制脸部和五官（朝北的士兵只露后脑勺）
-        if (!(type == NpcType.SOLDIER && facingDirection == 1)) {
+        if (!((type == NpcType.SOLDIER || type == NpcType.YAMEN_RUNNER) && facingDirection == 1)) {
             drawFace(canvas, paint, cx + headLookX, headY, headRadius);
         }
 
@@ -343,6 +347,22 @@ public class Npc {
                 // 郎中：素净的白色长衫，体现医者仁心
                 paint.setColor(Color.rgb(230, 230, 240));
                 canvas.drawRoundRect(bodyRect, 10, 10, paint);
+                break;
+
+            case MAGISTRATE_CLERK:
+            case PREFECT:
+            case YAMEN_RUNNER:
+            case BLACKSMITH:
+            case CRAFTSMAN:
+            case ENTERTAINER:
+            case NIGHT_WATCH:
+            case BOATMAN:
+            case STATION_MASTER:
+            case SWORDSMAN:
+            case WANDERER:
+            case REALM_ATTENDANT:
+            case VILLAGE_ELDER:
+                ExtendedNpcAppearance.drawBody(type, canvas, paint, bodyRect, cx, cy, size);
                 break;
 
             // ==================== 地府 NPC ====================
@@ -550,6 +570,22 @@ public class Npc {
                 paint.setColor(Color.rgb(255, 220, 180));
                 canvas.drawOval(cx - footWidth * 1.2f, footY, cx - footWidth * 0.2f, footY + footHeight, paint);
                 canvas.drawOval(cx + footWidth * 0.2f, footY, cx + footWidth * 1.2f, footY + footHeight, paint);
+                break;
+
+            case MAGISTRATE_CLERK:
+            case PREFECT:
+            case YAMEN_RUNNER:
+            case BLACKSMITH:
+            case CRAFTSMAN:
+            case ENTERTAINER:
+            case NIGHT_WATCH:
+            case BOATMAN:
+            case STATION_MASTER:
+            case SWORDSMAN:
+            case WANDERER:
+            case REALM_ATTENDANT:
+            case VILLAGE_ELDER:
+                ExtendedNpcAppearance.drawFeet(type, canvas, paint, cx, cy, size, footY, footWidth, footHeight);
                 break;
             case COACHMAN:
                 // 结实的皮靴，沾点泥土色
@@ -770,6 +806,22 @@ public class Npc {
                 float boxCy = (cy + size / 5f + cy + size / 2.5f) / 2;
                 canvas.drawLine(boxCx - 4, boxCy, boxCx + 4, boxCy, paint);
                 canvas.drawLine(boxCx, boxCy - 4, boxCx, boxCy + 4, paint);
+                break;
+
+            case MAGISTRATE_CLERK:
+            case PREFECT:
+            case YAMEN_RUNNER:
+            case BLACKSMITH:
+            case CRAFTSMAN:
+            case ENTERTAINER:
+            case NIGHT_WATCH:
+            case BOATMAN:
+            case STATION_MASTER:
+            case SWORDSMAN:
+            case WANDERER:
+            case REALM_ATTENDANT:
+            case VILLAGE_ELDER:
+                ExtendedNpcAppearance.drawAccessories(type, canvas, paint, cx, cy, size);
                 break;
 
             // ==================== 地府 NPC 配饰 ====================
@@ -1025,6 +1077,22 @@ public class Npc {
                 canvas.drawArc(cx - radius, cy - radius * 1.1f, cx + radius, cy - radius / 3, 180, 180, true, paint);
                 // 小发髻
                 canvas.drawCircle(cx, cy - radius * 1.25f, radius / 3f, paint);
+                break;
+
+            case MAGISTRATE_CLERK:
+            case PREFECT:
+            case YAMEN_RUNNER:
+            case BLACKSMITH:
+            case CRAFTSMAN:
+            case ENTERTAINER:
+            case NIGHT_WATCH:
+            case BOATMAN:
+            case STATION_MASTER:
+            case SWORDSMAN:
+            case WANDERER:
+            case REALM_ATTENDANT:
+            case VILLAGE_ELDER:
+                ExtendedNpcAppearance.drawHair(type, canvas, paint, cx, cy, radius);
                 break;
 
             // ==================== 地府 NPC 发型 ====================
@@ -1451,6 +1519,22 @@ public class Npc {
                 paint.setStrokeWidth(2);
                 canvas.drawArc(cx - radius / 1.5f, cy + radius / 6, cx - radius / 6, cy + radius / 2, 0, -180, false, paint);
                 canvas.drawArc(cx + radius / 6, cy + radius / 6, cx + radius / 1.5f, cy + radius / 2, 0, -180, false, paint);
+                break;
+
+            case MAGISTRATE_CLERK:
+            case PREFECT:
+            case YAMEN_RUNNER:
+            case BLACKSMITH:
+            case CRAFTSMAN:
+            case ENTERTAINER:
+            case NIGHT_WATCH:
+            case BOATMAN:
+            case STATION_MASTER:
+            case SWORDSMAN:
+            case WANDERER:
+            case REALM_ATTENDANT:
+            case VILLAGE_ELDER:
+                ExtendedNpcAppearance.drawFace(type, canvas, paint, cx, cy, radius);
                 break;
 
             // ==================== 地府 NPC 面容 ====================

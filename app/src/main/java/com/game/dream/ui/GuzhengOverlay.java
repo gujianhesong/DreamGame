@@ -2,10 +2,9 @@ package com.game.dream.ui;
 
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.LinearGradient;
 import android.graphics.Paint;
 import android.graphics.Rect;
-import android.graphics.Shader;
+import android.graphics.RectF;
 import android.view.MotionEvent;
 
 import com.game.dream.GameEngine;
@@ -33,6 +32,7 @@ public class GuzhengOverlay {
     private final Rect panel = new Rect();
     private final Rect body = new Rect();
     private final Rect closeButton = new Rect();
+    private final Rect titleBar = new Rect();
     private final float[] stringY = new float[STRING_COUNT];
 
     private int leftHoldString;
@@ -76,24 +76,19 @@ public class GuzhengOverlay {
     private void layout() {
         int sw = GameEngine.getScreenWidth();
         int sh = GameEngine.getScreenHeight();
-        int marginH = 6;
-        int marginV = 8;
-        int pw = sw - marginH * 2;
-        int ph = sh - marginV * 2;
-        int px = marginH;
-        int py = marginV;
-        panel.set(px, py, px + pw, py + ph);
-        int header = Math.max(72, (int) (ph * 0.11f));
-        int footer = Math.max(24, (int) (ph * 0.04f));
-        int side = Math.max(10, (int) (pw * 0.012f));
-        body.set(panel.left + side, panel.top + header, panel.right - side, panel.bottom - footer);
-        int closeW = Math.max(116, (int) (pw * 0.16f));
-        int closeH = Math.max(44, (int) (header * 0.62f));
-        closeButton.set(panel.right - closeW - side, panel.top + 10,
-                panel.right - side, panel.top + 10 + closeH);
+        panel.set(4, 4, sw - 4, sh - 4);
 
-        float topPad = Math.max(28f, body.height() * 0.06f);
-        float bottomPad = Math.max(14f, body.height() * 0.03f);
+        int closeW = Math.max(96, Math.min(132, panel.width() / 7));
+        closeButton.set(panel.right - closeW - 10, panel.top + 8,
+                panel.right - 10, panel.top + 54);
+
+        titleBar.set(panel.left + 12, panel.top + 4,
+                Math.max(panel.left + 80, closeButton.left - 12), panel.top + 56);
+        int headerBottom = panel.top + 88;
+        body.set(panel.left + 8, headerBottom, panel.right - 8, panel.bottom - 28);
+
+        float topPad = Math.max(26f, body.height() * 0.055f);
+        float bottomPad = Math.max(20f, body.height() * 0.05f);
         float usable = body.height() - topPad - bottomPad;
         for (int i = 0; i < STRING_COUNT; i++) {
             stringY[i] = body.top + topPad + usable * (i + 0.5f) / STRING_COUNT;
@@ -115,77 +110,192 @@ public class GuzhengOverlay {
         int sh = GameEngine.getScreenHeight();
         Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
-        paint.setColor(Color.argb(175, 8, 10, 16));
+        paint.setColor(Color.argb(195, 12, 10, 8));
         canvas.drawRect(0, 0, sw, sh, paint);
 
-        paint.setShader(new LinearGradient(panel.left, panel.top, panel.right, panel.bottom,
-                Color.argb(252, 32, 28, 36),
-                Color.argb(252, 18, 22, 30),
-                Shader.TileMode.CLAMP));
-        canvas.drawRoundRect(panel.left, panel.top, panel.right, panel.bottom, 18, 18, paint);
-        paint.setShader(null);
-
+        paint.setStyle(Paint.Style.FILL);
+        paint.setColor(Color.rgb(50, 36, 38));
+        canvas.drawRoundRect(panel.left, panel.top, panel.right, panel.bottom, 16, 16, paint);
         paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(3);
-        paint.setColor(Color.rgb(195, 140, 85));
-        canvas.drawRoundRect(panel.left, panel.top, panel.right, panel.bottom, 18, 18, paint);
+        paint.setStrokeWidth(4);
+        paint.setColor(Color.rgb(178, 138, 72));
+        canvas.drawRoundRect(panel.left + 2, panel.top + 2, panel.right - 2, panel.bottom - 2, 14, 14, paint);
+        paint.setStrokeWidth(1.5f);
+        paint.setColor(Color.argb(120, 220, 190, 120));
+        canvas.drawRoundRect(panel.left + 6, panel.top + 6, panel.right - 6, panel.bottom - 6, 12, 12, paint);
         paint.setStyle(Paint.Style.FILL);
 
-        paint.setTextAlign(Paint.Align.CENTER);
-        paint.setColor(Color.rgb(255, 210, 170));
-        float titleSize = Math.max(30f, Math.min(40f, panel.width() * 0.042f));
-        paint.setTextSize(titleSize);
-        canvas.drawText("古筝 · 试弹一曲", panel.centerX(), panel.top + titleSize + 8, paint);
-
-        paint.setColor(Color.rgb(170, 168, 160));
-        paint.setTextSize(Math.max(17f, titleSize * 0.58f));
-        canvas.drawText("二十一根弦 · 每弦空弦一音（按弦变音）· 雁柱左按右拨",
-                panel.centerX(), panel.top + titleSize + 36, paint);
-
+        drawBrocadeValance(canvas, paint);
         drawClose(canvas, paint);
+        drawHeader(canvas, paint);
+
         drawZitherBody(canvas, paint);
         drawStrings(canvas, paint);
+        drawNotePlaque(canvas, paint);
+    }
 
-        if (highlightString > 0) {
-            GuzhengSoundPlayer gp = GuzhengSoundPlayer.getInstance();
-            paint.setColor(Color.argb(230, 255, 200, 120));
-            paint.setTextSize(Math.max(22f, panel.height() * 0.032f));
-            canvas.drawText(gp.formatStringLabel(highlightString) + "（空弦）",
-                    panel.centerX(), panel.bottom - Math.max(6f, panel.height() * 0.012f), paint);
+    /** 红香院锦帘横条（绛紫锦色，较南市红篷更雅） */
+    private void drawBrocadeValance(Canvas canvas, Paint paint) {
+        int awBottom = panel.top + 84;
+        int stripes = 8;
+        float stripeH = (awBottom - panel.top - 8) / (float) stripes;
+        int[] colors = {
+                Color.rgb(92, 48, 72),
+                Color.rgb(118, 72, 92),
+                Color.rgb(88, 56, 78),
+                Color.rgb(128, 92, 58)
+        };
+        for (int i = 0; i < stripes; i++) {
+            paint.setColor(colors[i % colors.length]);
+            canvas.drawRect(panel.left + 8, panel.top + 8 + i * stripeH,
+                    panel.right - 8, panel.top + 8 + (i + 1) * stripeH, paint);
         }
+        paint.setColor(Color.rgb(72, 48, 38));
+        canvas.drawRect(panel.left + 8, awBottom - 2, panel.right - 8, awBottom + 5, paint);
+        paint.setColor(Color.argb(90, 200, 165, 100));
+        canvas.drawRect(panel.left + 8, awBottom + 2, panel.right - 8, awBottom + 4, paint);
+    }
+
+    private void drawHeader(Canvas canvas, Paint paint) {
+        float titleCx = titleBar.centerX();
+        float titleCy = titleBar.top + titleBar.height() * 0.68f;
+        paint.setTextAlign(Paint.Align.CENTER);
+        paint.setStyle(Paint.Style.FILL);
+        paint.setColor(Color.rgb(255, 232, 175));
+        paint.setTextSize(fitTextSize(paint, "红香琴案",
+                titleBar.width() - 4f, 28f, 38f));
+        paint.setShadowLayer(6, 0, 2, Color.argb(160, 50, 20, 30));
+        canvas.drawText("红香琴案", titleCx, titleCy, paint);
+        paint.clearShadowLayer();
+
+        paint.setColor(Color.argb(90, 255, 220, 150));
+        canvas.drawRect(panel.left + 20, panel.top + 84, panel.right - 20, panel.top + 86, paint);
+
+        float chipY = panel.top + 76;
+        drawStatChip(canvas, paint, panel.left + panel.width() * 0.28f, chipY, "雁柱左 · 按弦");
+        drawStatChip(canvas, paint, panel.right - panel.width() * 0.28f, chipY, "岳山右 · 拨弦");
+    }
+
+    private void drawStatChip(Canvas canvas, Paint paint, float cx, float cy, String text) {
+        paint.setTextSize(20f);
+        float tw = paint.measureText(text);
+        float pad = 14f;
+        float l = cx - tw / 2f - pad;
+        float r = cx + tw / 2f + pad;
+        float t = cy - 22;
+        float b = cy + 12;
+        paint.setStyle(Paint.Style.FILL);
+        paint.setColor(Color.argb(210, 58, 42, 52));
+        canvas.drawRoundRect(l, t, r, b, 8, 8, paint);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(1.5f);
+        paint.setColor(Color.rgb(196, 154, 88));
+        canvas.drawRoundRect(l, t, r, b, 8, 8, paint);
+        paint.setStyle(Paint.Style.FILL);
+        paint.setColor(Color.rgb(255, 240, 225));
+        paint.setTextAlign(Paint.Align.CENTER);
+        canvas.drawText(text, cx, cy + 2, paint);
     }
 
     private void drawClose(Canvas canvas, Paint paint) {
-        paint.setColor(Color.argb(200, 90, 55, 75));
-        canvas.drawRoundRect(closeButton.left, closeButton.top, closeButton.right, closeButton.bottom,
-                8, 8, paint);
-        paint.setColor(Color.WHITE);
-        paint.setTextSize(Math.max(24f, closeButton.height() * 0.52f));
-        canvas.drawText("收起", closeButton.centerX(), closeButton.centerY() + closeButton.height() * 0.18f, paint);
+        paint.setStyle(Paint.Style.FILL);
+        paint.setColor(Color.rgb(92, 58, 42));
+        canvas.drawRoundRect(closeButton.left, closeButton.top, closeButton.right, closeButton.bottom, 8, 8, paint);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(2);
+        paint.setColor(Color.rgb(196, 154, 88));
+        canvas.drawRoundRect(closeButton.left, closeButton.top, closeButton.right, closeButton.bottom, 8, 8, paint);
+        paint.setStyle(Paint.Style.FILL);
+        paint.setColor(Color.rgb(255, 236, 200));
+        paint.setTextSize(32);
+        paint.setTextAlign(Paint.Align.CENTER);
+        canvas.drawText("收起", closeButton.centerX(), closeButton.centerY() + 10, paint);
+    }
+
+    private void drawNotePlaque(Canvas canvas, Paint paint) {
+        if (highlightString <= 0) {
+            paint.setTextAlign(Paint.Align.CENTER);
+            paint.setColor(Color.argb(150, 220, 200, 175));
+            paint.setTextSize(17);
+            canvas.drawText("二十一弦 · 按弦变音 · 空弦一音", panel.centerX(), panel.bottom - 14, paint);
+            return;
+        }
+        GuzhengSoundPlayer gp = GuzhengSoundPlayer.getInstance();
+        String line = gp.formatStringLabel(highlightString) + " · 空弦";
+        paint.setTextSize(22);
+        float tw = paint.measureText(line);
+        float pad = 18f;
+        float cx = panel.centerX();
+        float cy = panel.bottom - 18;
+        float l = cx - tw / 2f - pad;
+        float r = cx + tw / 2f + pad;
+        float top = cy - 26;
+        float bottom = cy + 8;
+        paint.setStyle(Paint.Style.FILL);
+        paint.setColor(Color.argb(230, 58, 42, 48));
+        canvas.drawRoundRect(l, top, r, bottom, 8, 8, paint);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(1.5f);
+        paint.setColor(Color.rgb(196, 154, 88));
+        canvas.drawRoundRect(l, top, r, bottom, 8, 8, paint);
+        paint.setStyle(Paint.Style.FILL);
+        paint.setColor(Color.rgb(255, 228, 160));
+        paint.setTextAlign(Paint.Align.CENTER);
+        canvas.drawText(line, cx, cy, paint);
+    }
+
+    private static float fitTextSize(Paint paint, String sample, float maxWidth,
+                                     float minSize, float maxSize) {
+        for (float size = maxSize; size >= minSize; size -= 0.5f) {
+            paint.setTextSize(size);
+            if (paint.measureText(sample) <= maxWidth) {
+                return size;
+            }
+        }
+        return minSize;
     }
 
     private void drawZitherBody(Canvas canvas, Paint paint) {
-        paint.setColor(Color.rgb(88, 52, 30));
-        canvas.drawRoundRect(body.left, body.top, body.right, body.bottom, 12, 12, paint);
-
         float yueshanX = body.right - body.width() * 0.06f;
+        float pressRight = body.left + body.width() * 0.38f;
+        paint.setStyle(Paint.Style.FILL);
+        paint.setColor(Color.rgb(86, 50, 32));
+        canvas.drawRoundRect(body.left, body.top, body.right, body.bottom, 12, 12, paint);
+        paint.setColor(Color.argb(28, 120, 90, 110));
+        canvas.drawRect(body.left, body.top, pressRight, body.bottom, paint);
+        paint.setColor(Color.argb(22, 255, 235, 210));
+        canvas.drawRect(yueshanX, body.top, body.right, body.bottom, paint);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(2);
+        paint.setColor(Color.argb(140, 196, 154, 88));
+        canvas.drawRoundRect(body.left + 1, body.top + 1, body.right - 1, body.bottom - 1, 11, 11, paint);
+        paint.setStyle(Paint.Style.FILL);
+
+        for (int i = 0; i < 6; i++) {
+            float fy = body.top + body.height() * (0.18f + i * 0.13f);
+            paint.setColor(Color.argb(35, 40, 26, 18));
+            canvas.drawLine(body.left + body.width() * 0.06f, fy, body.right - body.width() * 0.08f, fy, paint);
+        }
+
         paint.setColor(Color.rgb(200, 175, 120));
         paint.setStrokeWidth(5);
+        paint.setStyle(Paint.Style.STROKE);
         canvas.drawLine(yueshanX, body.top + 4, yueshanX, body.bottom - 4, paint);
-
         paint.setStyle(Paint.Style.FILL);
-        paint.setColor(Color.rgb(50, 36, 24));
-        canvas.drawRoundRect(body.left, body.top, body.left + body.width() * 0.05f,
+
+        paint.setColor(Color.rgb(46, 32, 22));
+        canvas.drawRoundRect(body.left, body.top, body.left + body.width() * 0.06f,
                 body.bottom, 4, 4, paint);
+        paint.setColor(Color.rgb(38, 26, 18));
+        canvas.drawRoundRect(body.left - 4, body.bottom - 18, body.right + 4, body.bottom + 8, 6, 6, paint);
+        paint.setColor(Color.rgb(32, 22, 16));
+        canvas.drawRect(body.left, body.bottom + 4, body.right, body.bottom + 10, paint);
 
-        paint.setColor(Color.rgb(40, 28, 18));
-        canvas.drawRect(body.left, body.bottom - 22, body.right, body.bottom, paint);
-
-        paint.setTextSize(17);
-        paint.setColor(Color.argb(180, 255, 235, 200));
+        paint.setTextSize(18);
+        paint.setColor(Color.argb(200, 255, 235, 200));
         paint.setTextAlign(Paint.Align.CENTER);
-        canvas.drawText("筝首", body.left + body.width() * 0.05f, body.top + 22, paint);
-        canvas.drawText("岳山·右手拨弦", yueshanX - body.width() * 0.14f, body.top + 22, paint);
+        canvas.drawText("按", body.left + body.width() * 0.03f, body.top + 24, paint);
+        canvas.drawText("拨", yueshanX + body.width() * 0.08f, body.top + 24, paint);
     }
 
     private void drawStrings(Canvas canvas, Paint paint) {
@@ -215,13 +325,16 @@ public class GuzhengOverlay {
             canvas.drawLine(stringLeft, y, stringRight, y, paint);
 
             paint.setStyle(Paint.Style.FILL);
-            paint.setColor(Color.rgb(235, 210, 150));
+            paint.setColor(Color.rgb(228, 188, 118));
             float bh = Math.max(6f, body.height() / STRING_COUNT * 0.28f);
-            float bw = Math.max(5f, bh * 0.7f);
-            canvas.drawRect(bridgeX - bw / 2f, y - bh, bridgeX + bw / 2f, y + bh, paint);
+            float bw = Math.max(5f, bh * 0.55f);
+            RectF bridge = new RectF(bridgeX - bw / 2f, y - bh * 0.85f, bridgeX + bw / 2f, y + bh * 0.4f);
+            canvas.drawRoundRect(bridge, 2, 2, paint);
             paint.setColor(Color.rgb(120, 95, 60));
+            paint.setStyle(Paint.Style.STROKE);
             paint.setStrokeWidth(1.2f);
             canvas.drawLine(bridgeX - bw, y, bridgeX + bw, y, paint);
+            paint.setStyle(Paint.Style.FILL);
 
             if (no == 1 || no == 11 || no == 21 || no % 5 == 0) {
                 paint.setStyle(Paint.Style.FILL);

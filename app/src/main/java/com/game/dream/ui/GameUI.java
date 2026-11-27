@@ -76,6 +76,7 @@ public class GameUI {
     private EquipSellDialog equipSellDialog;
     private com.game.dream.ui.StockBookDialog stockBookDialog;
     private GamblingDiceOverlay gamblingDiceOverlay;
+    private GuzhengOverlay guzhengOverlay;
     private com.game.dream.panel.TitlePanel titlePanel;
     private float lastTitlePanelTouchY = 0;
 
@@ -203,6 +204,7 @@ public class GameUI {
         equipSellDialog = new EquipSellDialog();
         stockBookDialog = new com.game.dream.ui.StockBookDialog();
         gamblingDiceOverlay = new GamblingDiceOverlay();
+        guzhengOverlay = new GuzhengOverlay();
         titlePanel = new com.game.dream.panel.TitlePanel();
 
         // Initialize message panel
@@ -679,6 +681,9 @@ public class GameUI {
         if (gamblingDiceOverlay != null && gamblingDiceOverlay.isVisible()) {
             gamblingDiceOverlay.draw(canvas);
         }
+        if (guzhengOverlay != null && guzhengOverlay.isVisible()) {
+            guzhengOverlay.draw(canvas);
+        }
         if (titlePanel != null && titlePanel.isVisible()) {
             titlePanel.draw(canvas);
         }
@@ -753,6 +758,10 @@ public class GameUI {
             if (action == MotionEvent.ACTION_UP) {
                 gamblingDiceOverlay.handleTouch(x, y);
             }
+            return true;
+        }
+        if (guzhengOverlay != null && guzhengOverlay.isVisible()) {
+            guzhengOverlay.handleTouch(event);
             return true;
         }
         if (titlePanel != null && titlePanel.isVisible()) {
@@ -1845,6 +1854,15 @@ public class GameUI {
                                      GamblingDiceOverlay.Listener listener) {
         if (gamblingDiceOverlay != null) {
             gamblingDiceOverlay.show(dealerName, die1, die2, listener);
+        }
+    }
+
+    public void showGuzhengOverlay() {
+        if (currentDialog != null && currentDialog.isVisible()) {
+            currentDialog.hide();
+        }
+        if (guzhengOverlay != null) {
+            guzhengOverlay.show(null);
         }
     }
 

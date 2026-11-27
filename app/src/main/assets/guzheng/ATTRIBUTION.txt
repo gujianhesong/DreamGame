@@ -1,0 +1,12 @@
+Guzheng pluck samples (FLAC)
+
+Source: XSXB-Band-Samples (CC0 1.0)
+  https://github.com/sparklecatta-lang/XSXB-Band-Samples
+
+Upstream recording: Pufermufin — "LOVELY CHINESE GUZHENG PLUCKED" (CC0 1.0)
+  https://freesound.org/people/Pufermufin/sounds/396868/
+
+Tuning: D pentatonic (D调五声), real guzheng plucks.
+Mapping reference: guzheng.sfz (same folder).
+
+CC0: no attribution required; credit above is optional courtesy.

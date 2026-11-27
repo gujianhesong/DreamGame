@@ -1,0 +1,32 @@
+{
+  "_comment": "21弦 D调空弦：1=高音(演奏者左侧)。sample 为 assets/guzheng/ 下 FLAC；rate 相对 sampleMidi 的播放速率(2^((targetMidi-sampleMidi)/12))。rr 列表为同音 Round Robin 备选。v2 可作中岳拨法。",
+  "license": "CC0-1.0",
+  "strings": [
+    { "no": 1, "midi": 86, "note": "D6", "sample": "guzheng-86-v1-rr1.flac", "sampleMidi": 86, "rate": 1.0, "rr": ["guzheng-86-v1-rr1.flac"] },
+    { "no": 2, "midi": 83, "note": "B5", "sample": "guzheng-79-v1-rr1.flac", "sampleMidi": 79, "rate": 1.1892, "rr": ["guzheng-79-v1-rr1.flac"] },
+    { "no": 3, "midi": 81, "note": "A5", "sample": "guzheng-79-v1-rr1.flac", "sampleMidi": 79, "rate": 1.0595, "rr": ["guzheng-79-v1-rr1.flac"] },
+    { "no": 4, "midi": 78, "note": "F#5", "sample": "guzheng-79-v1-rr1.flac", "sampleMidi": 79, "rate": 0.8909, "rr": ["guzheng-79-v1-rr1.flac"] },
+    { "no": 5, "midi": 74, "note": "D5", "sample": "guzheng-74-v1-rr1.flac", "sampleMidi": 74, "rate": 1.0, "rr": ["guzheng-74-v1-rr1.flac", "guzheng-74-v1-rr2.flac", "guzheng-74-v1-rr3.flac"] },
+    { "no": 6, "midi": 71, "note": "B4", "sample": "guzheng-72-v1-rr1.flac", "sampleMidi": 72, "rate": 0.9439, "rr": ["guzheng-72-v1-rr1.flac", "guzheng-72-v1-rr2.flac", "guzheng-72-v1-rr3.flac"] },
+    { "no": 7, "midi": 69, "note": "A4", "sample": "guzheng-67-v1-rr1.flac", "sampleMidi": 67, "rate": 1.1225, "rr": ["guzheng-67-v1-rr1.flac", "guzheng-67-v2-rr1.flac"] },
+    { "no": 8, "midi": 66, "note": "F#4", "sample": "guzheng-67-v1-rr1.flac", "sampleMidi": 67, "rate": 0.9439, "rr": ["guzheng-67-v1-rr1.flac", "guzheng-67-v2-rr1.flac"] },
+    { "no": 9, "midi": 64, "note": "E4", "sample": "guzheng-65-v1-rr1.flac", "sampleMidi": 65, "rate": 0.9439, "rr": ["guzheng-65-v1-rr1.flac", "guzheng-65-v1-rr2.flac"] },
+    { "no": 10, "midi": 62, "note": "D4", "sample": "guzheng-62-v1-rr1.flac", "sampleMidi": 62, "rate": 1.0, "rr": ["guzheng-62-v1-rr1.flac", "guzheng-62-v1-rr2.flac", "guzheng-62-v1-rr3.flac"] },
+    { "no": 11, "midi": 59, "note": "B3", "sample": "guzheng-57-v1-rr1.flac", "sampleMidi": 57, "rate": 1.1225, "rr": ["guzheng-57-v1-rr1.flac", "guzheng-57-v1-rr2.flac", "guzheng-57-v1-rr3.flac"] },
+    { "no": 12, "midi": 57, "note": "A3", "sample": "guzheng-57-v1-rr1.flac", "sampleMidi": 57, "rate": 1.0, "rr": ["guzheng-57-v1-rr1.flac", "guzheng-57-v1-rr2.flac", "guzheng-57-v1-rr3.flac"] },
+    { "no": 13, "midi": 54, "note": "F#3", "sample": "guzheng-53-v1-rr1.flac", "sampleMidi": 53, "rate": 1.0595, "rr": ["guzheng-53-v1-rr1.flac", "guzheng-53-v1-rr2.flac", "guzheng-53-v1-rr3.flac"] },
+    { "no": 14, "midi": 52, "note": "E3", "sample": "guzheng-50-v1-rr1.flac", "sampleMidi": 50, "rate": 1.1225, "rr": ["guzheng-50-v1-rr1.flac"] },
+    { "no": 15, "midi": 50, "note": "D3", "sample": "guzheng-50-v1-rr1.flac", "sampleMidi": 50, "rate": 1.0, "rr": ["guzheng-50-v1-rr1.flac"] },
+    { "no": 16, "midi": 47, "note": "B2", "sample": "guzheng-45-v1-rr1.flac", "sampleMidi": 45, "rate": 1.1225, "rr": ["guzheng-45-v1-rr1.flac"] },
+    { "no": 17, "midi": 45, "note": "A2", "sample": "guzheng-45-v1-rr1.flac", "sampleMidi": 45, "rate": 1.0, "rr": ["guzheng-45-v1-rr1.flac"] },
+    { "no": 18, "midi": 42, "note": "F#2", "sample": "guzheng-43-v1-rr1.flac", "sampleMidi": 43, "rate": 0.9439, "rr": ["guzheng-43-v1-rr1.flac"] },
+    { "no": 19, "midi": 40, "note": "E2", "sample": "guzheng-38-v1-rr1.flac", "sampleMidi": 38, "rate": 1.1225, "rr": ["guzheng-38-v1-rr1.flac"] },
+    { "no": 20, "midi": 38, "note": "D2", "sample": "guzheng-38-v1-rr1.flac", "sampleMidi": 38, "rate": 1.0, "rr": ["guzheng-38-v1-rr1.flac"] },
+    { "no": 21, "midi": 38, "note": "D2", "sample": "guzheng-38-v1-rr1.flac", "sampleMidi": 38, "rate": 1.0, "rr": ["guzheng-38-v1-rr1.flac"] }
+  ],
+  "articulationMidPluck": {
+    "_comment": "拨点偏中游时改用 v2 采样(与 SFZ 中 55/67 v2 对应)",
+    "sampleMidi55Mid": "guzheng-55-v2-rr1.flac",
+    "sampleMidi67Mid": "guzheng-67-v2-rr1.flac"
+  }
+}

@@ -389,13 +389,17 @@ public class FunctionNpcManager {
             }
             case 100279: {
                 TitleSystem.getInstance().onShuyingTalk();
+                com.game.dream.audio.GuzhengSoundPlayer.getInstance()
+                        .init(GameEngine.getInstance().getAppContext());
                 GameEngine.getInstance().showDialog(npc.getName(),
                         "疏影抱琴，只承风雅之客。院中有茶有色，亦可听一曲清词，与刀兵之事无关。",
-                        Arrays.asList("多谢姑娘", "告辞"),
+                        Arrays.asList("我也想弹一弹琴", "多谢姑娘", "告辞"),
                         new DialogBox.DialogListener() {
                             @Override
                             public void onOptionSelected(int optionIndex) {
-                                // 纯剧情对白，无后续逻辑
+                                if (optionIndex == 0) {
+                                    GameEngine.getInstance().showGuzhengOverlay();
+                                }
                             }
                         });
                 return true;

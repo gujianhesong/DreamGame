@@ -222,6 +222,10 @@ public class GameEngine {
         return instance;
     }
 
+    public Context getAppContext() {
+        return context;
+    }
+
     public GameEngine(Context context) {
         instance = this;
         this.activityContext = context;
@@ -2413,6 +2417,12 @@ public class GameEngine {
                                      com.game.dream.ui.GamblingDiceOverlay.Listener listener) {
         if (gameUI != null) {
             gameUI.showGamblingDiceRoll(dealerName, die1, die2, listener);
+        }
+    }
+
+    public void showGuzhengOverlay() {
+        if (gameUI != null) {
+            gameUI.showGuzhengOverlay();
         }
     }
 

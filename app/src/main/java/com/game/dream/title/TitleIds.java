@@ -124,4 +124,7 @@ public final class TitleIds {
     public static final String HELL_4 = "hell_four";
     public static final String SEABED_DEEP = "seabed_deep";
     public static final String STALL_BROWSE = "stall_browse";
+    public static final String TAOQUAN_GUEST = "taoquan_guest";
+    public static final String TAOQUAN_SHARP = "taoquan_sharp";
+    public static final String TAOQUAN_RING_KING = "taoquan_ring_king";
 }

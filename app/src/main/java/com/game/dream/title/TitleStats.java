@@ -32,6 +32,9 @@ public final class TitleStats {
     public static final String WAREHOUSE_EXPAND = "warehouse_expand";
     public static final String COACH_TRAVEL = "coach_travel";
     public static final String HONGXIANG = "hongxiang";
+    public static final String RING_TOSS_GAMES = "ring_toss_games";
+    public static final String RING_TOSS_HITS = "ring_toss_hits";
+    public static final String RING_TOSS_FAR = "ring_toss_far_hits";
     public static final String INN_DAYS = "inn_days";
     public static final String MENGPO_TALK = "mengpo_talk";
     public static final String SOUL_RETURN = "soul_return";

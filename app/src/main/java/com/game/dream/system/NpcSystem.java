@@ -11,7 +11,9 @@ import com.game.dream.quest.SideQuestManager;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class NpcSystem {
 
@@ -31,8 +33,25 @@ public class NpcSystem {
         if (npcList == null) {
             npcList = loadMapNpcList(mapId);
             npcMap.put(mapId, npcList);
+            return npcList;
         }
+        mergeMissingDefinedNpcs(mapId, npcList);
         return npcList;
+    }
+
+    /** 热更新或增删配置 NPC 后，把定义里新增的常驻 NPC 补进已缓存列表（不覆盖已有条目）。 */
+    private void mergeMissingDefinedNpcs(int mapId, List<Npc> cached) {
+        List<Npc> defined = loadMapNpcList(mapId);
+        Set<Integer> present = new HashSet<>();
+        for (Npc n : cached) {
+            present.add(n.getId());
+        }
+        for (Npc n : defined) {
+            if (!present.contains(n.getId())) {
+                cached.add(n);
+                present.add(n.getId());
+            }
+        }
     }
 
     private List<Npc> loadMapNpcList(int mapId) {
@@ -132,6 +151,7 @@ public class NpcSystem {
                 npcList.add(new Npc(100259, "南市收购商", NpcType.MERCHANT, 29880, 33620));
                 npcList.add(new Npc(100262, "幻境司事", NpcType.REALM_ATTENDANT, 30120, 33620));
                 npcList.add(new Npc(100282, "烟花使者", NpcType.GIRL, 30280, 33740));
+                npcList.add(new Npc(100288, "套圈摊主·阿福", NpcType.MERCHANT, 30020, 33520));
 
                 // 四面城门左右卫兵，面朝城外（0南 1北 2西 3东）
                 npcList.add(gateGuard(100270, 29710, 34660, 0));

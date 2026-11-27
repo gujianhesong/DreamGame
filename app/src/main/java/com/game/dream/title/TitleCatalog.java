@@ -100,6 +100,9 @@ public final class TitleCatalog {
         r(d(TitleIds.GENERAL_STORE, "南市掮客", TitleRarity.FAN, "杂货铺购物", UnlockRule.builder().counter(TitleStats.SHOP_BUY, 1).build()));
         r(d(TitleIds.EQUIP_SELL, "甩手掌柜", TitleRarity.FAN, "收购商卖装备", UnlockRule.builder().flag("equip_sell").build()));
         r(d(TitleIds.RED_LANTERN, "幽绿灯下", TitleRarity.FAN, "如意赌坊门口", UnlockRule.builder().flag("gamble_visit").build()));
+        r(d(TitleIds.TAOQUAN_GUEST, "套圈过客", TitleRarity.FAN, "南市玩套圈一局", UnlockRule.builder().counter(TitleStats.RING_TOSS_GAMES, 1).build()));
+        r(d(TitleIds.TAOQUAN_SHARP, "远桩明目", TitleRarity.MING, "套中远桩", UnlockRule.builder().counter(TitleStats.RING_TOSS_FAR, 1).build()));
+        r(d(TitleIds.TAOQUAN_RING_KING, "套圈把式", TitleRarity.QI, "累计套中五十次", UnlockRule.builder().counter(TitleStats.RING_TOSS_HITS, 50).build()));
 
         // 套装
         r(d(TitleIds.JINLING_FOUR, "金陵四闯", TitleRarity.QI, "赌股彩庄各一", UnlockRule.builder().flag("jinling_four").build()));

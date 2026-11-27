@@ -77,6 +77,7 @@ public class GameUI {
     private com.game.dream.ui.StockBookDialog stockBookDialog;
     private GamblingDiceOverlay gamblingDiceOverlay;
     private GuzhengOverlay guzhengOverlay;
+    private RingTossOverlay ringTossOverlay;
     private com.game.dream.panel.TitlePanel titlePanel;
     private float lastTitlePanelTouchY = 0;
 
@@ -205,6 +206,7 @@ public class GameUI {
         stockBookDialog = new com.game.dream.ui.StockBookDialog();
         gamblingDiceOverlay = new GamblingDiceOverlay();
         guzhengOverlay = new GuzhengOverlay();
+        ringTossOverlay = new RingTossOverlay();
         titlePanel = new com.game.dream.panel.TitlePanel();
 
         // Initialize message panel
@@ -269,6 +271,9 @@ public class GameUI {
 
         if (gamblingDiceOverlay != null) {
             gamblingDiceOverlay.update();
+        }
+        if (ringTossOverlay != null) {
+            ringTossOverlay.update();
         }
     }
 
@@ -684,6 +689,9 @@ public class GameUI {
         if (guzhengOverlay != null && guzhengOverlay.isVisible()) {
             guzhengOverlay.draw(canvas);
         }
+        if (ringTossOverlay != null && ringTossOverlay.isVisible()) {
+            ringTossOverlay.draw(canvas);
+        }
         if (titlePanel != null && titlePanel.isVisible()) {
             titlePanel.draw(canvas);
         }
@@ -762,6 +770,10 @@ public class GameUI {
         }
         if (guzhengOverlay != null && guzhengOverlay.isVisible()) {
             guzhengOverlay.handleTouch(event);
+            return true;
+        }
+        if (ringTossOverlay != null && ringTossOverlay.isVisible()) {
+            ringTossOverlay.handleTouch(event);
             return true;
         }
         if (titlePanel != null && titlePanel.isVisible()) {
@@ -1863,6 +1875,15 @@ public class GameUI {
         }
         if (guzhengOverlay != null) {
             guzhengOverlay.show(null);
+        }
+    }
+
+    public void showRingTossOverlay() {
+        if (currentDialog != null && currentDialog.isVisible()) {
+            currentDialog.hide();
+        }
+        if (ringTossOverlay != null) {
+            ringTossOverlay.show();
         }
     }
 

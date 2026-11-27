@@ -402,6 +402,21 @@ public class TitleSystem {
         evaluateRules();
     }
 
+    public void onRingTossRound(int hits, int silverWon, int farHits) {
+        setFlag("ring_toss_visit");
+        addCounter(TitleStats.RING_TOSS_GAMES, 1);
+        if (hits > 0) {
+            addCounter(TitleStats.RING_TOSS_HITS, hits);
+        }
+        if (farHits > 0) {
+            addCounter(TitleStats.RING_TOSS_FAR, farHits);
+        }
+        if (silverWon >= RingTossSystem.ENTRY_FEE * 2) {
+            setFlag("ring_toss_profit");
+        }
+        evaluateRules();
+    }
+
     public void onKillEnemy() {
         addCounter(TitleStats.KILLS, 1);
     }

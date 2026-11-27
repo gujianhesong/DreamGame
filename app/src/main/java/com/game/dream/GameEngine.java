@@ -2426,6 +2426,12 @@ public class GameEngine {
         }
     }
 
+    public void showRingTossOverlay() {
+        if (gameUI != null) {
+            gameUI.showRingTossOverlay();
+        }
+    }
+
     public void showTitlePanel() {
         if (gameUI != null) {
             gameUI.showTitlePanel();

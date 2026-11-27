@@ -15,6 +15,7 @@ import com.game.dream.system.ItemSystem;
 import com.game.dream.system.MapSystem;
 import com.game.dream.system.Pet;
 import com.game.dream.system.PetSystem;
+import com.game.dream.system.RingTossSystem;
 import com.game.dream.system.RoleSystem;
 import com.game.dream.system.TitleSystem;
 import com.game.dream.ui.DialogBox;
@@ -412,6 +413,10 @@ public class FunctionNpcManager {
                 handleFireworksLottery(npc);
                 return true;
             }
+            case 100288: {
+                handleRingTossStall(npc);
+                return true;
+            }
             case 100258: {
                 handleYamenGuide(npc);
                 return true;
@@ -563,6 +568,32 @@ public class FunctionNpcManager {
                 GameEngine.getInstance().showDialog(npc.getName(), "好了，少侠已经完全恢复了");
             }
         });
+    }
+
+    private void handleRingTossStall(Npc npc) {
+        String intro = "嘿，少侠来试试手气？一局 "
+                + RingTossSystem.ENTRY_FEE + " 银，十个藤圈全归你。\n"
+                + "柱上标着兑银，一百到五百不等。套中了当场给你兑银！";
+        GameEngine.getInstance().showDialog(npc.getName(), intro,
+                Arrays.asList("来玩一局（" + RingTossSystem.ENTRY_FEE + " 银）", "改日再来"),
+                new DialogBox.DialogListener() {
+                    @Override
+                    public void onOptionSelected(int optionIndex) {
+                        if (optionIndex != 0) {
+                            return;
+                        }
+                        if (!RingTossSystem.getInstance().canAffordEntry()) {
+                            GameEngine.getInstance().showCenterToast(
+                                    "银两不足，需要 " + RingTossSystem.ENTRY_FEE + " 银。", 2200);
+                            return;
+                        }
+                        if (!RingTossSystem.getInstance().payEntry()) {
+                            GameEngine.getInstance().showCenterToast("扣银失败。", 2000);
+                            return;
+                        }
+                        GameEngine.getInstance().showRingTossOverlay();
+                    }
+                });
     }
 
     private void handleHongxiangPavilion(Npc npc) {
@@ -785,7 +816,7 @@ public class FunctionNpcManager {
 
     private void handleYamenGuide(Npc npc) {
         GameEngine.getInstance().showDialog(npc.getName(),
-                "金陵城大，少侠可问贫吏。北街醉仙楼用膳、悦来客栈歇宿，东侧背街有红香院听曲；醉仙楼东侧毗如意赌坊。西街回春堂买药，欧冶铁铺打铁，钱庄存钱，旁有股簿馆合股买卖；官仓扩行囊。东街龙泉剑庄、铁甲坊、璀璨珠宝、藏经阁。南广场杂货买捕捉符，旁有收购、兽医、幻境司事与烟花使者售金陵彩。修炼找南门外玄机真人，辅助找培元先生。东门车夫去东海湾，西门夜里有鬼差通地府。府内另有万妖台，可观天下妖物造型。",
+                "金陵城大，少侠可问贫吏。北街醉仙楼用膳、悦来客栈歇宿，东侧背街有红香院听曲；醉仙楼东侧毗如意赌坊。西街回春堂买药，欧冶铁铺打铁，钱庄存钱，旁有股簿馆合股买卖；官仓扩行囊。东街龙泉剑庄、铁甲坊、璀璨珠宝、藏经阁。南广场杂货买捕捉符，旁有收购、兽医、幻境司事与烟花使者售金陵彩，阿福地摊可套圈玩。修炼找南门外玄机真人，辅助找培元先生。东门车夫去东海湾，西门夜里有鬼差通地府。府内另有万妖台，可观天下妖物造型。",
                 Arrays.asList("前往万妖台", "知道了"),
                 new DialogBox.DialogListener() {
                     @Override

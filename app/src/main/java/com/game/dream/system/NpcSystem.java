@@ -24,33 +24,51 @@ public class NpcSystem {
     }
 
     private HashMap<Integer, List<Npc>> npcMap = new HashMap<>();
+    /** 防止 load 链里再调 getMapNpcList 时对同一列表边遍历边 add。 */
+    private final Set<Integer> mergingMapIds = new HashSet<>();
 
     private NpcSystem() {
     }
 
     public List<Npc> getMapNpcList(int mapId) {
-        List<Npc> npcList = npcMap.get(mapId);
-        if (npcList == null) {
-            npcList = loadMapNpcList(mapId);
-            npcMap.put(mapId, npcList);
+        synchronized (npcMap) {
+            List<Npc> npcList = npcMap.get(mapId);
+            if (npcList == null) {
+                npcList = loadMapNpcList(mapId);
+                npcMap.put(mapId, npcList);
+                return npcList;
+            }
+            mergeMissingDefinedNpcs(mapId, npcList);
             return npcList;
         }
-        mergeMissingDefinedNpcs(mapId, npcList);
-        return npcList;
     }
 
     /** 热更新或增删配置 NPC 后，把定义里新增的常驻 NPC 补进已缓存列表（不覆盖已有条目）。 */
     private void mergeMissingDefinedNpcs(int mapId, List<Npc> cached) {
-        List<Npc> defined = loadMapNpcList(mapId);
-        Set<Integer> present = new HashSet<>();
-        for (Npc n : cached) {
-            present.add(n.getId());
+        if (cached == null || !mergingMapIds.add(mapId)) {
+            return;
         }
-        for (Npc n : defined) {
-            if (!present.contains(n.getId())) {
-                cached.add(n);
-                present.add(n.getId());
+        try {
+            List<Npc> defined = loadMapNpcList(mapId);
+            Set<Integer> present = new HashSet<>();
+            for (int i = 0, n = cached.size(); i < n; i++) {
+                Npc npc = cached.get(i);
+                if (npc != null) {
+                    present.add(npc.getId());
+                }
             }
+            List<Npc> toAdd = new ArrayList<>();
+            for (Npc npc : defined) {
+                if (npc != null && !present.contains(npc.getId())) {
+                    toAdd.add(npc);
+                    present.add(npc.getId());
+                }
+            }
+            if (!toAdd.isEmpty()) {
+                cached.addAll(toAdd);
+            }
+        } finally {
+            mergingMapIds.remove(mapId);
         }
     }
 
@@ -313,7 +331,9 @@ public class NpcSystem {
     }
 
     public void replaceMapNpcList(int mapId, List<Npc> npcList) {
-        npcMap.put(mapId, npcList != null ? new ArrayList<>(npcList) : new ArrayList<Npc>());
+        synchronized (npcMap) {
+            npcMap.put(mapId, npcList != null ? new ArrayList<>(npcList) : new ArrayList<Npc>());
+        }
     }
 
     public Npc findNpc(int mapId, int npcId) {
@@ -333,29 +353,33 @@ public class NpcSystem {
         if (npc == null) {
             return;
         }
-        List<Npc> current = getMapNpcList(mapId);
-        List<Npc> next = new ArrayList<>();
-        for (Npc existing : current) {
-            if (existing.getId() != npc.getId()) {
-                next.add(existing);
+        synchronized (npcMap) {
+            List<Npc> current = getMapNpcList(mapId);
+            List<Npc> next = new ArrayList<>();
+            for (Npc existing : current) {
+                if (existing.getId() != npc.getId()) {
+                    next.add(existing);
+                }
             }
+            next.add(npc);
+            npcMap.put(mapId, next);
         }
-        next.add(npc);
-        npcMap.put(mapId, next);
     }
 
     public void removeNpc(int mapId, int npcId) {
-        List<Npc> current = npcMap.get(mapId);
-        if (current == null) {
-            return;
-        }
-        List<Npc> next = new ArrayList<>();
-        for (Npc existing : current) {
-            if (existing.getId() != npcId) {
-                next.add(existing);
+        synchronized (npcMap) {
+            List<Npc> current = npcMap.get(mapId);
+            if (current == null) {
+                return;
             }
+            List<Npc> next = new ArrayList<>();
+            for (Npc existing : current) {
+                if (existing.getId() != npcId) {
+                    next.add(existing);
+                }
+            }
+            npcMap.put(mapId, next);
         }
-        npcMap.put(mapId, next);
     }
 
     public void startConversation(Npc npc) {

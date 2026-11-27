@@ -2095,7 +2095,8 @@ public class GameEngine {
         }
 
         // Draw npcs
-        List<Npc> npcList = NpcSystem.getInstance().getMapNpcList(MapSystem.getInstance().getCurMapInfo().getMapId());
+        List<Npc> npcList = new ArrayList<>(
+                NpcSystem.getInstance().getMapNpcList(MapSystem.getInstance().getCurMapInfo().getMapId()));
         npcList.sort((n1, n2) -> Float.compare(n1.getY(), n2.getY()));
         boolean isNightNow = dayNightCycle != null && dayNightCycle.isNight();
         for (Npc npc : npcList) {
@@ -2413,10 +2414,9 @@ public class GameEngine {
         return null;
     }
 
-    public void showGamblingDiceRoll(String dealerName, int die1, int die2,
-                                     com.game.dream.ui.GamblingDiceOverlay.Listener listener) {
+    public void showGamblingHouse(String dealerName) {
         if (gameUI != null) {
-            gameUI.showGamblingDiceRoll(dealerName, die1, die2, listener);
+            gameUI.showGamblingHouse(dealerName);
         }
     }
 

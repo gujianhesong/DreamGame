@@ -763,9 +763,7 @@ public class GameUI {
             return true;
         }
         if (gamblingDiceOverlay != null && gamblingDiceOverlay.isVisible()) {
-            if (action == MotionEvent.ACTION_UP) {
-                gamblingDiceOverlay.handleTouch(x, y);
-            }
+            gamblingDiceOverlay.handleTouch(event);
             return true;
         }
         if (guzhengOverlay != null && guzhengOverlay.isVisible()) {
@@ -1862,10 +1860,12 @@ public class GameUI {
         return stockBookDialog;
     }
 
-    public void showGamblingDiceRoll(String dealerName, int die1, int die2,
-                                     GamblingDiceOverlay.Listener listener) {
+    public void showGamblingHouse(String dealerName) {
+        if (currentDialog != null && currentDialog.isVisible()) {
+            currentDialog.hide();
+        }
         if (gamblingDiceOverlay != null) {
-            gamblingDiceOverlay.show(dealerName, die1, die2, listener);
+            gamblingDiceOverlay.show(dealerName);
         }
     }
 

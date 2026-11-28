@@ -159,6 +159,7 @@ public class NpcSystem {
 
                 // 内城花园：钟楼南侧空地（避开钟楼与府衙建筑）
                 npcList.add(new Npc(100258, "府衙师爷", NpcType.MAGISTRATE_CLERK, 30000, 31300));
+                npcList.add(new Npc(100602, "万妖台接引人", NpcType.SERVANT, 30180, 31520));
                 npcList.add(new Npc(100283, "金陵知府", NpcType.PREFECT, 29850, 31200));
                 Npc nightWatch = new Npc(100286, "金陵更夫", NpcType.NIGHT_WATCH, 31000, 32500);
                 nightWatch.setNightOnly(true);

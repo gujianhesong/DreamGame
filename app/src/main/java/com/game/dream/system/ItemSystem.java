@@ -296,7 +296,9 @@ public class ItemSystem {
                         player.healBlood(effectValue);
                     }
                     int healed = player != null ? Math.max(0, player.getHealth() - before) : effectValue;
-                    GameEngine.getInstance().showFloatText("气血+" + healed, FloatingText.Type.HEAL);
+                    if (healed > 0) {
+                        GameEngine.getInstance().showFloatText("气血+" + healed, FloatingText.Type.HEAL);
+                    }
                     isUsed = true;
                 }
                 break;
@@ -307,8 +309,12 @@ public class ItemSystem {
                         //神农
                         effectValue = (int) (effectValue * 1.2);
                     }
+                    int mpBefore = roleInfo.getMp();
                     roleInfo.setMp(Math.min(roleInfo.getMagicCap(), roleInfo.getMp() + effectValue));
-                    GameEngine.getInstance().showFloatText("魔法+" + effectValue, FloatingText.Type.HEAL_MAGIC);
+                    int mpGained = roleInfo.getMp() - mpBefore;
+                    if (mpGained > 0) {
+                        GameEngine.getInstance().showFloatText("魔法+" + mpGained, FloatingText.Type.HEAL_MAGIC);
+                    }
                     isUsed = true;
                 }
                 break;

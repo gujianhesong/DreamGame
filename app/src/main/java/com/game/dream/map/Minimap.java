@@ -15,6 +15,8 @@ import com.game.dream.bean.MapInfo;
 public class Minimap {
     /** 小地图视口半径（世界像素），只显示该范围内的地形 */
     private static final float VIEW_WORLD_RADIUS = 2400f;
+    private static final int SCREEN_PADDING = 10;
+    private static final int FRAME_INSET = 5;
 
     private MapInfo map;
     private int mapWidth;
@@ -75,12 +77,24 @@ public class Minimap {
         isInitialized = true;
     }
 
+    public int getMinimapX(int screenWidth) {
+        return screenWidth - minimapSize - SCREEN_PADDING;
+    }
+
+    public int getCenterX(int screenWidth) {
+        return getMinimapX(screenWidth) + minimapSize / 2;
+    }
+
+    /** 小地图圆角外框底边 Y */
+    public int getFrameBottom() {
+        return SCREEN_PADDING + minimapSize + FRAME_INSET;
+    }
+
     public Rect getScreenBounds(int screenWidth, int screenHeight) {
-        int padding = 10;
-        int minimapX = screenWidth - minimapSize - padding;
-        int minimapY = padding;
-        return new Rect(minimapX - 5, minimapY - 5,
-                minimapX + minimapSize + 5, minimapY + minimapSize + 5);
+        int minimapX = getMinimapX(screenWidth);
+        int minimapY = SCREEN_PADDING;
+        return new Rect(minimapX - FRAME_INSET, minimapY - FRAME_INSET,
+                minimapX + minimapSize + FRAME_INSET, minimapY + minimapSize + FRAME_INSET);
     }
 
     public boolean hitTest(float x, float y, int screenWidth, int screenHeight) {
@@ -92,13 +106,12 @@ public class Minimap {
             initialize();
         }
 
-        int padding = 10;
-        int minimapX = screenWidth - minimapSize - padding;
-        int minimapY = padding;
+        int minimapX = getMinimapX(screenWidth);
+        int minimapY = SCREEN_PADDING;
 
-        RectF backgroundRect = new RectF(minimapX - 5, minimapY - 5,
-                minimapX + minimapSize + 5,
-                minimapY + minimapSize + 5);
+        RectF backgroundRect = new RectF(minimapX - FRAME_INSET, minimapY - FRAME_INSET,
+                minimapX + minimapSize + FRAME_INSET,
+                minimapY + minimapSize + FRAME_INSET);
         canvas.drawRoundRect(backgroundRect, 10, 10, backgroundPaint);
 
         Rect dstRect = new Rect(minimapX, minimapY,

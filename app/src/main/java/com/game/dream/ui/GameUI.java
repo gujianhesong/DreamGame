@@ -104,7 +104,6 @@ public class GameUI {
     private Rect craftButton;
     private Rect questButton;
     private Rect petButton;
-    private Rect illusionRealmButton;
 
     // 捕捉按钮(战斗 HUD, 靠近普攻按钮)
     private Rect captureButton;
@@ -600,14 +599,6 @@ public class GameUI {
                 screenHeight - infoPadding
         );
 
-        // 幻境入口（左上角，避免与底栏过挤）
-        illusionRealmButton = new Rect(
-                infoPadding,
-                infoPadding,
-                infoPadding + infoButtonSize,
-                infoPadding + infoButtonSize
-        );
-
     }
 
     public void draw(Canvas canvas) {
@@ -615,10 +606,10 @@ public class GameUI {
 
         drawControls(canvas);
 
-        // Draw minimap
         if (minimap != null) {
             Player player = GameEngine.getInstance().getPlayer();
             minimap.draw(canvas, player.getX(), player.getY(), screenWidth, screenHeight);
+            drawLocationBelowMinimap(canvas);
         }
 
         // Draw role info panel
@@ -1361,12 +1352,6 @@ public class GameUI {
         paint.setColor(Color.WHITE);
         //canvas.drawText("Memory: " + String.format("%.1f", getUsedMemoryMB()) + " MB", 10, 120, paint);
 
-        // Draw coordinates (top-left)
-        paint.setTextAlign(Paint.Align.LEFT);
-        paint.setColor(Color.WHITE);
-        Player player = GameEngine.getInstance().getPlayer();
-        canvas.drawText("Position: (" + (int) player.getX() + ", " + (int) player.getY() + ")", 10, 160, paint);
-
 //        // Draw terrain info
 //        int playerGridX = (int) (player.getX() / TILE_SIZE);
 //        int playerGridY = (int) (player.getY() / TILE_SIZE);
@@ -1385,8 +1370,10 @@ public class GameUI {
                 && curMapId != MapSystem.MAP_ID_NETHERWORLD
                 && curMapId != MapSystem.MAP_ID_ILLUSION_REALM;
         if (hasDayNight && GameEngine.getInstance().getDayNightCycle() != null) {
-            paint.setColor(Color.rgb(255, 255, 200)); // Light yellow
-            canvas.drawText(GameEngine.getInstance().getDayNightCycle().getTimePhase(), 10, 200, paint);
+            paint.setTextSize(24);
+            paint.setColor(Color.rgb(255, 252, 220));
+            canvas.drawText(GameEngine.getInstance().getDayNightCycle().getTimePhaseForDisplay(), 10, 108, paint);
+            paint.setTextSize(30);
         }
 
         // Draw weather info (海底/海底迷宫/地府 不显示天气)
@@ -1395,8 +1382,34 @@ public class GameUI {
                 && curMapId != MapSystem.MAP_ID_NETHERWORLD;
         if (hasWeather && GameEngine.getInstance().getWeatherSystem() != null) {
             paint.setColor(Color.rgb(200, 220, 255)); // Light blue
-            canvas.drawText("Weather: " + GameEngine.getInstance().getWeatherSystem().getWeatherDescription(), 10, 240, paint);
+            canvas.drawText("Weather: " + GameEngine.getInstance().getWeatherSystem().getWeatherDescription(), 10, 140, paint);
         }
+    }
+
+    private void drawLocationBelowMinimap(Canvas canvas) {
+        if (minimap == null) {
+            return;
+        }
+        Player player = GameEngine.getInstance().getPlayer();
+        if (player == null) {
+            return;
+        }
+        float cx = minimap.getCenterX(screenWidth);
+        float topY = minimap.getFrameBottom() + 8;
+        String mapName = MapSystem.getInstance().getCurMapInfo().getMapName();
+        String coords = "(" + (int) player.getX() + ", " + (int) player.getY() + ")";
+
+        Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        paint.setTextAlign(Paint.Align.CENTER);
+        paint.setStyle(Paint.Style.FILL);
+        paint.setShadowLayer(3f, 0f, 1f, Color.argb(180, 0, 0, 0));
+        paint.setColor(Color.rgb(255, 248, 220));
+        paint.setTextSize(24);
+        canvas.drawText(mapName != null ? mapName : "", cx, topY + 18, paint);
+        paint.setColor(Color.WHITE);
+        paint.setTextSize(21);
+        canvas.drawText(coords, cx, topY + 44, paint);
+        paint.clearShadowLayer();
     }
 
     private void drawControls(Canvas canvas) {
@@ -1536,11 +1549,6 @@ public class GameUI {
             drawMenuButton("🐾", canvas, petButton, petPanel != null && petPanel.isVisible());
         }
 
-        if (illusionRealmButton != null
-                && !(MapSystem.getInstance().isIllusionRealmMap() && IllusionRealmSystem.getInstance().isActive())) {
-            drawMenuButton("境", canvas, illusionRealmButton,
-                    illusionRealmPanel != null && illusionRealmPanel.isVisible());
-        }
     }
 
     /**
@@ -2044,23 +2052,6 @@ public class GameUI {
                     boolean wasVisible = petPanel.isVisible();
                     closeAllPanels();
                     if (!wasVisible) petPanel.show();
-                }
-                return true;
-            }
-        }
-
-        if (illusionRealmButton != null && TouchUtil.checkIsInTouchRectFloat(illusionRealmButton, x, y)) {
-            if (IllusionRealmSystem.getInstance().isActive()) {
-                return true;
-            }
-            if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_POINTER_DOWN) {
-                return true;
-            }
-            if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_POINTER_UP) {
-                if (illusionRealmPanel != null) {
-                    boolean wasVisible = illusionRealmPanel.isVisible();
-                    closeAllPanels();
-                    if (!wasVisible) illusionRealmPanel.show();
                 }
                 return true;
             }

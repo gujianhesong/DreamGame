@@ -189,13 +189,11 @@ public class Player extends Character {
                 }
                 persistMapPositionToRole();
             }
-            separateFromBosses(combatEnemies);
             return;
         }
 
         // If stunned, rooted, or frozen, prevent movement input from taking effect
         if (isStunned() || isRooted() || isFrozen()) {
-            separateFromBosses(combatEnemies);
             return;
         }
 
@@ -245,9 +243,8 @@ public class Player extends Character {
                 attackLungeRemaining -= lungeMove;
             }
             persistMapPositionToRole();
+            separateFromBosses(combatEnemies);
         }
-
-        separateFromBosses(combatEnemies);
 
         if (GameEngine.getInstance().isWorldMapNavigating()) {
             if (autoNavWalking) {
@@ -255,7 +252,6 @@ public class Player extends Character {
             } else {
                 walkCycle = (walkCycle + 1) % 120;
             }
-            separateFromBosses(combatEnemies);
             return;
         }
 
@@ -310,7 +306,6 @@ public class Player extends Character {
 
         // If not moving, return early (but animation still plays)
         if (!isMoving) {
-            separateFromBosses(combatEnemies);
             return;
         }
 
@@ -328,14 +323,15 @@ public class Player extends Character {
                     && terrain != MazeGenerator.MAZE_WALL
                     && terrain != MapGenerator.RIVER && terrain != MapGenerator.MOUNTAIN
                     && terrain != MapGenerator.CITY_WALL && terrain != MapGenerator.SEA) {
-                applyMoveUnlessDeeperIntoBoss(newX, newY);
+                x = newX;
+                y = newY;
             }
         } else {
-            applyMoveUnlessDeeperIntoBoss(newX, newY);
+            x = newX;
+            y = newY;
         }
 
         persistMapPositionToRole();
-        separateFromBosses(combatEnemies);
     }
 
     /**
@@ -1237,7 +1233,7 @@ public class Player extends Character {
         return health <= 0;
     }
 
-    /** 已贴上 BOSS 时，禁止再往其中心挤，避免人物钻进模型。 */
+    /** 冲刺/攻击前冲时：与 BOSS 的碰撞半径，避免顶进模型。普通行走不启用。 */
     private float bossContactRadius(Enemy enemy) {
         return size * 0.5f + Math.max(64f, enemy.getSize() * 0.42f);
     }
@@ -1344,21 +1340,6 @@ public class Player extends Character {
         return false;
     }
 
-    private void applyMoveUnlessDeeperIntoBoss(float newX, float newY) {
-        if (!isMovingDeeperIntoBoss(newX, newY)) {
-            x = newX;
-            y = newY;
-            return;
-        }
-        if (!isMovingDeeperIntoBoss(newX, y)) {
-            x = newX;
-            return;
-        }
-        if (!isMovingDeeperIntoBoss(x, newY)) {
-            y = newY;
-        }
-    }
-
     public float getWalkSpeedPerSecond() {
         int speed = RoleSystem.getInstance().getRoleInfo().getSpeed();
         float speedRatio = isSlowed() ? 0.5f : 1f;
@@ -1398,11 +1379,12 @@ public class Player extends Character {
             float beforeX = x;
             float beforeY = y;
             if (MapWalkUtil.isWorldPositionReachable(newX, newY)) {
-                applyMoveUnlessDeeperIntoBoss(newX, newY);
+                x = newX;
+                y = newY;
             } else if (MapWalkUtil.isWorldPositionReachable(newX, y)) {
-                applyMoveUnlessDeeperIntoBoss(newX, y);
+                x = newX;
             } else if (MapWalkUtil.isWorldPositionReachable(x, newY)) {
-                applyMoveUnlessDeeperIntoBoss(x, newY);
+                y = newY;
             }
             float subMoved = (float) Math.hypot(x - beforeX, y - beforeY);
             if (subMoved < 0.2f) {
@@ -1416,7 +1398,6 @@ public class Player extends Character {
         if (autoNavWalking) {
             updateFacingToward(dirX, dirY);
             persistMapPositionToRole();
-            separateFromBosses(worldEnemies);
             return true;
         }
         return false;

@@ -623,7 +623,9 @@ public class GameEngine {
                     roleInfo.setHp(Math.min(roleInfo.getBloodCap(), roleInfo.getHp() + recoveryValue));
                 }
                 int healed = player != null ? Math.max(0, player.getHealth() - before) : recoveryValue;
-                GameEngine.getInstance().showFloatText("气血+" + healed, FloatingText.Type.HEAL);
+                if (healed > 0) {
+                    GameEngine.getInstance().showFloatText("气血+" + healed, FloatingText.Type.HEAL);
+                }
 
                 // Reset accumulated time (keep remainder for accuracy)
                 accumulatedRecoveryTime_ZaiSheng -= limitTime;
@@ -637,8 +639,12 @@ public class GameEngine {
             if (accumulatedRecoveryTime_MingSi >= limitTime) {
                 RoleInfo roleInfo = RoleSystem.getInstance().getRoleInfo();
                 int recoveryValue = (int) (roleInfo.getMagicCap() * 0.03);
+                int mpBefore = roleInfo.getMp();
                 roleInfo.setMp(Math.min(roleInfo.getMagicCap(), roleInfo.getMp() + recoveryValue));
-                GameEngine.getInstance().showFloatText("魔法+" + recoveryValue, FloatingText.Type.HEAL_MAGIC);
+                int mpGained = roleInfo.getMp() - mpBefore;
+                if (mpGained > 0) {
+                    GameEngine.getInstance().showFloatText("魔法+" + mpGained, FloatingText.Type.HEAL_MAGIC);
+                }
 
                 // Reset accumulated time (keep remainder for accuracy)
                 accumulatedRecoveryTime_MingSi -= limitTime;
@@ -3207,7 +3213,6 @@ public class GameEngine {
         } else {
             player.triggerAttackAnimation();
         }
-        player.separateFromBosses(enemies);
 
         // Set pending attack - damage will be applied after lunge completes
         pendingMeleeAttack = true;

@@ -171,25 +171,32 @@ public class DayNightCycle {
     }
 
     /**
-     * Get current time phase description
+     * 按游戏内小时返回时段（5 点起算一日中的语境）。
+     * 20:00～次日 4:59 为「夜晚」（昼夜遮罩仍为夜间，仅文案单独命名）。
      */
     public String getTimePhase() {
-        int hour = (int)(gameTime / 3600);
-
-        if (hour >= 5 && hour < 8) {
-            return "Dawn " + hour;
-        } else if (hour >= 8 && hour < 12) {
-            return "Morning " + hour;
-        } else if (hour >= 12 && hour < 14) {
-            return "Noon " + hour;
-        } else if (hour >= 14 && hour < 17) {
-            return "Afternoon " + hour;
-        } else if (hour >= 17 && hour < 19) {
-            return "Dusk " + hour;
-        } else if (hour >= 19 || hour < 5) {
-            return "Night " + hour;
+        int hour = (int) (gameTime / 3600);
+        if (hour >= 5 && hour < 9) {
+            return "早上";
         }
-        return "Unknown";
+        if (hour >= 9 && hour < 12) {
+            return "上午";
+        }
+        if (hour >= 12 && hour < 14) {
+            return "中午";
+        }
+        if (hour >= 14 && hour < 17) {
+            return "下午";
+        }
+        if (hour >= 17 && hour < 20) {
+            return "傍晚";
+        }
+        return "夜晚";
+    }
+
+    /** 界面用：时段 + 具体时刻 */
+    public String getTimePhaseForDisplay() {
+        return getTimePhase() + " " + getFormattedTime();
     }
 
     /**

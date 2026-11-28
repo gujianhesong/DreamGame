@@ -404,6 +404,10 @@ public class FunctionNpcManager {
                         });
                 return true;
             }
+            case 100289: {
+                handleWeilaiKeyboard(npc);
+                return true;
+            }
             case 100280: {
                 handleGamblingHouse(npc);
                 return true;
@@ -657,6 +661,20 @@ public class FunctionNpcManager {
                                 "机筒一转，烟花一窜——您第 " + r + " 期的号码是【" + num + "】。\n"
                                         + "约 " + LotterySystem.formatCountdown(lottery.getSecondsUntilDraw())
                                         + " 后满城烟花，便揭晓开奖号。祝君好运！");
+                    }
+                });
+    }
+
+    private void handleWeilaiKeyboard(Npc npc) {
+        GameEngine.getInstance().showDialog(npc.getName(),
+                "蔚莱抚电子琴键，七声十二律皆可成调。诸般 GM 音色随心换，金陵风雅尽在此案。",
+                Arrays.asList("试弹一曲", "改日再来"),
+                new DialogBox.DialogListener() {
+                    @Override
+                    public void onOptionSelected(int optionIndex) {
+                        if (optionIndex == 0) {
+                            GameEngine.getInstance().showKeyboardOverlay();
+                        }
                     }
                 });
     }

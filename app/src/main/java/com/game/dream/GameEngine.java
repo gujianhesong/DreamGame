@@ -2426,6 +2426,12 @@ public class GameEngine {
         }
     }
 
+    public void showKeyboardOverlay() {
+        if (gameUI != null) {
+            gameUI.showKeyboardOverlay();
+        }
+    }
+
     public void showRingTossOverlay() {
         if (gameUI != null) {
             gameUI.showRingTossOverlay();

@@ -154,6 +154,7 @@ public class NpcSystem {
                 npcList.add(new Npc(100257, "悦来客栈老板", NpcType.TAVERN_KEEPER, 33160, 26380));
                 npcList.add(new Npc(100278, "红娘·春香", NpcType.WOMAN, 31700, 27880));
                 npcList.add(new Npc(100279, "琴师·疏影", NpcType.ENTERTAINER, 31920, 27880));
+                npcList.add(new Npc(100289, "蔚莱琴姬", NpcType.ENTERTAINER, 32140, 27880));
                 npcList.add(new Npc(100280, "钱麻子", NpcType.GAMBLER, 26660, 26260));
 
                 // 内城花园：钟楼南侧空地（避开钟楼与府衙建筑）

@@ -77,6 +77,7 @@ public class GameUI {
     private com.game.dream.ui.StockBookDialog stockBookDialog;
     private GamblingDiceOverlay gamblingDiceOverlay;
     private GuzhengOverlay guzhengOverlay;
+    private KeyboardOverlay keyboardOverlay;
     private RingTossOverlay ringTossOverlay;
     private com.game.dream.panel.TitlePanel titlePanel;
     private float lastTitlePanelTouchY = 0;
@@ -206,6 +207,7 @@ public class GameUI {
         stockBookDialog = new com.game.dream.ui.StockBookDialog();
         gamblingDiceOverlay = new GamblingDiceOverlay();
         guzhengOverlay = new GuzhengOverlay();
+        keyboardOverlay = new KeyboardOverlay();
         ringTossOverlay = new RingTossOverlay();
         titlePanel = new com.game.dream.panel.TitlePanel();
 
@@ -689,6 +691,9 @@ public class GameUI {
         if (guzhengOverlay != null && guzhengOverlay.isVisible()) {
             guzhengOverlay.draw(canvas);
         }
+        if (keyboardOverlay != null && keyboardOverlay.isVisible()) {
+            keyboardOverlay.draw(canvas);
+        }
         if (ringTossOverlay != null && ringTossOverlay.isVisible()) {
             ringTossOverlay.draw(canvas);
         }
@@ -768,6 +773,10 @@ public class GameUI {
         }
         if (guzhengOverlay != null && guzhengOverlay.isVisible()) {
             guzhengOverlay.handleTouch(event);
+            return true;
+        }
+        if (keyboardOverlay != null && keyboardOverlay.isVisible()) {
+            keyboardOverlay.handleTouch(event);
             return true;
         }
         if (ringTossOverlay != null && ringTossOverlay.isVisible()) {
@@ -1875,6 +1884,18 @@ public class GameUI {
         }
         if (guzhengOverlay != null) {
             guzhengOverlay.show(null);
+        }
+    }
+
+    public void showKeyboardOverlay() {
+        if (currentDialog != null && currentDialog.isVisible()) {
+            currentDialog.hide();
+        }
+        if (guzhengOverlay != null && guzhengOverlay.isVisible()) {
+            guzhengOverlay.hide();
+        }
+        if (keyboardOverlay != null) {
+            keyboardOverlay.show();
         }
     }
 

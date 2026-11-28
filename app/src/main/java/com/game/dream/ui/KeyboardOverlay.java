@@ -302,7 +302,7 @@ public class KeyboardOverlay {
     private void drawInstBar(Canvas canvas, Paint paint) {
         String label;
         if (pickerOpen) {
-            label = "收起 ▲";
+            label = "离开 ▲";
         } else {
             label = selectedProgram + " · " + GmInstruments.getName(selectedProgram);
         }

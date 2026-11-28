@@ -5,6 +5,8 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.RectF;
+import android.util.SparseArray;
+import android.util.SparseIntArray;
 import android.view.MotionEvent;
 
 import com.game.dream.GameEngine;
@@ -35,21 +37,25 @@ public class GuzhengOverlay {
     private final Rect titleBar = new Rect();
     private final float[] stringY = new float[STRING_COUNT];
 
-    private int leftHoldString;
-    private float leftHoldX;
-    private int leftPointerId = -1;
+  /** 左侧按弦区：每根手指独立按弦（弦号 + 横向深度） */
+    private static final class LeftPress {
+        int stringNo;
+        float x;
+    }
+
+    private final SparseArray<LeftPress> leftPressByPointer = new SparseArray<>();
     /** 本轮在拨弦区已发声的弦，同指同弦按住不重复播 */
     private int pluckSoundedString;
 
     private int highlightString;
+    /** 拨弦手指在拨弦区内已发声的弦（多指各记各的） */
+    private final SparseIntArray pluckFingerString = new SparseIntArray();
 
     public void show(Listener listener) {
         this.listener = listener;
         this.visible = true;
-        leftHoldString = 0;
-        leftHoldX = 0f;
+        leftPressByPointer.clear();
         pluckSoundedString = 0;
-        leftPointerId = -1;
         highlightString = 0;
         layout();
         GuzhengSoundPlayer player = GuzhengSoundPlayer.getInstance();
@@ -209,7 +215,7 @@ public class GuzhengOverlay {
         paint.setColor(Color.rgb(255, 236, 200));
         paint.setTextSize(32);
         paint.setTextAlign(Paint.Align.CENTER);
-        canvas.drawText("收起", closeButton.centerX(), closeButton.centerY() + 10, paint);
+        canvas.drawText("离开", closeButton.centerX(), closeButton.centerY() + 10, paint);
     }
 
     private void drawNotePlaque(Canvas canvas, Paint paint) {
@@ -307,7 +313,7 @@ public class GuzhengOverlay {
             int no = i + 1;
             float y = stringY[i];
             float bridgeX = bridgeXForString(no);
-            boolean pressed = leftHoldString == no;
+            boolean pressed = isStringLeftPressed(no);
             boolean lit = highlightString == no;
 
             float baseStroke = Math.max(1.6f, body.height() / STRING_COUNT * 0.22f);
@@ -369,24 +375,17 @@ public class GuzhengOverlay {
             return true;
         }
         if (action == MotionEvent.ACTION_POINTER_UP) {
-            if (pointerId == leftPointerId) {
-                leftPointerId = -1;
-                leftHoldString = 0;
-                leftHoldX = 0f;
+            clearLeftPress(pointerId);
+            pluckFingerString.delete(pointerId);
+            if (leftPressByPointer.size() == 0) {
+                pluckSoundedString = 0;
             }
             return true;
         }
 
         if (action == MotionEvent.ACTION_MOVE) {
             for (int i = 0; i < event.getPointerCount(); i++) {
-                int pid = event.getPointerId(i);
-                if (pid != leftPointerId) {
-                    continue;
-                }
-                applyPressMove(event.getX(i), event.getY(i));
-            }
-            if (event.getPointerCount() == 1) {
-                applyPluckMove(event.getX(0), event.getY(0));
+                updatePressOrPluck(event.getX(i), event.getY(i), event.getPointerId(i));
             }
             return true;
         }
@@ -412,17 +411,52 @@ public class GuzhengOverlay {
         }
 
         if (inPress) {
-            leftPointerId = pointerId;
-            leftHoldString = stringNo;
-            leftHoldX = x;
+            setLeftPress(pointerId, stringNo, x);
         }
         if (inPluck) {
-            tryPluckAt(stringNo, x, bridgeX, pointerId, true);
+            clearLeftPress(pointerId);
+            tryPluckAt(stringNo, x, bridgeX, pointerId);
         }
         return true;
     }
 
-    private void applyPressMove(float x, float y) {
+    private void setLeftPress(int pointerId, int stringNo, float x) {
+        LeftPress press = leftPressByPointer.get(pointerId);
+        if (press == null) {
+            press = new LeftPress();
+            leftPressByPointer.put(pointerId, press);
+        }
+        press.stringNo = stringNo;
+        press.x = x;
+    }
+
+    private void clearLeftPress(int pointerId) {
+        leftPressByPointer.remove(pointerId);
+    }
+
+    private boolean isStringLeftPressed(int stringNo) {
+        for (int i = 0; i < leftPressByPointer.size(); i++) {
+            if (leftPressByPointer.valueAt(i).stringNo == stringNo) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private float pressDepthForPluckedString(int stringNo) {
+        for (int i = 0; i < leftPressByPointer.size(); i++) {
+            LeftPress p = leftPressByPointer.valueAt(i);
+            if (p.stringNo != stringNo) {
+                continue;
+            }
+            float bridgeX = bridgeXForString(stringNo);
+            float pressLeft = body.left + body.width() * 0.07f;
+            return clamp01((bridgeX - p.x) / (bridgeX - pressLeft));
+        }
+        return 0f;
+    }
+
+    private void updatePressOrPluck(float x, float y, int pointerId) {
         if (!body.contains((int) x, (int) y)) {
             return;
         }
@@ -432,12 +466,14 @@ public class GuzhengOverlay {
         }
         float bridgeX = bridgeXForString(stringNo);
         if (x <= bridgeX) {
-            leftHoldString = stringNo;
-            leftHoldX = x;
+            setLeftPress(pointerId, stringNo, x);
+        } else {
+            clearLeftPress(pointerId);
+            applyPluckAlongPointer(x, y, pointerId);
         }
     }
 
-    private void applyPluckMove(float x, float y) {
+    private void applyPluckAlongPointer(float x, float y, int pointerId) {
         if (!body.contains((int) x, (int) y)) {
             return;
         }
@@ -447,42 +483,43 @@ public class GuzhengOverlay {
         }
         float bridgeX = bridgeXForString(stringNo);
         if (x > bridgeX) {
-            tryPluckAt(stringNo, x, bridgeX, -1, false);
+            tryPluckAt(stringNo, x, bridgeX, pointerId);
         }
     }
 
-    private void tryPluckAt(int stringNo, float x, float bridgeX, int pointerId, boolean onPointerDown) {
+    private void tryPluckAt(int stringNo, float x, float bridgeX, int pointerId) {
         float yueshanX = body.right - body.width() * 0.06f;
         float pluckRight = Math.min(yueshanX, body.right - 8);
-        boolean secondFingerPluck = onPointerDown && pointerId != leftPointerId && leftPointerId >= 0;
-        if (!secondFingerPluck && stringNo == pluckSoundedString) {
+        boolean handFreePluck = leftPressByPointer.size() > 0
+                && leftPressByPointer.indexOfKey(pointerId) < 0;
+        if (handFreePluck) {
+            if (pluckFingerString.get(pointerId, -1) == stringNo) {
+                return;
+            }
+            pluckFingerString.put(pointerId, stringNo);
+        } else if (stringNo == pluckSoundedString) {
             return;
         }
         float pluckT = (x - bridgeX) / (pluckRight - bridgeX);
         triggerPluck(stringNo, pluckT);
-        if (!secondFingerPluck) {
+        if (!handFreePluck) {
             pluckSoundedString = stringNo;
         }
     }
 
     private void clearAllTouchState() {
-        leftHoldString = 0;
-        leftHoldX = 0f;
-        leftPointerId = -1;
+        leftPressByPointer.clear();
         pluckSoundedString = 0;
+        pluckFingerString.clear();
         highlightString = 0;
     }
 
     private void triggerPluck(int stringNo, float pluckT) {
         pluckT = clamp01(pluckT);
         highlightString = stringNo;
-        float leftDepth = 0f;
-        if (leftHoldString == stringNo) {
-            float bridgeX = bridgeXForString(stringNo);
-            float pressLeft = body.left + body.width() * 0.07f;
-            leftDepth = clamp01((bridgeX - leftHoldX) / (bridgeX - pressLeft));
-        }
-        GuzhengSoundPlayer.getInstance().playPluck(stringNo, pluckT, leftHoldString, leftDepth);
+        float leftDepth = pressDepthForPluckedString(stringNo);
+        int pressString = leftDepth > 0.05f ? stringNo : 0;
+        GuzhengSoundPlayer.getInstance().playPluck(stringNo, pluckT, pressString, leftDepth);
     }
 
     private int hitString(float touchY) {
